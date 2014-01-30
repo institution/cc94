@@ -1,0 +1,4 @@
+/usr/local/bin/cog.py objs.h > tmp~
+cat tmp~ > objs.cpp
+make main
+make model
