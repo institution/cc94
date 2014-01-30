@@ -1,13 +1,10 @@
-/core
-/meta.py~
-/randmap.py~
-/unmadspack.py~
-/meta.pyc
-/main.tmp~
+*~
+*.pyc
 /main
+/model
+/core
 COLONIZE
 nbproject
-asset
 
 # Compiled Object files
 *.slo
