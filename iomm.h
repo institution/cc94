@@ -9,23 +9,27 @@
 
 
 namespace iomm{
-	
-	using std::ifstream;
-	using std::ofstream;
+	using std::ostream;
+	using std::istream;
 	using std::string;
+	using std::size_t;
 
-
-	char read_byte(ifstream& f);
-	uint8 read_uint8(ifstream& f);
-	uint16 read_uint16(ifstream& f);
-	uint32 read_uint32(ifstream& f);
-	string read_ascii(ifstream& f, uint32 n);	
+	string read_chars(istream &f, uint n);
+	size_t write_chars(ostream &f, const string &s);
 	
-	void write_byte(ofstream &f, char x);
-	void write_uint8(ofstream &f, uint8 x);	
-	void write_uint16(ofstream &f, uint16 x);
-	void write_uint32(ofstream &f, uint32 x);
-	void write_ascii(ofstream &f, string s);
+	char read_byte(istream &f);
+	uint8 read_uint8(istream &f);
+	uint16 read_uint16(istream &f);
+	uint32 read_uint32(istream &f);
+	string read_string(istream &f);
+	
+	size_t write_byte(ostream &f, const char &x);
+	size_t write_uint8(ostream &f, const uint8 &x);	
+	size_t write_uint16(ostream &f, const uint16 &x);
+	size_t write_uint32(ostream &f, const uint32 &x);
+	size_t write_string(ostream &f, const string &s);
+	
+
 }
 
 #endif
