@@ -84,4 +84,30 @@ namespace iomm{
 		}
 		return l;
 	}
+	
+	template <>
+	uint8 read<uint8>(istream &f) {
+		return read_uint8(f);
+	}
+	
+	template <>
+	uint16 read<uint16>(istream &f) {
+		return read_uint16(f);
+	}
+	
+	template <>
+	uint32 read<uint32>(istream &f) {
+		return read_uint32(f);
+	}
+	
+	//template <class T>
+	//size_t write(ostream &f, const T &t);
+	
+	
+	//read_LE<N>(istream &f) {
+	//	static_if
+	//	read_LE<N-1>
+	//}
+	
+	
 }

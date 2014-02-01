@@ -50,24 +50,39 @@ def make_rwtype(Name, *args, **kwargs):
 		
 	make_read(Name, name, nts)
 	make_write(Name, name, nts)
+	make_str(Name, nts)
+
+
+def make_str(type_, nts):
+	s = f((
+		'inline ostream& operator<<(ostream &out, const {type} &obj)	{{'
+		'	cout << "{type}(" << {lst} << ")";'
+		'}}'
+		),
+		type = type_,
+		lst = "<<','<<".join(f('"{mem}"<<"="<<obj.{mem}', mem=mem) for mem,_ in nts),
+	)
+	print(s)
+	endline()
 
 def make_write(type, name, nts, h=False):
 	if h: 
-		printf("void write_{}(ofstream &f, const {} &{});", name, type, name)
+		printf("inline void write_{}(ostream &f, const {} &{});", name, type, name)
 	else:
-		printf("void write_{}(ofstream &f, const {} &{}) {{", name, type, name)
+		printf("inline void write_{}(ostream &f, const {} &{}) {{", name, type, name)
 		for n,t in nts:
 			printft('write_{t}(f, {name}.{n});', name=name, n=n, t=t)	
 		printf('}}')
 	
+
 	
 def make_read(type, name, nts, h=False):
 	if h:
-		printf("{} read_{}(ifstream &f);", type, name)
+		printf("inline {} read_{}(istream &f);", type, name)
 			
 	else:
 		# read
-		printf("{} read_{}(ifstream &f) {{", type, name)
+		printf("inline {} read_{}(istream &f) {{", type, name)
 		printft('{} {};', type, name)
 		for n,t in nts:
 			printft('{name}.{n} = read_{t}(f);', name=name, n=n, t=t)	

@@ -1,11 +1,10 @@
-#ifndef TEXT_H
-#define TEXT_H
+#ifndef IOMM_H
+#define IOMM_H
 
 #include <cassert>
 #include <fstream>
 #include <stdexcept>
-#include "uint.h"
-
+#include <cstdint>
 
 
 namespace iomm{
@@ -13,7 +12,12 @@ namespace iomm{
 	using std::istream;
 	using std::string;
 	using std::size_t;
-
+	
+	using uint8 = std::uint8_t;
+	using uint16 = std::uint16_t;
+	using uint32 = std::uint32_t;
+	using uint = std::uint32_t;
+	
 	string read_chars(istream &f, uint n);
 	size_t write_chars(ostream &f, const string &s);
 	
@@ -29,7 +33,11 @@ namespace iomm{
 	size_t write_uint32(ostream &f, const uint32 &x);
 	size_t write_string(ostream &f, const string &s);
 	
-
+	template <class T>
+	T read(istream &f);
+	
+	template <class T>
+	size_t write(ostream &f, const T &t);
 }
 
 #endif
