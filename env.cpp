@@ -32,7 +32,7 @@ namespace col{
 		uint nunits = read_uint16(f); // num of units on map
 		cout << format("nunits = %1%\n") % nunits;
 		for (uint i = 0; i < nunits; ++i) {
-			env.icons.push_back(read_icon(f));
+			env.add(read_icon(f));
 		}
 
 		if (nsect < 3) return env;
@@ -84,7 +84,7 @@ namespace col{
 		uint nunits = env.icons.size();
 		write_uint16(f, nunits); // num of units on map
 		for (auto &icon: env.icons) {
-			write_icon(f, icon);
+			write_icon(f, icon.second);
 		}
 
 		// players

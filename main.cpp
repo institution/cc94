@@ -80,11 +80,11 @@ namespace col{
 		
 	};
 
-	void new_icon(Game &game, const Icon &icon) {
-		auto &icons = game.env.icons;
-		icons.push_back(icon);  //copy
-		icons[icons.size()-1].id = icons.size()-1;  // id
-	}
+	//void new_icon(Game &game, const Icon &icon) {
+	//	auto &icons = game.env.icons;
+	//	icons.push_back(icon);  //copy
+	//	icons[icons.size()-1].id = icons.size()-1;  // id
+	//}
 	
 	void move(Game &game, uint32 icon_id, uint8 dx, uint8 dy) {
 		auto &icon = game.env.icons[icon_id];
@@ -176,8 +176,8 @@ namespace col{
 			}
 		}
 
-		for (auto &icon: env.icons) {
-			render_icon(win, icon);
+		for (auto &p: env.icons) {
+			render_icon(win, p.second);
 		}
 
 	}
@@ -208,13 +208,13 @@ namespace col{
 					
 				if (es[0] == "list") {
 					for (auto &icon: env.icons) {
-						cout << icon << endl;
+						cout << icon.second << endl;
 						
 					}
 				}
 				else
 				if (es[0] == "del") {
-					env.icons.erase(env.icons.begin()+std::stoi(es[1]));					
+					env.icons.erase(IconKey(std::stoi(es[1])));
 				}
 				
 				buffer = "";	
@@ -244,7 +244,7 @@ namespace col{
 		else
 		if (ev.Type == sf::Event::KeyReleased) {
 			if (ev.Key.Code == sf::Key::C) {
-				env.icons.push_back(
+				env.add(
 					Icon(env.icons.size(), 100, 5, 5)
 				);
 			}				

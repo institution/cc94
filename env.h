@@ -6,14 +6,23 @@
 
 namespace col{
 
-	using Terrain = boost::multi_array<uint8, 2>;
+	
+	
+	
+	using Tiles = boost::multi_array<uint8, 2>;
+	
+	// 0 - key not set/unknown
+	using IconKey = uint32;
+	
+	using Icons = map<IconKey, Icon>;
 	
 	struct Env{
 
 
 		uint w, h;
-		Terrain terr;
-		vector<Icon> icons;
+		
+		Tiles terr;
+		Icons icons;
 
 		// uint cur_x, cur_y;  
 
@@ -23,6 +32,24 @@ namespace col{
 
 		uint16 curr_player;		
 		uint32 turn_no;
+		
+		IconKey next_key() {
+			return icons.size() + 1;
+		}
+		
+		void add(const Icon &icon) {
+			assert(icon.id > 0);
+			icons[icon.id] = icon;
+		}
+		
+		Icon& get(const IconKey &id) {
+			return icons[id];
+		}
+		
+		void del(const IconKey &id) {
+			icons.erase(id);
+		}
+		
 
 	};
 	
