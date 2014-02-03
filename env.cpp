@@ -35,23 +35,29 @@ namespace col{
 			if (nsect < 2) return env;
 			// icons	
 			uint nunits = read<uint16>(f); // num of units on map
-			cout << format("nunits = %1%\n") % nunits;
+			cout << format("Icons(%||)\n") % nunits;
 			for (uint i = 0; i < nunits; ++i) {
-				env.add(read<Icon>(f));
+				Icon icon(read<Icon>(f));
+				env.add(icon);
+				cout << icon << endl;
 			}
 
 			if (nsect < 3) return env;
 			// players
 			uint nplayers = read<uint8>(f);
-			cout << format("nplayers = %1%\n") % nunits;
+			cout << format("Players(%||):\n") % nplayers;
 			for (uint i = 0; i < nplayers; ++i) {
-				env.add_player(read<Player>(f));
+				Player p(read<Player>(f));
+				env.add_player(p);
+				cout << p << endl;
 			}
 
 			if (nsect < 4) return env;
 			// turn info
 			env.turn_no = read<uint32>(f);
 			env.curr_player = read<uint16>(f);
+			cout << format("turn_no = %||\n") % env.turn_no;
+			cout << format("curr_player = %||\n") % env.curr_player;
 
 
 			return env;
@@ -69,7 +75,7 @@ namespace col{
 
 
 			uint8 version = 1;
-			uint8 nsect = 3;
+			uint8 nsect = 4;
 			string fid = "COLMAPB";
 
 			l += write_chars(f, fid);

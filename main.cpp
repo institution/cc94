@@ -68,12 +68,26 @@ namespace col{
 
 
 
+	void render_shield(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
+		win.Draw(
+			sf::Shape::Rectangle(
+				x+1, y+1, 
+				x+6, y+8, 
+				sf::Color(col.r,col.g,col.b, 255),
+				1, 
+				sf::Color(0,0,0, 255)
+			)
+		);
+	}
 
-	void render_icon(sf::RenderWindow &win, const Icon &icon) {
+	void render_icon(sf::RenderWindow &win, const Env &env, const Icon &icon) {
+		auto &p = env.get_player(icon.player_id);
+		render_shield(win, icon.x*16, icon.y*16, p.color);
+		
 		sf::Sprite s;
 		s.SetPosition(icon.x*16, icon.y*16);
 		s.SetImage(res(ICON, icon.type_id));
-		win.Draw(s);
+		win.Draw(s);	
 	}
 
 	void render_map(sf::RenderWindow &win, const Env &env) 
@@ -93,7 +107,7 @@ namespace col{
 		}
 
 		for (auto &p: env.icons) {
-			render_icon(win, p.second);
+			render_icon(win, env, p.second);
 		}
 
 	}
@@ -101,6 +115,24 @@ namespace col{
 
 	void render_cursor(sf::RenderWindow &win, const Env &env) {
 
+	}
+	
+	
+	Color make_color_by_name(const string &s) {
+		if (s == "red") {
+			return Color(255,0,0);
+		}
+		else
+		if (s == "green") {
+			return Color(0,255,0);
+		}
+		else
+		if (s == "blue") {
+			return Color(0,0,255);
+		}
+		else {
+			return Color(0,0,0);
+		}
 	}
 	
 	
@@ -123,22 +155,47 @@ namespace col{
 				vector<string> es;
 				split(es, buffer, is_any_of(" "));
 					
-				if (es[0] == "list") {
+				if (es[0] == "lsi") {
 					for (auto &icon: env.icons) {
 						cout << icon.second << endl;						
 					}
 				}
 				else
-				if (es[0] == "del") {
+				if (es[0] == "deli") {
 					env.del(std::stoi(es[1]));
 				}
 				else
-				if (es[0] == "add") {
-					
+				if (es[0] == "addi") {					
 					env.add(Icon(
 						env.next_key(), 103, 
-						std::stoi(es[1]), std::stoi(es[2])
+						std::stoi(es[1]), std::stoi(es[2]), 
+						std::stoi(es[3])
 					));
+				}
+				else
+				if (es[0] == "lsp") {
+					for (auto &p: env.players) {
+						cout << p.second << endl;						
+					}
+				}
+				else
+				if (es[0] == "delp") {
+					env.del_player(std::stoi(es[1]));
+				}
+				else
+				if (es[0] == "addp") {					
+					env.add_player(Player(
+						env.next_key_player(),
+						string(es[1]),
+						make_color_by_name(string(es[2]))
+					));
+				}
+				else
+				if (es[0] == "set_owner") {
+					env.set_owner(
+						stoi(es[1]),
+						stoi(es[2])
+					);
 				}
 				else
 				if (es[0] == "move") {
@@ -177,9 +234,7 @@ namespace col{
 		else
 		if (ev.Type == sf::Event::KeyReleased) {
 			if (ev.Key.Code == sf::Key::C) {
-				env.add(
-					Icon(env.icons.size(), 100, 5, 5)
-				);
+				
 			}				
 		}
 		else

@@ -47,18 +47,29 @@ namespace col {
 
 	ostream& operator<<(ostream &out, const Icon &obj);
 	
+	
+	struct Color{
+		uint8 r,g,b;	
+		Color() {}
+		Color(uint8 r_, uint8 g_, uint8 b_): r(r_), g(g_), b(b_) {}
+	};
+	
+	ostream& operator<<(ostream &out, const Color &color);
+	
 	struct Player {
 		uint32 id;
 		string name;
-
+		Color color;
+		
 		Player() {}
 
-		Player(uint32 id_, string name_): id(id_), name(name_) {}
+		Player(uint32 id_, string name_, const Color &color_):
+			id(id_), name(name_), color(color_) {
+		}
 
-	}; 
+	};
 	
 	ostream& operator<<(ostream &out, const Player &obj);
 
-	
 }
 #endif

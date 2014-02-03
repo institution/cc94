@@ -61,6 +61,15 @@ namespace col{
 			++mod;
 		}
 		
+		void set_owner(const IconKey &icon_id, const PlayerKey &player_id) {
+			auto ii = icons.find(icon_id);
+			auto pp = players.find(player_id);
+			if (ii != icons.end() && pp != players.end()) {
+				Icon &icon = (*ii).second;
+				icon.player_id = player_id;
+				++mod;
+			}
+		}
 		
 		void add_player(const Player &t) {
 			//assert(icon.id > 0);
@@ -72,16 +81,31 @@ namespace col{
 			return players[id];			
 		}
 		
+		const Player& get_player(const PlayerKey &id) const {
+			auto p = players.find(id);
+			if (p != players.end()) {
+				return (*p).second;
+			}
+			else {
+				throw std::runtime_error(str(format("no player with id=%||") % id));
+			}
+		}
+		
 		void del_player(const PlayerKey &id) {
 			players.erase(id);
 			++mod;
 		}
 		
+		PlayerKey next_key_player() {
+			return players.size();
+		}
+		
 		void move(const IconKey &id, int8 dx, int8 dy) {
 			auto p = icons.find(id);
 			if (p != icons.end()) {
-				(*p).second.x += dx;
-				(*p).second.y += dy;
+				Icon &icon = (*p).second;
+				icon.x += dx;
+				icon.y += dy;
 				++mod;
 			}
 		}
