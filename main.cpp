@@ -39,7 +39,6 @@ using std::vector;
 //------------------------------------------------------------------------------
 
 namespace col{
-	using namespace iomm;
 
 
 	using Res = map<pair<string,uint>,sf::Image>;
@@ -62,93 +61,10 @@ namespace col{
 			if (!img.LoadFromFile(path)) {
 				throw std::runtime_error("cant't load image file: " + path);
 			}
+			img.SetSmooth(false);
 			return img;		
 		}
 	}
-
-
-
-	struct Game{
-		Env env;
-		
-		Game() {
-			
-		}
-		
-		
-		
-		
-	};
-
-	//void new_icon(Game &game, const Icon &icon) {
-	//	auto &icons = game.env.icons;
-	//	icons.push_back(icon);  //copy
-	//	icons[icons.size()-1].id = icons.size()-1;  // id
-	//}
-	
-	void move(Game &game, uint32 icon_id, uint8 dx, uint8 dy) {
-		auto &icon = game.env.icons[icon_id];
-		icon.x += dx;
-		icon.y += dy;
-	}
-
-	void end_turn() {
-
-	}
-
-		
-	
-	/*
-	void exec(Env &env, Action &a, long &auth_key)
-
-	
-
-
-	void turn(Env &env) {
-		for (auto &p: env.players) {
-
-			auto a = player_if.retrive();
-			auto r = exec_action(a);
-			player_if.send(r);
-
-		}
-		env.turn += 1;
-
-	}
-
-	*/
-
-	
-	
-	
-
-
-	using Terrain = boost::multi_array<uint8, 2>;
-
-	/*
-	struct AuthInfo{
-		using SharedKey = long;
-		using PlayerId = uint32;
-
-		map<SharedKey,PlayerId> info;
-
-		bool authenticate(PlayerId player_id, SharedKey token) {
-			auto it = info.find(token)
-			if (it != info.end()) {
-				return (*it).second == player_id;
-			}
-			return false;
-		}
-	};
-	*/
-
-
-
-
-
-
-
-
 
 
 
@@ -156,7 +72,7 @@ namespace col{
 	void render_icon(sf::RenderWindow &win, const Icon &icon) {
 		sf::Sprite s;
 		s.SetPosition(icon.x*16, icon.y*16);
-		s.SetImage(res(ICON, icon.type));
+		s.SetImage(res(ICON, icon.type_id));
 		win.Draw(s);
 	}
 
@@ -190,6 +106,7 @@ namespace col{
 	
 	using boost::split;
 	using boost::is_any_of;
+	using std::stoi;
 	
 	struct Console{
 		string buffer;
@@ -208,14 +125,30 @@ namespace col{
 					
 				if (es[0] == "list") {
 					for (auto &icon: env.icons) {
-						cout << icon.second << endl;
-						
+						cout << icon.second << endl;						
 					}
 				}
 				else
 				if (es[0] == "del") {
-					env.icons.erase(IconKey(std::stoi(es[1])));
+					env.del(std::stoi(es[1]));
 				}
+				else
+				if (es[0] == "add") {
+					
+					env.add(Icon(
+						env.next_key(), 103, 
+						std::stoi(es[1]), std::stoi(es[2])
+					));
+				}
+				else
+				if (es[0] == "move") {
+					
+					env.move(					
+						stoi(es[1]), // id
+						stoi(es[2]), // dx
+						stoi(es[3]) // dy
+					);
+				}	
 				
 				buffer = "";	
 				cout << "> ";				
@@ -258,6 +191,13 @@ namespace col{
 }
 
 
+void render(sf::RenderWindow &app, const col::Env &env, const Text &t) {
+	app.Clear();
+	render_map(app, env);
+	render_text(app, t);
+	app.Display();
+}
+
 int main()
 {
 	using namespace col;
@@ -284,18 +224,21 @@ int main()
 	app.SetView(view);
 	
 	ifstream f(fname, std::ios::binary);
-	auto env = read_env(f);
+	auto env = io::read<Env>(f);
 	f.close();
     
 	Console con(env);
 	
-	app.Clear();
-	render_map(app, env);
-	render_text(app, t);
-	app.Display();
+	auto last_mod = env.mod - 1;
 	
 	while (app.IsOpened())
 	{
+		
+		if (env.mod != last_mod) {
+			render(app, env, t);
+			last_mod = env.mod;
+		}
+		
 		sf::Event ev;
 		while (app.GetEvent(ev)) {
 			handle_event(app, env, ev, con);
@@ -305,7 +248,7 @@ int main()
 
 	{
 		ofstream fo(fname, std::ios::binary);
-		write_env(fo, env);
+		io::write<Env>(fo, env);
 	}
 		
 	return EXIT_SUCCESS;

@@ -13,8 +13,6 @@
 
 namespace col{
 	
-	using namespace iomm;
-	
 	using boost::format;
 	using std::ifstream;
 	using std::ofstream;
@@ -28,8 +26,6 @@ namespace col{
 	using std::map;
 	using std::vector;
 	
-	
-
 	
 }
 

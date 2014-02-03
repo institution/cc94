@@ -13,8 +13,11 @@ namespace col{
 	
 	// 0 - key not set/unknown
 	using IconKey = uint32;
+	using PlayerKey = uint32;
 	
 	using Icons = map<IconKey, Icon>;
+	using Players = map<PlayerKey, Player>;
+		
 	
 	struct Env{
 
@@ -27,35 +30,69 @@ namespace col{
 		// uint cur_x, cur_y;  
 
 		uint turn;
+		
+		uint32 mod;
 
-		vector<Player> players;   // ls of player id
+		Players players;   // ls of player id
 
 		uint16 curr_player;		
 		uint32 turn_no;
+		
+		Env() {
+			mod = 0;
+		}
 		
 		IconKey next_key() {
 			return icons.size() + 1;
 		}
 		
 		void add(const Icon &icon) {
-			assert(icon.id > 0);
+			//assert(icon.id > 0);
 			icons[icon.id] = icon;
+			++mod;
 		}
 		
 		Icon& get(const IconKey &id) {
-			return icons[id];
+			return icons[id];			
 		}
 		
 		void del(const IconKey &id) {
 			icons.erase(id);
+			++mod;
 		}
+		
+		
+		void add_player(const Player &t) {
+			//assert(icon.id > 0);
+			players[t.id] = t;
+			++mod;
+		}
+		
+		Player& get_player(const PlayerKey &id) {
+			return players[id];			
+		}
+		
+		void del_player(const PlayerKey &id) {
+			players.erase(id);
+			++mod;
+		}
+		
+		void move(const IconKey &id, int8 dx, int8 dy) {
+			auto p = icons.find(id);
+			if (p != icons.end()) {
+				(*p).second.x += dx;
+				(*p).second.y += dy;
+				++mod;
+			}
+		}
+		
+		
+		
+		
 		
 
 	};
 	
-	Env read_env(istream &f);
-	
-	void write_env(ostream &f, const Env &env);
 
 
 }
