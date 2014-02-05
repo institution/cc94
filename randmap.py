@@ -2,8 +2,8 @@ import struct
 import random
 import sys
 
-terr_base = [10, 1, 4]
-terr = [10, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+terr_base = [11, 2, 5]
+terr = [11, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
 
 def main():
 	fname = sys.argv[1]
@@ -15,7 +15,7 @@ def save(fname, xss):
 	
 	with open(fname, 'wb') as f:
 		f.write(b'COLMAPB')
-		f.write(struct.pack('1B', 1))
+		f.write(struct.pack('1B', 1))     # num_sections (1 - terrain data only)
 		f.write(struct.pack('2H', w, h))
 	
 		for j in range(h):
@@ -23,8 +23,8 @@ def save(fname, xss):
 				f.write(struct.pack('1B', xss[j][i]))
 				
 		# add units
-		unit.type
-		unit.color
+		#unit.type
+		#unit.color
 		
 				
 
@@ -33,7 +33,7 @@ def gen(w,h):
 	
 	for j in range(h):
 		for i in range(w):
-			xss[j][i] = 10
+			xss[j][i] = 11
 
 	for j in range(1,h-1):
 		for i in range(1,w-1):
@@ -77,3 +77,4 @@ def evo(xss, i, j):
 
 if __name__ == '__main__':
 	main()
+

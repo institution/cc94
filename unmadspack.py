@@ -46,10 +46,10 @@ def get_dname(fname):
 	return dname
 
 
-def get_default_pallete():
-	fname = 'VICEROY.PAL'
-	dname = get_dname(fname)
-	with open(fname, 'rb') as f:
+def get_default_pallete(fname):
+	dname = get_dname('VICEROY.PAL')
+	dir = os.path.dirname(fname)
+	with open(dir+'/VICEROY.PAL', 'rb') as f:
 		pal = read_pallete(f.read(256*3), dname)
 		
 	return pal
@@ -222,7 +222,7 @@ def unpack(fname):
 		if len(parts) > 2:
 			pal = read_pallete(parts[2], dname)
 		else:
-			pal = get_default_pallete()
+			pal = get_default_pallete(fname)
 		
 		image_part = parts[1]
 	
@@ -246,9 +246,9 @@ def unpack(fname):
 	
 	# ------------------------------
 	for i,ti in enumerate(tis):
-		ofile = '{}/{:0>3}.png'.format(dname, i)
+		ofile = '{}/{:0>3}.png'.format(dname, i+1)
 		
-		print('* tile {}; width={}; height={}; path={};'.format(i, ti.width, ti.height, ofile))
+		print('* tile {}; width={}; height={}; path={};'.format(i+1, ti.width, ti.height, ofile))
 		img = read_image(ext, ti, image_part, pal)
 		
 		img.save(ofile)
