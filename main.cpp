@@ -16,6 +16,7 @@
 #include "iomm.h"
 #include "text.h"
 #include "env.h"
+#include "csv.h"
 
 using std::unique_ptr;
 
@@ -40,6 +41,9 @@ using std::vector;
 
 namespace col{
 
+	
+	
+	
 
 	using Res = map<pair<string,uint>,sf::Image>;
 	Res g_res;

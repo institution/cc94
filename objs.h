@@ -5,29 +5,59 @@
 #include "col.h"
 #include "iomm.h"
 
+
+
+
+
+
 namespace col {
 	
+	// map
+	// col
+		
 	struct IconType{
 		using Key = uint32;
-		Key id;		
-		uint8 move;
-		uint16 pic;
-		string name;
 		
-		IconType(uint32 id, string name, uint8 move, uint16 pic);
+		Key id;
+		
+		string name;
+		uint8 pic;
+		uint8 movement;
+		uint8 attack;
+		uint8 combat;
+		uint8 cargo;
+		uint8 size;
+		
+		//uint8 cost;
+		//uint8 tools;
+		//uint8 guns;
+		//uint8 hull;
+
+		IconType() {}
+		
+		IconType(const vector<string> &xs) {
+			assert(xs.size() >= 11);
+			name = trim_copy(xs[0]);
+			pic = stoi(xs[1]);
+			movement = stoi(xs[2]);
+			attack = stoi(xs[3]);
+			combat = stoi(xs[4]);
+			cargo = stoi(xs[5]);
+			size = stoi(xs[6]);
+			
+			//cost = stoi(xs[7]);
+			//tools = stoi(xs[8]);
+			//guns = stoi(xs[9]);
+			//hull = stoi(xs[10]);
+			
+			id = pic;
+		}
+				
 	};
 	
 	
-	/*
-	IconTypes map<IconType::Key, IconType> icon_types;
 	
-	icon_types[100] = IconType(100, "Free Colonist", 1, 100);
-	icon_types[104] = IconType(104, "Scout", 3, 104);
-		
-	Icon create(const IconType &ic) {
-		
-	}
-	*/
+	
 	
 	struct Icon {
 		uint32 id;

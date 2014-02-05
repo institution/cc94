@@ -6,8 +6,10 @@
 #include <memory>
 #include <cassert>
 #include <vector>
+#include <string>
 #include <map>
 #include <boost/multi_array.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include "iomm.h"
 
@@ -26,6 +28,9 @@ namespace col{
 	using std::map;
 	using std::vector;
 	
+	using boost::algorithm::trim;	
+	using boost::algorithm::trim_copy;
+	using std::stoi;
 	
 }
 

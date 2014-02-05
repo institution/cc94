@@ -3,6 +3,7 @@
 
 #include "col.h"
 #include "objs.h"
+#include "csv.h"
 
 namespace col{
 
@@ -18,6 +19,10 @@ namespace col{
 	using Icons = map<IconKey, Icon>;
 	using Players = map<PlayerKey, Player>;
 		
+	using IconTypes = map<IconType::Key, IconType>;
+
+	IconTypes load_itypes();
+
 	
 	struct Env{
 
@@ -38,8 +43,14 @@ namespace col{
 		uint16 curr_player;		
 		uint32 turn_no;
 		
+		IconTypes its;
+		
 		Env() {
 			mod = 0;
+			
+			its = load_itypes();
+			
+			
 		}
 		
 		IconKey next_key() {

@@ -2,7 +2,41 @@
 
 namespace col{
 	
+
+
+
+
+	IconTypes load_itypes() {
+		IconTypes itypes;
+
+		auto vss = read_conf("./col94/unit.csv");
+		auto p = vss.begin();
+		auto e = vss.end();
+		
+		++p; // skip header
+		while (p != e) {
+			if ((*p).size() > 1) {
+				IconType ict = IconType(*p);
+
+				itypes[ict.id] = ict;
+
+				//for (auto &v: vs) {
+				//	cout << v << '|';
+				//}
+				//cout << endl;
+			}
+			
+			++p;
+		}
+
+		return itypes;
+	}
+	
 	namespace io {
+
+
+		
+		// Icon create(const IconType &ic) {
 
 
 		template <>
