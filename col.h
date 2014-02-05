@@ -31,6 +31,7 @@ namespace col{
 	using boost::algorithm::trim;	
 	using boost::algorithm::trim_copy;
 	using std::stoi;
+	using std::runtime_error;
 	
 }
 

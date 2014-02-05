@@ -19,6 +19,9 @@ namespace col{
 		using std::vector;
 
 		ifstream in(fname);
+		if (!in.is_open()) {
+			throw runtime_error(str(format("cannot open file %||") % fname));
+		}
 		//in.unsetf(std::ios::skipws);
 
 		string c{
