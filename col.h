@@ -12,6 +12,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include "iomm.h"
+#include "roll.h"
+
 
 namespace col{
 	
@@ -32,6 +34,8 @@ namespace col{
 	using boost::algorithm::trim_copy;
 	using std::stoi;
 	using std::runtime_error;
+	using std::remove_reference;
+	using roll::roll;
 	
 }
 

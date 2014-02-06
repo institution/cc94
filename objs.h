@@ -14,14 +14,17 @@ namespace col {
 	
 	// map
 	// col
-		
-	struct IconType{
-		using Key = uint32;
-		
-		Key id;
+	
+	using Coord = uint16;
+	
+
+	
+	
+	struct UnitType{
+		using Id = uint8;
 		
 		string name;
-		uint8 pic;
+		Id id;
 		uint8 movement;
 		uint8 attack;
 		uint8 combat;
@@ -33,12 +36,12 @@ namespace col {
 		//uint8 guns;
 		//uint8 hull;
 
-		IconType() {}
+		UnitType() {}
 		
-		IconType(const vector<string> &xs) {
+		UnitType(const vector<string> &xs) {
 			assert(xs.size() >= 11);
 			name = trim_copy(xs[0]);
-			pic = stoi(xs[1]);
+			id = stoi(xs[1]);
 			movement = stoi(xs[2]);
 			attack = stoi(xs[3]);
 			combat = stoi(xs[4]);
@@ -49,28 +52,55 @@ namespace col {
 			//tools = stoi(xs[8]);
 			//guns = stoi(xs[9]);
 			//hull = stoi(xs[10]);
-			
-			id = pic;
 		}
 				
 	};
 	
 	
 	
-	
+	struct Player;
+	/*
+	struct Struct {
+		using Id = uint32;
+		SType *type; // name 
+		
+		People workers;
+				
+		Coord x, y;
+		
+		
+	};*/
 	
 	struct Icon {
-		uint32 id;
-		uint32 type_id;
-		uint16 x;
-		uint16 y;
-		uint8 move_left;
-		uint32 player_id;
+		using Id = uint32;
+		
+		Id id;
+		UnitType const *type;
+		Coord x, y;
+		Player const *player;	
+		uint8 movement_used;  // movement used in this turn
+		
+		//uint8 spec_id;
 
-		Icon() {}
-
-		Icon(uint32 id_, uint16 type_id_, uint16 x_, uint16 y_, uint32 player_id_): 
-			id(id_), type_id(type_id_), x(x_), y(y_), player_id(player_id_) {
+		Icon(): movement_used(0) {}
+		
+		Icon(
+			Id id, 
+			UnitType const &type, 
+			Coord x, 
+			Coord y, 
+			Player const &player
+		) {	
+			this->id = id; 
+			this->type = &type; 
+			this->x = x;
+			this->y = y;
+			this->movement_used = 0;
+			this->player = &player;
+		}
+		
+		void turn() {
+			movement_used = 0;
 		}
 
 	}; 
@@ -87,13 +117,15 @@ namespace col {
 	ostream& operator<<(ostream &out, const Color &color);
 	
 	struct Player {
-		uint32 id;
+		using Id = uint32;
+		
+		Id id;
 		string name;
 		Color color;
 		
 		Player() {}
 
-		Player(uint32 id_, string name_, const Color &color_):
+		Player(Id id_, string name_, const Color &color_):
 			id(id_), name(name_), color(color_) {
 		}
 

@@ -100,6 +100,8 @@ namespace col{
 			return (b << 8) | a;	
 		}
 
+		
+
 
 		//template <class T>
 		//size_t write(ostream &f, const T &t);

@@ -85,12 +85,12 @@ namespace col{
 	}
 
 	void render_icon(sf::RenderWindow &win, const Env &env, const Icon &icon) {
-		auto &p = env.get_player(icon.player_id);
+		auto &p = env.get_player(icon.player->id);
 		render_shield(win, icon.x*16, icon.y*16, p.color);
 		
 		sf::Sprite s;
 		s.SetPosition(icon.x*16, icon.y*16);
-		s.SetImage(res(ICON, icon.type_id));
+		s.SetImage(res(ICON, icon.type->id));
 		win.Draw(s);	
 	}
 
@@ -158,23 +158,42 @@ namespace col{
 				
 				vector<string> es;
 				split(es, buffer, is_any_of(" "));
-					
+				
+				if (es[0] == "help") {
+					cout << "icons: lsi, addi, deli id" << endl;
+					cout << "players: lsp, addp, delp" << endl;
+					cout << "lsut" << endl;
+					cout << "move, set_owner" << endl;
+				}
+				else
 				if (es[0] == "lsi") {
 					for (auto &icon: env.icons) {
 						cout << icon.second << endl;						
 					}
 				}
 				else
-				if (es[0] == "deli") {
-					env.del(std::stoi(es[1]));
+				if (es[0] == "lsut") {
+					for (auto &utp: env.uts) {
+						auto &ut = utp.second;
+						cout << format("%u  %s\n") % uint16(ut.id) % ut.name;
+					}
 				}
 				else
-				if (es[0] == "addi") {					
-					env.add(Icon(
-						env.next_key(), 103, 
-						std::stoi(es[1]), std::stoi(es[2]), 
-						std::stoi(es[3])
-					));
+				if (es[0] == "deli") {
+					env.destroy_icon(std::stoi(es[1]));
+				}
+				else
+				if (es[0] == "addi") {	
+					if (es.size() < 4+1) {
+						cout << "Usage: addi x y player_id type_id" << endl;
+					}
+					else {					
+						env.create_icon(
+							std::stoi(es[4]), // type_id
+							std::stoi(es[3]),  // player_id
+							std::stoi(es[1]), std::stoi(es[2]) // x y							
+						);
+					}
 				}
 				else
 				if (es[0] == "lsp") {
@@ -187,12 +206,24 @@ namespace col{
 					env.del_player(std::stoi(es[1]));
 				}
 				else
-				if (es[0] == "addp") {					
-					env.add_player(Player(
-						env.next_key_player(),
-						string(es[1]),
-						make_color_by_name(string(es[2]))
-					));
+				if (es.at(0) == "save") {
+					{
+						ofstream f(es.at(1), std::ios::binary);
+						io::write(f, env);
+					}
+				}
+				else
+				if (es[0] == "addp") {
+					if (es.size() < 2+1) {
+						cout << "Usage: addp name color_name" << endl;
+					}
+					else {				
+						env.add_player(Player(
+							env.next_key_player(),
+							string(es[1]),
+							make_color_by_name(string(es[2]))
+						));
+					}
 				}
 				else
 				if (es[0] == "set_owner") {
@@ -202,14 +233,24 @@ namespace col{
 					);
 				}
 				else
-				if (es[0] == "move") {
-					
+				if (es.at(0) == "move") {					
 					env.move(					
-						stoi(es[1]), // id
-						stoi(es[2]), // dx
-						stoi(es[3]) // dy
+						stoi(es.at(1)), // id
+						stoi(es.at(2)), // dx
+						stoi(es.at(3))  // dy
 					);
-				}	
+				}
+				else
+				if (es.at(0) == "attack") {
+					env.attack(					
+						stoi(es.at(1)), // id
+						stoi(es.at(2)), // dx
+						stoi(es.at(3))  // dy
+					);
+				}
+				else {
+					cout << "ERROR: no such command" << endl;
+				}
 				
 				buffer = "";	
 				cout << "> ";				
@@ -305,10 +346,10 @@ int main()
 		
 	}
 
-	{
+	/*{
 		ofstream fo(fname, std::ios::binary);
 		io::write<Env>(fo, env);
-	}
+	}*/
 		
 	return EXIT_SUCCESS;
 }

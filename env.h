@@ -6,9 +6,6 @@
 #include "csv.h"
 
 namespace col{
-
-	
-	
 	
 	using Tiles = boost::multi_array<uint8, 2>;
 	
@@ -19,15 +16,15 @@ namespace col{
 	using Icons = map<IconKey, Icon>;
 	using Players = map<PlayerKey, Player>;
 		
-	using IconTypes = map<IconType::Key, IconType>;
+	using UnitTypes = map<UnitType::Id, UnitType>;
 
-	IconTypes load_itypes();
+	UnitTypes load_unit_types();
 
 	
+	
+	
 	struct Env{
-
-
-		uint w, h;
+		Coord w, h;
 		
 		Tiles terr;
 		Icons icons;
@@ -40,46 +37,95 @@ namespace col{
 
 		Players players;   // ls of player id
 
-		uint16 curr_player;		
+		Player::Id curr_player;		
 		uint32 turn_no;
 		
-		IconTypes its;
+		UnitTypes uts;
 		
 		Env() {
-			mod = 0;
-			
-			its = load_itypes();
-			
+			mod = 0;			
+			uts = load_unit_types();
 			
 		}
 		
-		IconKey next_key() {
-			return icons.size() + 1;
-		}
 		
-		void add(const Icon &icon) {
-			//assert(icon.id > 0);
-			icons[icon.id] = icon;
+		Icon::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coord x, Coord y) {
+			Icon::Id id = icons.size();
+			icons[id] = Icon(
+				id,
+				uts.at(type_id),
+				x,y,
+				players.at(player_id)
+			);
 			++mod;
+			return id;		
 		}
 		
-		Icon& get(const IconKey &id) {
-			return icons[id];			
-		}
-		
-		void del(const IconKey &id) {
+		void destroy_icon(Icon::Id id) {
 			icons.erase(id);
 			++mod;
 		}
 		
-		void set_owner(const IconKey &icon_id, const PlayerKey &player_id) {
-			auto ii = icons.find(icon_id);
-			auto pp = players.find(player_id);
-			if (ii != icons.end() && pp != players.end()) {
-				Icon &icon = (*ii).second;
-				icon.player_id = player_id;
-				++mod;
+		
+		void move(Icon::Id id, int8 dx, int8 dy) {
+			auto &icon = icons.at(id);
+			icon.x += dx;
+			icon.y += dy;
+			++mod;
+		}
+		
+		void attack(const IconKey &id, int8 dx, int8 dy) {
+			auto &c = icons.at(id);			
+			auto &d = get_icon_at(c.x+dx, c.y+dy);
+			
+			auto attack = c.type->attack;
+			auto combat = d.type->combat;
+			
+			assert(attack > 0);
+			
+			auto r = roll(0, attack + combat);
+			cout << "combat " << r << endl;
+			if (r <= attack) {
+				destroy_icon(d.id);
+				c.x += dx;
+				c.y += dy;
 			}
+			else {
+				destroy_icon(c.id);
+			}
+			++mod;
+		}
+		
+		Icon& get_icon_at(Coord x, Coord y) {
+			for (auto &p: icons) {				
+				auto &c = p.second;
+				if (c.x == x && c.y == y) {
+					return c;
+				}
+			}
+			throw runtime_error("no icon at location");
+		}
+		
+		
+		
+		
+		
+		
+		//Icon::Id create_icon(istream &f) {
+		//	Icon icon(read_obj<Icon>(*this, f));
+		//	env.icons[icon.id] = icon;
+		//	return icon.id;
+		//}
+				
+				
+		Icon& get(Icon::Id id) {
+			return icons.at(id);
+		}
+		
+		
+		void set_owner(const IconKey &icon_id, const PlayerKey &player_id) {
+			icons.at(icon_id).player = &players.at(player_id);
+			++mod;			
 		}
 		
 		void add_player(const Player &t) {
@@ -111,17 +157,6 @@ namespace col{
 			return players.size();
 		}
 		
-		void move(const IconKey &id, int8 dx, int8 dy) {
-			auto p = icons.find(id);
-			if (p != icons.end()) {
-				Icon &icon = (*p).second;
-				icon.x += dx;
-				icon.y += dy;
-				++mod;
-			}
-		}
-		
-		
 		
 		
 		
@@ -129,6 +164,20 @@ namespace col{
 	};
 	
 
+	
+	namespace io {
+		template <typename C>
+		typename C::mapped_type* read_ptr(C &cs, istream &f) {
+			return &cs.at(read<typename C::key_type>(f));
+		}
+
+		template <typename T>
+		T read_obj(Env &env, istream &f);
+
+		template <typename T>
+		size_t write_obj(ostream &f, T const &t);
+	}
+	
 
 }
 

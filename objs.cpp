@@ -1,34 +1,14 @@
 #include "objs.h"
+#include <type_traits>
 
 namespace col {
 	
-	namespace io{
-		template <>
-		Icon read<Icon>(istream &f) {
-			Icon icon;
-			icon.id = read<uint32>(f);
-			icon.type_id = read<uint16>(f);
-			icon.x = read<uint16>(f);
-			icon.y = read<uint16>(f);
-			icon.player_id = read<uint32>(f);
-			return icon;
-		}
 
-		template <>
-		size_t write<Icon>(ostream &f, const Icon &icon) {
-			size_t l = 0;
-			l += write<uint32>(f, icon.id);
-			l += write<uint16>(f, icon.type_id);
-			l += write<uint16>(f, icon.x);
-			l += write<uint16>(f, icon.y);
-			l += write<uint32>(f, icon.player_id);
-			return l;
-		}
-
-	}
-
-	ostream& operator<<(ostream &out, const Icon &obj) {
-		cout << "Icon(" << "id"<<"="<<obj.id<<','<<"type_id"<<"="<<obj.type_id<<','<<"x"<<"="<<obj.x<<','<<"y"<<"="<<obj.y<<','<<"player_id"<<"="<<obj.player_id << ")";
+	ostream& operator<<(ostream &out, const Icon &t) {
+		out << "Icon(id="<<t.id<<")";
+		//out << (format(
+		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
+		//) % t.id % t.type->id % t.x % t.y % t.player->id);
 	}
 
 	
@@ -58,26 +38,6 @@ namespace col {
 		cout << "Color("<<color.r<<','<<color.g<<","<<color.b<<")";
 	}
 	
-	namespace io {
-
-		template <>
-		Player read<Player>(istream &f) {
-			Player player;
-			player.id = read<uint32>(f);
-			player.name = read<string>(f);
-			player.color = read<Color>(f);
-			return player;
-		}
-
-		template <>
-		size_t write<Player>(ostream &f, const Player &player) {
-			size_t l = 0;
-			l += write<uint32>(f, player.id);
-			l += write<string>(f, player.name);
-			l += write<Color>(f, player.color);
-			return l;
-		}
-	}
 
 	ostream& operator<<(ostream &out, const Player &obj) {
 		cout << "Player(" << "id"<<"="<<obj.id<<','<<"name"<<"="<<obj.name << ")";

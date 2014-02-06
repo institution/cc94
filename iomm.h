@@ -40,6 +40,11 @@ namespace col{
 		template <class T>
 		size_t write(ostream &f, const T &t);
 
+		template <class T>
+		void read(T& t, istream& f) {
+			t = read<T>(f);
+		}		
+		
 	}
 	
 }

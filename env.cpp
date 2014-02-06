@@ -6,17 +6,18 @@ namespace col{
 
 
 
-	IconTypes load_itypes() {
-		IconTypes itypes;
+	UnitTypes load_unit_types() {
+		UnitTypes itypes;
 
-		auto vss = read_conf("./col94/unit.csv");
+		auto vss = read_conf("./col94/unit-types.csv");
 		auto p = vss.begin();
 		auto e = vss.end();
 		
 		++p; // skip header
 		while (p != e) {
+			cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
 			if ((*p).size() > 1) {
-				IconType ict = IconType(*p);
+				UnitType ict = UnitType(*p);
 
 				itypes[ict.id] = ict;
 
@@ -34,9 +35,45 @@ namespace col{
 	
 	namespace io {
 
-
+		template <>
+		Icon read_obj<Icon>(Env &env, istream &f) {
+			Icon u;
+			read(u.id, f);
+			u.type = read_ptr(env.uts, f);
+			read(u.x, f);
+			read(u.y, f);
+			u.player = read_ptr(env.players, f);
+			return u;
+		}
 		
-		// Icon create(const IconType &ic) {
+		template <>
+		size_t write_obj<Icon>(ostream &f, Icon const &icon) {
+			size_t l = 0;
+			l += write(f, icon.id);
+			l += write(f, icon.type->id);
+			l += write(f, icon.x);
+			l += write(f, icon.y);
+			l += write(f, icon.player->id);
+			return l;
+		}
+		
+		template <>
+		Player read_obj<Player>(Env &env, istream &f) {
+			Player player;
+			read(player.id, f);
+			read(player.name, f);
+			read(player.color, f);
+			return player;
+		}
+
+		template <>
+		size_t write_obj<Player>(ostream &f, const Player &player) {
+			size_t l = 0;
+			l += write(f, player.id);
+			l += write(f, player.name);
+			l += write(f, player.color);
+			return l;
+		}
 
 
 		template <>
@@ -47,49 +84,50 @@ namespace col{
 			string fid = "COLMAPB";
 			string ind = read_chars(f, 7);
 			assert(ind == fid);
-			auto version = read<uint8>(f);
 			auto nsect = read<uint8>(f);
 
 			if (nsect < 1) return env;
 			// terrain
-			auto w = read<uint16>(f);
-			auto h = read<uint16>(f);
-			env.w = w;
-			env.h = h;
-
-			cout << format("%1% %2%\n") % w % h;
+			read(env.w, f);
+			read(env.h, f);
+			auto w = env.w;
+			auto h = env.h;			
+			
+			cout << format("map size: %1%, %2%\n") % w % h;
 			terrain.resize(boost::extents[w][h]);
 
 			for(uint j = 0; j<h; ++j) {
 				for(uint i = 0; i<w; ++i) {
-					terrain[i][j] = read<uint8>(f);
+					read(terrain[i][j], f);
+					cout << to_string(terrain[i][j]) << ',';
 				}
+				cout << endl;
 			}
-
+			
 			if (nsect < 2) return env;
-			// icons	
-			uint nunits = read<uint16>(f); // num of units on map
-			cout << format("Icons(%||)\n") % nunits;
-			for (uint i = 0; i < nunits; ++i) {
-				Icon icon(read<Icon>(f));
-				env.add(icon);
-				cout << icon << endl;
-			}
-
-			if (nsect < 3) return env;
 			// players
-			uint nplayers = read<uint8>(f);
+			auto nplayers = read<Player::Id>(f);
 			cout << format("Players(%||):\n") % nplayers;
 			for (uint i = 0; i < nplayers; ++i) {
-				Player p(read<Player>(f));
+				Player p(read_obj<Player>(env, f));
 				env.add_player(p);
 				cout << p << endl;
+			}
+			
+			if (nsect < 3) return env;
+			// icons	
+			auto nunits = read<Icon::Id>(f); // num of units on map
+			cout << format("Icons(%||)\n") % nunits;
+			for (uint i = 0; i < nunits; ++i) {
+				Icon icon(read_obj<Icon>(env, f));
+				env.icons[icon.id] = icon;
+				cout << icon << endl;
 			}
 
 			if (nsect < 4) return env;
 			// turn info
-			env.turn_no = read<uint32>(f);
-			env.curr_player = read<uint16>(f);
+			read(env.turn_no, f);
+			read(env.curr_player, f);
 			cout << format("turn_no = %||\n") % env.turn_no;
 			cout << format("curr_player = %||\n") % env.curr_player;
 
@@ -104,45 +142,40 @@ namespace col{
 		size_t write<Env>(ostream &f, const Env &env) {
 			size_t l = 0;
 			auto &terrain = env.terr;
-			uint w = env.w;
-			uint h = env.h;
+			auto w = env.w;
+			auto h = env.h;
 
-
-			uint8 version = 1;
 			uint8 nsect = 4;
 			string fid = "COLMAPB";
 
 			l += write_chars(f, fid);
-			l += write<uint8>(f, version);
-			l += write<uint8>(f, nsect);
+			l += write(f, nsect);
 
 			// terrain
-			l += write<uint16>(f, w);
-			l += write<uint16>(f, h);
+			l += write(f, env.w);
+			l += write(f, env.h);
 
 			for(uint j = 0; j < h; ++j) {
 				for(uint i = 0; i < w; ++i) {
-					l += write<uint8>(f, terrain[i][j]);
+					l += write(f, terrain[i][j]);
 				}
 			}
-
-			// icons
-			uint nunits = env.icons.size();
-			l += write<uint16>(f, nunits); // num of units on map
-			for (auto &icon: env.icons) {
-				l += write<Icon>(f, icon.second);
-			}
-
-			// players
-			uint np = env.players.size();
-			l += write<uint8>(f, np);
+			
+			// players			
+			l += write<Player::Id>(f, env.players.size());
 			for (auto &p: env.players) {
-				l += write<Player>(f, p.second);
+				l += write_obj<Player>(f, p.second);
+			}
+			
+			// icons
+			l += write<Icon::Id>(f, env.icons.size());
+			for (auto &icon: env.icons) {
+				l += write_obj<Icon>(f, icon.second);
 			}
 
 			// turn info
-			l += write<uint32>(f, env.turn_no);
-			l += write<uint16>(f, env.curr_player);
+			l += write(f, env.turn_no);
+			l += write(f, env.curr_player);
 
 
 			//res(ICON, 100)
