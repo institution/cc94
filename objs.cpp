@@ -5,7 +5,7 @@ namespace col {
 	
 
 	ostream& operator<<(ostream &out, const Icon &t) {
-		out << "Icon(id="<<t.id<<")";
+		out << "Icon("<<"id="<<t.id<<','<<"type="<<uint32(t.type->id)<<")";
 		//out << (format(
 		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
 		//) % t.id % t.type->id % t.x % t.y % t.player->id);
@@ -40,7 +40,7 @@ namespace col {
 	
 
 	ostream& operator<<(ostream &out, const Player &obj) {
-		cout << "Player(" << "id"<<"="<<obj.id<<','<<"name"<<"="<<obj.name << ")";
+		cout << "Player(" << "id"<<"="<<obj.id<<','<<"name"<<"="<<obj.name <<','<<"flag"<<"="<<obj.flag_id << ")";
 	}
 
 }

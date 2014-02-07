@@ -63,7 +63,11 @@ namespace col{
 			auto &img = g_res[key];
 			auto path = str(format("./%||/%|03|.png") % d % i);
 			if (!img.LoadFromFile(path)) {
-				throw std::runtime_error("cant't load image file: " + path);
+				// try default
+				if (!img.LoadFromFile("./" + ICON + "/065.png")) {
+					throw std::runtime_error("can't load default image file while loading: " + path);
+				}
+				// throw std::runtime_error("cant't load image file: " + path);
 			}
 			img.SetSmooth(false);
 			return img;		
@@ -83,43 +87,64 @@ namespace col{
 			)
 		);
 	}
+	
+	
+	void render_playerind(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
+		win.Draw(
+			sf::Shape::Rectangle(
+				x, y, 
+				x+1, y+1, 
+				sf::Color(col.r,col.g,col.b, 255),
+				0, 
+				sf::Color(0,0,0, 0)
+			)
+		);
+	}
+	
+	void render_cursor(sf::RenderWindow &win, uint16 x, uint16 y) {
+		win.Draw(
+			sf::Shape::Rectangle(
+				x+1, y+1, 
+				x+15, y+15, 
+				sf::Color(0,0,0, 0),
+				1, 
+				sf::Color(255,255,255, 255)
+			)
+		);
+	}
+	
+	void render_sprite(sf::RenderWindow &win, uint16 x, uint16 y, const sf::Image &img) {
+		sf::Sprite s;
+		s.SetPosition(x, y);
+		s.SetImage(img); 
+		win.Draw(s);
+	}
 
+	
+	
 	void render_icon(sf::RenderWindow &win, const Env &env, const Icon &icon) {
 		auto &p = env.get_player(icon.player->id);
-		render_shield(win, icon.x*16, icon.y*16, p.color);
 		
-		sf::Sprite s;
-		s.SetPosition(icon.x*16, icon.y*16);
-		s.SetImage(res(ICON, icon.type->id));
-		win.Draw(s);	
-	}
-
-	void render_map(sf::RenderWindow &win, const Env &env) 
-	{
-		auto &terrain = env.terr;
-
-		auto w = env.w;
-		auto h = env.h;
-
-		for (uint i = 0; i < w; ++i) {
-			for (uint j = 0; j < h; ++j) {
-				sf::Sprite s;
-				s.SetPosition(i*16, j*16);
-				s.SetImage(res(TERR, terrain[i][j]));
-				win.Draw(s);
-			}
+		auto type = icon.type->id;
+		switch (type / 256) {
+			case 0: 
+				render_shield(win, icon.x*16, icon.y*16, p.color);
+				render_sprite(win, icon.x*16, icon.y*16, res(ICON, type));
+				break;
+			case 1: 
+				render_sprite(win, icon.x*16, icon.y*16, res(ICON, 4));
+				// flag:
+				render_sprite(win, icon.x*16+5, icon.y*16, res(ICON, icon.player->flag_id));
+				break;
 		}
-
-		for (auto &p: env.icons) {
-			render_icon(win, env, p.second);
-		}
-
+		
 	}
 
+	struct Console;
+	
 
-	void render_cursor(sf::RenderWindow &win, const Env &env) {
 
-	}
+
 	
 	
 	Color make_color_by_name(const string &s) {
@@ -147,9 +172,12 @@ namespace col{
 	struct Console{
 		string buffer;
 		Env &env;
-
+		Coord sel_x, sel_y;
+		uint32 mod;
+		
 		Console(Env &env_): buffer(""), env(env_) {
-
+			sel_x = sel_y = -1;
+			mod = 0;
 		}
 		
 		void handle(uint16 code) {
@@ -164,6 +192,11 @@ namespace col{
 					cout << "players: lsp, addp, delp" << endl;
 					cout << "lsut" << endl;
 					cout << "move, set_owner" << endl;
+				}
+				else				
+				if (es[0] == "turn") {
+					env.turn();
+					cout << "Turn: " << env.turn_no << ", " << env.curr_player->name << endl;					
 				}
 				else
 				if (es[0] == "lsi") {
@@ -184,15 +217,41 @@ namespace col{
 				}
 				else
 				if (es[0] == "addi") {	
-					if (es.size() < 4+1) {
-						cout << "Usage: addi x y player_id type_id" << endl;
+					switch (es.size()) {
+						default: {
+							cout << "Usage1: addi type_id player_id" << endl;
+							cout << "Usage2: addi type_id player_id x y" << endl;						
+							break;
+						}
+						case 3: {
+							env.create_icon(
+								std::stoi(es.at(1)), // type_id
+								std::stoi(es.at(2)),  // player_id
+								this->sel_x, this->sel_y // x y
+							);
+							break;
+						}							
+						case 5: {
+							env.create_icon(
+								std::stoi(es.at(1)), // type_id
+								std::stoi(es.at(2)),  // player_id
+								std::stoi(es.at(3)), std::stoi(es.at(4)) // x y
+							);
+							break;
+						}
 					}
-					else {					
-						env.create_icon(
-							std::stoi(es[4]), // type_id
-							std::stoi(es[3]),  // player_id
-							std::stoi(es[1]), std::stoi(es[2]) // x y							
-						);
+				}
+				else
+				if (es[0] == "setturn") {	
+					switch (es.size()) {
+						default: {
+							cout << "Usage1: setturn num" << endl;
+							break;
+						}
+						case 2: {
+							env.turn_no = stoi(es.at(1));
+							break;
+						}
 					}
 				}
 				else
@@ -215,13 +274,14 @@ namespace col{
 				else
 				if (es[0] == "addp") {
 					if (es.size() < 2+1) {
-						cout << "Usage: addp name color_name" << endl;
+						cout << "Usage: addp name color_name flag_id" << endl;
 					}
 					else {				
 						env.add_player(Player(
 							env.next_key_player(),
 							string(es[1]),
-							make_color_by_name(string(es[2]))
+							make_color_by_name(string(es[2])),
+							stoi(es[3])
 						));
 					}
 				}
@@ -265,6 +325,29 @@ namespace col{
 		
 	};
 	
+	void render_map(sf::RenderWindow &win, const Env &env, const Console &con) 
+	{
+		auto &terrain = env.terr;
+
+		auto w = env.w;
+		auto h = env.h;
+
+		for (uint i = 0; i < w; ++i) {
+			for (uint j = 0; j < h; ++j) {
+				sf::Sprite s;
+				s.SetPosition(i*16, j*16);
+				s.SetImage(res(TERR, terrain[i][j]));
+				win.Draw(s);
+			}
+		}
+
+		for (auto &p: env.icons) {
+			render_icon(win, env, p.second);
+		}
+		
+		render_cursor(win, con.sel_x*16, con.sel_y*16);
+
+	}
 
 	void handle_event(sf::RenderWindow &app, Env &env, const sf::Event &ev, Console &con) {
 		if (ev.Type == sf::Event::TextEntered) {
@@ -286,15 +369,33 @@ namespace col{
 		if (ev.Type == sf::Event::Closed) {
 			app.Close();
 		}
+		else
+		if (ev.Type == sf::Event::MouseButtonPressed)
+		{
+			if (ev.MouseButton.Button == sf::Mouse::Right)
+			{
+				sf::Vector2f mp = app.ConvertCoords(ev.MouseButton.X, ev.MouseButton.Y);
+				con.sel_x = mp.x / 16;
+				con.sel_y = mp.y / 16;
+				++con.mod;
+				
+				std::cout << "sel x: " << con.sel_x << std::endl;
+				std::cout << "sel y: " << con.sel_y << std::endl;				
+			}
+		}
+		
 	}
 
 }
 
 
-void render(sf::RenderWindow &app, const col::Env &env, const Text &t) {
+void render(sf::RenderWindow &app, const col::Env &env, const Text &t, const col::Console &con) {
 	app.Clear();
-	render_map(app, env);
+	render_map(app, env, con);
 	render_text(app, t);
+	render_playerind(app, 0, 0, env.curr_player->color);
+
+	
 	app.Display();
 }
 
@@ -329,14 +430,16 @@ int main()
     
 	Console con(env);
 	
-	auto last_mod = env.mod - 1;
+	auto last_mod1 = env.mod - 1;
+	auto last_mod2 = con.mod - 1;
 	
 	while (app.IsOpened())
 	{
 		
-		if (env.mod != last_mod) {
-			render(app, env, t);
-			last_mod = env.mod;
+		if (env.mod != last_mod1 || con.mod != last_mod2) {
+			render(app, env, t, con);
+			last_mod1 = env.mod;
+			last_mod2 = con.mod;
 		}
 		
 		sf::Event ev;

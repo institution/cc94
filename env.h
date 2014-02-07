@@ -13,8 +13,8 @@ namespace col{
 	using IconKey = uint32;
 	using PlayerKey = uint32;
 	
-	using Icons = map<IconKey, Icon>;
-	using Players = map<PlayerKey, Player>;
+	using Icons = map<Icon::Id, Icon>;
+	using Players = map<Player::Id, Player>;
 		
 	using UnitTypes = map<UnitType::Id, UnitType>;
 
@@ -31,13 +31,12 @@ namespace col{
 
 		// uint cur_x, cur_y;  
 
-		uint turn;
 		
 		uint32 mod;
 
 		Players players;   // ls of player id
 
-		Player::Id curr_player;		
+		Player* curr_player;		
 		uint32 turn_no;
 		
 		UnitTypes uts;
@@ -45,7 +44,19 @@ namespace col{
 		Env() {
 			mod = 0;			
 			uts = load_unit_types();
-			
+		}
+		
+		
+		void turn() {
+			auto p = players.find(curr_player->id + 1);
+			if (p != players.end()) {
+				curr_player = &(*p).second;
+			}
+			else {
+				curr_player = &players.at(0);
+				++turn_no;
+			}			
+			++mod;
 		}
 		
 		
@@ -130,6 +141,7 @@ namespace col{
 		
 		void add_player(const Player &t) {
 			//assert(icon.id > 0);
+			cout << "Adding player: " << t.id << endl;
 			players[t.id] = t;
 			++mod;
 		}

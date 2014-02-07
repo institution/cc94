@@ -21,7 +21,7 @@ namespace col {
 	
 	
 	struct UnitType{
-		using Id = uint8;
+		using Id = uint32;
 		
 		string name;
 		Id id;
@@ -39,7 +39,7 @@ namespace col {
 		UnitType() {}
 		
 		UnitType(const vector<string> &xs) {
-			assert(xs.size() >= 11);
+			assert(xs.size() >= 7);
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
 			movement = stoi(xs[2]);
@@ -122,11 +122,12 @@ namespace col {
 		Id id;
 		string name;
 		Color color;
+		uint32 flag_id;
 		
 		Player() {}
 
-		Player(Id id_, string name_, const Color &color_):
-			id(id_), name(name_), color(color_) {
+		Player(Id id_, string name_, const Color &color_, uint32 flag_id_):
+			id(id_), name(name_), color(color_), flag_id(flag_id_) {
 		}
 
 	};

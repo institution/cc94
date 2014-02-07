@@ -9,22 +9,22 @@ namespace col{
 	UnitTypes load_unit_types() {
 		UnitTypes itypes;
 
-		auto vss = read_conf("./col94/unit-types.csv");
+		auto vss = read_conf("./col94/icons.csv");
 		auto p = vss.begin();
 		auto e = vss.end();
 		
 		++p; // skip header
 		while (p != e) {
-			cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
+			// cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
 			if ((*p).size() > 1) {
-				UnitType ict = UnitType(*p);
+				UnitType ut = UnitType(*p);
 
-				itypes[ict.id] = ict;
+				itypes[ut.id] = ut;
 
-				//for (auto &v: vs) {
-				//	cout << v << '|';
-				//}
-				//cout << endl;
+				for (auto &v: *p) {
+					cout << v << '|';
+				}
+				cout << endl;
 			}
 			
 			++p;
@@ -63,6 +63,7 @@ namespace col{
 			read(player.id, f);
 			read(player.name, f);
 			read(player.color, f);
+			read(player.flag_id, f);
 			return player;
 		}
 
@@ -72,6 +73,7 @@ namespace col{
 			l += write(f, player.id);
 			l += write(f, player.name);
 			l += write(f, player.color);
+			l += write(f, player.flag_id);
 			return l;
 		}
 
@@ -110,6 +112,7 @@ namespace col{
 			cout << format("Players(%||):\n") % nplayers;
 			for (uint i = 0; i < nplayers; ++i) {
 				Player p(read_obj<Player>(env, f));
+				cout << "Player_read" << endl;
 				env.add_player(p);
 				cout << p << endl;
 			}
@@ -127,7 +130,8 @@ namespace col{
 			if (nsect < 4) return env;
 			// turn info
 			read(env.turn_no, f);
-			read(env.curr_player, f);
+			env.curr_player = read_ptr(env.players, f);
+			
 			cout << format("turn_no = %||\n") % env.turn_no;
 			cout << format("curr_player = %||\n") % env.curr_player;
 
@@ -175,7 +179,7 @@ namespace col{
 
 			// turn info
 			l += write(f, env.turn_no);
-			l += write(f, env.curr_player);
+			l += write(f, env.curr_player->id);
 
 
 			//res(ICON, 100)
