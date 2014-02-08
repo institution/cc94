@@ -50,7 +50,10 @@ namespace col{
 
 	const string 
 		TERR = "COLONIZE/TERRAIN_SS",
-		ICON = "COLONIZE/ICONS_SS";
+		ICON = "COLONIZE/ICONS_SS",
+		PHYS = "COLONIZE/PHYS0_SS",
+		ARCH = "COLONIZE/PARCH_SS",
+		BUILDING = "COLONIZE/BUILDING_SS";
 
 	const Res::mapped_type& res(const string &d, const uint &i) {
 
@@ -139,6 +142,8 @@ namespace col{
 		}
 		
 	}
+	
+
 
 	struct Console;
 	
@@ -165,6 +170,24 @@ namespace col{
 	}
 	
 	
+	
+	
+	enum PlayerType{
+		HUMAN,
+		AI
+	}
+	
+	PlayerType get_player_type(const Player &p) {
+		if (p.id == 0) {
+			return HUMAN;
+		}
+		else {
+			return AI;
+		}
+	}
+	
+		
+	
 	using boost::split;
 	using boost::is_any_of;
 	using std::stoi;
@@ -174,9 +197,11 @@ namespace col{
 		Env &env;
 		Coord sel_x, sel_y;
 		uint32 mod;
+		Coord city_x, city_y;
 		
 		Console(Env &env_): buffer(""), env(env_) {
 			sel_x = sel_y = -1;
+			city_x = city_y = -1;
 			mod = 0;
 		}
 		
@@ -266,10 +291,18 @@ namespace col{
 				}
 				else
 				if (es.at(0) == "save") {
-					{
-						ofstream f(es.at(1), std::ios::binary);
-						io::write(f, env);
+					switch (es.size()) {
+						default: {
+							cout << "Usage: save filename" << endl;
+							break;
+						}
+						case 2: {
+							ofstream f(es.at(1), std::ios::binary);
+							io::write(f, env);
+							break;
+						}
 					}
+					
 				}
 				else
 				if (es[0] == "addp") {
@@ -308,6 +341,41 @@ namespace col{
 						stoi(es.at(3))  // dy
 					);
 				}
+				else
+				if (es.at(0) == "enter") {
+					switch (es.size()) {
+						default: {
+							cout << "Usage: enter [x y]" << endl;
+							break;
+						}
+						case 1: {
+							city_x = sel_x;
+							city_y = sel_y;
+							mod++;
+							break;
+						}
+						case 3: {							
+							city_x = stoi(es[1]);
+							city_y = stoi(es[2]);
+							mod++;
+							break;
+						}
+					}
+				}
+				else
+				if (es.at(0) == "exit") {
+					switch (es.size()) {
+						default: {
+							cout << "Usage: exit" << endl;
+							break;
+						}
+						case 1: {
+							city_x = city_y = -1;
+							mod++;
+							break;
+						}
+					}					
+				}
 				else {
 					cout << "ERROR: no such command" << endl;
 				}
@@ -325,6 +393,95 @@ namespace col{
 		
 	};
 	
+	struct Coords{
+		Coord x,y;
+		
+		Coords(Coord x_, Coord y_): x(x_), y(y_) {			
+		}
+		
+		Coords() {}
+	};
+	
+	void render_city(sf::RenderWindow &win, const Env &env, const Console &con) {
+		
+		auto bg = res(ARCH, 1);
+		
+		auto w = bg.GetWidth();
+		auto h = bg.GetHeight();
+		
+		for (uint8 j = 0; j < 5; ++j) {
+			for (uint8 i = 0; i < 7; ++i) {
+				render_sprite(win, i*w, 8+j*h, bg);
+			}
+		}
+		
+		// tree pattern
+		uint16 TREES = 43;
+		uint16 HILL = 44;
+		uint16 TWO = 45;
+		uint16 COAST = 46;
+		uint16 B1 = TWO;
+		uint16 B2 = HILL;
+		uint16 B3 = TREES;
+		
+		vector<Coords> coords({
+			Coords(7,15), Coords(54,22), Coords(90,13), Coords(144,13), Coords(172,15),
+			Coords(7,42), Coords(37,45), Coords(66,52), Coords(96,52), Coords(129,54),
+			Coords(9,77), Coords(14,100), Coords(68,87), Coords(124,58), Coords(121,107)
+		});
+		
+		vector<uint16> trees{
+			HILL, B1, B3, B1, B1,
+			B1, TWO, B1, TWO, HILL,
+			HILL, B2, TREES, COAST, B2
+		};
+		
+		
+		uint i = 0;
+		for (auto &icon: env.ats(con.city_x, con.city_y)) {
+			auto type = icon.type->id;
+			if (type < 256 || icon.x != con.city_x || icon.y != con.city_y) {
+				continue;
+			}
+			
+			switch (type/ 256) {
+				case 1:
+					render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, type % 255));
+					break;
+				default:
+					render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, -1));
+					break;
+			}
+			
+			
+			cout << icon << endl;
+			++i;
+		}
+		
+		for (; i<15; ++i) {			
+			render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, trees[i]));
+		}
+		
+		
+		
+	}
+	
+	void render_tile(sf::RenderWindow &win, Coord i, Coord j, const Tile &tile) {
+		
+		auto terrain = tile & 0x0F;
+		auto forest = bool(tile & (1 << 4));
+		
+		
+		render_sprite(win, i*16, j*16, res(TERR, terrain));
+		if (forest) {
+			cout << uint16(tile) << endl;
+			cout << uint16(terrain) << endl;
+			cout << uint16(forest) << endl;
+			cout << endl;
+			render_sprite(win, i*16, j*16, res(PHYS, 65));
+		}
+	}
+	
 	void render_map(sf::RenderWindow &win, const Env &env, const Console &con) 
 	{
 		auto &terrain = env.terr;
@@ -334,10 +491,7 @@ namespace col{
 
 		for (uint i = 0; i < w; ++i) {
 			for (uint j = 0; j < h; ++j) {
-				sf::Sprite s;
-				s.SetPosition(i*16, j*16);
-				s.SetImage(res(TERR, terrain[i][j]));
-				win.Draw(s);
+				render_tile(win, i, j, terrain[i][j]);				
 			}
 		}
 
@@ -391,7 +545,13 @@ namespace col{
 
 void render(sf::RenderWindow &app, const col::Env &env, const Text &t, const col::Console &con) {
 	app.Clear();
-	render_map(app, env, con);
+	cout << con.city_x << endl;
+	if (con.city_x != col::Coord(-1)) {
+		render_city(app, env, con);
+	}
+	else {
+		render_map(app, env, con);
+	}
 	render_text(app, t);
 	render_playerind(app, 0, 0, env.curr_player->color);
 

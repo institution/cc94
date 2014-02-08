@@ -1,46 +1,46 @@
 name,id,movement,attack,combat,slots,size,category,icon
-Stockade,256,0,0,0,0,99,B,1
-Fort,257,0,0,0,0,99,B,2
-Fortress,258,0,0,0,0,99,B,3
-Armory,259,0,0,0,3,99,B,4
-Magazine,260,0,0,0,3,99,B,5
-Arsenal,261,0,0,0,3,99,B,6
-Docks,262,0,0,0,3,99,B,7
-Drydock,263,0,0,0,3,99,B,8
-Shipyard,264,0,0,0,3,99,B,9
-Town Hall,265,0,0,0,3,99,B,10
-Town Hall unused2,266,0,0,0,3,99,B,11
-Town Hall unused3,267,0,0,0,3,99,B,12
-Schoolhouse,268,0,0,0,3,99,B,13
-College,269,0,0,0,3,99,B,14
-University,270,0,0,0,3,99,B,15
-Fence (Warehouse),272,0,0,0,3,99,B,17
-Warehouse Expansion,271,0,0,0,3,99,B,16
-Stable,302,0,0,0,3,99,B,47
-Custom House,274,0,0,0,3,99,B,19
-Printing Press,275,0,0,0,3,99,B,20
-Newspaper,276,0,0,0,3,99,B,21
-Weaver's House,277,0,0,0,3,99,B,22
-Weaver's Shop,278,0,0,0,3,99,B,23
-Textile Mill,279,0,0,0,3,99,B,24
-Tobacconist's House,280,0,0,0,3,99,B,25
-Tobacconist's Shop,281,0,0,0,3,99,B,26
-Cigar Factory,282,0,0,0,3,99,B,27
-Rum Distiller's House,283,0,0,0,3,99,B,28
-Rum Distillery,284,0,0,0,3,99,B,29
-Rum Factory,285,0,0,0,3,99,B,30
-Capitol unused1,286,0,0,0,3,99,B,31
-Capitol Expansion unused2,287,0,0,0,3,99,B,32
-Fur Trader's House,288,0,0,0,3,99,B,33
-Fur Trading Post,289,0,0,0,3,99,B,34
-Fur Factory,290,0,0,0,3,99,B,35
-Carpenter's Shop,291,0,0,0,3,99,B,36
-Lumber Mill,292,0,0,0,3,99,B,37
-Church,293,0,0,0,3,99,B,38
-Cathedral,294,0,0,0,3,99,B,39
-Blacksmith's House,295,0,0,0,3,99,B,40
-Blacksmith's Shop,296,0,0,0,3,99,B,41
-Iron Works,297,0,0,0,3,99,B,42
+Stockade,256,0,0,0,0,200,B,1
+Fort,257,0,0,0,0,200,B,2
+Fortress,258,0,0,0,0,200,B,3
+Armory,259,0,0,0,3,100,B,4
+Magazine,260,0,0,0,3,100,B,5
+Arsenal,261,0,0,0,3,100,B,6
+Docks,262,0,0,0,3,400,B,7
+Drydock,263,0,0,0,3,400,B,8
+Shipyard,264,0,0,0,3,400,B,9
+Town Hall,265,0,0,0,3,300,B,10
+Town Hall unused2,266,0,0,0,3,300,B,11
+Town Hall unused3,267,0,0,0,3,300,B,12
+Schoolhouse,268,0,0,0,3,100,B,13
+College,269,0,0,0,3,100,B,14
+University,270,0,0,0,3,100,B,15
+Fence (Warehouse),272,0,0,0,3,200,B,17
+Warehouse Expansion,271,0,0,0,3,100,B,16
+Stable,302,0,0,0,3,100,B,47
+Custom House,274,0,0,0,3,100,B,19
+Printing Press,275,0,0,0,3,100,B,20
+Newspaper,276,0,0,0,3,100,B,21
+Weaver's House,277,0,0,0,3,100,B,22
+Weaver's Shop,278,0,0,0,3,100,B,23
+Textile Mill,279,0,0,0,3,100,B,24
+Tobacconist's House,280,0,0,0,3,100,B,25
+Tobacconist's Shop,281,0,0,0,3,100,B,26
+Cigar Factory,282,0,0,0,3,100,B,27
+Rum Distiller's House,283,0,0,0,3,100,B,28
+Rum Distillery,284,0,0,0,3,100,B,29
+Rum Factory,285,0,0,0,3,100,B,30
+Capitol unused1,286,0,0,0,3,300,B,31
+Capitol Expansion unused2,287,0,0,0,3,300,B,32
+Fur Trader's House,288,0,0,0,3,100,B,33
+Fur Trading Post,289,0,0,0,3,100,B,34
+Fur Factory,290,0,0,0,3,100,B,35
+Carpenter's Shop,291,0,0,0,3,100,B,36
+Lumber Mill,292,0,0,0,3,100,B,37
+Church,293,0,0,0,3,100,B,38
+Cathedral,294,0,0,0,3,100,B,39
+Blacksmith's House,295,0,0,0,3,100,B,40
+Blacksmith's Shop,296,0,0,0,3,100,B,41
+Iron Works,297,0,0,0,3,100,B,42
 Colonists,101,1,0,1,0,1,A,101
 Horses,30,4,0,0,0,1,A,30
 Soldiers,103,1,2,2,0,1,A,103

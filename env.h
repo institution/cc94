@@ -6,8 +6,8 @@
 #include "csv.h"
 
 namespace col{
-	
-	using Tiles = boost::multi_array<uint8, 2>;
+	using Tile = uint8;
+	using Tiles = boost::multi_array<Tile, 2>;
 	
 	// 0 - key not set/unknown
 	using IconKey = uint32;
@@ -21,7 +21,51 @@ namespace col{
 	UnitTypes load_unit_types();
 
 	
-	
+	template <typename C>
+	struct RangeXY {
+		using baseiter = typename C::const_iterator;
+		
+		struct Iter{
+			baseiter p;
+			
+			Iter(baseiter p_): p(p_) {
+			}
+			
+			bool operator!= (const Iter& other) {
+				return p != other.p;
+			}
+
+			
+			Iter& operator++() {
+				++p;
+				return *this;
+			}
+
+			const typename C::mapped_type & operator*() {
+				 return (*p).second;
+			}
+		};
+		
+		baseiter p_begin;
+		baseiter p_end;
+		Coord x, y;
+		
+		RangeXY(const C &c, Coord x, Coord y) {
+			this->p_begin = c.cbegin();
+			this->p_end = c.cend();				
+			this->x = x;
+			this->y = y;
+		}
+		
+		Iter begin() const	{
+			return Iter(p_begin);
+		}
+
+		Iter end() const {
+			return Iter(p_end);
+		}
+
+	};
 	
 	struct Env{
 		Coord w, h;
@@ -107,6 +151,11 @@ namespace col{
 			++mod;
 		}
 		
+
+		
+		
+		
+		
 		Icon& get_icon_at(Coord x, Coord y) {
 			for (auto &p: icons) {				
 				auto &c = p.second;
@@ -115,6 +164,10 @@ namespace col{
 				}
 			}
 			throw runtime_error("no icon at location");
+		}
+		
+		RangeXY<Icons> ats(Coord x, Coord y) const {
+			return RangeXY<Icons>(icons, x, y);			
 		}
 		
 		

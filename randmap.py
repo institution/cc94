@@ -2,6 +2,14 @@ import struct
 import random
 import sys
 
+GRASSLAND = 5
+ARCTIC = 10
+OCEAN = 11
+DESERT = 2
+
+FOREST = +16
+
+
 terr_base = [11, 2, 5]
 terr = [11, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
 
@@ -70,8 +78,11 @@ def evo(xss, i, j):
 		xss[j-1][i-1],
 		xss[j+1][i-1],
 	]
-	print(k)
-	return random.choice(list(k))
+	r = random.choice(list(k))
+	if r == GRASSLAND:
+		return random.choice(GRASSLAND, GRASSLAND+FOREST)
+	else:
+		return r
 	
 	
 
