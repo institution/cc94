@@ -6,72 +6,122 @@
 #include "csv.h"
 
 namespace col{
-	using Tile = uint8;
-	using Tiles = boost::multi_array<Tile, 2>;
-	
-	// 0 - key not set/unknown
-	using IconKey = uint32;
-	using PlayerKey = uint32;
+	using Terr = uint8;
+	using Terrs = boost::multi_array<Tile, 2>;
 	
 	using Icons = map<Icon::Id, Icon>;
 	using Players = map<Player::Id, Player>;
 		
 	using UnitTypes = map<UnitType::Id, UnitType>;
 
+	using TerrTypes = map<TerrType::Id, TerrType>;
+	
+			
+	TerrTypes load_terr_types();
 	UnitTypes load_unit_types();
 
+	using Coords = aga2::Mv1<Coord>;
 	
-	template <typename C>
-	struct RangeXY {
-		using baseiter = typename C::const_iterator;
+	
+	using IconsByLoc = map<Coords, IconsLst>;
+	/*
+	template <typename Cnt>
+	struct Filtered {
+		using baseiter = typename Cnt::const_iterator;
+		using func_type = function<bool(Icon const&)>;
+		
+		Cnt const* cnt;
+		func_type fun;
 		
 		struct Iter{
 			baseiter p;
+			func_type fun;
 			
-			Iter(baseiter p_): p(p_) {
+			Iter(baseiter p_, func_type fun) {
+				//p(p_)
+				this->fun = fun;
 			}
+			
 			
 			bool operator!= (const Iter& other) {
 				return p != other.p;
 			}
-
 			
 			Iter& operator++() {
 				++p;
 				return *this;
 			}
 
-			const typename C::mapped_type & operator*() {
+			const typename Cnt::mapped_type & operator*() {
 				 return (*p).second;
 			}
 		};
-		
-		baseiter p_begin;
-		baseiter p_end;
-		Coord x, y;
-		
-		RangeXY(const C &c, Coord x, Coord y) {
-			this->p_begin = c.cbegin();
-			this->p_end = c.cend();				
-			this->x = x;
-			this->y = y;
+			
+		Filtered(const Cnt &cnt, func_type fun) {
+			this->cnt = &cnt;
+			this->fun = fun;
 		}
 		
-		Iter begin() const	{
-			return Iter(p_begin);
+		Iter begin() const {
+			return Iter(cnt->cbegin(), fun);
 		}
 
 		Iter end() const {
-			return Iter(p_end);
+			return Iter(cnt->cend(), fun);
 		}
+		
+	};
+	*/
+	
+	/* Dir code is yx in mod 3-1 (2 -> -1)
+	00 0  -1,-1
+	01 1  -1,0 
+	02 2  -1,1
+	10 3  0,-1
+	11 4  0,0
+	12 5  0,1
+	20 6  1,-1
+	21 7  1,0
+	22 8  1,1
+	*/
 
+	enum class Dir: int8{
+		Q=0, W=1, E=2,
+		A=3,      D=5,
+		Z=6, X=7, C=8
 	};
 	
+	V2<int8> vec4dir(Dir const& d) {
+		auto n = static_cast<int8>(d);
+		return V2<int8>((n % 3) - 1, (n / 3) - 1);
+	}
+	
+	namespace action {
+		struct Move {
+			Icon::Id icon_id;
+			Dir dir;
+		};		
+		
+		struct Attack {
+			Icon::Id icon_id;
+			Dir dir;
+		};
+				
+		struct Turn {
+
+		};
+	}
+	
 	struct Env{
+		// terrain layer - const
+		// game layer - forest, plow, building, unit, resource, unit
+		
 		Coord w, h;
 		
-		Tiles terr;
-		Icons icons;
+		Terrs terr;  // static terr_id
+		
+		//IconsAt      // by loc
+		Icons icons;  // by id
 
 		// uint cur_x, cur_y;  
 
@@ -83,7 +133,8 @@ namespace col{
 		Player* curr_player;		
 		uint32 turn_no;
 		
-		UnitTypes uts;
+		UnitTypes uts; // static
+		TerrTypes tts;
 		
 		Env() {
 			mod = 0;			
@@ -91,7 +142,7 @@ namespace col{
 		}
 		
 		
-		void turn() {
+		void exec(action::Turn const& a) {
 			auto p = players.find(curr_player->id + 1);
 			if (p != players.end()) {
 				curr_player = &(*p).second;
@@ -121,20 +172,50 @@ namespace col{
 			++mod;
 		}
 		
+		TerrType& get_tt(Coord x, Coord y) {
+			return terr_types.at(get_terr(c[0], c[1]));
+		}
 		
-		void move(Icon::Id id, int8 dx, int8 dy) {
-			auto &icon = icons.at(id);
-			icon.x += dx;
-			icon.y += dy;
+		uint8 get_move_type(Coords const& c) {
+			auto tt = terr[c.y][c.x];
+			tt
+			return 1;
+			
+		}
+		
+		void exec(action::Move const& a) {
+		
+			auto &icon = icons.at(a.icon_id);
+			auto v = vec4dir(a.dir);
+			
+			auto &tt = get_tt(icon.x + v[0], icon.y + v[1]);
+			
+			auto &ut = *(icon.type);
+			
+			if (!(ut.movement_type & tt.movement_type)) {
+				throw runtime_error("cant move - noncompatible type");
+			}
+				
+			if (ut.movement < tt.movement_cost + icon.movement_used)) {
+				throw runtime_error("cant move - not enough moves");
+			}
+			
+			icon.movement_used += tt.movement_cost;
+			icon.x += v[0];
+			icon.y += v[1];
 			++mod;
+			
 		}
 		
 		void attack(const IconKey &id, int8 dx, int8 dy) {
 			auto &c = icons.at(id);			
 			auto &d = get_icon_at(c.x+dx, c.y+dy);
 			
+			auto &tt = get_tt(c.x + dx, c.y + dy);
+			
 			auto attack = c.type->attack;
-			auto combat = d.type->combat;
+			auto combat_base = d.type->combat;
+			auto combat = combat_base + uint8(0.25 * tt.defensive * combat_base);
 			
 			assert(attack > 0);
 			
@@ -166,9 +247,9 @@ namespace col{
 			throw runtime_error("no icon at location");
 		}
 		
-		RangeXY<Icons> ats(Coord x, Coord y) const {
-			return RangeXY<Icons>(icons, x, y);			
-		}
+		//RangeXY<Icons> all(Coord x, Coord y) const {
+		//	return RangeXY<Icons>(icons, x, y);			
+		//}
 		
 		
 		

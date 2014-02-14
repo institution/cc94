@@ -1,68 +1,68 @@
-name,id,movement,attack,combat,slots,size,category,icon
-Stockade,256,0,0,0,0,200,B,1
-Fort,257,0,0,0,0,200,B,2
-Fortress,258,0,0,0,0,200,B,3
-Armory,259,0,0,0,3,100,B,4
-Magazine,260,0,0,0,3,100,B,5
-Arsenal,261,0,0,0,3,100,B,6
-Docks,262,0,0,0,3,400,B,7
-Drydock,263,0,0,0,3,400,B,8
-Shipyard,264,0,0,0,3,400,B,9
-Town Hall,265,0,0,0,3,300,B,10
-Town Hall unused2,266,0,0,0,3,300,B,11
-Town Hall unused3,267,0,0,0,3,300,B,12
-Schoolhouse,268,0,0,0,3,100,B,13
-College,269,0,0,0,3,100,B,14
-University,270,0,0,0,3,100,B,15
-Fence (Warehouse),272,0,0,0,3,200,B,17
-Warehouse Expansion,271,0,0,0,3,100,B,16
-Stable,302,0,0,0,3,100,B,47
-Custom House,274,0,0,0,3,100,B,19
-Printing Press,275,0,0,0,3,100,B,20
-Newspaper,276,0,0,0,3,100,B,21
-Weaver's House,277,0,0,0,3,100,B,22
-Weaver's Shop,278,0,0,0,3,100,B,23
-Textile Mill,279,0,0,0,3,100,B,24
-Tobacconist's House,280,0,0,0,3,100,B,25
-Tobacconist's Shop,281,0,0,0,3,100,B,26
-Cigar Factory,282,0,0,0,3,100,B,27
-Rum Distiller's House,283,0,0,0,3,100,B,28
-Rum Distillery,284,0,0,0,3,100,B,29
-Rum Factory,285,0,0,0,3,100,B,30
-Capitol unused1,286,0,0,0,3,300,B,31
-Capitol Expansion unused2,287,0,0,0,3,300,B,32
-Fur Trader's House,288,0,0,0,3,100,B,33
-Fur Trading Post,289,0,0,0,3,100,B,34
-Fur Factory,290,0,0,0,3,100,B,35
-Carpenter's Shop,291,0,0,0,3,100,B,36
-Lumber Mill,292,0,0,0,3,100,B,37
-Church,293,0,0,0,3,100,B,38
-Cathedral,294,0,0,0,3,100,B,39
-Blacksmith's House,295,0,0,0,3,100,B,40
-Blacksmith's Shop,296,0,0,0,3,100,B,41
-Iron Works,297,0,0,0,3,100,B,42
-Colonists,101,1,0,1,0,1,A,101
-Horses,30,4,0,0,0,1,A,30
-Soldiers,103,1,2,2,0,1,A,103
-Pioneers,102,1,0,1,0,1,A,102
-Missionaries,106,1,0,1,0,1,A,106
-Dragoons,105,4,3,3,0,1,A,105
-Scouts,104,4,1,1,0,1,A,104
-Regulars,126,1,5,5,0,1,A,126
-Cont. Cav.,130,4,5,5,0,1,A,130
-Cavalry,127,4,6,6,0,1,A,127
-Cont. Army,129,1,4,4,0,1,A,129
-Treasure,17,1,0,0,0,6,A,17
-Artillery,10,1,7,5,0,1,A,10
-Wagon Train,9,2,0,1,2,99,A,9
-Caravel,6,4,0,2,2,99,A,6
-Merchantman,7,5,0,6,4,99,A,7
-Galleon,8,6,0,10,6,99,A,8
-Privateer,15,8,8,8,2,99,A,15
-Frigate,16,6,16,16,4,99,A,16
-Man-O-War,128,5,24,24,6,99,A,128
-Braves,110,1,1,1,0,0,A,110
-Armed Braves,111,1,2,2,0,0,A,111
-Mtd. Braves,112,4,2,2,0,0,A,112
-Mtd. Warriors,113,4,3,3,0,0,A,113
-Colony,4,0,0,0,0,99,A,4
+name,id,movement,attack,combat,slots,size,category,icon,"movement_type(1-naval,2-land)(bflag)"
+Stockade,256,0,0,0,0,200,B,1,2
+Fort,257,0,0,0,0,200,B,2,2
+Fortress,258,0,0,0,0,200,B,3,2
+Armory,259,0,0,0,3,100,B,4,2
+Magazine,260,0,0,0,3,100,B,5,2
+Arsenal,261,0,0,0,3,100,B,6,2
+Docks,262,0,0,0,3,400,B,7,2
+Drydock,263,0,0,0,3,400,B,8,2
+Shipyard,264,0,0,0,3,400,B,9,2
+Town Hall,265,0,0,0,3,300,B,10,2
+Town Hall unused2,266,0,0,0,3,300,B,11,2
+Town Hall unused3,267,0,0,0,3,300,B,12,2
+Schoolhouse,268,0,0,0,3,100,B,13,2
+College,269,0,0,0,3,100,B,14,2
+University,270,0,0,0,3,100,B,15,2
+Fence (Warehouse),272,0,0,0,3,200,B,17,2
+Warehouse Expansion,271,0,0,0,3,100,B,16,2
+Stable,302,0,0,0,3,100,B,47,2
+Custom House,274,0,0,0,3,100,B,19,2
+Printing Press,275,0,0,0,3,100,B,20,2
+Newspaper,276,0,0,0,3,100,B,21,2
+Weaver's House,277,0,0,0,3,100,B,22,2
+Weaver's Shop,278,0,0,0,3,100,B,23,2
+Textile Mill,279,0,0,0,3,100,B,24,2
+Tobacconist's House,280,0,0,0,3,100,B,25,2
+Tobacconist's Shop,281,0,0,0,3,100,B,26,2
+Cigar Factory,282,0,0,0,3,100,B,27,2
+Rum Distiller's House,283,0,0,0,3,100,B,28,2
+Rum Distillery,284,0,0,0,3,100,B,29,2
+Rum Factory,285,0,0,0,3,100,B,30,2
+Capitol unused1,286,0,0,0,3,300,B,31,2
+Capitol Expansion unused2,287,0,0,0,3,300,B,32,2
+Fur Trader's House,288,0,0,0,3,100,B,33,2
+Fur Trading Post,289,0,0,0,3,100,B,34,2
+Fur Factory,290,0,0,0,3,100,B,35,2
+Carpenter's Shop,291,0,0,0,3,100,B,36,2
+Lumber Mill,292,0,0,0,3,100,B,37,2
+Church,293,0,0,0,3,100,B,38,2
+Cathedral,294,0,0,0,3,100,B,39,2
+Blacksmith's House,295,0,0,0,3,100,B,40,2
+Blacksmith's Shop,296,0,0,0,3,100,B,41,2
+Iron Works,297,0,0,0,3,100,B,42,2
+Colonists,101,1,0,1,0,1,A,101,2
+Horses,30,4,0,0,0,1,A,30,2
+Soldiers,103,1,2,2,0,1,A,103,2
+Pioneers,102,1,0,1,0,1,A,102,2
+Missionaries,106,1,0,1,0,1,A,106,2
+Dragoons,105,4,3,3,0,1,A,105,2
+Scouts,104,4,1,1,0,1,A,104,2
+Regulars,126,1,5,5,0,1,A,126,2
+Cont. Cav.,130,4,5,5,0,1,A,130,2
+Cavalry,127,4,6,6,0,1,A,127,2
+Cont. Army,129,1,4,4,0,1,A,129,2
+Treasure,17,1,0,0,0,6,A,17,2
+Artillery,10,1,7,5,0,1,A,10,2
+Wagon Train,9,2,0,1,2,99,A,9,2
+Caravel,6,4,0,2,2,99,A,6,1
+Merchantman,7,5,0,6,4,99,A,7,1
+Galleon,8,6,0,10,6,99,A,8,1
+Privateer,15,8,8,8,2,99,A,15,1
+Frigate,16,6,16,16,4,99,A,16,1
+Man-O-War,128,5,24,24,6,99,A,128,1
+Braves,110,1,1,1,0,0,A,110,2
+Armed Braves,111,1,2,2,0,0,A,111,2
+Mtd. Braves,112,4,2,2,0,0,A,112,2
+Mtd. Warriors,113,4,3,3,0,0,A,113,2
+Colony,4,0,0,0,0,99,A,4,2

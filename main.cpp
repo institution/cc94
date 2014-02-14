@@ -17,6 +17,7 @@
 #include "text.h"
 #include "env.h"
 #include "csv.h"
+#include "ai.h"
 
 using std::unique_ptr;
 

@@ -15,10 +15,31 @@ namespace col {
 	// map
 	// col
 	
-	using Coord = uint16;
+	const uint8 UNIT_MOVEMENT = 3;
 	
+	using Coord = int16;
 
-	
+	struct TerrType{
+		using Id = uint8;
+		
+		string name;
+		Id id;
+		uint8 movement_cost;
+		uint8 movement_type;
+		uint8 defensive;
+		
+		TerrType() {}
+		
+		TerrType(const vector<string> &xs) {
+			assert(xs.size() >= 16);
+			name = trim_copy(xs[0]);
+			id = stoi(xs[1]);
+			movement_cost = stoi(xs[2]);
+			defensive = stoi(xs[3]);			
+			movement_type = stoi(xs[15]) * UNIT_MOVEMENT;
+		}
+				
+	};
 	
 	struct UnitType{
 		using Id = uint32;
@@ -30,28 +51,21 @@ namespace col {
 		uint8 combat;
 		uint8 cargo;
 		uint8 size;
-		
-		//uint8 cost;
-		//uint8 tools;
-		//uint8 guns;
-		//uint8 hull;
+		uint8 movement_type;
 
 		UnitType() {}
 		
 		UnitType(const vector<string> &xs) {
-			assert(xs.size() >= 7);
+			assert(xs.size() >= 8);
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement = stoi(xs[2]);
+			movement = stoi(xs[2]) * UNIT_MOVEMENT;
 			attack = stoi(xs[3]);
 			combat = stoi(xs[4]);
 			cargo = stoi(xs[5]);
 			size = stoi(xs[6]);
+			movement_type = stoi(xs[7]);
 			
-			//cost = stoi(xs[7]);
-			//tools = stoi(xs[8]);
-			//guns = stoi(xs[9]);
-			//hull = stoi(xs[10]);
 		}
 				
 	};
@@ -80,6 +94,8 @@ namespace col {
 		Player const *player;	
 		uint8 movement_used;  // movement used in this turn
 		
+		
+				
 		//uint8 spec_id;
 
 		Icon(): movement_used(0) {}

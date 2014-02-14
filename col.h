@@ -8,12 +8,13 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <functional>
 #include <boost/multi_array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include "iomm.h"
 #include "roll.h"
-
+#include "aga2.h"
 
 namespace col{
 	
@@ -22,6 +23,7 @@ namespace col{
 	using std::ofstream;
 	using std::string;
 	using std::to_string;
+	using std::function;
 
 	using std::cout;
 	using std::endl;
@@ -36,6 +38,9 @@ namespace col{
 	using std::runtime_error;
 	using std::remove_reference;
 	using roll::roll;
+	
+	template <typename T>
+	using Vec = aga2::Mv1<T>;
 	
 }
 
