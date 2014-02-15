@@ -14,7 +14,7 @@
 #include <boost/format.hpp>
 #include "iomm.h"
 #include "roll.h"
-#include "aga2.h"
+#include "aga2.hpp"
 
 namespace col{
 	
@@ -40,7 +40,7 @@ namespace col{
 	using roll::roll;
 	
 	template <typename T>
-	using Vec = aga2::Mv1<T>;
+	using Vector2 = aga2::Mv1<T>;
 	
 }
 

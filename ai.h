@@ -7,7 +7,7 @@
 
 
 namespace col {
-
+/*
 	template<typename T>
 	using Vector2 = aga2::Mv1<T>;
 
@@ -185,7 +185,7 @@ namespace col {
 
 
 
-
+*/
 }
 
 #endif

@@ -80,7 +80,7 @@ def evo(xss, i, j):
 	]
 	r = random.choice(list(k))
 	if r == GRASSLAND:
-		return random.choice(GRASSLAND, GRASSLAND+FOREST)
+		return random.choice([GRASSLAND, GRASSLAND+FOREST])
 	else:
 		return r
 	

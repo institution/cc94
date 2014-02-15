@@ -176,7 +176,7 @@ namespace col{
 	enum PlayerType{
 		HUMAN,
 		AI
-	}
+	};
 	
 	PlayerType get_player_type(const Player &p) {
 		if (p.id == 0) {
@@ -221,7 +221,7 @@ namespace col{
 				}
 				else				
 				if (es[0] == "turn") {
-					env.turn();
+					env.exec(action::Turn());
 					cout << "Turn: " << env.turn_no << ", " << env.curr_player->name << endl;					
 				}
 				else
@@ -328,19 +328,23 @@ namespace col{
 				}
 				else
 				if (es.at(0) == "move") {					
-					env.move(					
+					env.exec(action::Move(					
 						stoi(es.at(1)), // id
-						stoi(es.at(2)), // dx
-						stoi(es.at(3))  // dy
-					);
+						dir4vec(
+							stoi(es.at(2)), // dx
+							stoi(es.at(3))  // dy
+						)
+					));
 				}
 				else
 				if (es.at(0) == "attack") {
-					env.attack(					
+					env.exec(action::Attack(					
 						stoi(es.at(1)), // id
-						stoi(es.at(2)), // dx
-						stoi(es.at(3))  // dy
-					);
+						dir4vec(
+							stoi(es.at(2)), // dx
+							stoi(es.at(3))  // dy
+						)
+					));
 				}
 				else
 				if (es.at(0) == "enter") {
@@ -394,14 +398,6 @@ namespace col{
 		
 	};
 	
-	struct Coords{
-		Coord x,y;
-		
-		Coords(Coord x_, Coord y_): x(x_), y(y_) {			
-		}
-		
-		Coords() {}
-	};
 	
 	void render_city(sf::RenderWindow &win, const Env &env, const Console &con) {
 		
@@ -439,18 +435,24 @@ namespace col{
 		
 		
 		uint i = 0;
-		for (auto &icon: env.ats(con.city_x, con.city_y)) {
+		for (auto &iicon: env.icons) {
+			auto & icon = iicon.second;
+			if (icon.x != con.city_x || icon.y != con.city_y) {
+				continue;
+			}
+			
 			auto type = icon.type->id;
 			if (type < 256 || icon.x != con.city_x || icon.y != con.city_y) {
 				continue;
 			}
 			
+			auto & pos = coords[i];
 			switch (type/ 256) {
 				case 1:
-					render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, type % 255));
+					render_sprite(win, pos[0], pos[1], res(BUILDING, type % 255));
 					break;
 				default:
-					render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, -1));
+					render_sprite(win, pos[0], pos[1], res(BUILDING, -1));
 					break;
 			}
 			
@@ -459,15 +461,19 @@ namespace col{
 			++i;
 		}
 		
-		for (; i<15; ++i) {			
-			render_sprite(win, coords[i].x, coords[i].y, res(BUILDING, trees[i]));
+		for (; i<15; ++i) {		
+			auto & pos = coords[i];
+			render_sprite(win, pos[0], pos[1], res(BUILDING, trees[i]));
 		}
 		
 		
 		
 	}
 	
-	void render_tile(sf::RenderWindow &win, Coord i, Coord j, const Tile &tile) {
+	void render_tile(sf::RenderWindow &win, 
+			Coord const& i, Coord const& j, 
+			Terr const& tile) 
+	{
 		
 		auto terrain = tile & 0x0F;
 		auto forest = bool(tile & (1 << 4));
@@ -475,24 +481,22 @@ namespace col{
 		
 		render_sprite(win, i*16, j*16, res(TERR, terrain));
 		if (forest) {
-			cout << uint16(tile) << endl;
-			cout << uint16(terrain) << endl;
-			cout << uint16(forest) << endl;
-			cout << endl;
+			//cout << uint16(tile) << endl;
+			//cout << uint16(terrain) << endl;
+			//cout << uint16(forest) << endl;
+			//cout << endl;
 			render_sprite(win, i*16, j*16, res(PHYS, 65));
 		}
 	}
 	
 	void render_map(sf::RenderWindow &win, const Env &env, const Console &con) 
 	{
-		auto &terrain = env.terr;
-
 		auto w = env.w;
 		auto h = env.h;
 
-		for (uint i = 0; i < w; ++i) {
-			for (uint j = 0; j < h; ++j) {
-				render_tile(win, i, j, terrain[i][j]);				
+		for (uint j = 0; j < h; ++j) {
+			for (uint i = 0; i < w; ++i) {
+				render_tile(win, i, j, env.get_terr_id(i,j));
 			}
 		}
 

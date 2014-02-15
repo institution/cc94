@@ -71,6 +71,13 @@ namespace col{
 		}
 
 		template <>
+		size_t write<int16>(ostream &f, const int16 &x) {
+			write_byte(f, x & 0xff);
+			write_byte(f, x >> 8);
+			return 2;		
+		}
+		
+		template <>
 		size_t write<uint32>(ostream &f, const uint32 &x) {
 			write_byte(f, (x >> 0) & 0xff);
 			write_byte(f, (x >> 8) & 0xff);
@@ -100,7 +107,13 @@ namespace col{
 			return (b << 8) | a;	
 		}
 
-		
+		template <>
+		int16 read<int16>(istream &f) {
+			uint16 a = read_byte(f);
+			uint16 b = read_byte(f);
+			return (b << 8) | a;	
+		}
+
 
 
 		//template <class T>

@@ -18,6 +18,8 @@ namespace col {
 	const uint8 UNIT_MOVEMENT = 3;
 	
 	using Coord = int16;
+	using Coords = Vector2<Coord>;
+
 
 	struct TerrType{
 		using Id = uint8;
@@ -32,6 +34,7 @@ namespace col {
 		
 		TerrType(const vector<string> &xs) {
 			assert(xs.size() >= 16);
+			
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
 			movement_cost = stoi(xs[2]);
@@ -64,8 +67,9 @@ namespace col {
 			combat = stoi(xs[4]);
 			cargo = stoi(xs[5]);
 			size = stoi(xs[6]);
-			movement_type = stoi(xs[7]);
-			
+			// unused column 7 
+			// unused column 8
+			movement_type = stoi(xs[9]);			
 		}
 				
 	};

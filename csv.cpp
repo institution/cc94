@@ -39,7 +39,7 @@ namespace col{
 
 		ws = (*lit(' '));
 		comment = lit(';') >> *char_("a-zA-Z0-9 ");
-		word = *(char_("a-zA-Z0-9 ")|char_('-')|char_('\'')|char_('(')|char_(')'));
+		word = *(char_("a-zA-Z0-9 ")|char_('-')|char_('_')|char_('\'')|char_('(')|char_(')'));
 		line = (word % lit(',')) >> (-comment);	
 		lines  = (-line) % eol;
 

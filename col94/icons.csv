@@ -1,4 +1,4 @@
-name,id,movement,attack,combat,slots,size,category,icon,"movement_type(1-naval,2-land)(bflag)"
+name,id,movement,attack,combat,slots,size,category,icon,movementtype
 Stockade,256,0,0,0,0,200,B,1,2
 Fort,257,0,0,0,0,200,B,2,2
 Fortress,258,0,0,0,0,200,B,3,2

@@ -39,16 +39,16 @@ namespace col{
 		
 		++p; // skip header
 		while (p != e) {
-			// cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
+			//cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
 			if ((*p).size() > 1) {
 				UnitType ut = UnitType(*p);
 
 				itypes[ut.id] = ut;
 
-				for (auto &v: *p) {
-					cout << v << '|';
-				}
-				cout << endl;
+				//for (auto &v: *p) {
+				//	cout << v << '|';
+				//}
+				//cout << endl;
 			}
 			
 			++p;
@@ -105,7 +105,7 @@ namespace col{
 		template <>
 		Env read<Env>(istream &f) {
 			Env env;
-			auto &terrain = env.terr;
+			auto &terrain = env.terrs;
 
 			string fid = "COLMAPB";
 			string ind = read_chars(f, 7);
@@ -119,15 +119,15 @@ namespace col{
 			auto w = env.w;
 			auto h = env.h;			
 			
-			cout << format("map size: %1%, %2%\n") % w % h;
-			terrain.resize(boost::extents[w][h]);
+			cout << format("Map size: %1%, %2%\n") % w % h;
+			terrain.resize(boost::extents[h][w]);
 
-			for(uint j = 0; j<h; ++j) {
-				for(uint i = 0; i<w; ++i) {
-					read(terrain[i][j], f);
-					cout << to_string(terrain[i][j]) << ',';
+			for(Coord j = 0; j < h; ++j) {
+				for(Coord i = 0; i < w; ++i) {
+					read(terrain[j][i], f);
+					//cout << to_string(terrain[j][i]) << ',';
 				}
-				cout << endl;
+				//cout << endl;
 			}
 			
 			if (nsect < 2) return env;
@@ -154,10 +154,16 @@ namespace col{
 			if (nsect < 4) return env;
 			// turn info
 			read(env.turn_no, f);
-			env.curr_player = read_ptr(env.players, f);
+			if (env.players.size()) {
+				env.curr_player = read_ptr(env.players, f);
+			}
+			else {
+				Player::Id zero;
+				read(zero, f);
+				env.curr_player = nullptr;
+			}
 			
 			cout << format("turn_no = %||\n") % env.turn_no;
-			cout << format("curr_player = %||\n") % env.curr_player;
 
 
 			return env;
@@ -169,7 +175,7 @@ namespace col{
 		template <>
 		size_t write<Env>(ostream &f, const Env &env) {
 			size_t l = 0;
-			auto &terrain = env.terr;
+			auto &terrain = env.terrs;
 			auto w = env.w;
 			auto h = env.h;
 
@@ -183,9 +189,9 @@ namespace col{
 			l += write(f, env.w);
 			l += write(f, env.h);
 
-			for(uint j = 0; j < h; ++j) {
-				for(uint i = 0; i < w; ++i) {
-					l += write(f, terrain[i][j]);
+			for(Coord j = 0; j < h; ++j) {
+				for(Coord i = 0; i < w; ++i) {
+					l += write(f, terrain[j][i]);
 				}
 			}
 			
@@ -203,7 +209,12 @@ namespace col{
 
 			// turn info
 			l += write(f, env.turn_no);
-			l += write(f, env.curr_player->id);
+			if (env.curr_player != nullptr) {
+				l += write(f, env.curr_player->id);				
+			}
+			else {
+				l += write(f, Player::Id(0));
+			}
 
 
 			//res(ICON, 100)
