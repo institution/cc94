@@ -386,7 +386,7 @@ namespace col{
 				}
 				
 				buffer = "";	
-				cout << "> ";				
+				cout << "> ";			
 			}			
 			else {
 				cout << char(code);
@@ -394,6 +394,7 @@ namespace col{
 			}
 			
 			cout.flush();
+			++mod;
 		}
 		
 	};
@@ -545,10 +546,26 @@ namespace col{
 		
 	}
 
+	void render_cmd(sf::RenderWindow &app, const col::Console &con, sf::Font const& font) {
+		cout << "render:"<<con.buffer<<endl;
+		render_text(app, 
+			Vector2<int16>(0,190),
+			font,
+			con.buffer
+		);
+	}
+
+	
 }
 
 
-void render(sf::RenderWindow &app, const col::Env &env, const Text &t, const col::Console &con) {
+void render_panel(sf::RenderWindow &app, const col::Env &env) {
+	
+
+}
+
+
+void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con) {
 	app.Clear();
 	cout << con.city_x << endl;
 	if (con.city_x != col::Coord(-1)) {
@@ -557,11 +574,9 @@ void render(sf::RenderWindow &app, const col::Env &env, const Text &t, const col
 	else {
 		render_map(app, env, con);
 	}
-	render_text(app, t);
-	render_playerind(app, 0, 0, env.curr_player->color);
-
 	
-	app.Display();
+	render_playerind(app, 0, 0, env.curr_player->color);
+	
 }
 
 int main()
@@ -575,13 +590,6 @@ int main()
 	if (!tiny.LoadFromFile("font/pixelated/pixelated.ttf", 8)) {
 		throw std::runtime_error("cannot load font");
 	}
-	
-	Text t;
-	t.text = string("COLONIST: BUILD   MOVE   PAUSE");
-	t.pos = sf::Vector2i(0,190);
-	t.f = &tiny;
-	
-	
 	
 	
 	const uint SCL = 3;
@@ -602,7 +610,11 @@ int main()
 	{
 		
 		if (env.mod != last_mod1 || con.mod != last_mod2) {
-			render(app, env, t, con);
+			render(app, env, con);
+			
+			render_cmd(app, con, tiny);
+			
+			app.Display();
 			last_mod1 = env.mod;
 			last_mod2 = con.mod;
 		}
