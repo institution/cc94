@@ -12,7 +12,7 @@
 namespace col {
 
 	struct Console{
-		string output;
+		vector<string> output;
 		string buffer;
 		
 		Env &env;
@@ -36,7 +36,7 @@ namespace col {
 		}
 
 		void clear() {
-			output = "";
+			output.clear();
 			buffer = "> ";
 		}
 

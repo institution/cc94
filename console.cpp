@@ -60,12 +60,16 @@ namespace col {
 			split(es, buffer, is_any_of(" "));
 
 			if (es[0] == "help") {
-				output = "lsi, addi, deli\nlsp, addp, delp\nmove\nattack\nturn\n";
+				output.push_back("lsi, addi, deli");
+				output.push_back("lsp, addp, delp");
+				output.push_back("move");
+				output.push_back("attack");
+				output.push_back("turn");
 			}
 			else				
 			if (es[0] == "turn") {
 				env.exec(action::Turn());
-				output = str(format("Turn %||.%|| ") % env.turn_no % (env.curr_player->name));
+				output.push_back(str(format("Turn %||.%|| ") % env.turn_no % (env.curr_player->name)));
 			}
 			else
 			if (es[0] == "lsi") {

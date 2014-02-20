@@ -9,6 +9,9 @@ namespace col {
 	using ResFont = map<string, sf::Font>;
 	ResFont g_fonts;
 	
+	using ResPixFont = map<string, PixFont>;
+	ResPixFont g_pixfonts;
+	
 	ResFont::mapped_type const& res_font(string const& name, uint8 size) {
 		auto p = g_fonts.find(name);
 		if (p != g_fonts.end()) {
@@ -24,6 +27,19 @@ namespace col {
 		}		
 	}
 	
+	
+	ResPixFont::mapped_type const& res_pixfont(string const& name) {
+		auto p = g_pixfonts.find(name);
+		if (p != g_pixfonts.end()) {
+			return (*p).second;
+		}
+		else {
+			auto &font = g_pixfonts[name];
+			auto path = str(format("./font/%||") % name);
+			font.load(path);
+			return font;
+		}		
+	}
 	
 	const string 
 		TERR = "COLONIZE/TERRAIN_SS",
@@ -282,6 +298,45 @@ namespace col {
 		*/
 	}
 
+	int16 render_text(
+			sf::RenderWindow &win, 
+			Vector2<int16> const& pos,
+			PixFont const& font,
+			string const& text,
+			int16 width = 0
+		) {
+
+		// width
+
+		auto x = pos[0];
+		auto y = pos[1];
+
+		auto &img = font.img;
+
+		sf::Sprite s;	
+		s.SetImage(img);
+
+		//auto line_height = font.GetCharacterSize();
+		//cout << "char hh:" << hh << endl;
+
+		for (auto c: text) {
+			auto &g = font.glyphs.at(c);
+			auto &rr = g.rect;
+
+			cout << uint16(c) << endl;
+			
+			//cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
+			//cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
+
+			s.SetPosition(x ,y);
+			s.SetSubRect(g.rect);
+			win.Draw(s);
+
+			x += rr.Right - rr.Left + 1;
+		}
+
+		return x;
+	}
 
 	int16 render_text(
 			sf::RenderWindow &win, 
@@ -331,10 +386,24 @@ namespace col {
 	}
 	
 	void render_cmd(sf::RenderWindow &app, const col::Console &con) {
+		
+		
+		auto ln = con.output.size();
+		for (int i = 0; i < ln; ++i) {
+			render_text(
+				app, 
+				Vector2<int16>(1, 192 - (ln-i)*8),
+				res_pixfont("tiny.png"),
+				con.output[i],
+				0
+			);			
+		}
+		
+		
 		render_text(
 			app, 
-			Vector2<int16>(0,190),
-			res_font("tiny.ttf", 8),
+			Vector2<int16>(1,192),
+			res_pixfont("tiny.png"),
 			con.buffer,
 			0
 		);
