@@ -91,13 +91,13 @@ namespace col{
 		Z=6, X=7, C=8
 	};
 	
-	inline Vector2<int8> vec4dir(Dir const& d) {
+	inline Coords vec4dir(Dir const& d) {
 		auto n = static_cast<int8>(d);
-		return Vector2<int8>((n % 3) - 1, (n / 3) - 1);
+		return Coords((n % 3) - 1, (n / 3) - 1);
 	}
 	
-	inline Dir dir4vec(int8 dx, int8 dy) {
-		return static_cast<Dir>((dy + 1) * 3 + (dx + 1));		
+	inline Dir dir4vec(Coords const& d) {
+		return static_cast<Dir>((d[0] + 1) * 3 + (d[1] + 1));		
 	}
 	
 	namespace action {
@@ -183,7 +183,7 @@ namespace col{
 		}
 		
 		
-		Icon::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coord x, Coord y) {
+		Icon::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
 			Icon::Id id = icons.size();
 			
 			if (uts.find(type_id) == uts.end()) {
@@ -193,7 +193,7 @@ namespace col{
 			icons[id] = Icon(
 				id,
 				uts.at(type_id),
-				x,y,
+				xy,
 				players.at(player_id)
 			);
 			++mod;
@@ -213,8 +213,8 @@ namespace col{
 			return terrs[y][x];
 		}
 		
-		TerrType& get_tt(Coord x, Coord y) {
-			return tts.at(get_terr_id(x, y));
+		TerrType& get_tt(Coords const& xy) {
+			return tts.at(get_terr_id(xy[0], xy[1]));
 		}
 		
 		
@@ -223,7 +223,7 @@ namespace col{
 			auto &icon = icons.at(a.icon_id);
 			auto v = vec4dir(a.dir);
 			
-			auto &tt = get_tt(icon.x + v[0], icon.y + v[1]);
+			auto &tt = get_tt(icon.pos + v);
 			
 			auto &ut = *(icon.type);
 			
@@ -236,8 +236,7 @@ namespace col{
 			}
 			
 			icon.movement_used += tt.movement_cost;
-			icon.x += v[0];
-			icon.y += v[1];
+			icon.pos += v;
 			++mod;
 			
 		}
@@ -246,9 +245,9 @@ namespace col{
 			auto v = vec4dir(a.dir);
 			
 			auto &u1 = icons.at(a.icon_id);	
-			auto &u2 = get_icon_at(u1.x + v[0], u1.y + v[1]);
+			auto &u2 = get_icon_at(u1.pos + v);
 			
-			auto &tt = get_tt(u1.x + v[0], u1.y + v[1]);
+			auto &tt = get_tt(u1.pos + v);
 			
 			auto attack = u1.type->attack;
 			auto combat_base = u2.type->combat;
@@ -260,8 +259,7 @@ namespace col{
 			cout << "combat " << r << endl;
 			if (r <= attack) {
 				destroy_icon(u2.id);
-				u1.x += v[0];
-				u1.y += v[1];
+				u1.pos += v;
 			}
 			else {
 				destroy_icon(u1.id);
@@ -270,10 +268,10 @@ namespace col{
 			++mod;
 		}
 		
-		Icon& get_icon_at(Coord x, Coord y) {
+		Icon& get_icon_at(Coords const& xy) {
 			for (auto &p: icons) {				
 				auto &c = p.second;
-				if (c.x == x && c.y == y) {
+				if (c.pos == xy) {
 					return c;
 				}
 			}

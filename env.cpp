@@ -59,24 +59,43 @@ namespace col{
 	
 	namespace io {
 
+		
+		template <>
+		void read<Coords>(Coords &cs, istream &f) {
+			read(cs[0], f);
+			read(cs[1], f);			
+		}
+			
+		
+		template <>
+		size_t write<Coords>(ostream &f, Coords const& cs) {
+			size_t l = 0;
+			l += write(f, cs[0]);
+			l += write(f, cs[1]);
+			return l;			
+		}
+		
+		
+		
 		template <>
 		Icon read_obj<Icon>(Env &env, istream &f) {
 			Icon u;
 			read(u.id, f);
 			u.type = read_ptr(env.uts, f);
-			read(u.x, f);
-			read(u.y, f);
+			read(u.pos, f);
 			u.player = read_ptr(env.players, f);
 			return u;
 		}
+		
+		
+		
 		
 		template <>
 		size_t write_obj<Icon>(ostream &f, Icon const &icon) {
 			size_t l = 0;
 			l += write(f, icon.id);
 			l += write(f, icon.type->id);
-			l += write(f, icon.x);
-			l += write(f, icon.y);
+			l += write(f, icon.pos);
 			l += write(f, icon.player->id);
 			return l;
 		}
@@ -91,6 +110,8 @@ namespace col{
 			return player;
 		}
 
+		
+		
 		template <>
 		size_t write_obj<Player>(ostream &f, const Player &player) {
 			size_t l = 0;

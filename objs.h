@@ -7,9 +7,6 @@
 
 
 
-
-
-
 namespace col {
 	
 	// map
@@ -94,7 +91,7 @@ namespace col {
 		
 		Id id;
 		UnitType const *type;
-		Coord x, y;
+		Coords pos;
 		Player const *player;	
 		uint8 movement_used;  // movement used in this turn
 		
@@ -107,14 +104,12 @@ namespace col {
 		Icon(
 			Id id, 
 			UnitType const &type, 
-			Coord x, 
-			Coord y, 
+			Coords pos, 
 			Player const &player
 		) {	
 			this->id = id; 
 			this->type = &type; 
-			this->x = x;
-			this->y = y;
+			this->pos = pos;
 			this->movement_used = 0;
 			this->player = &player;
 		}
