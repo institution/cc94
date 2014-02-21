@@ -34,9 +34,9 @@ namespace col {
 			
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement_cost = stoi(xs[2]);
+			movement_cost = stoi(xs[2]) * UNIT_MOVEMENT;
 			defensive = stoi(xs[3]);			
-			movement_type = stoi(xs[15]) * UNIT_MOVEMENT;
+			movement_type = stoi(xs[15]);
 		}
 				
 	};

@@ -74,14 +74,15 @@ namespace col {
 			else
 			if (es[0] == "lsi") {
 				for (auto &icon: env.icons) {
-					cout << icon.second << endl;						
+					output.push_back(str(format("%||\n") % icon.second));
 				}
 			}
 			else
 			if (es[0] == "lsut") {
 				for (auto &utp: env.uts) {
 					auto &ut = utp.second;
-					cout << format("%u  %s\n") % uint16(ut.id) % ut.name;
+					auto x = format("%u  %s\n") % uint16(ut.id) % ut.name;
+					output.push_back(str(x));
 				}
 			}
 			else
@@ -92,8 +93,8 @@ namespace col {
 			if (es[0] == "addi") {	
 				switch (es.size()) {
 					default: {
-						cout << "Usage1: addi type_id player_id" << endl;
-						cout << "Usage2: addi type_id player_id x y" << endl;						
+						output.push_back("Usage1: addi type_id player_id\n");
+						output.push_back("Usage2: addi type_id player_id x y\n");
 						break;
 					}
 					case 3: {
@@ -118,7 +119,7 @@ namespace col {
 			if (es[0] == "setturn") {	
 				switch (es.size()) {
 					default: {
-						cout << "Usage1: setturn num" << endl;
+						output.push_back("Usage1: setturn num\n");						
 						break;
 					}
 					case 2: {
@@ -130,7 +131,8 @@ namespace col {
 			else
 			if (es[0] == "lsp") {
 				for (auto &p: env.players) {
-					cout << p.second << endl;						
+					auto x = format("%||\n") % p.second;
+					output.push_back(str(x));
 				}
 			}
 			else
@@ -141,7 +143,7 @@ namespace col {
 			if (es.at(0) == "save") {
 				switch (es.size()) {
 					default: {
-						cout << "Usage: save filename" << endl;
+						output.push_back("Usage: save filename");
 						break;
 					}
 					case 2: {
@@ -155,7 +157,7 @@ namespace col {
 			else
 			if (es[0] == "addp") {
 				if (es.size() < 2+1) {
-					cout << "Usage: addp name color_name flag_id" << endl;
+					output.push_back("Usage: addp name color_name flag_id");					
 				}
 				else {				
 					env.add_player(Player(
@@ -201,7 +203,7 @@ namespace col {
 			if (es.at(0) == "enter") {
 				switch (es.size()) {
 					default: {
-						cout << "Usage: enter [x y]" << endl;
+						output.push_back("Usage: enter [x y]");
 						break;
 					}
 					case 1: {
@@ -222,7 +224,7 @@ namespace col {
 			if (es.at(0) == "exit") {
 				switch (es.size()) {
 					default: {
-						cout << "Usage: exit" << endl;
+						output.push_back("Usage: exit");						
 						break;
 					}
 					case 1: {
@@ -233,11 +235,11 @@ namespace col {
 				}					
 			}
 			else {
-				cout << "ERROR: no such command" << endl;
+				output.push_back("ERROR: no such command");
+				
 			}
 
-			buffer = "";	
-			cout << "> ";			
+			buffer = "";			
 		}			
 		else {
 			cout << char(code);

@@ -97,7 +97,7 @@ namespace col{
 	}
 	
 	inline Dir dir4vec(Coords const& d) {
-		return static_cast<Dir>((d[0] + 1) * 3 + (d[1] + 1));		
+		return static_cast<Dir>((d[0] + 1) + (d[1] + 1) * 3);
 	}
 	
 	namespace action {
@@ -245,7 +245,7 @@ namespace col{
 			auto v = vec4dir(a.dir);
 			
 			auto &u1 = icons.at(a.icon_id);	
-			auto &u2 = get_icon_at(u1.pos + v);
+			auto &u2 = ref_icon_at(u1.pos + v);
 			
 			auto &tt = get_tt(u1.pos + v);
 			
@@ -268,12 +268,33 @@ namespace col{
 			++mod;
 		}
 		
-		Icon& get_icon_at(Coords const& xy) {
+		
+		Icon const* get_icon_at(Coords const& xy) const {
 			for (auto &p: icons) {				
 				auto &c = p.second;
 				if (c.pos == xy) {
-					return c;
+					return &c;
 				}
+			}
+			return nullptr;			
+		}
+		
+		
+		Icon* get_icon_at(Coords const& xy) {
+			for (auto &p: icons) {				
+				auto &c = p.second;
+				if (c.pos == xy) {
+					return &c;
+				}
+			}
+			return nullptr;
+			
+		}
+		
+		Icon& ref_icon_at(Coords const& pos) {
+			auto p = get_icon_at(pos);
+			if (p) {
+				return *p;
 			}
 			throw runtime_error("no icon at location");
 		}

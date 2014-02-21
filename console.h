@@ -37,7 +37,7 @@ namespace col {
 
 		void clear() {
 			output.clear();
-			buffer = "> ";
+			buffer = "";
 		}
 
 		void modified() {

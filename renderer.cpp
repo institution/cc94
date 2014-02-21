@@ -41,6 +41,17 @@ namespace col {
 		}		
 	}
 	
+	
+	int16 render_text(
+		sf::RenderWindow &win, 
+		Vector2<int16> const& pos,
+		PixFont const& font,
+		string const& text,
+		int16 width = 0
+	);
+	
+	
+	
 	const string 
 		TERR = "COLONIZE/TERRAIN_SS",
 		ICON = "COLONIZE/ICONS_SS",
@@ -255,8 +266,8 @@ namespace col {
 	void render_panel(sf::RenderWindow &win, 
 			Env const& env,
 			Console const& con,
-			Vector2<uint16> const& pos, 
-			Vector2<uint16> const& dim
+			Vector2<int16> const& pos, 
+			Vector2<int16> const& dim
 		) {
 		
 		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);
@@ -273,7 +284,33 @@ namespace col {
 				1, 
 				sf::Color(50,0,0, 255)
 			)
-		);		
+		);
+
+		
+		Icon const* u = env.get_icon_at(con.sel);
+		
+		if (u) {
+			
+			auto &ut = *(u->type);
+			auto moves = (ut.movement - u->movement_used) / UNIT_MOVEMENT;
+			
+			auto s = str(format("%||\nmoves: %||") % ut.name % uint16(moves));
+			
+			render_text(win, 
+				pos,
+				res_pixfont("tiny.png"),
+				s,
+				dim[0]
+			);
+			
+		}
+		
+		
+		
+
+				
+
+		
 		/*
 		i = d/w;
 		j = dy/h;
@@ -303,7 +340,7 @@ namespace col {
 			Vector2<int16> const& pos,
 			PixFont const& font,
 			string const& text,
-			int16 width = 0
+			int16 width
 		) {
 
 		// width
@@ -323,10 +360,9 @@ namespace col {
 			auto &g = font.glyphs.at(c);
 			auto &rr = g.rect;
 
-			cout << uint16(c) << endl;
-			
-			//cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
-			//cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
+			//cout << uint16(c) << endl;			
+			// cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
+			// cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
 
 			s.SetPosition(x ,y);
 			s.SetSubRect(g.rect);
@@ -427,8 +463,8 @@ namespace col {
 
 			
 		render_panel(app, env, con,			
-			Vector2<uint16>(280,0),
-			Vector2<uint16>(40,200)
+			Vector2<int16>(240,0),
+			Vector2<int16>(80,200)
 		);
 
 		
