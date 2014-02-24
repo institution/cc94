@@ -101,26 +101,20 @@ namespace col{
 	}
 	
 	namespace action {
-		struct Move {
-			Icon::Id icon_id;
-			Dir dir;
-			Move(Icon::Id const& iid, Dir const& dirr) {
-				icon_id = iid;
-				dir = dirr;
-			}
-		};		
-		
-		struct Attack {
-			Icon::Id icon_id;
-			Dir dir;
+		struct Action {
 			
-			Attack(Icon::Id const& iid, Dir const& dirr) {
-				icon_id = iid;
+		};
+				
+		struct AttackMove: Action {
+			Icon* icon;
+			Dir dir;
+			AttackMove(Icon & iid, Dir const& dirr) {
+				icon = &iid;
 				dir = dirr;
 			}
 		};
 				
-		struct Turn {
+		struct Turn: Action {
 
 		};
 	}
@@ -164,6 +158,9 @@ namespace col{
 			cout << " " << uts.size() << " loaded." << endl;
 		}
 		
+		Player* get_current_player() {
+			return curr_player;
+		}
 		
 		void exec(action::Turn const& a) {
 			if (curr_player == nullptr) {
@@ -213,61 +210,9 @@ namespace col{
 			return terrs[y][x];
 		}
 		
-		TerrType& get_tt(Coords const& xy) {
+		TerrType& get_terr_type(Coords const& xy) {
 			return tts.at(get_terr_id(xy[0], xy[1]));
 		}
-		
-		
-		void exec(action::Move const& a) {
-		
-			auto &icon = icons.at(a.icon_id);
-			auto v = vec4dir(a.dir);
-			
-			auto &tt = get_tt(icon.pos + v);
-			
-			auto &ut = *(icon.type);
-			
-			if (!(ut.movement_type & tt.movement_type)) {
-				throw runtime_error("cant move - noncompatible type");
-			}
-				
-			if (ut.movement < tt.movement_cost + icon.movement_used) {
-				throw runtime_error("cant move - not enough moves");
-			}
-			
-			icon.movement_used += tt.movement_cost;
-			icon.pos += v;
-			++mod;
-			
-		}
-		
-		void exec(action::Attack const& a) {
-			auto v = vec4dir(a.dir);
-			
-			auto &u1 = icons.at(a.icon_id);	
-			auto &u2 = ref_icon_at(u1.pos + v);
-			
-			auto &tt = get_tt(u1.pos + v);
-			
-			auto attack = u1.type->attack;
-			auto combat_base = u2.type->combat;
-			auto combat = combat_base + uint8(0.25 * tt.defensive * combat_base);
-			
-			assert(attack > 0);
-			
-			auto r = roll(0, attack + combat);
-			cout << "combat " << r << endl;
-			if (r <= attack) {
-				destroy_icon(u2.id);
-				u1.pos += v;
-			}
-			else {
-				destroy_icon(u1.id);
-			}
-			
-			++mod;
-		}
-		
 		
 		Icon const* get_icon_at(Coords const& xy) const {
 			for (auto &p: icons) {				
@@ -277,6 +222,12 @@ namespace col{
 				}
 			}
 			return nullptr;			
+		}
+		
+		
+		
+		Icon& icon4id(Icon::Id const& id) {
+			return icons.at(id);			
 		}
 		
 		
@@ -298,6 +249,83 @@ namespace col{
 			}
 			throw runtime_error("no icon at location");
 		}
+		
+		bool can_attack_move(Icon const& u, Dir const& dir) {
+			// square empty
+			auto& ut = *(u.type);
+			auto dest = u.pos + vec4dir(dir);
+			auto tt = get_terr_type(dest);
+			
+			if (!(ut.movement_type & tt.movement_type)) {
+				return false;
+				// throw runtime_error("cant move - noncompatible type");
+			}
+			// compatible terrain type
+				
+			if (ut.movement < tt.movement_cost + u.movement_used) {
+				return false;
+				// throw runtime_error("cant move - not enough moves");
+			}
+			// enough movement
+			
+			auto x = get_icon_at(dest);
+			if (x != nullptr && x->player == u.player) {
+				return 0;				
+				//throw std::runtime_error("cannot move: square already occupied");
+			}
+			// dest square empty or occupied by enemy
+			
+			return true;			
+		}
+		
+		
+		
+		void exec(action::AttackMove const& a) {
+			
+			Icon* p = a.icon;
+			
+			if (!can_attack_move(*p, a.dir)) {
+				throw std::runtime_error("cannot attack move");			
+			}
+			
+			auto dest = p->pos + vec4dir(a.dir);
+			auto q = get_icon_at(dest);
+			auto tt = get_terr_type(dest);
+			
+			if (q == nullptr) {
+				// move
+				
+				p->movement_used += tt.movement_cost;
+				p->pos = dest;
+			}
+			else {
+				//attack
+				auto attack_base = p->type->attack;
+				auto attack = attack_base;
+				auto combat_base = q->type->combat;
+				auto combat = combat_base + uint8(0.25 * tt.defensive * combat_base);
+
+				assert(attack > 0);
+
+				auto r = roll(0, attack + combat);
+
+				// cout << "combat " << r << endl;
+
+				if (r <= attack) {
+					p->movement_used = p->type->movement;
+					p->pos = dest;
+
+					destroy_icon(q->id);
+				}
+				else {
+					destroy_icon(p->id);
+				}
+
+			}
+			
+			++mod;			
+		}
+		
 		
 		//RangeXY<Icons> all(Coord x, Coord y) const {
 		//	return RangeXY<Icons>(icons, x, y);			

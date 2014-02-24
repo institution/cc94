@@ -7,6 +7,60 @@
 
 
 namespace col {
+	
+	/*
+	
+	struct Move {
+		Icon::Id icon_id;
+		Dir dir;
+		Move(Icon::Id const& iid, Dir const& dirr);
+	};		
+
+	struct Attack {
+		Icon::Id icon_id;
+		Dir dir;			
+		Attack(Icon::Id const& iid, Dir const& dirr);
+	};
+
+	struct Turn {
+
+	};
+
+	
+	
+	get_current_player
+			
+	play_random_game
+		int16 MAX_TURN = 5
+
+
+		while (turn < MAX_TURN) {
+
+
+		}
+	
+	get_result(Env const& env, Player::Id pid)
+		
+		
+	void create_env(Env const& env) {
+		// copy and randomly fill hidden information
+		
+	}
+	
+	
+	
+	
+	Action create_random_action(Env const& g) {
+		auto p = get_current_player();
+		
+			
+		
+	}
+			
+*/
+	
+		
+	
 /*
 	template<typename T>
 	using Vector2 = aga2::Mv1<T>;

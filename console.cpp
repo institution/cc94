@@ -177,8 +177,8 @@ namespace col {
 			}
 			else
 			if (es.at(0) == "move") {					
-				env.exec(action::Move(					
-					stoi(es.at(1)), // id
+				env.exec(action::AttackMove(					
+					env.icon4id(stoi(es.at(1))), // id
 					dir4vec(
 						Coords(
 							stoi(es.at(2)), // dx
@@ -189,8 +189,8 @@ namespace col {
 			}
 			else
 			if (es.at(0) == "attack") {
-				env.exec(action::Attack(					
-					stoi(es.at(1)), // id
+				env.exec(action::AttackMove(
+					env.icon4id(stoi(es.at(1))), // id
 					dir4vec(
 						Coords(
 							stoi(es.at(2)), // dx
