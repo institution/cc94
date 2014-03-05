@@ -176,16 +176,37 @@ namespace col {
 				);
 			}
 			else
-			if (es.at(0) == "move") {					
-				env.exec(action::AttackMove(					
-					env.icon4id(stoi(es.at(1))), // id
-					dir4vec(
-						Coords(
-							stoi(es.at(2)), // dx
-							stoi(es.at(3))  // dy
-						)
-					)
-				));
+			if (es.at(0) == "move") {
+				switch (es.size()) {
+					default:
+						output.push_back("Usage: move [icon_id] dx dy");
+						break;
+					case 4:
+						env.exec(action::AttackMove(					
+							env.icon4id(stoi(es.at(1))), // id
+							dir4vec(
+								Coords(
+									stoi(es.at(2)), // dx
+									stoi(es.at(3))  // dy
+								)
+							)
+						));
+						break;
+					case 3:
+						
+						
+						env.exec(action::AttackMove(					
+							env.ref_icon_at(sel),
+							dir4vec(
+								Coords(
+									stoi(es.at(1)), // dx
+									stoi(es.at(2))  // dy
+								)
+							)
+						));
+						break;					
+				}
+				
 			}
 			else
 			if (es.at(0) == "attack") {
