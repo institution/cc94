@@ -1,19 +1,25 @@
 #define BOOST_TEST_MODULE ai
 #include <boost/test/unit_test.hpp>
+#include <iostream>
+#include "ai.h"
+#include "roll.h"
 
-// Very Simple Game
+using namespace std;
+
 struct XOGame{
+	
+	using PlayerId = char;
 	
 	// 012
 	// 345
 	// 678
-	char xs[9];
+	char bs[9];
 	char player;
-	int moved;
+	int moves;
 	
 	XOGame() {
-		for (auto &x: xs) {
-			x = '.';
+		for (auto &b: bs) {
+			b = '.';
 		}
 		player = 'O';
 		moves = 1;
@@ -40,33 +46,8 @@ struct XOGame{
 		--moves;
 	}
 	
-	struct Action {
-		virtual void exec(Game &game) = 0;
-	};
-	
-	struct Move {
-		int i;
-		Move(int i_) {
-			i = i_;
-		}
+	float get_result(PlayerId p) {
 		
-	};
-	
-	struct EndTurn {
-		int i;
-		Action(int i_) {
-			i = i_;
-			assert(0 <= i);
-			assert(i < 9);		
-		}
-	};
-	
-	
-	void exec(Action *a) {
-			
-	}
-	
-	float get_result(char p) {
 		// -
 		if (bs[0] == bs[1] == bs[2] == p) return 1;
 		if (bs[3] == bs[4] == bs[5] == p) return 1;
@@ -82,14 +63,87 @@ struct XOGame{
 		return 0;
 	}
 	
+	
+	
+};
+
+struct XOGameWrapper {
+	
+	using PlayerId = typename XOGame::PlayerId;
+	
+	XOGame &game;
+	
+	XOGameWrapper(XOGame &g): game(g) {
+		
+	}
+	
+	struct Action {
+		virtual void exec(XOGame &game) = 0;
+	};
+	
+	struct Move: Action {
+		int i;
+		Move(int i_) {
+			i = i_;
+		}
+		
+		void exec(XOGame &game) {
+			game.move(i);
+		}
+	};
+	
+	struct EndTurn: Action {
+		void exec(XOGame &game) {
+			game.end_turn();
+		}
+	};	
+	
+	void exec(Action *a) {
+		if (a == nullptr) {
+			EndTurn().exec(this->game);
+		}
+		else {
+			a->exec(this->game);
+		}
+	}
+	
+	float get_result(XOGame::PlayerId p) {
+		return game.get_result(p);		
+	}
+	
+	Action *create_random_action() {
+		if (game.moves) {
+			return new Move(roll::roll(0,9));
+		}
+		else {
+			return nullptr; // endturn
+		}
+	}
+	
 };
 
 
-BOOST_AUTO_TEST_CASE( test1 )
+
+
+ostream& operator<<(ostream &out, XOGame const& g) {
+	out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
+	    << g.bs[3] << g.bs[4] << g.bs[5] << "\n"
+	    << g.bs[6] << g.bs[7] << g.bs[8] << "\n";
+}
+
+
+BOOST_AUTO_TEST_CASE( test_base )
 {
 	
+	XOGame game;
+	
+	XOGameWrapper gw(game);
+	col::MCTS<XOGameWrapper> mt(gw, 'O');
+	
+	mt.think();
 	
 	
+	/*
     // seven ways to detect and report the same error:
     BOOST_CHECK( add( 2,2 ) == 4 );        // #1 continues on error
 
@@ -107,4 +161,5 @@ BOOST_AUTO_TEST_CASE( test1 )
                          "add(..) result: " << add( 2,2 ) );
 
     BOOST_CHECK_EQUAL( add( 2,2 ), 4 );	  // #7 continues on error
+	*/
 }

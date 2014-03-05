@@ -1,6 +1,7 @@
 #ifndef AI_H
 #define AI_H
 
+#include <cmath>
 #include "aga2.hpp"
 #include "col.h"
 #include "env.h"
@@ -39,7 +40,8 @@ namespace col {
 	};
 	
 	
-	ostream& operator<<(ostream &out, Node const& n) {
+	template<typename Action>
+	ostream& operator<<(ostream &out, Node<Action> const& n) {
 		out<<"Node("<<(*n.action)<<","<<n.win<<","<<n.total<<")";
 		//out << (format(
 		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
@@ -49,8 +51,9 @@ namespace col {
 	
 	template<typename Game>
 	struct MCTS {
-		using PlayerId = typename Game::Player::Id;
+		using PlayerId = typename Game::PlayerId;
 		using NodeType = Node<typename Game::Action>;
+		using Action = typename Game::Action;
 		
 		PlayerId player_id;
 		NodeType *root;
@@ -72,23 +75,25 @@ namespace col {
 			
 			NodeType *node = root;
 			
-			Env env(o_env);  // copy curr state
+			Game env(o_env);  // copy curr state
 			
 			// select
 			while (node->left_child) {
 								
 				float w = node->win;
 				float n = node->total;
-				float ln_t = ln(parent->total);
+				float ln_t = std::log(node->parent->total);
 				
 				NodeType *child_node = node->left_child;
 				
-				ra = create_random_action(env, pid)
+				ra = env.create_random_action();
 				
 				float best_value = 0;
-				do {
+				NodeType *best_child = nullptr;
+				
+				while (child_node) {
 					// check action already generated
-					if (ra && *ra == *(child_node->action)) {
+					if (ra && ((*ra) == *(child_node->action))) {
 						delete ra;
 						ra == nullptr;
 					}							
@@ -100,8 +105,9 @@ namespace col {
 						best_value = value;
 					}
 					
+					child_node = child_node->right_neigh;
 				} 
-				while (child_node = child_node->right_neigh);
+				
 				
 				// select new action or best_node
 				if (ra) {
@@ -110,13 +116,13 @@ namespace col {
 				}
 				else {
 					// select best node
-					node = best_node;
+					node = best_child;
 				}
 						
 			}
 			
 			// expand
-			while (ra = create_random_action(env, pid)) {
+			while (ra = env.create_random_action(env)) {
 				env.exec(ra);
 				node = create_child(node, ra);				
 			}
@@ -124,12 +130,12 @@ namespace col {
 			
 			// play (5 random turns ahead)
 			for (int i=0; i<5*NUM_OF_PLAYERS; ++i) {
-				while (ra = create_random_action(env, get_pid(env))) {
+				while (ra = env.create_random_action(env)) {
 					env.exec(ra);
-				}
+				}				
 			}
 			
-			float result = get_result(env, player_id);
+			float result = env.get_result(player_id);
 			
 			// backprop
 			while (node) {
@@ -140,11 +146,12 @@ namespace col {
 			
 		}
 		
+		
 		Action const* get_action() {
 			// return best move
-			node = root;
-			Node *child_node = root->left_child;
-			Node *best_child = nullptr;
+			NodeType *node = root;
+			NodeType *child_node = root->left_child;
+			NodeType *best_child = nullptr;
 			float best_value = -1;
 				
 			while (child_node) {
@@ -162,6 +169,7 @@ namespace col {
 			root = best_child;			
 			return root->action;
 		}
+		
 				
 	};
 	
@@ -170,12 +178,11 @@ namespace col {
 		map<Player::Id, float> pts;
 		
 		for (auto& x: env.players) {
-			Player& pl = x.second;
-			pts[pl.id] = 0;			
+			pts[x.second.id] = 0;			
 		}
 		
 		for (auto& x: env.icons) {
-			pts[x.second->player->id] += 1;
+			pts[x.second.player->id] += 1;
 		}		
 		
 		float total = 0;
@@ -187,22 +194,26 @@ namespace col {
 	}
 		
 	
-	void destroy_node(Node *node) {
+	template<typename Action>
+	void destroy_node(Node<Action> *node) {
 		delete node;
 	}
 	
-	void create_child(Node *parent, Node *child) {
-		tmp = left_child;
-		left_child = child;
-		child.right_neigh = tmp;		
-		child.parent = parent;
+	template<typename Action>
+	void create_child(Node<Action> *parent, Node<Action> *child) {
+		
+		Node<Action> *tmp = parent->left_child;
+		parent->left_child = child;
+		child->right_neigh = tmp;		
+		child->parent = parent;
 	}
 	
-	void extract(Node *node) {
+	template<typename Action>
+	void extract(Node<Action> *node) {
 		
-		parent = node->parent;
+		Node<Action> *parent = node->parent;
 		assert(parent != nullptr);
-		child_node = parent->left_child;
+		Node<Action> *child_node = parent->left_child;
 		while (child_node) {
 			if (node == child_node->right_neigh) {
 				child_node->right_neigh = node->right_neigh;
