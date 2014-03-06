@@ -1,12 +1,12 @@
-#define BOOST_TEST_MODULE ai
-#include <boost/test/unit_test.hpp>
 #include <iostream>
 #include "ai.h"
 #include "roll.h"
+  
 
+			
 using namespace std;
 
-struct XOGame{
+struct OX{
 	
 	using PlayerId = char;
 	
@@ -17,7 +17,7 @@ struct XOGame{
 	char player;
 	int moves;
 	
-	XOGame() {
+	OX() {
 		for (auto &b: bs) {
 			b = '.';
 		}
@@ -67,18 +67,28 @@ struct XOGame{
 	
 };
 
-struct XOGameWrapper {
+struct OXWrap {
 	
-	using PlayerId = typename XOGame::PlayerId;
+	using PlayerId = typename OX::PlayerId;
 	
-	XOGame &game;
+	OX &game;
 	
-	XOGameWrapper(XOGame &g): game(g) {
-		
-	}
+	OXWrap(OX &g): game(g) {}
 	
 	struct Action {
-		virtual void exec(XOGame &game) = 0;
+		virtual void exec(OX &game) = 0;
+		virtual bool eq(Action & a) = 0;
+		
+		bool operator==(Action &a) {
+			try {
+				return this->eq(a);
+			}
+			catch (std::bad_cast) {
+				return false;
+			}
+		}
+		
+		virtual ostream& dump(ostream& out) = 0;
 	};
 	
 	struct Move: Action {
@@ -87,16 +97,37 @@ struct XOGameWrapper {
 			i = i_;
 		}
 		
-		void exec(XOGame &game) {
+		void exec(OX &game) {
 			game.move(i);
 		}
+		
+		bool eq(Action & a)  {
+			Move& b = dynamic_cast<Move&>(a);
+			return i == b.i;
+		}
+		
+		virtual ostream& dump(ostream& out) {
+			out << "Move(" << i << ")";
+		}
+		
 	};
 	
 	struct EndTurn: Action {
-		void exec(XOGame &game) {
+		void exec(OX &game) {
 			game.end_turn();
+		}		
+
+		bool eq(Action & a)  {
+			EndTurn& b = dynamic_cast<EndTurn&>(a);
+			return true;
 		}
+		
+		virtual ostream& dump(ostream& out) {
+			out << "EndTurn()";
+		}
+		
 	};	
+	
 	
 	void exec(Action *a) {
 		if (a == nullptr) {
@@ -107,7 +138,7 @@ struct XOGameWrapper {
 		}
 	}
 	
-	float get_result(XOGame::PlayerId p) {
+	float get_result(OX::PlayerId p) {
 		return game.get_result(p);		
 	}
 	
@@ -124,42 +155,44 @@ struct XOGameWrapper {
 
 
 
+	
 
-ostream& operator<<(ostream &out, XOGame const& g) {
+ostream& operator<<(ostream &out, OXWrap::Action &a) {
+	return a.dump(out);	
+}
+
+
+ostream& operator<<(ostream &out, OX const& g) {
 	out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
 	    << g.bs[3] << g.bs[4] << g.bs[5] << "\n"
 	    << g.bs[6] << g.bs[7] << g.bs[8] << "\n";
 }
 
 
-BOOST_AUTO_TEST_CASE( test_base )
+int main()
 {
 	
-	XOGame game;
+	OX game;	
+	OXWrap gw(game);
 	
-	XOGameWrapper gw(game);
-	col::MCTS<XOGameWrapper> mt(gw, 'O');
+	col::MCTS<OXWrap> mt(gw, 'O');
 	
 	mt.think();
+	pprint(mt.root);
 	
+	mt.think();
+	pprint(mt.root);
 	
-	/*
-    // seven ways to detect and report the same error:
-    BOOST_CHECK( add( 2,2 ) == 4 );        // #1 continues on error
-
-    BOOST_REQUIRE( add( 2,2 ) == 4 );      // #2 throws on error
-
-    if( add( 2,2 ) != 4 )
-      BOOST_ERROR( "Ouch..." );            // #3 continues on error
-
-    if( add( 2,2 ) != 4 )
-      BOOST_FAIL( "Ouch..." );             // #4 throws on error
-
-    if( add( 2,2 ) != 4 ) throw "Ouch..."; // #5 throws on error
-
-    BOOST_CHECK_MESSAGE( add( 2,2 ) == 4,  // #6 continues on error
-                         "add(..) result: " << add( 2,2 ) );
-
-    BOOST_CHECK_EQUAL( add( 2,2 ), 4 );	  // #7 continues on error
-	*/
+	mt.think();
+	pprint(mt.root);
+	
+	mt.think();
+	pprint(mt.root);
+	
+	mt.think();
+	pprint(mt.root);
+	
+	return 0;
 }
+
+

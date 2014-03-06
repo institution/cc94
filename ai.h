@@ -8,44 +8,100 @@
 
 
 namespace col {
-	template<typename Action>
+	
+	template<typename T>
 	struct Node {
-		Action *action;
-		float win, total;
 		
+		T *action;
+		float win, total;
+				
 		Node *parent;
 		Node *left_child;
 		Node *right_neigh;
-					
-		Node(Action *action_, float win_=0, float total_=0) {
-			action = action_;
-			win = win_; 
-			total = total_;
-			
+							
+		Node(T *a): action(a), win(0), total(0) {
 			left_child = nullptr;
 			right_neigh = nullptr;
 			parent = nullptr;
 		}
 		
 		~Node() {
-			if (action)
+			if (action) {
 				delete action;
+				action = nullptr;
+			}
 			
-			if (left_child)
+			if (left_child)	{
 				delete left_child;
-			
-			if (right_neigh)
+				left_child = nullptr;
+			}
+		
+			if (right_neigh) {
 				delete right_neigh;
+				right_neigh = nullptr;
+			}
 		}
 	};
 	
+	//using NodeType = Node<Data<>>
 	
-	template<typename Action>
-	ostream& operator<<(ostream &out, Node<Action> const& n) {
-		out<<"Node("<<(*n.action)<<","<<n.win<<","<<n.total<<")";
+	template<typename T>
+	Node<T>* insert_child(Node<T> *parent, Node<T> *child) {		
+		child->right_neigh = parent->left_child;
+		child->parent = parent;		
+		parent->left_child = child;
+		return child;
+	}
+	
+	template<typename T>
+	Node<T>* insert_child(Node<T> *parent, T *a) {		
+		return insert_child(parent, new Node<T>(a));
+	}
+	
+	
+	template<typename T>
+	void extract(Node<T> *node) {
+		
+		Node<T> *parent = node->parent;
+		assert(parent != nullptr);
+		Node<T> *child_node = parent->left_child;
+		while (child_node) {
+			if (node == child_node->right_neigh) {
+				child_node->right_neigh = node->right_neigh;
+				node->parent = nullptr;
+				node->right_neigh = nullptr;
+				return;
+			}					
+			child_node = child_node->right_neigh;
+		}
+		
+		assert(0); // impossible to get here
+	}
+	
+	
+	
+	template<typename T>
+	ostream& operator<<(ostream &out, Node<T> const& n) {
+		if (n.action) {
+			out<<"Node("<<(*n.action)<<","<<n.win<<","<<n.total<<")";
+		}
+		else {
+			out<<"Node(nullptr,"<<n.win<<","<<n.total<<")";
+		}
 		//out << (format(
 		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
 		//) % t.id % t.type->id % t.x % t.y % t.player->id);
+		return out;
+	}
+	
+	template<typename T>
+	void pprint(Node<T> *n) {
+		cout << (*n) << endl;
+		Node<T> *node = n->left_child;
+		while (node) {
+			cout << "  " << (*node) << endl;
+			node = node->right_neigh;
+		}		
 	}
 	
 	
@@ -55,12 +111,13 @@ namespace col {
 		using NodeType = Node<typename Game::Action>;
 		using Action = typename Game::Action;
 		
+		
 		PlayerId player_id;
 		NodeType *root;
 		Game const& o_env;
 		
 		MCTS(Game const& env, PlayerId const& pid): o_env(env), player_id(pid) {
-			root = new Node<typename Game::Action>(nullptr);			
+			root = new NodeType(nullptr);
 		}
 		
 		~MCTS() {
@@ -73,19 +130,16 @@ namespace col {
 			auto const& pid = player_id;
 			int const NUM_OF_PLAYERS = 2;
 			
-			NodeType *node = root;
-			
 			Game env(o_env);  // copy curr state
 			
 			// select
+			NodeType *node = root;
+			
 			while (node->left_child) {
-								
-				float w = node->win;
-				float n = node->total;
-				float ln_t = std::log(node->parent->total);
 				
 				NodeType *child_node = node->left_child;
 				
+				float ln_t = std::log(node->total);
 				ra = env.create_random_action();
 				
 				float best_value = 0;
@@ -97,6 +151,9 @@ namespace col {
 						delete ra;
 						ra == nullptr;
 					}							
+				
+					float w = child_node->win;
+					float n = child_node->total;
 					
 					// find best node
 					float value = w / n + sqrt(2 * ln_t / n);
@@ -112,7 +169,7 @@ namespace col {
 				// select new action or best_node
 				if (ra) {
 					// add and select node with new action
-					node = create_child(node, ra);
+					node = insert_child(node, ra);
 				}
 				else {
 					// select best node
@@ -122,15 +179,15 @@ namespace col {
 			}
 			
 			// expand
-			while (ra = env.create_random_action(env)) {
+			while (ra = env.create_random_action()) {
 				env.exec(ra);
-				node = create_child(node, ra);				
+				node = insert_child(node, ra);				
 			}
 			
 			
 			// play (5 random turns ahead)
 			for (int i=0; i<5*NUM_OF_PLAYERS; ++i) {
-				while (ra = env.create_random_action(env)) {
+				while (ra = env.create_random_action()) {
 					env.exec(ra);
 				}				
 			}
@@ -194,38 +251,7 @@ namespace col {
 	}
 		
 	
-	template<typename Action>
-	void destroy_node(Node<Action> *node) {
-		delete node;
-	}
-	
-	template<typename Action>
-	void create_child(Node<Action> *parent, Node<Action> *child) {
-		
-		Node<Action> *tmp = parent->left_child;
-		parent->left_child = child;
-		child->right_neigh = tmp;		
-		child->parent = parent;
-	}
-	
-	template<typename Action>
-	void extract(Node<Action> *node) {
-		
-		Node<Action> *parent = node->parent;
-		assert(parent != nullptr);
-		Node<Action> *child_node = parent->left_child;
-		while (child_node) {
-			if (node == child_node->right_neigh) {
-				child_node->right_neigh = node->right_neigh;
-				node->parent = nullptr;
-				node->right_neigh = nullptr;
-				return;
-			}					
-			child_node = child_node->right_neigh;
-		}
-		
-		assert(0); // impossible to get here
-	}
+
 			
 	
 		
