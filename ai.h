@@ -2,35 +2,41 @@
 #define AI_H
 
 #include <cmath>
+#include <memory>
+#include <stdexcept>
+#include <iostream>
 #include "aga2.hpp"
 #include "col.h"
 #include "env.h"
 
 
-namespace col {
+namespace tree {
+	
+	using std::move;
+	using std::unique_ptr;
+	using std::runtime_error;
+	using std::ostream;
+	using std::cout;
+	using std::endl;
 	
 	template<typename T>
 	struct Node {
 		
-		T *action;
+		
+		unique_ptr<T> action;
 		float win, total;
 				
 		Node *parent;
 		Node *left_child;
 		Node *right_neigh;
 							
-		Node(T *a): action(a), win(0), total(0) {
+		Node(unique_ptr<T> &a): action(move(a)), win(0), total(0) {
 			left_child = nullptr;
 			right_neigh = nullptr;
 			parent = nullptr;
 		}
 		
 		~Node() {
-			if (action) {
-				delete action;
-				action = nullptr;
-			}
-			
 			if (left_child)	{
 				delete left_child;
 				left_child = nullptr;
@@ -41,6 +47,7 @@ namespace col {
 				right_neigh = nullptr;
 			}
 		}
+		
 	};
 	
 	//using NodeType = Node<Data<>>
@@ -54,7 +61,7 @@ namespace col {
 	}
 	
 	template<typename T>
-	Node<T>* insert_child(Node<T> *parent, T *a) {		
+	Node<T>* insert_child(Node<T> *parent, unique_ptr<T> &a) {		
 		return insert_child(parent, new Node<T>(a));
 	}
 	
@@ -95,16 +102,162 @@ namespace col {
 	}
 	
 	template<typename T>
-	void pprint(Node<T> *n) {
-		cout << (*n) << endl;
-		Node<T> *node = n->left_child;
-		while (node) {
-			cout << "  " << (*node) << endl;
-			node = node->right_neigh;
-		}		
+	void dump(Node<T> *n, int maxdeep, int deep=0) {
+		for (int i=0; i<deep; ++i) cout << "  ";
+		cout << *n << endl;
+		
+		if (deep < maxdeep) {
+			Node<T> *node = n->left_child;
+			while (node) {
+				dump(node, maxdeep, deep+1);
+				node = node->right_neigh;
+			}
+		}
 	}
 	
+} // tree
+
+
+namespace mcts {
+	using std::cout;
+	using std::endl;
 	
+	// 1.0 - normal
+	const float EXPLORE_FACTOR = 1.0;   
+	
+	template <typename Node, typename Game>
+	Node* select(Node *node, Game &game, int verbose=0) {
+
+		using std::log;
+		
+		auto ra = game.create_random_action();
+		
+		if (!ra) {
+			// terminal node
+			return node;
+		}
+		
+		
+		// try add new action
+		//cout << "try add: " << *ra << endl;
+		Node *iter = node->left_child;
+		while (iter) {
+			if (*ra == *iter->action) {
+				ra = nullptr;
+				break;
+			}
+			iter = iter->right_neigh;
+		}
+
+		if (ra) {	
+			node = insert_child(node, ra);
+			
+			if (verbose > 1)
+				cout << "select/new_move: " << *node->action << endl;
+			
+			game.exec(node->action);
+			return node;
+		}
+	
+
+		// or find most interesting node
+		// cout << "find exiting move " << endl;
+		float best_value = -1;
+		Node *best_node = nullptr;
+		float ln_t = log(node->total);
+		
+		iter = node->left_child;
+		while (iter) {
+			float w = iter->win;
+			float n = iter->total;
+			float value = w / n + EXPLORE_FACTOR * sqrt(2 * ln_t / n);
+			if (value > best_value) {
+				best_value = value;
+				best_node = iter;				
+			}
+			iter = iter->right_neigh;
+		}
+		
+		if (best_node) {
+			node = best_node;
+			
+			if (verbose > 1)
+				cout << "select/existing_move: " << *node->action << endl;
+			
+			game.exec(node->action);
+			return node;
+		}
+		
+		assert(0);
+		//throw runtime_error("impossible to be here");		
+	}
+
+	
+	template <typename Node, typename Game>
+	void step(Node *root, Game &game, int verbose=0) {
+		Node *node = root;
+		
+		if (verbose) 
+			cout << "step/root: " << *node->action << endl;
+		
+		
+		// select until leaf
+		while (node->left_child) {
+			// select already visited or not yet tried node (if any)
+			node = select(node, game, verbose);
+			if (verbose)
+				cout << "step/select:  " << *node->action << endl;
+		}
+		
+		// expand this node
+		auto ra = game.create_random_action();
+		if (ra) {
+			game.exec(ra);
+			node = insert_child(node, ra);
+			if (verbose)
+				cout << "step/expand: " << *node->action << endl;			
+		}
+		else {
+			// terminal node - so what?
+			// cout << "[EXPAND] " << "(terminal node - no expand)" << endl;
+		}
+		
+		// play
+		// cout << "mcts::step - play" << endl;
+		while (ra = game.create_random_action()) {
+			game.exec(ra);
+		}
+		
+		
+		// backprop
+		//cout << "mcts::step - backprop" << endl;
+		while (node) {
+			if (node->action)
+				node->win += game.get_result(node->action->player_id);
+			node->total += 1.0f;
+			node = node->parent;
+		}
+		
+		if (verbose)
+			cout << endl;
+		
+	}
+	
+		
+}
+
+#endif
+
+
+
+
+
+
+
+
+
+/*
+namespace col {
 	template<typename Game>
 	struct MCTS {
 		using PlayerId = typename Game::PlayerId;
@@ -125,7 +278,7 @@ namespace col {
 				delete root;
 		}
 		
-		void think() {
+		void think(Node *root, Game &game) {
 			Action *ra = nullptr;
 			auto const& pid = player_id;
 			int const NUM_OF_PLAYERS = 2;
@@ -149,7 +302,7 @@ namespace col {
 					// check action already generated
 					if (ra && ((*ra) == *(child_node->action))) {
 						delete ra;
-						ra == nullptr;
+						ra = nullptr;
 					}							
 				
 					float w = child_node->win;
@@ -250,29 +403,8 @@ namespace col {
 		return pts.at(pid)/total;		
 	}
 		
-	
-
-			
-	
-		
-}
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+} // ns col
+*/
 
 
 

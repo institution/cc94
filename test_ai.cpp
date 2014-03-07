@@ -1,12 +1,25 @@
 #include <iostream>
+#include <map>
+#include <boost/format.hpp>
+
 #include "ai.h"
 #include "roll.h"
   
 
 			
 using namespace std;
+using namespace boost;
+
+struct OX;
+
+void dump(OX const& ox);
+
 
 struct OX{
+	
+	struct InvalidMove {
+		
+	};
 	
 	using PlayerId = char;
 	
@@ -15,19 +28,34 @@ struct OX{
 	// 678
 	char bs[9];
 	char player;
-	int moves;
+	int moves, free;
+	map<char,float> score;
+	bool end;
+	int verbose;
 	
-	OX() {
+	OX(int verbosee = 0) {
 		for (auto &b: bs) {
 			b = '.';
 		}
 		player = 'O';
 		moves = 1;
+		free = 9;
+		
+		score['O'] = 0;
+		score['X'] = 0;
+		
+		end = false;
+		verbose = verbosee;
 	}
 	
-	void end_turn() {
-		assert(moves = 0);
+	void end_turn(PlayerId pid) {
+		assert(pid == player);
+		assert(moves == 0);
+		assert(!end);
 		
+		if (verbose)
+			cout << format("OX::end_turn(%||)\n") % pid;
+
 		if (player == 'O') {
 			player = 'X';
 		}
@@ -36,46 +64,118 @@ struct OX{
 		}
 		moves = 1;
 	}
+	
+	char get(int x, int y) {
+		return bs[x + y*3];
+	}
+	
+	bool bound(int x, int y) {
+		return 0 <= x and x < 3 and 0 <= y and y < 3;
+	}
+	
+	void move(PlayerId pid, int i) {
+		int x = i%3;
+		int y = i/3;
 		
-	void move(int i) {
+		if (verbose)
+			cout << format("OX::move(%|| to %||,%||)\n") % pid % x % y;
+		
+		assert(pid == player);
 		assert(moves > 0);
 		assert(0 <= i);
 		assert(i < 9);
+		assert(bs[i] == '.');
+		assert(!end);
 		
 		bs[i] = player;
-		--moves;
+		--moves;	
+		--free;
+		
+		
+		
+		
+		auto r = check_pos(x, y);
+		if (r) {
+			score[player] = 1;
+			end = true;
+			if (verbose) {
+				dump(*this);
+				cout << format("OX And the winner is: '%||'\n") % player;
+			}
+		
+		}
+		else		
+		if (free == 0) {
+			score['O'] = 0.5;
+			score['X'] = 0.5;
+			end = true;
+			
+			if (verbose) {
+				dump(*this);
+				cout << format("OX And the winner is: TIE\n");
+			}
+		}
+		
+		
+			
+		
 	}
 	
-	float get_result(PlayerId p) {
-		
-		// -
-		if (bs[0] == bs[1] == bs[2] == p) return 1;
-		if (bs[3] == bs[4] == bs[5] == p) return 1;
-		if (bs[6] == bs[7] == bs[8] == p) return 1;
-		// |
-		if (bs[0] == bs[3] == bs[6] == p) return 1;
-		if (bs[1] == bs[4] == bs[7] == p) return 1;
-		if (bs[2] == bs[5] == bs[8] == p) return 1;
-		// X
-		if (bs[0] == bs[4] == bs[8] == p) return 1;
-		if (bs[2] == bs[4] == bs[6] == p) return 1;
-		
+	bool check_pos(int x, int y) {
+		if (1 + check_dir(x,y,0,-1) + check_dir(x,y,0,1) >= 3) return 1;
+		if (1 + check_dir(x,y,-1,0) + check_dir(x,y,1,0) >= 3) return 1;
+		if (1 + check_dir(x,y,-1,-1) + check_dir(x,y,1,1) >= 3) return 1;
+		if (1 + check_dir(x,y,1,-1) + check_dir(x,y,-1,1) >= 3) return 1;
 		return 0;
+	}
+	
+	int check_dir(int x, int y, int dx, int dy) {
+		int i = x + dx;
+		int j = y + dy;
+		int l = 0;
+		
+		while (bound(i,j) and (get(i, j) == player)) {
+			++l;
+			
+			i += dx;
+			j += dy;
+		}
+		return l;
+	}
+	
+	
+	float get_result(PlayerId p) {
+		if (verbose > 1) 
+			cout << format("OS::get_result('%||') -> %|| \n") % p % score.at(p);
+		
+		return score.at(p);
 	}
 	
 	
 	
 };
 
-struct OXWrap {
+struct OXSim {
 	
 	using PlayerId = typename OX::PlayerId;
 	
-	OX &game;
+	OX game;
+	OX const &base;
 	
-	OXWrap(OX &g): game(g) {}
+	OX::PlayerId pid;
+	
+	OXSim(OX const &g, OX::PlayerId const& p): game(g), base(g), pid(p) {}
+	
+	void reset() {
+		game = base;
+	}
 	
 	struct Action {
+		using PlayerId = OX::PlayerId;
+		PlayerId player_id;
+		
+		Action(PlayerId pid): player_id(pid) {}
+		
 		virtual void exec(OX &game) = 0;
 		virtual bool eq(Action & a) = 0;
 		
@@ -93,12 +193,13 @@ struct OXWrap {
 	
 	struct Move: Action {
 		int i;
-		Move(int i_) {
-			i = i_;
+		
+		Move(PlayerId pid, int ii): Action(pid) {
+			i = ii;
 		}
 		
 		void exec(OX &game) {
-			game.move(i);
+			game.move(player_id, i);
 		}
 		
 		bool eq(Action & a)  {
@@ -107,14 +208,16 @@ struct OXWrap {
 		}
 		
 		virtual ostream& dump(ostream& out) {
-			out << "Move(" << i << ")";
+			out << "Move('" << player_id << "'," << i << ")";
 		}
 		
 	};
 	
 	struct EndTurn: Action {
+		EndTurn(PlayerId pid): Action(pid) {}
+		
 		void exec(OX &game) {
-			game.end_turn();
+			game.end_turn(player_id);
 		}		
 
 		bool eq(Action & a)  {
@@ -123,31 +226,44 @@ struct OXWrap {
 		}
 		
 		virtual ostream& dump(ostream& out) {
-			out << "EndTurn()";
+			out << "EndTurn('" << player_id << "')";
 		}
 		
 	};	
 	
 	
-	void exec(Action *a) {
-		if (a == nullptr) {
-			EndTurn().exec(this->game);
-		}
-		else {
-			a->exec(this->game);
-		}
+	void exec(unique_ptr<Action> &a) {
+		a->exec(this->game);		
 	}
 	
-	float get_result(OX::PlayerId p) {
-		return game.get_result(p);		
+	float get_result(PlayerId const& pid) {
+		return game.get_result(pid);
 	}
 	
-	Action *create_random_action() {
+	unique_ptr<Action> create_random_action() {
+		
 		if (game.moves) {
-			return new Move(roll::roll(0,9));
+			
+			int i = roll::roll(0, game.free);
+						
+			int j = 0;
+			while (j < 9) {
+				if (game.bs[j] == '.') {
+					//cout << "i = "<< i << endl;
+					if (i == 0) break;
+					--i;
+				}
+				++j;
+			}
+			
+			return unique_ptr<Action>(new Move(game.player, j));
+		}
+		else
+		if (!game.end) {
+			return unique_ptr<Action>(new EndTurn(game.player)); // endturn
 		}
 		else {
-			return nullptr; // endturn
+			return unique_ptr<Action>(nullptr); 
 		}
 	}
 	
@@ -157,10 +273,13 @@ struct OXWrap {
 
 	
 
-ostream& operator<<(ostream &out, OXWrap::Action &a) {
+ostream& operator<<(ostream &out, OXSim::Action &a) {
 	return a.dump(out);	
 }
 
+void dump(OXSim::Action &a) {
+	cout << a << endl;
+}
 
 ostream& operator<<(ostream &out, OX const& g) {
 	out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
@@ -168,29 +287,56 @@ ostream& operator<<(ostream &out, OX const& g) {
 	    << g.bs[6] << g.bs[7] << g.bs[8] << "\n";
 }
 
+void dump(OX const& ox) {
+	cout << ox;
+}
 
 int main()
 {
+	/*{
+		OX t;
+		t.move('O', 1);
+		dump(t);
+		t.end_turn('O');
+
+		t.move('X', 2);
+		dump(t);
+		t.end_turn('X');
+	}*/
 	
-	OX game;	
-	OXWrap gw(game);
+	OX game(0);	
+		
+	using NodeType = tree::Node<OXSim::Action>;
 	
-	col::MCTS<OXWrap> mt(gw, 'O');
+	unique_ptr<OXSim::Action> tmp(new OXSim::EndTurn('X'));
 	
-	mt.think();
-	pprint(mt.root);
+	NodeType root_obj(tmp);
+	NodeType *root = &root_obj;
+		
+	for (int i=0; i<50; ++i) {
+		
+		cout << "dumping tree before step: " << endl;
+		dump(root, 8);
+		cout << endl;
+		
+		OXSim gw(game, 'O');
+		
+		//cout << "after reset:" << endl;
+		//dump(gw.game);
+		
+		mcts::step(root, gw, 1);
+		
+		//cout << "game state after play: " << endl;
+		//dump(gw.game);
+		//cout << endl;
+		
+		
+	}
 	
-	mt.think();
-	pprint(mt.root);
+	cout << "dumping tree: " << endl;
+	dump(root, 20);
 	
-	mt.think();
-	pprint(mt.root);
-	
-	mt.think();
-	pprint(mt.root);
-	
-	mt.think();
-	pprint(mt.root);
+	// TODO: select preferred move
 	
 	return 0;
 }
