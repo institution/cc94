@@ -4,141 +4,15 @@
 
 #include "ai.h"
 #include "roll.h"
-  
+#include "ox.h"
 
 			
 using namespace std;
 using namespace boost;
-
-struct OX;
-
-void dump(OX const& ox);
+using namespace ox;
 
 
-struct OX{
-	
-	struct InvalidMove {
-		
-	};
-	
-	using PlayerId = char;
-	
-	// 012
-	// 345
-	// 678
-	char bs[9];
-	char player;
-	int free;
-	map<char,float> score;
-	bool end;
-	int verbose;
-	
-	OX(int verbosee = 0) {
-		for (auto &b: bs) {
-			b = '.';
-		}
-		player = 'O';
-		free = 9;
-		
-		score['O'] = 0;
-		score['X'] = 0;
-		
-		end = false;
-		verbose = verbosee;
-	}
-	
-	
-	char get(int x, int y) {
-		return bs[x + y*3];
-	}
-	
-	bool bound(int x, int y) {
-		return 0 <= x and x < 3 and 0 <= y and y < 3;
-	}
-	
-	void move(PlayerId pid, int i) {
-		int x = i%3;
-		int y = i/3;
-		
-		if (verbose)
-			cout << format("OX::move(%|| to %||,%||)\n") % pid % x % y;
-		
-		assert(pid == player);
-		assert(0 <= i);
-		assert(i < 9);
-		assert(bs[i] == '.');
-		assert(!end);
-		
-		bs[i] = player;
-		--free;
-		
-		if (player == 'O') {
-			player = 'X';
-		}
-		else {
-			player = 'O';
-		}
-		
-		
-		auto r = check_pos(x, y);
-		if (r) {
-			score[player] = 1;
-			end = true;
-			if (verbose) {
-				dump(*this);
-				cout << format("OX And the winner is: '%||'\n") % player;
-			}
-		
-		}
-		else		
-		if (free == 0) {
-			score['O'] = 0.5;
-			score['X'] = 0.5;
-			end = true;
-			
-			if (verbose) {
-				dump(*this);
-				cout << format("OX And the winner is: TIE\n");
-			}
-		}
-		
-		
-			
-		
-	}
-	
-	bool check_pos(int x, int y) {
-		if (1 + check_dir(x,y,0,-1) + check_dir(x,y,0,1) >= 3) return 1;
-		if (1 + check_dir(x,y,-1,0) + check_dir(x,y,1,0) >= 3) return 1;
-		if (1 + check_dir(x,y,-1,-1) + check_dir(x,y,1,1) >= 3) return 1;
-		if (1 + check_dir(x,y,1,-1) + check_dir(x,y,-1,1) >= 3) return 1;
-		return 0;
-	}
-	
-	int check_dir(int x, int y, int dx, int dy) {
-		int i = x + dx;
-		int j = y + dy;
-		int l = 0;
-		
-		while (bound(i,j) and (get(i, j) == player)) {
-			++l;
-			
-			i += dx;
-			j += dy;
-		}
-		return l;
-	}
-	
-	
-	float get_result(PlayerId p) {
-		if (verbose > 1) 
-			cout << format("OS::get_result('%||') -> %|| \n") % p % score.at(p);
-		
-		return score.at(p);
-	}
-	
-	
-};
+
 
 struct OXSim {
 	
@@ -275,15 +149,6 @@ void dump(OXSim::Action &a) {
 	cout << a << endl;
 }
 
-ostream& operator<<(ostream &out, OX const& g) {
-	out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
-	    << g.bs[3] << g.bs[4] << g.bs[5] << "   player: '" << g.player << "'\n"
-	    << g.bs[6] << g.bs[7] << g.bs[8] << "\n";
-}
-
-void dump(OX const& ox) {
-	cout << ox;
-}
 
 
 
@@ -313,7 +178,7 @@ int main()
 	
 
 	while (1) {
-		for (int i=0; i<1000; ++i) {
+		for (int i=0; i<90*2; ++i) {
 
 			//cout << "dumping tree before step: " << endl;
 			//dump(root, 8);
