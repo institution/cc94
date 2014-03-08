@@ -22,7 +22,6 @@ namespace tree {
 	template<typename T>
 	struct Node {
 		
-		
 		unique_ptr<T> action;
 		float win, total;
 				
@@ -65,24 +64,42 @@ namespace tree {
 		return insert_child(parent, new Node<T>(a));
 	}
 	
+	template<typename T>
+	void destroy(Node<T> *&node) {
+		delete node;
+		node = nullptr;
+	}
+	
 	
 	template<typename T>
 	void extract(Node<T> *node) {
+		/* Extract subtree with root at node */
 		
 		Node<T> *parent = node->parent;
-		assert(parent != nullptr);
-		Node<T> *child_node = parent->left_child;
-		while (child_node) {
-			if (node == child_node->right_neigh) {
-				child_node->right_neigh = node->right_neigh;
-				node->parent = nullptr;
-				node->right_neigh = nullptr;
-				return;
-			}					
-			child_node = child_node->right_neigh;
+		assert(parent != nullptr);  // no parent - node already extracted
+		
+		Node<T> *iter = parent->left_child;
+		if (node == iter) {
+			// rewire parent
+			parent->left_child = node->right_neigh;			
+		}
+		else {
+			// find and rewire left neigh
+			while (iter) {
+				if (node == iter->right_neigh) {
+					// rewire left neigh
+					iter->right_neigh = node->right_neigh;
+					break;
+				}					
+				iter = iter->right_neigh;
+			}		
+			assert(iter);  // node not found is its parent childs - impossible
 		}
 		
-		assert(0); // impossible to get here
+		// clear node
+		node->parent = nullptr;
+		node->right_neigh = nullptr;
+		return;
 	}
 	
 	
@@ -121,6 +138,8 @@ namespace tree {
 namespace mcts {
 	using std::cout;
 	using std::endl;
+	using std::unique_ptr;
+	using std::move;
 	
 	// 1.0 - normal
 	const float EXPLORE_FACTOR = 1.0;   
@@ -243,7 +262,51 @@ namespace mcts {
 		
 	}
 	
+	template <typename T>
+	void apply(tree::Node<T> *&root, T &action) {
 		
+		tree::Node<T>* iter = root->left_child;
+		while (iter) {
+			if (*iter->action == action) {
+				break;
+			}
+			iter = iter->right_neigh;
+		}
+		
+		tree::Node<T> *node = nullptr;
+		if (iter) {
+			node = iter;
+		}
+		else {
+			unique_ptr<T> tmp(action.new_copy());
+			node = insert_child(root, tmp);
+		}
+	
+		tree::extract(node);
+		tree::destroy(root);
+		root = node;
+	}
+	
+	template <typename Node>
+	Node* preferred_node(Node *root) {
+		float best_total = -1;
+		Node *best_node = nullptr;
+		
+		Node *iter = root->left_child;
+		while (iter) {
+			auto total = iter->total;
+			if (best_total < total) {
+				best_total = total;
+				best_node = iter;				
+			}
+			iter = iter->right_neigh;
+		}
+		
+		return best_node;
+	}
+	
+	
+
 }
 
 #endif

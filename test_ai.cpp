@@ -160,11 +160,11 @@ struct OXSim {
 	using PlayerId = typename OX::PlayerId;
 	
 	OX game;
-	OX const &base;
+	OX &base;
 	
 	OX::PlayerId pid;
 	
-	OXSim(OX const &g, OX::PlayerId const& p): game(g), base(g), pid(p) {}
+	OXSim(OX &g, OX::PlayerId const& p): game(g), base(g), pid(p) {}
 	
 	void reset() {
 		game = base;
@@ -189,6 +189,8 @@ struct OXSim {
 		}
 		
 		virtual ostream& dump(ostream& out) = 0;
+		
+		virtual Action* new_copy() = 0;
 	};
 	
 	struct Move: Action {
@@ -207,9 +209,14 @@ struct OXSim {
 			return i == b.i;
 		}
 		
+		Action* new_copy() {
+			return new Move(*this);
+		}
+		
 		virtual ostream& dump(ostream& out) {
 			out << "Move('" << player_id << "'," << i << ")";
 		}
+		
 		
 	};
 	
@@ -225,6 +232,10 @@ struct OXSim {
 			return true;
 		}
 		
+		Action* new_copy() {
+			return new EndTurn(*this);
+		}
+		
 		virtual ostream& dump(ostream& out) {
 			out << "EndTurn('" << player_id << "')";
 		}
@@ -234,6 +245,10 @@ struct OXSim {
 	
 	void exec(unique_ptr<Action> &a) {
 		a->exec(this->game);		
+	}
+	
+	void exec_real(Action &a) {
+		a.exec(this->base);
 	}
 	
 	float get_result(PlayerId const& pid) {
@@ -283,13 +298,15 @@ void dump(OXSim::Action &a) {
 
 ostream& operator<<(ostream &out, OX const& g) {
 	out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
-	    << g.bs[3] << g.bs[4] << g.bs[5] << "\n"
+	    << g.bs[3] << g.bs[4] << g.bs[5] << "   player: '" << g.player << "'\n"
 	    << g.bs[6] << g.bs[7] << g.bs[8] << "\n";
 }
 
 void dump(OX const& ox) {
 	cout << ox;
 }
+
+
 
 int main()
 {
@@ -304,39 +321,72 @@ int main()
 		t.end_turn('X');
 	}*/
 	
+	roll::seed();
+	
 	OX game(0);	
 		
 	using NodeType = tree::Node<OXSim::Action>;
 	
 	unique_ptr<OXSim::Action> tmp(new OXSim::EndTurn('X'));
 	
-	NodeType root_obj(tmp);
-	NodeType *root = &root_obj;
+	
+	NodeType *root = new NodeType(tmp);
+	
+
+	while (1) {
+		for (int i=0; i<50; ++i) {
+
+			//cout << "dumping tree before step: " << endl;
+			//dump(root, 8);
+			//cout << endl;
+
+			OXSim gw(game, 'O');
+
+			//cout << "after reset:" << endl;
+			//dump(gw.game);
+
+			//cout << "step" << endl;
+			mcts::step(root, gw, 1);
+
+			//cout << "game state after play: " << endl;
+			//dump(gw.game);
+			//cout << endl;
+
+
+		}
+
+		cout << "dumping tree: " << endl;
+		dump(root, 20);
+
+		// select preferred move
+		NodeType *node = mcts::preferred_node(root);
+		cout << "preferred move: " << *node->action << endl;
 		
-	for (int i=0; i<50; ++i) {
+		OXSim::Action &action = *node->action;
 		
-		cout << "dumping tree before step: " << endl;
-		dump(root, 8);
-		cout << endl;
 		
-		OXSim gw(game, 'O');
+		OXSim tmp(game, 'O');
+		tmp.exec_real(action);
 		
-		//cout << "after reset:" << endl;
-		//dump(gw.game);
 		
-		mcts::step(root, gw, 1);
+		cout << "CURRENT GAME STATE: " << endl;
+		dump(game);
 		
-		//cout << "game state after play: " << endl;
-		//dump(gw.game);
-		//cout << endl;
 		
+		mcts::apply(root, action);
+		
+		
+		
+		//cout << "dumping tree after extract: " << endl;
+		//dump(root, 20);
+
+		cout << "enter any letter: " << endl;
+		char x;
+		cin >> x;
 		
 	}
 	
-	cout << "dumping tree: " << endl;
-	dump(root, 20);
-	
-	// TODO: select preferred move
+	delete root;
 	
 	return 0;
 }
