@@ -7,10 +7,10 @@
 #include <iostream>
 #include "aga2.hpp"
 #include "col.h"
-#include "env.h"
+#include "env.h" 
 
 
-namespace tree {
+namespace tree {  
 	
 	using std::move;
 	using std::unique_ptr;
@@ -24,12 +24,14 @@ namespace tree {
 		
 		unique_ptr<T> action;
 		float win, total;
+		bool terminal;
 				
 		Node *parent;
 		Node *left_child;
 		Node *right_neigh;
 							
 		Node(unique_ptr<T> &a): action(move(a)), win(0), total(0) {
+			terminal = 0;
 			left_child = nullptr;
 			right_neigh = nullptr;
 			parent = nullptr;
@@ -107,10 +109,10 @@ namespace tree {
 	template<typename T>
 	ostream& operator<<(ostream &out, Node<T> const& n) {
 		if (n.action) {
-			out<<"Node("<<(*n.action)<<","<<n.win<<","<<n.total<<")";
+			out<<"Node("<<(*n.action)<<", "<<n.win<<", "<<n.total<<")" <<(n.terminal?"T":"");					
 		}
 		else {
-			out<<"Node(nullptr,"<<n.win<<","<<n.total<<")";
+			out<<"Node(nullptr, "<<n.win<<", "<<n.total<<")";
 		}
 		//out << (format(
 		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
@@ -239,6 +241,7 @@ namespace mcts {
 		else {
 			// terminal node - so what?
 			// cout << "[EXPAND] " << "(terminal node - no expand)" << endl;
+			node->terminal = 1;
 		}
 		
 		// play
@@ -310,6 +313,11 @@ namespace mcts {
 }
 
 #endif
+
+
+
+
+
 
 
 

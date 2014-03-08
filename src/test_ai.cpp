@@ -28,7 +28,7 @@ struct OX{
 	// 678
 	char bs[9];
 	char player;
-	int moves, free;
+	int free;
 	map<char,float> score;
 	bool end;
 	int verbose;
@@ -38,7 +38,6 @@ struct OX{
 			b = '.';
 		}
 		player = 'O';
-		moves = 1;
 		free = 9;
 		
 		score['O'] = 0;
@@ -48,22 +47,6 @@ struct OX{
 		verbose = verbosee;
 	}
 	
-	void end_turn(PlayerId pid) {
-		assert(pid == player);
-		assert(moves == 0);
-		assert(!end);
-		
-		if (verbose)
-			cout << format("OX::end_turn(%||)\n") % pid;
-
-		if (player == 'O') {
-			player = 'X';
-		}
-		else {
-			player = 'O';
-		}
-		moves = 1;
-	}
 	
 	char get(int x, int y) {
 		return bs[x + y*3];
@@ -81,17 +64,20 @@ struct OX{
 			cout << format("OX::move(%|| to %||,%||)\n") % pid % x % y;
 		
 		assert(pid == player);
-		assert(moves > 0);
 		assert(0 <= i);
 		assert(i < 9);
 		assert(bs[i] == '.');
 		assert(!end);
 		
 		bs[i] = player;
-		--moves;	
 		--free;
 		
-		
+		if (player == 'O') {
+			player = 'X';
+		}
+		else {
+			player = 'O';
+		}
 		
 		
 		auto r = check_pos(x, y);
@@ -150,7 +136,6 @@ struct OX{
 		
 		return score.at(p);
 	}
-	
 	
 	
 };
@@ -220,24 +205,24 @@ struct OXSim {
 		
 	};
 	
-	struct EndTurn: Action {
-		EndTurn(PlayerId pid): Action(pid) {}
+	struct Start: Action {
+		Start(PlayerId pid): Action(pid) {}
 		
 		void exec(OX &game) {
-			game.end_turn(player_id);
+			
 		}		
 
 		bool eq(Action & a)  {
-			EndTurn& b = dynamic_cast<EndTurn&>(a);
+			Start& b = dynamic_cast<Start&>(a);
 			return true;
 		}
 		
 		Action* new_copy() {
-			return new EndTurn(*this);
+			return new Start(*this);
 		}
 		
 		virtual ostream& dump(ostream& out) {
-			out << "EndTurn('" << player_id << "')";
+			out << "Start('" << player_id << "')";
 		}
 		
 	};	
@@ -255,10 +240,8 @@ struct OXSim {
 		return game.get_result(pid);
 	}
 	
-	unique_ptr<Action> create_random_action() {
-		
-		if (game.moves) {
-			
+	unique_ptr<Action> create_random_action() {		
+		if (!game.end) {			
 			int i = roll::roll(0, game.free);
 						
 			int j = 0;
@@ -269,13 +252,9 @@ struct OXSim {
 					--i;
 				}
 				++j;
-			}
-			
+			}			
 			return unique_ptr<Action>(new Move(game.player, j));
-		}
-		else
-		if (!game.end) {
-			return unique_ptr<Action>(new EndTurn(game.player)); // endturn
+			
 		}
 		else {
 			return unique_ptr<Action>(nullptr); 
@@ -327,14 +306,14 @@ int main()
 		
 	using NodeType = tree::Node<OXSim::Action>;
 	
-	unique_ptr<OXSim::Action> tmp(new OXSim::EndTurn('X'));
+	unique_ptr<OXSim::Action> tmp(new OXSim::Start('X'));
 	
 	
 	NodeType *root = new NodeType(tmp);
 	
 
 	while (1) {
-		for (int i=0; i<50; ++i) {
+		for (int i=0; i<1000; ++i) {
 
 			//cout << "dumping tree before step: " << endl;
 			//dump(root, 8);
@@ -346,7 +325,7 @@ int main()
 			//dump(gw.game);
 
 			//cout << "step" << endl;
-			mcts::step(root, gw, 1);
+			mcts::step(root, gw, 0);
 
 			//cout << "game state after play: " << endl;
 			//dump(gw.game);
@@ -356,7 +335,7 @@ int main()
 		}
 
 		cout << "dumping tree: " << endl;
-		dump(root, 20);
+		dump(root, 2);
 
 		// select preferred move
 		NodeType *node = mcts::preferred_node(root);
