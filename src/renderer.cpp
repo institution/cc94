@@ -3,7 +3,7 @@
 namespace col {
 	
 
-	using Res = map<pair<string,uint>, sf::Image>;
+	using Res = map<pair<string,uint>, sf::Texture>;
 	Res g_res;
 	
 	using ResFont = map<string, sf::Font>;
@@ -20,9 +20,11 @@ namespace col {
 		else {
 			auto &font = g_fonts[name];
 			auto path = str(format("./font/%||") % name);
-			if (!font.LoadFromFile(path, size)) {
+			if (!font.loadFromFile(path)) {
+				
 				throw std::runtime_error("cannot load font");
 			}
+			// set size
 			return font;
 		}		
 	}
@@ -69,25 +71,41 @@ namespace col {
 		else {
 			auto &img = g_res[key];
 			auto path = str(format("./%||/%|03|.png") % d % i);
-			if (!img.LoadFromFile(path)) {
+			if (!img.loadFromFile(path)) {
 				// try default
-				if (!img.LoadFromFile("./" + ICON + "/065.png")) {
+				if (!img.loadFromFile("./" + ICON + "/065.png")) {
 					throw std::runtime_error("can't load default image file while loading: " + path);
 				}
 				// throw std::runtime_error("cant't load image file: " + path);
 			}
-			img.SetSmooth(false);
+			img.setSmooth(false);
 			return img;		
 		}
 	}
 	
 	
+	sf::RectangleShape RectShape(
+			Vector2<int16> const& pos, 
+			Vector2<int16> const& dim,
+			sf::Color const& fill_color,
+			int16 const& outline_thickness,
+			sf::Color const& outline_color
+	) {
+		sf::RectangleShape rectangle;
+		rectangle.setPosition(pos[0], pos[1]);
+		rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
+		rectangle.setFillColor(fill_color);
+		rectangle.setOutlineColor(outline_color);
+		rectangle.setOutlineThickness(outline_thickness);		
+		return rectangle;
+	}
+	
 	
 	void render_shield(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
-		win.Draw(
-			sf::Shape::Rectangle(
-				x+1, y+1, 
-				x+6, y+8, 
+		win.draw(
+			RectShape(
+				Vector2<int16>(x+1, y+1), 
+				Vector2<int16>(6, 8), 
 				sf::Color(col.r,col.g,col.b, 255),
 				1, 
 				sf::Color(0,0,0, 255)
@@ -97,10 +115,10 @@ namespace col {
 	
 	
 	void render_playerind(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
-		win.Draw(
-			sf::Shape::Rectangle(
-				x, y, 
-				x+1, y+1, 
+		win.draw(
+			RectShape(
+				Vector2<int16>(x, y), 
+				Vector2<int16>(1, 1), 
 				sf::Color(col.r,col.g,col.b, 255),
 				0, 
 				sf::Color(0,0,0, 0)
@@ -109,22 +127,22 @@ namespace col {
 	}
 	
 	void render_cursor(sf::RenderWindow &win, uint16 x, uint16 y) {
-		win.Draw(
-			sf::Shape::Rectangle(
-				x+1, y+1, 
-				x+15, y+15, 
+		win.draw(
+			RectShape(
+				Vector2<int16>(x+1, y+1), 
+				Vector2<int16>(14, 14), 
 				sf::Color(0,0,0, 0),
 				1, 
 				sf::Color(255,255,255, 255)
 			)
-		);
+		);		
 	}
 	
-	void render_sprite(sf::RenderWindow &win, uint16 x, uint16 y, const sf::Image &img) {
+	void render_sprite(sf::RenderWindow &win, uint16 x, uint16 y, const sf::Texture &img) {
 		sf::Sprite s;
-		s.SetPosition(x, y);
-		s.SetImage(img); 
-		win.Draw(s);
+		s.setPosition(x, y);
+		s.setTexture(img); 
+		win.draw(s);
 	}
 
 	
@@ -152,8 +170,8 @@ namespace col {
 		
 		auto bg = res(ARCH, 1);
 		
-		auto w = bg.GetWidth();
-		auto h = bg.GetHeight();
+		auto w = bg.getSize().x;
+		auto h = bg.getSize().y;
 		
 		for (uint8 j = 0; j < 5; ++j) {
 			for (uint8 i = 0; i < 7; ++i) {
@@ -275,16 +293,16 @@ namespace col {
 		
 		
 		//get_icon_at
+		sf::RectangleShape rectangle;
+		rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
+		rectangle.setFillColor(sf::Color(50,0,0, 255));
+		rectangle.setOutlineColor(sf::Color(0,50,0, 255));
+		rectangle.setOutlineThickness(1);
+		rectangle.setPosition(pos[0], pos[1]);
 		
-		win.Draw(
-			sf::Shape::Rectangle(
-				pos[0], pos[1], 
-				pos[0] + dim[0], pos[1] + dim[1], 
-				sf::Color(0,50,0, 255),
-				1, 
-				sf::Color(50,0,0, 255)
-			)
-		);
+		win.draw(rectangle);
+		
+		
 
 		
 		Icon const* u = env.get_icon_at(con.sel);
@@ -348,10 +366,10 @@ namespace col {
 		auto x = pos[0];
 		auto y = pos[1];
 
-		auto &img = font.img;
+		auto &img = font.tex;
 
 		sf::Sprite s;	
-		s.SetImage(img);
+		s.setTexture(img);
 
 		//auto line_height = font.GetCharacterSize();
 		//cout << "char hh:" << hh << endl;
@@ -364,16 +382,17 @@ namespace col {
 			// cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
 			// cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
 
-			s.SetPosition(x ,y);
-			s.SetSubRect(g.rect);
-			win.Draw(s);
+			s.setPosition(x ,y);
+			s.setTextureRect(g.rect);
+			win.draw(s);
 
-			x += rr.Right - rr.Left + 1;
+			x += rr.width + 1;
 		}
 
 		return x;
 	}
 
+	/*
 	int16 render_text(
 			sf::RenderWindow &win, 
 			Vector2<int16> const& pos,
@@ -387,18 +406,18 @@ namespace col {
 		auto x = pos[0];
 		auto y = pos[1];
 
-		auto &img = font.GetImage();
+		auto &img = font.getTexture();
 
 		((sf::Image&)img).SetSmooth(false);
 
 		sf::Sprite s;	
-		s.SetImage(img);
+		s.setTexture(img);
 
 		//auto line_height = font.GetCharacterSize();
 		//cout << "char hh:" << hh << endl;
 
 		for (auto c: text) {
-			auto &g = font.GetGlyph(c);
+			auto &g = font.getGlyph(c);
 			auto &rr = g.Rectangle;
 
 			auto &r = g.TexCoords;
@@ -406,20 +425,24 @@ namespace col {
 			//cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
 			//cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
 
-			s.SetPosition(x + rr.Left ,y + rr.Top + 6);
-			s.SetSubRect(sf::IntRect(
-				(r.Left * img.GetWidth()) +0.5, 
-				(r.Top * img.GetHeight()) +0.5, 
-				(r.Right * img.GetWidth()) +0.5, 
-				(r.Bottom * img.GetHeight()) +0.5
+			s.setPosition(x + rr.left ,y + rr.top + 6);
+			
+			auto dim = img.getSize();
+			
+			s.setTextureRect(sf::Rect<int>(
+				(r.left * dim.x) +0.5, 
+				(r.top * dim.y) +0.5, 
+				(r.width * dim.x) +0.5, 
+				(r.height * dim.y) +0.5
 			));
-			win.Draw(s);
+			win.draw(s);
 
 			x += g.Advance;
 		}
 
 		return x;
 	}
+	 * */
 	
 	void render_cmd(sf::RenderWindow &app, const col::Console &con) {
 		
@@ -449,7 +472,7 @@ namespace col {
 	
 	
 	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con) {
-		app.Clear();
+		app.clear();
 		
 		
 		if (con.mode == Console::Mode::COLONY) {
@@ -469,7 +492,7 @@ namespace col {
 
 		
 		render_cmd(app, con);
-		app.Display();
+		app.display();
 		
 	}
 	

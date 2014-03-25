@@ -12,7 +12,7 @@ namespace col {
 	struct PixFont{
 
 		struct PixGlyph{
-			sf::IntRect rect;
+			sf::Rect<int> rect;
 		};
 
 		struct PixReader {
@@ -25,27 +25,31 @@ namespace col {
 			}
 
 			sf::Color getpix(uint16 i, uint16 j) {
-				if (i >= img->GetWidth() || j >= img->GetHeight()) {
+				auto dim = img->getSize();
+				if (i >= dim.x || j >= dim.y) {
 					throw OutOfBound();
 				}
-				return img->GetPixel(i,j);
+				return img->getPixel(i,j);
 			}
 		};
 		
 
 		map<uint16, PixGlyph> glyphs;
-		sf::Image img;
+		sf::Texture tex;
 
 		PixFont() {}
 
 		void load(string const& path) {
 			
-			if (!img.LoadFromFile(path)) {
+			if (!tex.loadFromFile(path)) {
 				throw std::runtime_error("cant't load font file: " + path);
 			}
-			img.SetSmooth(false);
+			tex.setSmooth(false);
 			
-			auto ind = img.GetPixel(0,1);
+			
+			auto img = tex.copyToImage();
+			
+			auto ind = img.getPixel(0,1);
 
 			PixReader r(img);
 			
@@ -78,10 +82,10 @@ namespace col {
 					i_end = i;
 
 					auto &g = glyphs[char_code];
-					g.rect.Top = j_begin;
-					g.rect.Bottom = j_end;
-					g.rect.Left = i_begin;
-					g.rect.Right = i_end;
+					g.rect.top = j_begin;
+					g.rect.height = j_end - j_begin;
+					g.rect.left = i_begin;
+					g.rect.width = i_end - i_begin;
 					
 					++char_code;					
 				}

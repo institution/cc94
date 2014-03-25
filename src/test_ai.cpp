@@ -178,7 +178,7 @@ int main()
 	
 
 	while (1) {
-		for (int i=0; i<90*2; ++i) {
+		for (int i=0; i<140*2; ++i) {
 
 			//cout << "dumping tree before step: " << endl;
 			//dump(root, 8);
@@ -231,6 +231,9 @@ int main()
 	}
 	
 	delete root;
+	
+	// TODO: AI20 vs AI60
+	// TODO: AIcurr vs AIfirst check all moves 
 	
 	return 0;
 }

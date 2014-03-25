@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -66,15 +65,15 @@ namespace col{
 	
 	void handle_events(sf::RenderWindow &app, Console &con) {
 		sf::Event ev;
-		while (app.GetEvent(ev)) {
-			if (ev.Type == sf::Event::KeyPressed) {
-				if (ev.Key.Code == sf::Key::Escape) {
-					app.Close();
+		while (app.pollEvent(ev)) {
+			if (ev.type == sf::Event::KeyPressed) {
+				if (ev.key.code == sf::Keyboard::Escape) {
+					app.close();
 				}				
 			}
 			else
-			if (ev.Type == sf::Event::Closed) {
-				app.Close();
+			if (ev.type == sf::Event::Closed) {
+				app.close();
 			}
 
 			con.handle(app, ev);
@@ -97,7 +96,7 @@ int main()
 	const uint SCL = 3;
 	sf::RenderWindow app(sf::VideoMode(320 * SCL, 200 * SCL, 32), "SFML Window");
 	sf::View view(sf::FloatRect(0, 0, 320, 200));
-	app.SetView(view);
+	app.setView(view);
 	
 	ifstream f(fname, std::ios::binary);
 	auto env = io::read<Env>(f);
@@ -108,7 +107,7 @@ int main()
 	auto last_env = env.mod - 1;
 	auto last_con = con.mod - 1;
 
-	while (app.IsOpened())
+	while (app.isOpen())
 	{
 		
 		

@@ -25,25 +25,27 @@ namespace col {
 	
 	
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
-		auto type = event.Type;
+		auto type = event.type;
 	
 		if (type == sf::Event::TextEntered) {
-			handle_char(event.Text.Unicode);			
+			handle_char(event.text.unicode);			
 		}		
 		else
-		if (event.Type == sf::Event::KeyReleased) {
-			if (event.Key.Code == sf::Key::C) {
+		if (type == sf::Event::KeyReleased) {
+			if (event.key.code == sf::Keyboard::C) {
 				
 			}				
 		}
 		else
 		if (type == sf::Event::MouseButtonPressed)
 		{
-			if (event.MouseButton.Button == sf::Mouse::Right)
+			if (event.mouseButton.button == sf::Mouse::Right)
 			{
-				sf::Vector2f mp = app.ConvertCoords(
-					event.MouseButton.X, 
-					event.MouseButton.Y
+				sf::Vector2f mp = app.mapPixelToCoords(
+					sf::Vector2i(
+						event.mouseButton.x, 
+						event.mouseButton.y
+					)
 				);
 				sel[0] = mp.x / 16;
 				sel[1] = mp.y / 16;
