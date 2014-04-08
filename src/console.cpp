@@ -22,6 +22,30 @@ namespace col {
 		}
 	}
 	
+	uint8 flag_id4color_name(const string &s) {
+		if (s == "red") {
+			return 119;
+		}
+		else
+		if (s == "blue") {
+			return 120;
+		}
+		else
+		if (s == "yellow") {
+			return 120;
+		}
+		else
+		if (s == "orange") {
+			return 120;
+		}
+		else
+		if (s == "usa") {
+			return 131;
+		}
+		else {
+			return 65;
+		}
+	}
 	
 	
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
@@ -62,26 +86,42 @@ namespace col {
 			split(es, buffer, is_any_of(" "));
 
 			if (es[0] == "help") {
-				output.push_back("lsi, addi, deli");
-				output.push_back("lsp, addp, delp");
-				output.push_back("move");
-				output.push_back("attack");
-				output.push_back("turn");
+				output.push_back("lsp  lsi  lsut");
+				output.push_back("sel");				
+				output.push_back("addp addi");
+				output.push_back("delp deli");
+				output.push_back("move attack");
+				output.push_back("enter exit");
+				output.push_back("save turn");
 			}
 			else				
 			if (es[0] == "turn") {
-				env.exec(action::Turn());
-				output.push_back(str(format("Turn %||.%|| ") % env.turn_no % (env.curr_player->name)));
+				envgame.turn();
+				output.push_back(str(format("Turn %|| ") % envgame.turn_no));
+			}
+			else				
+			if (es[0] == "endturn") {
+				switch (es.size()) {
+					default: {
+						output.push_back("Usage: endturn [player_id]\n");
+						break;
+					}
+					case 2: {
+						envgame.exec(EndTurn(std::stoi(es.at(1))));
+						break;
+					}					
+				}				
 			}
 			else
 			if (es[0] == "lsi") {
-				for (auto &icon: env.icons) {
-					output.push_back(str(format("%||\n") % icon.second));
+				for (auto &item: envgame.icons) {
+					cout << item.second << endl;
+					output.push_back(str(format("%||\n") % item.second));
 				}
 			}
 			else
 			if (es[0] == "lsut") {
-				for (auto &utp: env.uts) {
+				for (auto &utp: *envgame.uts) {
 					auto &ut = utp.second;
 					auto x = format("%u  %s\n") % uint16(ut.id) % ut.name;
 					output.push_back(str(x));
@@ -89,34 +129,38 @@ namespace col {
 			}
 			else
 			if (es[0] == "deli") {
-				env.destroy_icon(std::stoi(es[1]));
+				envgame.destroy_icon(std::stoi(es[1]));
 			}
 			else
 			if (es[0] == "addi") {	
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage1: addi type_id player_id\n");
-						output.push_back("Usage2: addi type_id player_id x y\n");
+						output.push_back("Usage: addi type_id player_id\n");
 						break;
 					}
 					case 3: {
-						env.create_icon(
+						envgame.create_icon(
 							std::stoi(es.at(1)), // type_id
 							std::stoi(es.at(2)),  // player_id
 							Coords(sel[0], sel[1]) // x y
 						);
 						break;
-					}							
-					case 5: {
-						env.create_icon(
-							std::stoi(es.at(1)), // type_id
-							std::stoi(es.at(2)),  // player_id
-							Coords(std::stoi(es.at(3)), std::stoi(es.at(4))) // x y
-						);
-						break;
-					}
+					}					
 				}
 			}
+			else
+			if (es[0] == "sel") {	
+				switch (es.size()) {
+					default: {
+						output.push_back("Usage: sel x y\n");
+						break;
+					}
+					case 3: {
+						sel = Coords(std::stoi(es.at(1)), std::stoi(es.at(2)));
+						break;
+					}					
+				}
+			}			
 			else
 			if (es[0] == "setturn") {	
 				switch (es.size()) {
@@ -125,21 +169,21 @@ namespace col {
 						break;
 					}
 					case 2: {
-						env.turn_no = stoi(es.at(1));
+						envgame.turn_no = stoi(es.at(1));
 						break;
 					}
 				}
 			}
 			else
 			if (es[0] == "lsp") {
-				for (auto &p: env.players) {
+				for (auto &p: envgame.players) {
 					auto x = format("%||\n") % p.second;
 					output.push_back(str(x));
 				}
 			}
 			else
 			if (es[0] == "delp") {
-				env.del_player(std::stoi(es[1]));
+				envgame.del_player(std::stoi(es[1]));
 			}
 			else
 			if (es.at(0) == "save") {
@@ -150,7 +194,7 @@ namespace col {
 					}
 					case 2: {
 						ofstream f(es.at(1), std::ios::binary);
-						io::write(f, env);
+						io::write<EnvGame>(f, envgame);
 						break;
 					}
 				}
@@ -158,21 +202,21 @@ namespace col {
 			}
 			else
 			if (es[0] == "addp") {
-				if (es.size() < 2+1) {
-					output.push_back("Usage: addp name color_name flag_id");					
+				if (es.size() < 3) {
+					output.push_back("Usage: addp name colorname");					
 				}
 				else {				
-					env.add_player(Player(
-						env.next_key_player(),
+					envgame.add_player(Player(
+						envgame.next_key_player(),
 						string(es[1]),
 						make_color_by_name(string(es[2])),
-						stoi(es[3])
+						flag_id4color_name(string(es[2]))
 					));
 				}
 			}
 			else
 			if (es[0] == "set_owner") {
-				env.set_owner(
+				envgame.set_owner(
 					stoi(es[1]),
 					stoi(es[2])
 				);
@@ -184,8 +228,9 @@ namespace col {
 						output.push_back("Usage: move [icon_id] dx dy");
 						break;
 					case 4:
-						env.exec(action::AttackMove(					
-							env.icon4id(stoi(es.at(1))), // id
+						envgame.exec(AttackMove(
+							envgame.current_player_id,
+							stoi(es.at(1)), // id
 							dir4vec(
 								Coords(
 									stoi(es.at(2)), // dx
@@ -195,10 +240,9 @@ namespace col {
 						));
 						break;
 					case 3:
-						
-						
-						env.exec(action::AttackMove(					
-							env.ref_icon_at(sel),
+						envgame.exec(AttackMove(
+							envgame.current_player_id,
+							envgame.ref_icon_at(sel).id,
 							dir4vec(
 								Coords(
 									stoi(es.at(1)), // dx
@@ -209,18 +253,6 @@ namespace col {
 						break;					
 				}
 				
-			}
-			else
-			if (es.at(0) == "attack") {
-				env.exec(action::AttackMove(
-					env.icon4id(stoi(es.at(1))), // id
-					dir4vec(
-						Coords(
-							stoi(es.at(2)), // dx
-							stoi(es.at(3))  // dy
-						)
-					)
-				));
 			}
 			else
 			if (es.at(0) == "enter") {

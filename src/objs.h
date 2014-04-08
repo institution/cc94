@@ -12,12 +12,44 @@ namespace col {
 	// map
 	// col
 	
-	const uint8 UNIT_MOVEMENT = 3;
+	const uint8 UNIT_OF_MOVEMENT = 12;
 	
 	using Coord = int16;
 	using Coords = Vector2<Coord>;
+	
+	
+	using MovementType = uint8;
+	MovementType const MOVEMENT_TYPE_LAND = 1;
+	MovementType const MOVEMENT_TYPE_NAVAL = 2;
+	
+	using Biome = uint8;
+	
+	Biome const BIOME_TUNDRA = 1; //BOREAL FOREST
+	Biome const BIOME_PRAIRIE = 4; // BROADLEAF FOREST
+	Biome const BIOME_PLAINS = 3; // MIXED_FOREST
+	Biome const BIOME_DESERT = 2; //SCRUB FOREST
+	Biome const BIOME_SAVANNAH = 6; //TROPICAL FOREST				
+	Biome const BIOME_GRASSLAND = 5; //CONFIER FOREST		
+	Biome const BIOME_MARSH = 7; //WETLAND FOREST
+	Biome const BIOME_SWAMP = 8; //RAIN FOREST
+	Biome const BIOME_ARCTIC = 10;
+	Biome const BIOME_OCEAN = 11;
+	Biome const BIOME_SEA_LANE = 12;
+	
+	using Phys = uint8;
+	
+	Phys const PHYS_HILL = 1;
+	Phys const PHYS_MOUNTAIN = 2;	
+	Phys const PHYS_ROAD = 4;
+	Phys const PHYS_FOREST = 8;
+	Phys const PHYS_MINOR_RIVER = 16;
+	Phys const PHYS_MAJOR_RIVER = 32;
+	Phys const PHYS_DOCKS = 64;
+	
+			
+	
 
-
+	
 	struct TerrType{
 		using Id = uint8;
 		
@@ -34,7 +66,7 @@ namespace col {
 			
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement_cost = stoi(xs[2]) * UNIT_MOVEMENT;
+			movement_cost = stoi(xs[2]) * UNIT_OF_MOVEMENT;
 			defensive = stoi(xs[3]);			
 			movement_type = stoi(xs[15]);
 		}
@@ -59,7 +91,7 @@ namespace col {
 			assert(xs.size() >= 8);
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement = stoi(xs[2]) * UNIT_MOVEMENT;
+			movement = stoi(xs[2]) * UNIT_OF_MOVEMENT;
 			attack = stoi(xs[3]);
 			combat = stoi(xs[4]);
 			cargo = stoi(xs[5]);
@@ -86,41 +118,7 @@ namespace col {
 		
 	};*/
 	
-	struct Icon {
-		using Id = uint32;
-		
-		Id id;
-		UnitType const *type;
-		Coords pos;
-		Player const *player;	
-		uint8 movement_used;  // movement used in this turn
-		
-		
-				
-		//uint8 spec_id;
 
-		Icon(): movement_used(0) {}
-		
-		Icon(
-			Id id, 
-			UnitType const &type, 
-			Coords pos, 
-			Player const &player
-		) {	
-			this->id = id; 
-			this->type = &type; 
-			this->pos = pos;
-			this->movement_used = 0;
-			this->player = &player;
-		}
-		
-		void turn() {
-			movement_used = 0;
-		}
-
-	}; 
-
-	ostream& operator<<(ostream &out, const Icon &obj);
 	
 	
 	struct Color{
@@ -138,7 +136,7 @@ namespace col {
 		Id id;
 		string name;
 		Color color;
-		uint32 flag_id;
+		uint8 flag_id;
 		
 		Player() {}
 

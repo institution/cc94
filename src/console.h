@@ -7,7 +7,7 @@
 
 
 #include "col.h"
-#include "env.h"
+#include "envgame.h"
 
 namespace col {
 
@@ -15,7 +15,7 @@ namespace col {
 		vector<string> output;
 		string buffer;
 		
-		Env &env;
+		EnvGame &envgame;
 		
 		uint32 mod;
 		
@@ -28,7 +28,8 @@ namespace col {
 		
 		Mode mode;
 
-		Console(Env &env_): env(env_) {
+		Console(EnvGame &envgame_): envgame(envgame_) {
+			
 			sel = Coords(-1,-1);
 			mod = 0;
 			mode = Mode::AMERICA;

@@ -14,6 +14,7 @@
 #include "env.h"
 #include "csv.h"
 #include "ai.h"
+#include "envgame.h"
 #include "console.h"
 #include "renderer.h"
 
@@ -98,9 +99,22 @@ int main()
 	sf::View view(sf::FloatRect(0, 0, 320, 200));
 	app.setView(view);
 	
+	
+	
+	//cout << "Loading terr types...";
+	//tts = load_terr_types();
+	//cout << " " << tts.size() << " loaded." << endl;
+
+	cout << "Loading unit types...";
+	auto uts = load_unit_types();
+	cout << " " << uts.size() << " loaded." << endl;
+
+	EnvGame env;
+	env.uts = &uts;
+	
 	ifstream f(fname, std::ios::binary);
-	auto env = io::read<Env>(f);
-	f.close();
+	io::read<EnvGame>(env, f);
+	f.close();	
     
 	Console con(env);
 		
@@ -112,7 +126,7 @@ int main()
 		
 		
 		if ((env.mod != last_env) || (con.mod != last_con)) {
-			cout << "RENDER:" << con.mod << ',' << env.mod << endl;
+			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
 			
 			render(app, env, con);		
 			

@@ -4,10 +4,13 @@
 #include "col.h"
 #include "objs.h"
 #include "csv.h"
+#include "terr.h"
+#include "icon.h"
+
 
 namespace col{
-	using Terr = uint8;
-	using TerrId = uint8;
+	
+	
 	using Terrs = boost::multi_array<Terr, 2>;
 	
 	using Icons = map<Icon::Id, Icon>;
@@ -100,69 +103,57 @@ namespace col{
 		return static_cast<Dir>((d[0] + 1) + (d[1] + 1) * 3);
 	}
 	
-	namespace action {
-		struct Action {
-			
-		};
-				
-		struct AttackMove: Action {
-			Icon* icon;
-			Dir dir;
-			AttackMove(Icon & iid, Dir const& dirr) {
-				icon = &iid;
-				dir = dirr;
-			}
-		};
-				
-		struct Turn: Action {
-
-		};
-	}
 	
 	struct Env{
 		// terrain layer - const
 		// game layer - forest, plow, building, unit, resource, unit
 		
+		// static
 		Coord w, h;
 		
-		Terrs terrs;  // static terr_id
+		UnitTypes const* uts; 
+		//TerrTypes tts;
+		
+		// modifiable
+		Terrs terrs;  
 		
 		//IconsAt      // by loc
 		Icons icons;  // by id
 
-		// uint cur_x, cur_y;  
-
-		
 		uint32 mod;
 
 		Players players;   // ls of player id
 
-		Player* curr_player;		
 		uint32 turn_no;
 		
-		UnitTypes uts; // static
-		TerrTypes tts;
-		
 		Env() {
+			uts = nullptr;
 			mod = 0;
-			curr_player = nullptr;
 			turn_no = 0;
 			w = h = 0;
+		}
 			
-			cout << "Loading terr types...";
-			tts = load_terr_types();
-			cout << " " << tts.size() << " loaded." << endl;
+		
+		
+		
+		void turn() {
+			// time progress
+			++turn_no;
 			
-			cout << "Loading unit types...";
-			uts = load_unit_types();
-			cout << " " << uts.size() << " loaded." << endl;
+			// all icons - new movment
+			for (auto& item: icons) {
+				item.second.turn();
+			}
+			
+			++mod;
 		}
 		
-		Player* get_current_player() {
-			return curr_player;
+		void end_turn(Player::Id const& player_id) {
+			// player declares no more actions
 		}
 		
-		void exec(action::Turn const& a) {
+		/*void switch_next_player() {
+			
 			if (curr_player == nullptr) {
 				throw runtime_error("curr_player is nullish: cannot end turn");
 			}
@@ -173,23 +164,24 @@ namespace col{
 			}
 			else {
 				curr_player = &players.at(0);
-				++turn_no;
+				turn();
 			}	
 
 			++mod;
-		}
+		}*/
+		
 		
 		
 		Icon::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
 			Icon::Id id = icons.size();
 			
-			if (uts.find(type_id) == uts.end()) {
+			if (uts->find(type_id) == uts->end()) {
 				throw runtime_error(str(format("unit types: id not found: %||") % type_id));
 			}
 						
 			icons[id] = Icon(
 				id,
-				uts.at(type_id),
+				uts->at(type_id),
 				xy,
 				players.at(player_id)
 			);
@@ -201,18 +193,23 @@ namespace col{
 			icons.erase(id);
 			++mod;
 		}
-		
-		TerrId get_terr_id(Coord x, Coord y) const {
-			return terrs[y][x];
+				
+		Terr& terr(Vector2<Coord> const& z) {
+			return terrs[z[1]][z[0]];
 		}
 		
-		TerrId& terr_id(Coord x, Coord y) {
-			return terrs[y][x];
+		Terr const& terr(Vector2<Coord> const& z) const {
+			return terrs[z[1]][z[0]];
 		}
 		
-		TerrType& get_terr_type(Coords const& xy) {
-			return tts.at(get_terr_id(xy[0], xy[1]));
-		}
+		
+		//TerrId& terr_id(Coord x, Coord y) {
+		//	return terrs[y][x];
+		//}
+		
+		//TerrType& get_terr_type(Coords const& xy) {
+		//	return tts.at(get_terr_id(xy[0], xy[1]));
+		//}
 		
 		Icon const* get_icon_at(Coords const& xy) const {
 			for (auto &p: icons) {				
@@ -254,15 +251,17 @@ namespace col{
 			// square empty
 			auto& ut = *(u.type);
 			auto dest = u.pos + vec4dir(dir);
-			auto tt = get_terr_type(dest);
+			auto tt = terr(dest);
 			
-			if (!(ut.movement_type & tt.movement_type)) {
+			if (!(ut.movement_type & tt.get_movement_type())) {
+				cout << "cannot move - noncompatible type" << endl;
 				return false;
 				// throw runtime_error("cant move - noncompatible type");
 			}
 			// compatible terrain type
 				
-			if (ut.movement < tt.movement_cost + u.movement_used) {
+			if (ut.movement < tt.get_movement_cost(ut.movement_type) + u.movement_used) {
+				cout << "cannot move - not enough moves" << endl;
 				return false;
 				// throw runtime_error("cant move - not enough moves");
 			}
@@ -270,7 +269,8 @@ namespace col{
 			
 			auto x = get_icon_at(dest);
 			if (x != nullptr && x->player == u.player) {
-				return 0;				
+				cout << "cannot move: square already occupied" << endl;
+				return false;				
 				//throw std::runtime_error("cannot move: square already occupied");
 			}
 			// dest square empty or occupied by enemy
@@ -280,22 +280,22 @@ namespace col{
 		
 		
 		
-		void exec(action::AttackMove const& a) {
+		void attack_move(Player::Id const& pid, Icon::Id const& iid, Dir const& dir) {
+			Icon *p = & icon4id(iid);
 			
-			Icon* p = a.icon;
-			
-			if (!can_attack_move(*p, a.dir)) {
+			if (!can_attack_move(*p, dir)) {
+				cout << "!!!!!!!!" << endl;
 				throw std::runtime_error("cannot attack move");			
 			}
 			
-			auto dest = p->pos + vec4dir(a.dir);
+			auto dest = p->pos + vec4dir(dir);
 			auto q = get_icon_at(dest);
-			auto tt = get_terr_type(dest);
+			auto tt = terr(dest);
 			
 			if (q == nullptr) {
 				// move
 				
-				p->movement_used += tt.movement_cost;
+				p->movement_used += tt.get_movement_cost(p->get_movement_type());
 				p->pos = dest;
 			}
 			else {
@@ -303,7 +303,7 @@ namespace col{
 				auto attack_base = p->type->attack;
 				auto attack = attack_base;
 				auto combat_base = q->type->combat;
-				auto combat = combat_base + uint8(0.25 * tt.defensive * combat_base);
+				auto combat = combat_base + uint8(0.25 * tt.get_defensive_value(q->get_movement_type()) * combat_base);
 
 				assert(attack > 0);
 
@@ -357,9 +357,6 @@ namespace col{
 			//assert(icon.id > 0);
 			cout << "Adding player: " << t.id << endl;
 			players[t.id] = t;
-			if (curr_player == nullptr) {
-				curr_player = &players.at(t.id);
-			}
 			++mod;
 		}
 		
@@ -396,8 +393,15 @@ namespace col{
 	
 	namespace io {
 		template <typename C>
+		typename C::mapped_type const* read_ptr(C const& cs, istream &f) {
+			auto key = read<typename C::key_type>(f);
+			return &cs.at(key);
+		}
+		
+		template <typename C>
 		typename C::mapped_type* read_ptr(C &cs, istream &f) {
-			return &cs.at(read<typename C::key_type>(f));
+			auto key = read<typename C::key_type>(f);
+			return &cs.at(key);
 		}
 
 		template <typename T>

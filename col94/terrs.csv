@@ -1,31 +1,13 @@
-Name,Id,Movement,Defensive,Improvement,Value,Farmer,Planter(s),Planter(t),Planter(c),Trapper,Lumberjack,Ore Miner,Silver Miner,Fisherman,movement_type
-Tundra,1,1,0,4,2,2,0,0,0,0,0,2,0,0,2
-Desert,2,1,0,3,2,1,0,0,1,0,0,2,0,0,2
-Plains,3,1,0,3,4,4,0,0,2,0,0,1,0,0,2
-Prairie,4,1,0,3,4,2,0,0,3,0,0,0,0,0,2
-Grassland,5,1,0,3,4,2,0,3,0,0,0,0,0,0,2
-Savannah,6,1,0,3,4,3,3,0,0,0,0,0,0,0,2
-Marsh,7,2,1,5,2,2,0,2,0,0,0,2,0,0,2
-Swamp,8,2,1,7,2,2,2,0,0,0,0,2,0,0,2
-Arctic,10,2,0,4,0,0,0,0,0,0,0,0,0,0,2
-Ocean,11,1,0,2,3,0,0,0,0,0,0,0,0,3,1
-Sea Lane,12,1,0,2,0,0,0,0,0,0,0,0,0,3,1
-Mountains,33,3,6,7,2,0,0,0,0,0,0,4,1,0,2
-Hills,49,2,4,4,2,1,0,0,0,0,0,4,0,0,2
-;
-;OTHER NAMES,,,,,,,,,,,,,,,
-;Forest,65,,,,,,,,,,,,,,
-;River,,,,,,,,,,,,,,,
-;Major River,,,,,,,,,,,,,,,
-;Minor River,,,,,,,,,,,,,,,
-;Unexplored,,,,,,,,,,,,,,,
-;Road,81,,,,,,,,,,,,,,
-;Plow,150,,,,,,,,,,,,,,
-; Terrain Squares,,,,,,,,,,,,,,,
-;,,,,,,,,,,,,,,,
-; a) Name,Type(Water=0,Unforested=1,Forested=2),,,,,,,,,,,,
-; b) Movement,Defensive,Improvement,Value,,,,,,,,,,,,
-; c) Yield (Farmer,Planter(s),Planter(t),Planter(c),,,,,,,,,,,,
-; Trapper,Lumberjack,Ore Miner,Silver Miner,,,,,,,,,,,,
-; Fisherman),,,,,,,,,,,,,,,
-;,,,,,,,,,,,,,,,
+Name,Id,Movement,Defensive,Improvement,Value,Farmer,Planter(s),Planter(t),Planter(c),Trapper,Lumberjack,Ore Miner,Silver Miner,Fisherman,movement_type,terraform_id
+Tundra,1,1,0,4,2,2,0,0,0,0,0,2,0,0,2,63
+Desert,2,1,0,3,2,1,0,0,1,0,0,2,0,0,2,9
+Plains,3,1,0,3,4,4,0,0,2,0,0,1,0,0,2,65
+Prairie,4,1,0,3,4,2,0,0,3,0,0,0,0,0,2,66
+Grassland,5,1,0,3,4,2,0,3,0,0,0,0,0,0,2,67
+Savannah,6,1,0,3,4,3,3,0,0,0,0,0,0,0,2,68
+Marsh,7,2,1,5,2,2,0,2,0,0,0,2,0,0,2,69
+Swamp,8,2,1,7,2,2,2,0,0,0,0,2,0,0,2,70
+Arctic,10,2,0,4,0,0,0,0,0,0,0,0,0,0,2,10
+Ocean,11,1,0,2,3,0,0,0,0,0,0,0,0,3,1,11
+Sea Lane,12,1,0,2,0,0,0,0,0,0,0,0,0,3,1,12
+

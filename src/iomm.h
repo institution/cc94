@@ -34,16 +34,20 @@ namespace col{
 		string read_chars(istream &f, uint n);
 		size_t write_chars(ostream &f, const string &s);
 
-		template <class T>
-		T read(istream &f);
 
 		template <class T>
 		size_t write(ostream &f, const T &t);
 
 		template <class T>
-		void read(T& t, istream& f) {
-			t = read<T>(f);
-		}		
+		void read(T& t, istream& f);
+		
+		
+		template <class T>
+		T read(istream &f) {
+			T t;
+			read(t, f);
+			return t;
+		}
 		
 	}
 	

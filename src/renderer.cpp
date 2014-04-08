@@ -242,18 +242,33 @@ namespace col {
 			Terr const& tile) 
 	{
 		
-		auto terrain = tile & 0x0F;
-		auto forest = bool(tile & (1 << 4));
+		auto biome = tile.biome;
+		auto forest = tile.has(PHYS_FOREST);
+		auto hill = tile.has(PHYS_HILL);
+		auto mountain = tile.has(PHYS_MOUNTAIN);
 		
 		
-		render_sprite(win, i*16, j*16, res(TERR, terrain));
+		
+		
+		render_sprite(win, i*16, j*16, res(TERR, biome));
 		if (forest) {
+			render_sprite(win, i*16, j*16, res(PHYS, 65));
+		}
+		if (hill) {
+			render_sprite(win, i*16, j*16, res(PHYS, 49));
+		}
+		if (mountain) {
+			render_sprite(win, i*16, j*16, res(PHYS, 33));
+		}
+		
+		
+		/*if (forest) {
 			//cout << uint16(tile) << endl;
 			//cout << uint16(terrain) << endl;
 			//cout << uint16(forest) << endl;
 			//cout << endl;
 			render_sprite(win, i*16, j*16, res(PHYS, 65));
-		}
+		}*/
 	}
 	
 	void render_map(sf::RenderWindow &win, const Env &env, const Console &con) 
@@ -263,7 +278,7 @@ namespace col {
 
 		for (uint j = 0; j < h; ++j) {
 			for (uint i = 0; i < w; ++i) {
-				render_tile(win, i, j, env.get_terr_id(i,j));
+				render_tile(win, i, j, env.terr(Coords(i,j)));
 			}
 		}
 
@@ -310,9 +325,9 @@ namespace col {
 		if (u) {
 			
 			auto &ut = *(u->type);
-			auto moves = (ut.movement - u->movement_used) / UNIT_MOVEMENT;
+			auto moves = float(ut.movement - u->movement_used) / UNIT_OF_MOVEMENT;
 			
-			auto s = str(format("%||\nmoves: %||") % ut.name % uint16(moves));
+			auto s = boost::str(format("%||\nmoves: %||") % ut.name % moves);
 			
 			render_text(win, 
 				pos,
@@ -482,7 +497,9 @@ namespace col {
 			render_map(app, env, con);
 		}
 
-		render_playerind(app, 0, 0, env.curr_player->color);
+		//if (env.curr_player) {
+		//	render_playerind(app, 0, 0, env.curr_player->color);
+		//}
 
 			
 		render_panel(app, env, con,			

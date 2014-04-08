@@ -213,7 +213,7 @@ bool operator==(Mv0<R> const& x, Mv0<R> const& y) {
 template <class R>
 bool operator==(Mv1<R> const& x, Mv1<R> const& y) {
 
-    return (x[0] == y[0]);
+    return (x[0] == y[0]) && (x[1] == y[1]);
 }
 
 template <class R>
@@ -238,7 +238,7 @@ bool operator!=(Mv0<R> const& x, Mv0<R> const& y) {
 template <class R>
 bool operator!=(Mv1<R> const& x, Mv1<R> const& y) {
 
-    return (x[0] != y[0]);
+    return (x[0] != y[0]) || (x[1] != y[1]);
 }
 
 template <class R>

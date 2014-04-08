@@ -41,18 +41,18 @@ namespace col{
 
 
 		template <>
-		uint32 read<uint32>(istream &f) {
+		void read<uint32>(uint32 &r, istream &f) {
 			uint32 a = read_byte(f);
 			uint32 b = read_byte(f);
 			uint32 c = read_byte(f);
 			uint32 d = read_byte(f);		
-			return (d << 24) | (c << 16) | (b << 8) | a;
+			r = (d << 24) | (c << 16) | (b << 8) | a;
 		}
 
 		template <>
-		string read<string>(istream& f) {
+		void read<string>(string &r, istream& f) {
 			uint32 n = read<uint32>(f);
-			return read_chars(f, n);		
+			r = read_chars(f, n);		
 		}
 
 
@@ -96,22 +96,22 @@ namespace col{
 
 
 		template <>
-		uint8 read<uint8>(istream &f) {
-			return read_byte(f);
+		void read<uint8>(uint8 &r, istream &f) {
+			r = read_byte(f);
 		}
 
 		template <>
-		uint16 read<uint16>(istream &f) {
+		void read<uint16>(uint16 &r, istream &f) {
 			uint16 a = read_byte(f);
 			uint16 b = read_byte(f);
-			return (b << 8) | a;	
+			r = (b << 8) | a;	
 		}
 
 		template <>
-		int16 read<int16>(istream &f) {
+		void read<int16>(int16 &r, istream &f) {
 			uint16 a = read_byte(f);
 			uint16 b = read_byte(f);
-			return (b << 8) | a;	
+			r = (b << 8) | a;	
 		}
 
 
