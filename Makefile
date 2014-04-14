@@ -2,7 +2,7 @@
 # *.cpp -> *.o
 # `find . -name '*.cpp' | rev | cut -c4- | rev | sed -e 's/$/o/' | tr '\n' ' '`
 
-OBJS=b/iomm.o b/env.o b/objs.o b/csv.o b/roll.o b/console.o b/renderer.o b/pixfont.o b/ai.o b/ox.o b/terr.o b/icon.o b/envgame.o
+OBJS=b/iomm.o b/env.o b/objs.o b/csv.o b/roll.o b/console.o b/renderer.o b/pixfont.o b/ai.o b/ox.o b/terr.o b/unit.o b/envgame.o b/build.o
 
 
 main: b/main.o ${OBJS}

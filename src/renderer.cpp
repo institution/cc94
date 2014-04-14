@@ -147,26 +147,26 @@ namespace col {
 
 	
 	
-	void render_icon(sf::RenderWindow &win, const Env &env, const Icon &icon) {
-		auto &p = env.get_player(icon.player->id);
+	void render_icon(sf::RenderWindow &win, Env const& env, Unit const& unit) {
+		auto &p = env.get_player(unit.player->id);
 		
-		auto type = icon.type->id;
+		auto type = unit.type->id;
 		switch (type / 256) {
 			case 0: 
-				render_shield(win, icon.pos[0]*16, icon.pos[1]*16, p.color);
-				render_sprite(win, icon.pos[0]*16, icon.pos[1]*16, res(ICON, type));
+				render_shield(win, unit.pos[0]*16, unit.pos[1]*16, p.color);
+				render_sprite(win, unit.pos[0]*16, unit.pos[1]*16, res(ICON, type));
 				break;
 			case 1: 
-				render_sprite(win, icon.pos[0]*16, icon.pos[1]*16, res(ICON, 4));
+				render_sprite(win, unit.pos[0]*16, unit.pos[1]*16, res(ICON, 4));
 				// flag:
-				render_sprite(win, icon.pos[0]*16+5, icon.pos[1]*16, res(ICON, icon.player->flag_id));
+				render_sprite(win, unit.pos[0]*16+5, unit.pos[1]*16, res(ICON, unit.player->flag_id));
 				break;
 		}
 		
 	}
 	
 
-	void render_city(sf::RenderWindow &win, const Env &env, const Console &con) {
+	void render_city(sf::RenderWindow &win, Env const& env, Console const& con) {
 		
 		auto bg = res(ARCH, 1);
 		
@@ -202,14 +202,14 @@ namespace col {
 		
 		
 		uint i = 0;
-		for (auto &iicon: env.icons) {
-			auto & icon = iicon.second;
-			if (icon.pos != con.sel) {
+		for (auto &iunit: env.units) {
+			auto & unit = iunit.second;
+			if (unit.pos != con.sel) {
 				continue;
 			}
 			
-			auto type = icon.type->id;
-			if (type < 256 || icon.pos != con.sel) {
+			auto type = unit.type->id;
+			if (type < 256 || unit.pos != con.sel) {
 				continue;
 			}
 			
@@ -224,7 +224,7 @@ namespace col {
 			}
 			
 			
-			cout << icon << endl;
+			cout << unit << endl;
 			++i;
 		}
 		
@@ -282,7 +282,7 @@ namespace col {
 			}
 		}
 
-		for (auto &p: env.icons) {
+		for (auto &p: env.units) {
 			render_icon(win, env, p.second);
 		}
 		
@@ -320,7 +320,7 @@ namespace col {
 		
 
 		
-		Icon const* u = env.get_icon_at(con.sel);
+		Unit const* u = env.get_icon_at(con.sel);
 		
 		if (u) {
 			

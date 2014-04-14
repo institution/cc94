@@ -46,62 +46,35 @@ namespace col {
 	Phys const PHYS_MAJOR_RIVER = 32;
 	Phys const PHYS_DOCKS = 64;
 	
-			
+	using Item = uint8;
 	
+	Item const ITEM_FOOD = 23;
+	Item const ITEM_SUGAR = 24;
+	Item const ITEM_TOBACCO = 25;
+	Item const ITEM_COTTON = 26;
+	Item const ITEM_FURS = 27;
+	Item const ITEM_LUMBER = 28;
+	Item const ITEM_ORE = 29;
+	Item const ITEM_SILVER = 30;
+	Item const ITEM_HORSES = 31;
+	Item const ITEM_RUM = 32;
+	Item const ITEM_CIGARS = 33;
+	Item const ITEM_CLOTH = 34;
+	Item const ITEM_COATS = 35;
+	Item const ITEM_TRADE_GOODS = 36;
+	Item const ITEM_TOOLS = 37 ;
+	Item const ITEM_MUSKETS = 38;
+	
+	using Stock = map<Item,float>;
+	
+	
+	
+	struct Place {
+		
+	};
 
 	
-	struct TerrType{
-		using Id = uint8;
-		
-		string name;
-		Id id;
-		uint8 movement_cost;
-		uint8 movement_type;
-		uint8 defensive;
-		
-		TerrType() {}
-		
-		TerrType(const vector<string> &xs) {
-			assert(xs.size() >= 16);
-			
-			name = trim_copy(xs[0]);
-			id = stoi(xs[1]);
-			movement_cost = stoi(xs[2]) * UNIT_OF_MOVEMENT;
-			defensive = stoi(xs[3]);			
-			movement_type = stoi(xs[15]);
-		}
-				
-	};
 	
-	struct UnitType{
-		using Id = uint32;
-		
-		string name;
-		Id id;
-		uint8 movement;
-		uint8 attack;
-		uint8 combat;
-		uint8 cargo;
-		uint8 size;
-		uint8 movement_type;
-
-		UnitType() {}
-		
-		UnitType(const vector<string> &xs) {
-			assert(xs.size() >= 8);
-			name = trim_copy(xs[0]);
-			id = stoi(xs[1]);
-			movement = stoi(xs[2]) * UNIT_OF_MOVEMENT;
-			attack = stoi(xs[3]);
-			combat = stoi(xs[4]);
-			cargo = stoi(xs[5]);
-			size = stoi(xs[6]);
-			// unused column 7 
-			// unused column 8
-			movement_type = stoi(xs[9]);			
-		}
-				
-	};
 	
 	
 	

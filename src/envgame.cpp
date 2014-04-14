@@ -47,13 +47,13 @@ namespace col {
 			
 			
 			if (nsect < 3) return;
-			// icons
-			auto nunits = read<Icon::Id>(f);    // num of icons
-			cout << format("Icons(%||)\n") % nunits;
+			// units
+			auto nunits = read<Unit::Id>(f);    // num of units
+			cout << format("Units(%||)\n") % nunits;
 			for (uint i = 0; i < nunits; ++i) {
-				Icon icon(read_obj<Icon>(env, f));
-				env.icons[icon.id] = icon;
-				cout << icon << endl;
+				Unit unit(read_obj<Unit>(env, f));
+				env.units[unit.id] = unit;
+				cout << unit << endl;
 			}
 			
 			if (nsect < 4) return;
@@ -98,10 +98,10 @@ namespace col {
 				l += write_obj<Player>(f, p.second);
 			}
 			
-			// icons
-			l += write<Icon::Id>(f, env.icons.size());
-			for (auto &icon: env.icons) {
-				l += write_obj<Icon>(f, icon.second);
+			// units
+			l += write<Unit::Id>(f, env.units.size());
+			for (auto &unit: env.units) {
+				l += write_obj<Unit>(f, unit.second);
 			}
 
 			// turn info

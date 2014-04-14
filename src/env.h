@@ -5,33 +5,57 @@
 #include "objs.h"
 #include "csv.h"
 #include "terr.h"
-#include "icon.h"
+#include "build.h"
+#include "unit.h"
 
 
 namespace col{
 	
 	
-	using Terrs = boost::multi_array<Terr, 2>;
+	using TerrTypes = map<TerrType::Id, TerrType>;
+	using BuildTypes = map<BuildType::Id, BuildType>;
+	using UnitTypes = map<UnitType::Id, UnitType>;
 	
-	using Icons = map<Icon::Id, Icon>;
+	using Terrs = boost::multi_array<Terr, 2>;	
+	using Builds = map<Build::Id, Build>;
+	using Units = map<Unit::Id, Unit>;
+		
 	using Players = map<Player::Id, Player>;
 		
-	using UnitTypes = map<UnitType::Id, UnitType>;
+	
+	template<class Types>
+	Types load(string const& fn) {
+		using Type = typename Types::mapped_type;
+		Types ts;
 
-	using TerrTypes = map<TerrType::Id, TerrType>;
-	
-			
-	TerrTypes load_terr_types();
-	UnitTypes load_unit_types();
+		auto ls = read_conf(fn);
+		auto p = ls.begin();
+		auto e = ls.end();
+		
+		++p; // skip header
+		while (p != e) {
+			// cout << "LOAD TERR TYPES: " << (*p).size() << endl;
+			if ((*p).size() > 1) {
+				auto t = Type(*p);
+				ts[t.id] = t;
 
+				//for (auto &v: *p) {
+				//	cout << v << '|';
+				//}
+				//cout << endl;
+			}			
+			++p;
+		}
+
+		return ts;
+	}
 	
-	
-	//using IconsByLoc = map<Coords, IconsLst>;
+	//using UnitsByLoc = map<Coords, UnitsLst>;
 	/*
 	template <typename Cnt>
 	struct Filtered {
 		using baseiter = typename Cnt::const_iterator;
-		using func_type = function<bool(Icon const&)>;
+		using func_type = function<bool(Unit const&)>;
 		
 		Cnt const* cnt;
 		func_type fun;
@@ -111,14 +135,15 @@ namespace col{
 		// static
 		Coord w, h;
 		
+		TerrTypes const* tts;
+		BuildTypes const* bts; 
 		UnitTypes const* uts; 
-		//TerrTypes tts;
+		
 		
 		// modifiable
 		Terrs terrs;  
-		
-		//IconsAt      // by loc
-		Icons icons;  // by id
+		Builds builds;		
+		Units units;  
 
 		uint32 mod;
 
@@ -127,7 +152,6 @@ namespace col{
 		uint32 turn_no;
 		
 		Env() {
-			uts = nullptr;
 			mod = 0;
 			turn_no = 0;
 			w = h = 0;
@@ -140,8 +164,8 @@ namespace col{
 			// time progress
 			++turn_no;
 			
-			// all icons - new movment
-			for (auto& item: icons) {
+			// all units - new movment
+			for (auto& item: units) {
 				item.second.turn();
 			}
 			
@@ -172,14 +196,66 @@ namespace col{
 		
 		
 		
-		Icon::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
-			Icon::Id id = icons.size();
+		/*
+		void move_in(Terr const& loc, Unit const& obj) {
+			 obj.place = &loc;
+		}		
+		void move_in(Terr const& loc, Build const& obj) {
+			 obj.place = &loc;
+		}		
+		void move_in(Unit const& loc, Unit const& obj) {
+			 obj.place = &loc;
+		}
+		void move_in(Unit const& loc, Cargo const& obj)	{			 {
+			 obj.place = &loc;
+		}
+		bool move_in(Build const& loc, Unit const& obj) {
+			//if (loc.get_free_space() >= obj.get_size()) {
+			//	loc.sub_free_space(obj.get_size());
+				obj.place = &loc;
+			//	return NOT_ENOUGH_SPACE;
+			//}
+			//else {
+			//	return OK;
+			//}
+		}
+		void move_in(Build const& loc, Cargo const& obj) {
+			 obj.place = &loc;
+		}
+		
+		
+		void move_out(Unit const& obj, Terr const& loc) {
+			obj.place = nullptr;
+		}
+		void move_out(Build const& obj, Terr const& loc) {
+			obj.place = nullptr;
+		}
+		
+		void move_out(Unit const& obj, UNit const& loc) {
+			
+			obj.place = nullptr;
+		}
+		void move_out(Cargo const& obj, Unit const& loc) {
+			obj.place = nullptr;
+		}
+		
+		void move_out(Unit const& obj, Build const& loc) {
+			obj.place = nullptr;
+		}
+		void move_out(Cargo const& obj, Build const& loc) {
+			obj.place = nullptr;
+		}
+		*/
+		
+		
+		Unit::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
+			Unit::Id id = units.size();
 			
 			if (uts->find(type_id) == uts->end()) {
 				throw runtime_error(str(format("unit types: id not found: %||") % type_id));
 			}
 						
-			icons[id] = Icon(
+			units[id] = Unit(
 				id,
 				uts->at(type_id),
 				xy,
@@ -189,8 +265,8 @@ namespace col{
 			return id;		
 		}
 		
-		void destroy_icon(Icon::Id id) {
-			icons.erase(id);
+		void destroy_icon(Unit::Id id) {
+			units.erase(id);
 			++mod;
 		}
 				
@@ -211,8 +287,8 @@ namespace col{
 		//	return tts.at(get_terr_id(xy[0], xy[1]));
 		//}
 		
-		Icon const* get_icon_at(Coords const& xy) const {
-			for (auto &p: icons) {				
+		Unit const* get_icon_at(Coords const& xy) const {
+			for (auto &p: units) {				
 				auto &c = p.second;
 				if (c.pos == xy) {
 					return &c;
@@ -223,13 +299,13 @@ namespace col{
 		
 		
 		
-		Icon& icon4id(Icon::Id const& id) {
-			return icons.at(id);			
+		Unit& icon4id(Unit::Id const& id) {
+			return units.at(id);			
 		}
 		
 		
-		Icon* get_icon_at(Coords const& xy) {
-			for (auto &p: icons) {				
+		Unit* get_icon_at(Coords const& xy) {
+			for (auto &p: units) {				
 				auto &c = p.second;
 				if (c.pos == xy) {
 					return &c;
@@ -239,7 +315,7 @@ namespace col{
 			
 		}
 		
-		Icon& ref_icon_at(Coords const& pos) {
+		Unit& ref_icon_at(Coords const& pos) {
 			auto p = get_icon_at(pos);
 			if (p) {
 				return *p;
@@ -247,7 +323,7 @@ namespace col{
 			throw runtime_error("no icon at location");
 		}
 		
-		bool can_attack_move(Icon const& u, Dir const& dir) {
+		bool can_attack_move(Unit const& u, Dir const& dir) {
 			// square empty
 			auto& ut = *(u.type);
 			auto dest = u.pos + vec4dir(dir);
@@ -280,8 +356,8 @@ namespace col{
 		
 		
 		
-		void attack_move(Player::Id const& pid, Icon::Id const& iid, Dir const& dir) {
-			Icon *p = & icon4id(iid);
+		void attack_move(Player::Id const& pid, Unit::Id const& iid, Dir const& dir) {
+			Unit *p = & icon4id(iid);
 			
 			if (!can_attack_move(*p, dir)) {
 				cout << "!!!!!!!!" << endl;
@@ -327,8 +403,8 @@ namespace col{
 		}
 		
 		
-		//RangeXY<Icons> all(Coord x, Coord y) const {
-		//	return RangeXY<Icons>(icons, x, y);			
+		//RangeXY<Units> all(Coord x, Coord y) const {
+		//	return RangeXY<Units>(units, x, y);			
 		//}
 		
 		
@@ -336,20 +412,20 @@ namespace col{
 		
 		
 		
-		//Icon::Id create_icon(istream &f) {
-		//	Icon icon(read_obj<Icon>(*this, f));
-		//	env.icons[icon.id] = icon;
+		//Unit::Id create_icon(istream &f) {
+		//	Unit icon(read_obj<Unit>(*this, f));
+		//	env.units[icon.id] = icon;
 		//	return icon.id;
 		//}
 				
 				
-		Icon& get(Icon::Id id) {
-			return icons.at(id);
+		Unit& get(Unit::Id id) {
+			return units.at(id);
 		}
 		
 		
-		void set_owner(const Icon::Id &icon_id, const Player::Id &player_id) {
-			icons.at(icon_id).player = &players.at(player_id);
+		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {
+			units.at(icon_id).player = &players.at(player_id);
 			++mod;			
 		}
 		

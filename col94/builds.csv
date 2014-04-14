@@ -1,0 +1,48 @@
+name,id,space
+Stockade,1,0
+Fort,2,0
+Fortress,3,0
+Armory,4,3
+Magazine,5,3
+Arsenal,6,3
+Docks,7,3
+Drydock,8,3
+Shipyard,9,3
+Town Hall,10,3
+Town Hall unused2,11,3
+Town Hall unused3,12,3
+Schoolhouse,13,3
+College,14,3
+University,15,3
+Warehouse,16,3
+Fence,17,3
+Custom House,19,3
+Printing Press,20,3
+Newspaper,21,3
+Weaver's House,22,3
+Weaver's Shop,23,3
+Textile Mill,24,3
+Tobacconist's House,25,3
+Tobacconist's Shop,26,3
+Cigar Factory,27,3
+Rum Distiller's House,28,3
+Rum Distillery,29,3
+Rum Factory,30,3
+Capitol unused1,31,3
+Capitol Expansion unused2,32,3
+Fur Trader's House,33,3
+Fur Trading Post,34,3
+Fur Factory,35,3
+Carpenter's Shop,36,3
+Lumber Mill,37,3
+Church,38,3
+Cathedral,39,3
+Blacksmith's House,40,3
+Blacksmith's Shop,41,3
+Iron Works,42,3
+Trees 3,43,0
+Trees 2,44,0
+Trees 1,45,0
+Coast,46,0
+Stable,47,0
+Stable Warehouse,48,0

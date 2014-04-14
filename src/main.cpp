@@ -105,11 +105,14 @@ int main()
 	//tts = load_terr_types();
 	//cout << " " << tts.size() << " loaded." << endl;
 
-	cout << "Loading unit types...";
-	auto uts = load_unit_types();
-	cout << " " << uts.size() << " loaded." << endl;
-
+	auto tts = load<TerrTypes>("./col94/terrs.csv");
+	auto bts = load<BuildTypes>("./col94/builds.csv");
+	auto uts = load<UnitTypes>("./col94/units.csv");
+		
 	EnvGame env;
+
+	env.tts = &tts;
+	env.bts = &bts;
 	env.uts = &uts;
 	
 	ifstream f(fname, std::ios::binary);

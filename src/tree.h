@@ -58,6 +58,56 @@ namespace tree {
 	};
 	
 	
+	
+	
+	struct Node2 {
+		Node2 *parent;
+		Node2 *left_child;
+		Node2 *right_neigh;
+		
+		Node2() {
+			left_child = nullptr;
+			right_neigh = nullptr;
+			parent = nullptr;
+		}
+		
+		~Node2() {
+			if (left_child)	 delete left_child;
+			if (right_neigh) delete right_neigh;
+		}
+				
+	};
+
+	Node2* insert(Node2* par, Node2 *chi) {
+		chi->parent = par;
+		chi->right_neigh = par->left_child;
+		par->left_child = chi;
+		return chi;
+	}
+	
+	Node2 *extract(Node2 *chi) {
+		if (chi->parent == nullptr) {
+			return chi;
+		}
+		
+		Node2 *iter = chi->parent->left_child;
+		while (iter) {
+			if (node == iter->right_neigh) {
+				iter->right_neigh = chi->right_neigh;
+				chi->parent = nullptr;
+				chi->right_neigh = nullptr;
+				return chi;
+			}					
+			iter = iter->right_neigh;
+		}
+		assert(0); // impossible to get here
+		return nullptr;
+	}
+	
+	Node2* move(Node2 *par, Node2 *chi) {
+		return insert(par, extract(chi));
+	}
+	
 
 }
 	

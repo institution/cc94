@@ -11,7 +11,13 @@ namespace col{
 			explicit Error (const char* what_arg);
 	};
 
-
+	
+	using uint16 = ErrNo;	
+	ErrNo const NOT_ENOUGH_SPACE = 2;
+	ErrNo const CANNOT_MOVE = 3;
+	
+	
+	//ErrNo const  = ;
 }
 
 #endif

@@ -2,7 +2,7 @@
 
 namespace col {
 
-	
+	using boost::str;
 	
 	
 	Color make_color_by_name(const string &s) {
@@ -114,7 +114,7 @@ namespace col {
 			}
 			else
 			if (es[0] == "lsi") {
-				for (auto &item: envgame.icons) {
+				for (auto &item: envgame.units) {
 					cout << item.second << endl;
 					output.push_back(str(format("%||\n") % item.second));
 				}

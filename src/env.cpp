@@ -4,6 +4,8 @@ namespace col{
 	
 
 
+	
+	
 	TerrTypes load_terr_types() {
 		TerrTypes tts;
 
@@ -92,8 +94,8 @@ namespace col{
 		}
 		
 		template <>
-		Icon read_obj<Icon>(Env &env, istream &f) {
-			Icon u;
+		Unit read_obj<Unit>(Env &env, istream &f) {
+			Unit u;
 			read(u.id, f);
 			u.type = (UnitType const*)read_ptr(*env.uts, f);
 			read(u.pos, f);
@@ -105,12 +107,12 @@ namespace col{
 		
 		
 		template <>
-		size_t write_obj<Icon>(ostream &f, Icon const &icon) {
+		size_t write_obj<Unit>(ostream &f, Unit const &unit) {
 			size_t l = 0;
-			l += write(f, icon.id);
-			l += write(f, icon.type->id);
-			l += write(f, icon.pos);
-			l += write(f, icon.player->id);
+			l += write(f, unit.id);
+			l += write(f, unit.type->id);
+			l += write(f, unit.pos);
+			l += write(f, unit.player->id);
 			return l;
 		}
 		

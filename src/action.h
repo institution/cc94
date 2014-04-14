@@ -34,9 +34,9 @@ namespace col {
 
 
 	struct AttackMove: Action {
-		Icon::Id iid;
+		Unit::Id iid;
 		Dir dir;
-		AttackMove(Player::Id const& pid, Icon::Id const& iid, Dir const& dir): Action(pid) {
+		AttackMove(Player::Id const& pid, Unit::Id const& iid, Dir const& dir): Action(pid) {
 			this->iid = iid;
 			this->dir = dir;
 		}
