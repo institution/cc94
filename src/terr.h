@@ -2,6 +2,7 @@
 #define TERR_H
 
 #include "objs.h"
+#include "colony.h"
 
 namespace col{
 	
@@ -14,6 +15,7 @@ namespace col{
 		uint8 movement_cost;
 		uint8 movement_type;
 		uint8 defensive;
+		
 		
 		TerrType() {}
 		
@@ -35,6 +37,15 @@ namespace col{
 		uint8 biome;
 		uint8 phys;
 		
+		vector<Unit*> units;
+		Colony* colony;
+		
+		Terr() {
+			colony = nullptr;
+		}
+		
+		
+			
 		
 		bool has(Phys const& p) const {
 			return phys & p;

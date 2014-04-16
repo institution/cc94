@@ -6,58 +6,6 @@ namespace col{
 
 	
 	
-	TerrTypes load_terr_types() {
-		TerrTypes tts;
-
-		auto vss = read_conf("./col94/terrs.csv");
-		auto p = vss.begin();
-		auto e = vss.end();
-		
-		++p; // skip header
-		while (p != e) {
-			// cout << "LOAD TERR TYPES: " << (*p).size() << endl;
-			if ((*p).size() > 1) {
-				TerrType tt = TerrType(*p);
-
-				tts[tt.id] = tt;
-
-				//for (auto &v: *p) {
-				//	cout << v << '|';
-				//}
-				//cout << endl;
-			}			
-			++p;
-		}
-
-		return tts;
-	}
-
-	UnitTypes load_unit_types() {
-		UnitTypes itypes;
-
-		auto vss = read_conf("./col94/icons.csv");
-		auto p = vss.begin();
-		auto e = vss.end();
-		
-		++p; // skip header
-		while (p != e) {
-			//cout << "LOAD UNIT TYPES: " << (*p).size() << endl;
-			if ((*p).size() > 1) {
-				UnitType ut = UnitType(*p);
-
-				itypes[ut.id] = ut;
-
-				//for (auto &v: *p) {
-				//	cout << v << '|';
-				//}
-				//cout << endl;
-			}
-			
-			++p;
-		}
-
-		return itypes;
-	}
 	
 	namespace io {
 

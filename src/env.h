@@ -2,6 +2,7 @@
 #define ENV_H
 
 #include "col.h"
+#include "base.h"
 #include "objs.h"
 #include "csv.h"
 #include "terr.h"
@@ -12,6 +13,7 @@
 namespace col{
 	
 	
+	
 	using TerrTypes = map<TerrType::Id, TerrType>;
 	using BuildTypes = map<BuildType::Id, BuildType>;
 	using UnitTypes = map<UnitType::Id, UnitType>;
@@ -20,6 +22,7 @@ namespace col{
 	using Builds = map<Build::Id, Build>;
 	using Units = map<Unit::Id, Unit>;
 		
+	using Colonies = map<Colony::Id, Colony>;
 	using Players = map<Player::Id, Player>;
 		
 	
@@ -112,20 +115,6 @@ namespace col{
 	22 8  1,1
 	*/
 
-	enum class Dir: int8{
-		Q=0, W=1, E=2,
-		A=3,      D=5,
-		Z=6, X=7, C=8
-	};
-	
-	inline Coords vec4dir(Dir const& d) {
-		auto n = static_cast<int8>(d);
-		return Coords((n % 3) - 1, (n / 3) - 1);
-	}
-	
-	inline Dir dir4vec(Coords const& d) {
-		return static_cast<Dir>((d[0] + 1) + (d[1] + 1) * 3);
-	}
 	
 	
 	struct Env{
@@ -144,9 +133,11 @@ namespace col{
 		Terrs terrs;  
 		Builds builds;		
 		Units units;  
+		
 
 		uint32 mod;
 
+		Colonies colonies;
 		Players players;   // ls of player id
 
 		uint32 turn_no;
@@ -168,6 +159,9 @@ namespace col{
 			for (auto& item: units) {
 				item.second.turn();
 			}
+			
+			
+			
 			
 			++mod;
 		}
@@ -196,10 +190,32 @@ namespace col{
 		
 		
 		
+		// terr - unit
+		void move_in(Terr &loc, Unit &obj) {
+			loc.units.push_back(&obj);		
+			obj.place = &loc;
+		}
+		void move_out(Terr &loc, Unit &obj) {
+			auto& us = loc.units;			
+			us.erase(remove(us.begin(), us.end(), &obj), us.end());
+			obj.place = nullptr;
+		}
+		
+		// terr - colony
+		void move_in(Terr &loc, Colony &obj) {
+			assert(loc.colony == nullptr);
+			loc.colony = &obj;
+			obj.place = &loc;
+		}
+		void move_out(Terr &loc, Colony &obj) {
+			assert(loc.colony == &obj);
+			loc.colony = nullptr;
+			obj.place = nullptr;
+		}
+		
+		
+		
 		/*
-		void move_in(Terr const& loc, Unit const& obj) {
-			 obj.place = &loc;
-		}		
 		void move_in(Terr const& loc, Build const& obj) {
 			 obj.place = &loc;
 		}		
@@ -209,7 +225,7 @@ namespace col{
 		void move_in(Unit const& loc, Cargo const& obj)	{			 {
 			 obj.place = &loc;
 		}
-		bool move_in(Build const& loc, Unit const& obj) {
+		void move_in(Build const& loc, Unit const& obj) {
 			//if (loc.get_free_space() >= obj.get_size()) {
 			//	loc.sub_free_space(obj.get_size());
 				obj.place = &loc;
@@ -323,6 +339,57 @@ namespace col{
 			throw runtime_error("no icon at location");
 		}
 		
+		
+	/*
+		void produce(Unit const& unit, Item const& item, Dir const& dir) {
+			
+			
+		}
+		
+		
+		void construct(Unit const& unit) {
+	
+		}
+		
+		void move(Unit const& unit, Build const& build) {
+			
+		}
+			*/
+
+		
+		bool colonize(Unit &u, string const& name) {
+			
+			// decrease unit time_left
+			if (u.time_left < 6) {
+				return 0;
+			}
+			u.time_left -= 6;			
+			
+			// unit terrain square
+			assert(u.place);
+			assert(typeid(u.place) == typeid(Terr));
+			
+			auto& t = *static_cast<Terr*>(u.place);
+						
+			// next colony uid
+			Colony::Id id = colonies.size();
+			
+			// create colony
+			//auto& cc = colonies.emplace(id, Colony(id, name)).second;
+			
+			colonies.emplace(id, Colony(id, name));
+			
+			// colony at terrain square
+			//move_in(t, c);
+			
+			//move_in(cc, );
+			
+			// move unit into colony
+			// TODO
+			
+			return 1;
+		}
+		
 		bool can_attack_move(Unit const& u, Dir const& dir) {
 			// square empty
 			auto& ut = *(u.type);
@@ -336,6 +403,15 @@ namespace col{
 			}
 			// compatible terrain type
 				
+			/*
+			moves_left = u.time_left * ut.movement;
+			
+			moves_need = tt.get_movement_cost(ut.movement_type)
+			
+			moves_left < moves_need
+				u.time_left -= moves_need / ut.movement
+			*/
+			
 			if (ut.movement < tt.get_movement_cost(ut.movement_type) + u.movement_used) {
 				cout << "cannot move - not enough moves" << endl;
 				return false;

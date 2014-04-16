@@ -10,6 +10,7 @@ namespace col{
 	
 	
 	
+	
 	struct UnitType {
 		using Id = uint32;
 		
@@ -21,7 +22,7 @@ namespace col{
 		uint8 cargo;
 		uint8 size;
 		uint8 movement_type;
-
+			
 		UnitType() {}
 		
 		UnitType(vector<string> const& xs) {
@@ -40,49 +41,60 @@ namespace col{
 				
 	};
 	
-	
-	struct Unit: Place {
+	struct Unit: Place, Placeable {
 		using Id = uint32;
 		
 		Id id;
 		UnitType const* type;
-		Place *place;
 		Coords pos;
 		Player const* player;	
-		uint8 movement_used;  // movement used in this turn
-				
+		uint8 movement_used;
+		uint8 time_left;
+		
 		// uint8 spec_id;
 		// int8 spec_lvl;
 		
 		string name;
 		
+		uint8 task;
+		uint8 param;
+		Dir dir;
+		
+		uint8 move_acc;
+		
+		//task
+		//60/90
+		
+				
+		
 		uint16 free_space;
 		
 
-		Unit(): movement_used(0) {
+		Unit(): Place(), Placeable(), time_left(6) {
 			name = "";
+			
 		}
+		
+		
 		
 		Unit(
 			Id id, 
 			UnitType const &type, 
 			Coords pos, 
 			Player const &player
-		) {	
+		): Place(), Placeable() {	
 			this->id = id; 
 			this->type = &type; 
 			this->pos = pos;
-			this->movement_used = 0;
+			this->time_left = 6;
 			this->player = &player;
+			this->movement_used = 0;
 		}
 		
-		void produce() {
-			
-		}
 		
 		void turn() {
 			
-			movement_used = 0;
+			time_left = 6;
 			
 			/*if (supply != -1) {
 				if (supply) {

@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <unordered_set>
 #include <boost/multi_array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -25,6 +26,7 @@ namespace col{
 	using std::string;
 	using std::to_string;
 	using std::function;
+	using std::unordered_set;
 
 	using std::cout;
 	using std::endl;
@@ -32,6 +34,7 @@ namespace col{
 	using std::pair;
 	using std::map;
 	using std::vector;
+	using std::remove;
 	
 	using boost::algorithm::trim;	
 	using boost::algorithm::trim_copy;
