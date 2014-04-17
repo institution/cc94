@@ -9,10 +9,12 @@ namespace roll{
 
 	extern boost::random::mt19937 gen;
 
-	inline int roll(int a, int b) {
+	inline int roll2(int a, int b) {
 		boost::random::uniform_int_distribution<> dist(a, b-1);
 		return dist(gen);
 	}
+	
+	int roll1(int b);
 	
 	inline void seed() {
 		gen.seed(std::time(0));

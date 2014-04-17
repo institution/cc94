@@ -34,21 +34,30 @@ namespace col{
 	struct Terr: Place {
 		using Id = Coords;
 		
-		uint8 biome;
-		uint8 phys;
+		Biome biome;
+		Phys phys;
 		
 		vector<Unit*> units;
 		Colony* colony;
 		
-		Terr() {
-			colony = nullptr;
-		}
+		Terr(): colony(nullptr) {}
 		
+		explicit Terr(Biome const& biome, Phys const& phys = PHYS_NONE): 
+			biome(biome), phys(phys), colony(nullptr) 
+		{}
 		
 			
 		
 		bool has(Phys const& p) const {
 			return phys & p;
+		}
+		
+		void add(Phys const& p) {
+			phys |= p;
+		}
+		
+		bool passable_by(MType const& mt) {
+			return get_movement_type() & mt;
 		}
 		
 		MovementType get_movement_type();

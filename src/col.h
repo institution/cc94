@@ -1,6 +1,7 @@
 #ifndef COL_H
 #define COL_H
 
+#include <typeinfo>
 #include <iostream>
 #include <fstream>
 #include <memory>
@@ -9,7 +10,11 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <memory>
+#include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <tuple>
 #include <boost/multi_array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -24,9 +29,13 @@ namespace col{
 	using std::ifstream;
 	using std::ofstream;
 	using std::string;
+	using std::cerr;
 	using std::to_string;
 	using std::function;
 	using std::unordered_set;
+	using std::unique_ptr;
+	using std::shared_ptr;
+	using std::unordered_map;
 
 	using std::cout;
 	using std::endl;
@@ -49,6 +58,9 @@ namespace col{
 	using boost::is_any_of;
 	using std::stoi;
 	
+	using std::piecewise_construct;
+	using std::forward_as_tuple;
+	
 	using roll::roll;
 	
 	template <typename T>
@@ -56,6 +68,8 @@ namespace col{
 	
 	using Vector2i = Vector2<int16>;
 	using Vector2f = Vector2<float>;
+	
+	
 }
 
 #endif

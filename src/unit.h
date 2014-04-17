@@ -15,17 +15,28 @@ namespace col{
 		using Id = uint32;
 		
 		string name;
-		Id id;
+		Id id; // const
 		uint8 movement;
 		uint8 attack;
 		uint8 combat;
 		uint8 cargo;
 		uint8 size;
 		uint8 movement_type;
-			
+		
+		UnitType& set_travel(MType const& mt) {
+			movement_type = mt;
+			return *this;
+		}
+		
+		MType const& get_travel() const {
+			return movement_type;			
+		}
+		
 		UnitType() {}
 		
-		UnitType(vector<string> const& xs) {
+		explicit UnitType(Id const& id): id(id) {}
+		
+		explicit UnitType(vector<string> const& xs) {
 			assert(xs.size() >= 8);
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
@@ -76,6 +87,16 @@ namespace col{
 		}
 		
 		
+		Unit(
+			Id id, 
+			UnitType const &type
+		): Place(), Placeable() {	
+			this->id = id; 
+			this->type = &type; 
+			this->time_left = 6;
+			this->movement_used = 0;
+		}
+		
 		
 		Unit(
 			Id id, 
@@ -105,6 +126,10 @@ namespace col{
 				}
 			}*/
 						
+		}
+		
+		bool can_travel_by(MType const& mt) {
+			return get_movement_type() & mt;
 		}
 		
 		MovementType get_movement_type() {

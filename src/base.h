@@ -4,6 +4,10 @@
 #include "col.h"
 
 namespace col {
+	
+	using Code = int16;
+	Code const OK = 0;
+	
 
 	using Coord = int16;
 	using Coords = Vector2<Coord>;
@@ -42,17 +46,23 @@ namespace col {
 	
 	
 	uint8 const UNIT_OF_MOVEMENT = 12;
-	uint8 const TIME_ATOM = 6;
+	uint8 const TIME_UNIT = 6;
 	// uint8 const COLONIZE_TP_COST = 6;
 	
 	
 	using MovementType = uint8;
+	using MType = MovementType;
 	using Biome = uint8;
 	using Phys = uint8;
 	using Item = uint8;
 		
+	
 	MovementType const MOVEMENT_TYPE_LAND = 1;
 	MovementType const MOVEMENT_TYPE_NAVAL = 2;
+	MovementType const MOVEMENT_TYPE_SEA = 2;
+	MType const LAND = 1;
+	MType const SEA = 2;
+	
 	
 	Biome const BIOME_TUNDRA = 1; //BOREAL FOREST
 	Biome const BIOME_PRAIRIE = 4; // BROADLEAF FOREST
@@ -66,6 +76,7 @@ namespace col {
 	Biome const BIOME_OCEAN = 11;
 	Biome const BIOME_SEA_LANE = 12;
 	
+	Phys const PHYS_NONE = 0;
 	Phys const PHYS_HILL = 1;
 	Phys const PHYS_MOUNTAIN = 2;	
 	Phys const PHYS_ROAD = 4;

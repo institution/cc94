@@ -7,14 +7,14 @@
 
 namespace col {
 	
-	struct Colony: Placeable {
+	struct Colony: Place, Placeable {
 		
 		using Id = uint32;
 		
 		Id const id;
 		
 		vector<Unit*> units;
-		vector<Build*> builds;
+		vector<buildp> builds;
 
 		string name;
 
@@ -26,10 +26,16 @@ namespace col {
 			
 		}
 
+		Colony(Colony &&c): id(c.id), name(c.name), units(move(c.units)), builds(move(c.builds)) {
+			// place?
+		}
+		
 	private:
 		Colony(Colony const& c): id(c.id) {
-			assert(0);
+			// place?
 		}
+		
+			
 	};
 }
 

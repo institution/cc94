@@ -129,7 +129,7 @@ namespace col {
 			}
 			else
 			if (es[0] == "deli") {
-				envgame.destroy_icon(std::stoi(es[1]));
+				envgame.destroy<Unit>(std::stoi(es[1]));
 			}
 			else
 			if (es[0] == "addi") {	

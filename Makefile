@@ -8,22 +8,21 @@ OBJS=b/iomm.o b/env.o b/objs.o b/csv.o b/roll.o b/console.o b/renderer.o b/pixfo
 main: b/main.o ${OBJS}
 	g++ b/main.o ${OBJS} -o main -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
-test_ai: b/test_ai.o ${OBJS}
-	g++ b/test_ai.o ${OBJS} -o test_ai -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+test: b/test.o ${OBJS}
+	g++ b/test.o ${OBJS} -o test -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
-test_ox: b/test_ox.o ${OBJS}
-	g++ b/test_ox.o ${OBJS} -o test_ox -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+#test_ox: b/test_ox.o ${OBJS}
+#	g++ b/test_ox.o ${OBJS} -o test_ox -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 #model: model.o iomm.o env.o
 #	g++ model.o iomm.o env.o -o model -I./include -L./lib -std=c++0x -g -lsfml-network
 
-b/main.o b/test_ai.o b/test_ox.o: b/%.o: src/%.cpp
+b/main.o b/test.o b/test_ox.o: b/%.o: src/%.cpp
 	g++ -c -o $@ $< -std=c++11 -g
-
 		
 ${OBJS}: b/%.o: src/%.cpp src/%.h
 	g++ -c -o $@ $< -std=c++11 -g
 
 clean:
-	rm -f main b/*.o core test_ai
+	rm -f b/*.o main core.* test
 

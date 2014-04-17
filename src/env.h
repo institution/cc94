@@ -11,17 +11,16 @@
 
 
 namespace col{
+	using Id = uint32;
 	
-	
-	
-	using TerrTypes = map<TerrType::Id, TerrType>;
-	using BuildTypes = map<BuildType::Id, BuildType>;
-	using UnitTypes = map<UnitType::Id, UnitType>;
+	using TerrTypes = unordered_map<TerrType::Id, TerrType>;
+	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
+	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
 	
 	using Terrs = boost::multi_array<Terr, 2>;	
-	using Builds = map<Build::Id, Build>;
-	using Units = map<Unit::Id, Unit>;
-		
+	using Units = unordered_map<Unit::Id, Unit>;
+	
+	
 	using Colonies = map<Colony::Id, Colony>;
 	using Players = map<Player::Id, Player>;
 		
@@ -35,17 +34,14 @@ namespace col{
 		auto p = ls.begin();
 		auto e = ls.end();
 		
-		++p; // skip header
+		// skip header
+		++p; 
+		
+		// load line by line
 		while (p != e) {
-			// cout << "LOAD TERR TYPES: " << (*p).size() << endl;
 			if ((*p).size() > 1) {
 				auto t = Type(*p);
 				ts[t.id] = t;
-
-				//for (auto &v: *p) {
-				//	cout << v << '|';
-				//}
-				//cout << endl;
 			}			
 			++p;
 		}
@@ -53,55 +49,6 @@ namespace col{
 		return ts;
 	}
 	
-	//using UnitsByLoc = map<Coords, UnitsLst>;
-	/*
-	template <typename Cnt>
-	struct Filtered {
-		using baseiter = typename Cnt::const_iterator;
-		using func_type = function<bool(Unit const&)>;
-		
-		Cnt const* cnt;
-		func_type fun;
-		
-		struct Iter{
-			baseiter p;
-			func_type fun;
-			
-			Iter(baseiter p_, func_type fun) {
-				//p(p_)
-				this->fun = fun;
-			}
-			
-			
-			bool operator!= (const Iter& other) {
-				return p != other.p;
-			}
-			
-			Iter& operator++() {
-				++p;
-				return *this;
-			}
-
-			const typename Cnt::mapped_type & operator*() {
-				 return (*p).second;
-			}
-		};
-			
-		Filtered(const Cnt &cnt, func_type fun) {
-			this->cnt = &cnt;
-			this->fun = fun;
-		}
-		
-		Iter begin() const {
-			return Iter(cnt->cbegin(), fun);
-		}
-
-		Iter end() const {
-			return Iter(cnt->cend(), fun);
-		}
-		
-	};
-	*/
 	
 	/* Dir code is yx in mod 3-1 (2 -> -1)
 	00 0  -1,-1
@@ -124,17 +71,16 @@ namespace col{
 		// static
 		Coord w, h;
 		
-		TerrTypes const* tts;
-		BuildTypes const* bts; 
-		UnitTypes const* uts; 
+		shared_ptr<TerrTypes> tts;
+		shared_ptr<BuildTypes> bts; 
+		shared_ptr<UnitTypes> uts; 
 		
 		
 		// modifiable
 		Terrs terrs;  
-		Builds builds;		
 		Units units;  
 		
-
+		
 		uint32 mod;
 
 		Colonies colonies;
@@ -142,13 +88,56 @@ namespace col{
 
 		uint32 turn_no;
 		
+		int (*roll)(int);
+		
+		Id next_id_;
 		Env() {
 			mod = 0;
 			turn_no = 0;
 			w = h = 0;
+			
+			units.reserve(10);
+			next_id_ = 0;
+			
+			uts.reset(new UnitTypes());
+			
+			set_random_gen(roll::roll1);
+		}
+		
+		Env& set_random_gen(int (*f)(int)) {
+			roll = f;
+			return *this;
 		}
 			
+		template <typename T>
+		unordered_map<typename T::Id, T>& get_cont();
+				
+		template<class T>
+		typename T::Id next_id() {
+			return T::Id(++next_id_);
+		}
 		
+		
+		template<class T, class... A>
+		T& create(typename T::Id id, A&&... args) { 
+			auto& ts = get_cont<T>();
+			auto p = ts.emplace(piecewise_construct,
+				forward_as_tuple(id), 
+				forward_as_tuple(id, std::forward<A>(args)...)
+			).first;
+			
+			return (*p).second;
+		}
+				
+		template <typename T>
+		void destroy(typename T::Id const& id) {
+			get_cont<T>().erase(id);			
+		}
+			
+		template <typename T>
+		T& ref(typename T::Id const& id) {
+			return get_cont<T>().at(id);
+		}
 		
 		
 		void turn() {
@@ -159,10 +148,6 @@ namespace col{
 			for (auto& item: units) {
 				item.second.turn();
 			}
-			
-			
-			
-			
 			++mod;
 		}
 		
@@ -213,7 +198,11 @@ namespace col{
 			obj.place = nullptr;
 		}
 		
-		
+		// colony - build
+		void move_in(Colony &loc, buildp &&objp) {
+			objp->place = &loc;
+			loc.builds.push_back(move(objp));			
+		}
 		
 		/*
 		void move_in(Terr const& loc, Build const& obj) {
@@ -281,18 +270,33 @@ namespace col{
 			return id;		
 		}
 		
-		void destroy_icon(Unit::Id id) {
-			units.erase(id);
-			++mod;
-		}
 				
-		Terr& terr(Vector2<Coord> const& z) {
+		Terr& terr(Coords const& z) {
 			return terrs[z[1]][z[0]];
 		}
 		
-		Terr const& terr(Vector2<Coord> const& z) const {
+		Terr& ref_terr(Coords const& z) {
 			return terrs[z[1]][z[0]];
 		}
+		
+		Env& set_terr(Coords const& z, Terr const& t) {
+			terrs[z[1]][z[0]] = t;
+		}
+		
+		Terr const& terr(Coords const& z) const {
+			return terrs[z[1]][z[0]];
+		}
+		
+		Env& resize(Coords const& dim) {
+			terrs.resize(boost::extents[dim[1]][dim[0]]);
+			return *this;
+		}
+		
+			/*for(Coord j = 0; j < dim[1]; ++j) {
+				for(Coord i = 0; i < dim[0]; ++i) {
+					terrs[j][i] = def;					
+				}
+			}*/
 		
 		
 		//TerrId& terr_id(Coord x, Coord y) {
@@ -356,6 +360,77 @@ namespace col{
 		}
 			*/
 
+		bool run_map_task(Unit &u, uint8 const& time_cost) {
+			/* 
+			 */
+			auto time_left = u.time_left;
+			if (time_left < time_cost) {
+				u.time_left = 0;
+				return roll(time_cost) < time_left;
+			}
+			else {
+				u.time_left -= time_cost;
+				return 1;
+			}
+		}
+		
+		Code build_road(Unit &u) {
+			/* Build road on land terrain square (cost ~ 1.5 turns)
+			 */
+			
+			cerr << typeid(u.place).name() << endl;
+			cerr << typeid(Terr*).name() << endl;
+
+				
+			if (typeid(u.place) != typeid(Terr*)) {
+				
+				// unit not on terrain
+				return -1;
+			}
+			
+			Terr& t = *static_cast<Terr*>(u.place);
+					
+			if (!t.passable_by(LAND)) {
+				// can build on land only
+				return -2;
+			}
+			
+			if (!u.can_travel_by(LAND)) {
+				// must be based land unit
+				return -3;
+			}			
+			
+			if (t.has(PHYS_ROAD)) {
+				// road already exists
+				return -4;
+			}
+			
+			uint8 time_cost = TIME_UNIT * 2;
+			auto r = run_map_task(u, time_cost);
+						
+			if (r) {
+				// place road
+				t.add(PHYS_ROAD);				
+			}
+			
+			return 0;
+		}
+		
+		bool plow_field() {
+			
+		}
+		
+		bool clear_forest(Unit const& u) {
+			uint8 time_cost = TIME_UNIT * 3;  // 3t
+			
+			
+		}
+		
+		
+		bool plant_forest() {
+			
+		}
+		
 		
 		bool colonize(Unit &u, string const& name) {
 			
@@ -379,15 +454,21 @@ namespace col{
 			
 			colonies.emplace(id, Colony(id, name));
 			
-			// colony at terrain square
-			//move_in(t, c);
+			Colony &c = colonies[id];
 			
-			//move_in(cc, );
+			// colony at terrain square
+			move_in(t, c);
+
+			move_in(c, create_build(10));
 			
 			// move unit into colony
 			// TODO
 			
 			return 1;
+		}
+		
+		buildp create_build(BuildType::Id const& type_id) {
+			return buildp( new Build( bts->at(10) ) );
 		}
 		
 		bool can_attack_move(Unit const& u, Dir const& dir) {
@@ -459,7 +540,7 @@ namespace col{
 
 				assert(attack > 0);
 
-				auto r = roll(0, attack + combat);
+				auto r = roll(attack + combat);
 
 				// cout << "combat " << r << endl;
 
@@ -467,10 +548,10 @@ namespace col{
 					p->movement_used = p->type->movement;
 					p->pos = dest;
 
-					destroy_icon(q->id);
+					destroy<Unit>(q->id);
 				}
 				else {
-					destroy_icon(p->id);
+					destroy<Unit>(q->id);
 				}
 
 			}
@@ -563,6 +644,14 @@ namespace col{
 		size_t write_obj(ostream &f, T const &t);
 	}
 	
+	
+	template <>	inline Units& Env::get_cont<Unit>() {
+		return units;
+	}
+	
+	template <>	inline UnitTypes& Env::get_cont<UnitType>() {
+		return *uts;
+	}
 
 }
 

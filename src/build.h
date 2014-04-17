@@ -26,25 +26,19 @@ namespace col{
 	};
 	
 	struct Build: Place {
-		using Id = uint32;
 		
-		Id id;
 		BuildType const* type;
 		//int8 free_slots;
 		Place *place;
 		
-		Build() {}
-		
-		Build(
-			Id id, 
-			BuildType const& type
-		) {	
-			this->id = id; 
-			this->type = &type;
+		Build(BuildType const& type): type(&type) {	
 			//this->free_slots = type.slots;
 		}
 				
 	}; 
+	
+	using buildp = unique_ptr<Build>;
+
 
 	ostream& operator<<(ostream &out, Build const& obj);
 
