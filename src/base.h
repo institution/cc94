@@ -15,7 +15,7 @@ namespace col {
 	
 	enum class Dir: int8{
 		Q=0, W=1, E=2,
-		A=3,      D=5,
+		A=3, S=4, D=5,
 		Z=6, X=7, C=8
 	};
 

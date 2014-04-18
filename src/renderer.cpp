@@ -324,10 +324,9 @@ namespace col {
 		
 		if (u) {
 			
-			auto &ut = *(u->type);
-			auto moves = float(ut.movement - u->movement_used) / UNIT_OF_MOVEMENT;
+			auto moves = u->time_left;
 			
-			auto s = boost::str(format("%||\nmoves: %||") % ut.name % moves);
+			auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
 			
 			render_text(win, 
 				pos,

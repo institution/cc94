@@ -7,6 +7,86 @@
 using namespace col;
 using roll::replay;
 
+
+/*
+ * build road *
+ * move *
+ * attack
+ * build colony 
+ * work at colony manufacture
+ * work at colony field
+ *  
+ * 
+ */
+
+TEST_CASE( "env::move_unit", "env" ) {
+	
+	Env env;
+	
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(BIOME_PLAINS));
+	env.set_terr({1,0}, Terr(BIOME_PLAINS));
+	
+	auto u = env.create<Unit>(
+		1,
+		env.create<UnitType>(1).set_travel(LAND)
+	);
+	
+	env.move_in(env.ref_terr({0,0}), u);
+	
+	REQUIRE(env.get_coords(u) == Coords(0,0));
+	
+	env.set_random_gen(replay({0}));
+	env.move_unit(u, Dir::D);	
+	
+	REQUIRE(env.get_coords(u) == Coords(1,0));
+	
+	
+}
+
+
+TEST_CASE( "env::get_coords", "env" ) {
+	
+	Env env;
+	
+	env.resize({5,3});
+	env.set_terr({4,1}, Terr(BIOME_PLAINS));
+		
+	REQUIRE(env.get_coords(env.ref_terr({4,1})) == Coords(4,1));
+	
+}
+
+		
+			
+
+TEST_CASE( "env::order_attack", "env" ) {
+	
+	Env env;
+	
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(BIOME_PLAINS));
+	env.set_terr({1,0}, Terr(BIOME_PLAINS));
+	
+	auto& t1 = env.ref_terr({0,0});
+	auto& t2 = env.ref_terr({1,0});
+	
+	auto& ut = env.create<UnitType>(1).set_travel(LAND);
+	ut.set_attack(2).set_combat(1);
+	
+	auto& u1 = env.create<Unit>(1, ut);
+	env.move_in(t1, u1);
+	
+	auto& u2 = env.create<Unit>(2, ut);
+	env.move_in(t2, u2);
+	
+	env.set_random_gen(replay({1}));
+	env.order_attack(u1, Dir::D);
+	
+	REQUIRE(env.exist<Unit>(1) == true);
+	REQUIRE(env.exist<Unit>(2) == false);
+	
+}
+
 TEST_CASE( "env::build_road", "[env]" ) {
 	
 	Env env;

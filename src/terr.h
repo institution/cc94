@@ -64,6 +64,11 @@ namespace col{
 		}
 		
 		MovementType get_movement_type();
+		
+		MType get_travel() {
+			return get_movement_type();
+		}
+		
 		int8 get_movement_cost(MovementType const& movement_type);
 		
 		int8 get_defensive_value(MovementType const& movement_type);

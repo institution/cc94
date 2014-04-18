@@ -16,38 +16,44 @@ namespace col{
 		
 		string name;
 		Id id; // const
-		uint8 movement;
-		uint8 attack;
-		uint8 combat;
+		uint8 speed;  // flat tiles per 1t (TIME_UNIT)
+		uint8 attack; // attack strength
+		uint8 combat; // defense strength
 		uint8 cargo;
 		uint8 size;
-		uint8 movement_type;
+		uint8 travel; // travel flags LAND | SEA
 		
-		UnitType& set_travel(MType const& mt) {
-			movement_type = mt;
-			return *this;
-		}
+		UnitType& set_travel(uint8 const& t) { travel = t; return *this; }
+		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
+		UnitType& set_attack(uint8 const& a) { attack = a; return *this; }
+		UnitType& set_combat(uint8 const& c) { combat = c; return *this; }
 		
-		MType const& get_travel() const {
-			return movement_type;			
-		}
+		string const& get_name() const { return name; }
+		uint8 const& get_travel() const { return travel; }
+		uint8 const& get_speed() const { return speed; }
+		uint8 const& get_attack() const { return attack; }
+		uint8 const& get_combat() const { return combat; }
+		
 		
 		UnitType() {}
 		
-		explicit UnitType(Id const& id): id(id) {}
+		explicit UnitType(Id const& id): id(id), name("unnamed") {}
 		
 		explicit UnitType(vector<string> const& xs) {
 			assert(xs.size() >= 8);
+			
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement = stoi(xs[2]) * UNIT_OF_MOVEMENT;
-			attack = stoi(xs[3]);
-			combat = stoi(xs[4]);
-			cargo = stoi(xs[5]);
-			size = stoi(xs[6]);
+			
+			set_speed(stoi(xs[2]));
+			set_attack(stoi(xs[3]));
+			set_combat(stoi(xs[4]));
+			
+			//cargo = stoi(xs[5]);
+			//size = stoi(xs[6]);
 			// unused column 7 
 			// unused column 8
-			movement_type = stoi(xs[9]);			
+			set_travel(stoi(xs[9]));
 		}
 				
 	};
@@ -59,8 +65,16 @@ namespace col{
 		UnitType const* type;
 		Coords pos;
 		Player const* player;	
-		uint8 movement_used;
+		
 		uint8 time_left;
+		
+		
+		string const& get_name() const { return type->get_name(); }
+		uint8 const& get_travel() const { return type->get_travel(); }
+		uint8 const& get_speed() const { return type->get_speed(); }
+		uint8 const& get_attack() const { return type->get_attack(); }
+		uint8 const& get_combat() const { return type->get_combat(); }
+		
 		
 		// uint8 spec_id;
 		// int8 spec_lvl;
@@ -90,6 +104,9 @@ namespace col{
 		}
 		
 		
+		
+			
+			
 		Unit(
 			Id id, 
 			UnitType const &type
@@ -97,7 +114,6 @@ namespace col{
 			this->id = id; 
 			this->type = &type; 
 			this->time_left = 6;
-			this->movement_used = 0;
 		}
 		
 		
@@ -112,7 +128,6 @@ namespace col{
 			this->pos = pos;
 			this->time_left = 6;
 			this->player = &player;
-			this->movement_used = 0;
 		}
 		
 		
@@ -131,13 +146,6 @@ namespace col{
 						
 		}
 		
-		bool can_travel_by(MType const& mt) {
-			return get_movement_type() & mt;
-		}
-		
-		MovementType get_movement_type() {
-			return static_cast<MovementType>(type->movement_type);
-		}
 
 	}; 
 

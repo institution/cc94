@@ -9,6 +9,8 @@
 #include "build.h"
 #include "unit.h"
 #include "roll.h"
+#include "error.h"
+#include <signal.h>
 
 
 namespace col{
@@ -26,29 +28,6 @@ namespace col{
 	using Players = map<Player::Id, Player>;
 		
 	
-	template<class Types>
-	Types load(string const& fn) {
-		using Type = typename Types::mapped_type;
-		Types ts;
-
-		auto ls = read_conf(fn);
-		auto p = ls.begin();
-		auto e = ls.end();
-		
-		// skip header
-		++p; 
-		
-		// load line by line
-		while (p != e) {
-			if ((*p).size() > 1) {
-				auto t = Type(*p);
-				ts[t.id] = t;
-			}			
-			++p;
-		}
-
-		return ts;
-	}
 	
 	
 	/* Dir code is yx in mod 3-1 (2 -> -1)
@@ -63,7 +42,10 @@ namespace col{
 	22 8  1,1
 	*/
 
-	
+
+	inline bool compatible(MType const& x, MType const& y) {
+		return x | y;
+	}
 	
 	struct Env{
 		// terrain layer - const
@@ -100,8 +82,9 @@ namespace col{
 			units.reserve(10);
 			next_id_ = 0;
 			
+			tts.reset(new TerrTypes());
+			bts.reset(new BuildTypes());
 			uts.reset(new UnitTypes());
-			
 			
 			set_random_gen(roll::roll1);
 		}
@@ -112,6 +95,33 @@ namespace col{
 		}
 		
 		
+		
+		template<class Type>
+		void loads(string const& fn) {
+						
+			auto& ts = get_cont<Type>();
+
+			auto ls = read_conf(fn);
+			auto p = ls.begin();
+			auto e = ls.end();
+
+			
+			++p; // skip header
+			// load line by line
+			while (p != e) {
+				auto& xs = *p;
+				if (xs.size() > 1) {
+					// id must be in second column
+					auto id = stoi(xs[1]);
+					ts.emplace(piecewise_construct,
+						forward_as_tuple(id), 
+						forward_as_tuple(xs)
+					);
+				}			
+				++p;
+			}
+
+		}
 		
 			
 		template <typename T>
@@ -140,9 +150,22 @@ namespace col{
 		}
 			
 		template <typename T>
-		T& ref(typename T::Id const& id) {
+		T& get(typename T::Id const& id) {
 			return get_cont<T>().at(id);
 		}
+		
+		template <typename T>
+		T const& get(typename T::Id const& id) const {
+			return get_cont<T>().at(id);
+		}
+		
+		template <typename T>
+		bool exist(typename T::Id const& id) {
+			return get_cont<T>().count(id);
+		}
+		
+				
+		
 		
 		
 		void turn() {
@@ -204,10 +227,10 @@ namespace col{
 		}
 		
 		// colony - build
-		void move_in(Colony &loc, buildp &&objp) {
+		/*void move_in(Colony &loc, buildp &&objp) {
 			objp->place = &loc;
 			loc.builds.push_back(move(objp));			
-		}
+		}*/
 		
 		/*
 		void move_in(Terr const& loc, Build const& obj) {
@@ -258,6 +281,9 @@ namespace col{
 		*/
 		
 		
+	
+		
+		
 		Unit::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
 			Unit::Id id = units.size();
 			
@@ -280,12 +306,32 @@ namespace col{
 			return terrs[z[1]][z[0]];
 		}
 		
+		Coords get_coords(Terr const& t) {
+			uint32 offset = uint32(&t - &terrs[0][0]);
+			return Coords(offset % w, offset / w);
+		}
+		
+		Coords get_coords(Unit const& u) {
+			return get_coords(ref_terr(u));
+		}
+		
 		Terr& ref_terr(Coords const& z) {
+			if (!(0 <= z[0] and z[0] < w and 0 <= z[1] and z[1] < h)) {
+				throw Error("reffering terr outside the map");
+			}
 			return terrs[z[1]][z[0]];
+		}
+		
+		Terr& ref_terr(Unit const& u) {			
+			if (u.place->place_type() != PlaceType::Terr) {				
+				throw Error("unit not in field");
+			}			
+			return *static_cast<Terr*>(u.place);
 		}
 		
 		Env& set_terr(Coords const& z, Terr const& t) {
 			terrs[z[1]][z[0]] = t;
+			return *this;
 		}
 		
 		Terr const& terr(Coords const& z) const {
@@ -294,6 +340,8 @@ namespace col{
 		
 		Env& resize(Coords const& dim) {
 			terrs.resize(boost::extents[dim[1]][dim[0]]);
+			w = dim[0];
+			h = dim[1];
 			return *this;
 		}
 		
@@ -366,8 +414,8 @@ namespace col{
 			*/
 
 		bool check(int L, int M) {
-			int r = roll(M);
-			cerr << str(format("check %||/%|| -> %||\n") % L % M % r);
+			int r = roll(M); // 0, M-1
+			cerr << str(format("check %||/%|| -> %||\n") % L % M % (r+1));
 			return r < L;
 			
 		}
@@ -379,9 +427,10 @@ namespace col{
 			auto time_left = u.time_left;
 			if (time_left < time_cost) {
 				u.time_left = 0;
-				return check(time_left, time_cost);				
+				return check(time_left, time_cost);
 			}
 			else {
+				cerr << "check no need" << endl;
 				u.time_left -= time_cost;
 				return 1;
 			}
@@ -391,41 +440,120 @@ namespace col{
 			/* Build road on land terrain square (cost ~ 1.5 turns)
 			 */
 			
-			//cerr << static_cast<int>(u.place_type()) << endl;
-			
-			if (u.place->place_type() != PlaceType::Terr) {
-				
-				// unit not on terrain
-				return -1;
+			// unit checks
+			if (u.place->place_type() != PlaceType::Terr) {				
+				return -1; // unit not on terrain
 			}
-			
-			Terr& t = *static_cast<Terr*>(u.place);
-					
-			if (!t.passable_by(LAND)) {
-				// can build on land only
-				return -2;
+			if (!compatible(u.get_travel(), LAND)) {
+				return -2; // must be land based unit
 			}
-			
-			if (!u.can_travel_by(LAND)) {
-				// must be based land unit
-				return -3;
-			}			
-			
-			if (t.has(PHYS_ROAD)) {
-				// road already exists
-				return -4;
-			}
-			
-			uint8 time_cost = TIME_UNIT * 2;
-			auto r = run_map_task(u, time_cost);
 						
-			if (r) {
-				// place road
-				t.add(PHYS_ROAD);				
+			Terr& t = *static_cast<Terr*>(u.place);
+			// terrain checks
+			if (!t.passable_by(LAND)) {
+				return -3; // can build on land only
+			}
+			if (t.has(PHYS_ROAD)) {
+				return -4; // road already exists
 			}
 			
-			return 0;
+			// execute
+			if (run_map_task(u, TIME_UNIT * 2)) {
+				t.add(PHYS_ROAD); 
+			}			
+			return OK;
 		}
+		
+		
+		
+		bool move_unit(Unit &u, Dir const& dir) {
+			/* Move unit
+			 */
+			
+			if (dir == Dir::S) {
+				throw Error("already here");
+			}
+			
+			// get terr
+			auto& orig = ref_terr(u);
+			auto& dest = ref_terr(get_coords(orig) + vec4dir(dir));
+			
+			if (!compatible(u.get_travel(), dest.get_travel())) {
+				throw Error("cannot travel through this terrain");
+			}
+			
+			// cost to move = 1t
+			auto time_cost = TIME_UNIT;
+						
+			// execute
+			if (run_map_task(u, time_cost)) {
+				move_out(orig, u);
+				move_in(dest, u);
+				return 1; // success
+			}
+			else {
+				return 0; // try next turn
+			}
+			
+		}
+		
+		Unit& get_defender(Terr const& t) {
+			if (!t.units.size()) {
+				throw Error("no defending unit");
+			}
+			return *t.units[0];
+		}
+		
+		bool order_attack(Unit &attacker, Dir const& dir) {
+			/* Order attack
+			 */
+			
+			if (dir == Dir::S) {
+				throw Error("cannot attack self");
+			}
+			
+			// get terr
+			auto& orig = ref_terr(attacker);
+			auto& dest = ref_terr(get_coords(orig) + vec4dir(dir));
+			
+			if (!compatible(attacker.get_travel(), dest.get_travel())) {
+				throw Error("this unit cannot attack accross that terrain");
+			}
+			
+			if (attacker.get_attack() == 0) {
+				throw Error("this unit has no offensive capability");
+			}
+			
+			auto& defender = get_defender(dest);
+			
+			// cost to approach enemy and fight = 1t
+			auto time_cost = TIME_UNIT;
+						
+			// execute
+			if (run_map_task(attacker, time_cost)) {
+				// fight
+				auto attack_base = attacker.get_attack();
+				auto attack = attack_base;
+				auto combat_base = defender.get_combat();
+				auto combat = combat_base;
+
+				if (check(attack, attack + combat)) {
+					move_out(dest, defender);
+					destroy<Unit>(defender.id);
+				}
+				else {
+					move_out(orig, attacker);
+					destroy<Unit>(attacker.id);
+				}
+				
+				return 1; // command executed
+			}
+			else {
+				return 0; // try next turn
+			}
+			
+		}
+		
 		
 		bool plow_field() {
 			
@@ -470,7 +598,7 @@ namespace col{
 			// colony at terrain square
 			move_in(t, c);
 
-			move_in(c, create_build(10));
+			//move_in(c, create_build(10));
 			
 			// move unit into colony
 			// TODO
@@ -488,11 +616,11 @@ namespace col{
 			auto dest = u.pos + vec4dir(dir);
 			auto tt = terr(dest);
 			
-			if (!(ut.movement_type & tt.get_movement_type())) {
-				cout << "cannot move - noncompatible type" << endl;
-				return false;
+			//if (!(ut.movement_type & tt.get_movement_type())) {
+			//	cout << "cannot move - noncompatible type" << endl;
+			//	return false;
 				// throw runtime_error("cant move - noncompatible type");
-			}
+			//}
 			// compatible terrain type
 				
 			/*
@@ -504,11 +632,11 @@ namespace col{
 				u.time_left -= moves_need / ut.movement
 			*/
 			
-			if (ut.movement < tt.get_movement_cost(ut.movement_type) + u.movement_used) {
-				cout << "cannot move - not enough moves" << endl;
-				return false;
+			//if (ut.movement < tt.get_movement_cost(ut.movement_type) + u.movement_used) {
+			//	cout << "cannot move - not enough moves" << endl;
+			//	return false;
 				// throw runtime_error("cant move - not enough moves");
-			}
+			//}
 			// enough movement
 			
 			auto x = get_icon_at(dest);
@@ -539,7 +667,7 @@ namespace col{
 			if (q == nullptr) {
 				// move
 				
-				p->movement_used += tt.get_movement_cost(p->get_movement_type());
+				//p->movement_used += tt.get_movement_cost(p->get_movement_type());
 				p->pos = dest;
 			}
 			else {
@@ -547,16 +675,16 @@ namespace col{
 				auto attack_base = p->type->attack;
 				auto attack = attack_base;
 				auto combat_base = q->type->combat;
-				auto combat = combat_base + uint8(0.25 * tt.get_defensive_value(q->get_movement_type()) * combat_base);
+				//auto combat = combat_base + uint8(0.25 * tt.get_defensive_value(q->get_movement_type()) * combat_base);
 
 				assert(attack > 0);
 
-				auto r = roll(attack + combat);
+				//auto r = roll(attack + combat);
 
 				// cout << "combat " << r << endl;
-
+				/*
 				if (r <= attack) {
-					p->movement_used = p->type->movement;
+					//p->movement_used = p->type->movement;
 					p->pos = dest;
 
 					destroy<Unit>(q->id);
@@ -564,6 +692,7 @@ namespace col{
 				else {
 					destroy<Unit>(q->id);
 				}
+				 * */
 
 			}
 			
@@ -586,11 +715,6 @@ namespace col{
 		//	return icon.id;
 		//}
 				
-				
-		Unit& get(Unit::Id id) {
-			return units.at(id);
-		}
-		
 		
 		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {
 			units.at(icon_id).player = &players.at(player_id);
@@ -662,6 +786,14 @@ namespace col{
 	
 	template <>	inline UnitTypes& Env::get_cont<UnitType>() {
 		return *uts;
+	}
+	
+	template <>	inline TerrTypes& Env::get_cont<TerrType>() {
+		return *tts;
+	}
+	
+	template <>	inline BuildTypes& Env::get_cont<BuildType>() {
+		return *bts;
 	}
 
 }
