@@ -19,6 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
+#include <boost/function.hpp>
 #include "iomm.h"
 #include "roll.h"
 #include "aga2.hpp"
@@ -61,8 +62,7 @@ namespace col{
 	using std::piecewise_construct;
 	using std::forward_as_tuple;
 	
-	using roll::roll;
-	
+
 	template <typename T>
 	using Vector2 = aga2::Mv1<T>;
 	

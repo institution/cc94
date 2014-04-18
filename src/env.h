@@ -8,6 +8,7 @@
 #include "terr.h"
 #include "build.h"
 #include "unit.h"
+#include "roll.h"
 
 
 namespace col{
@@ -88,7 +89,7 @@ namespace col{
 
 		uint32 turn_no;
 		
-		int (*roll)(int);
+		boost::function<int (int range)> roll;
 		
 		Id next_id_;
 		Env() {
@@ -101,13 +102,17 @@ namespace col{
 			
 			uts.reset(new UnitTypes());
 			
+			
 			set_random_gen(roll::roll1);
 		}
 		
-		Env& set_random_gen(int (*f)(int)) {
-			roll = f;
+		Env& set_random_gen(boost::function<int (int range)> const& func) {
+			roll = func;
 			return *this;
 		}
+		
+		
+		
 			
 		template <typename T>
 		unordered_map<typename T::Id, T>& get_cont();
@@ -360,13 +365,21 @@ namespace col{
 		}
 			*/
 
+		bool check(int L, int M) {
+			int r = roll(M);
+			cerr << str(format("check %||/%|| -> %||\n") % L % M % r);
+			return r < L;
+			
+		}
+		
 		bool run_map_task(Unit &u, uint8 const& time_cost) {
 			/* 
 			 */
+			
 			auto time_left = u.time_left;
 			if (time_left < time_cost) {
 				u.time_left = 0;
-				return roll(time_cost) < time_left;
+				return check(time_left, time_cost);				
 			}
 			else {
 				u.time_left -= time_cost;
@@ -378,11 +391,9 @@ namespace col{
 			/* Build road on land terrain square (cost ~ 1.5 turns)
 			 */
 			
-			cerr << typeid(u.place).name() << endl;
-			cerr << typeid(Terr*).name() << endl;
-
-				
-			if (typeid(u.place) != typeid(Terr*)) {
+			//cerr << static_cast<int>(u.place_type()) << endl;
+			
+			if (u.place->place_type() != PlaceType::Terr) {
 				
 				// unit not on terrain
 				return -1;

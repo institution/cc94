@@ -29,10 +29,17 @@ namespace col {
 	}
 
 	
+	enum class PlaceType{
+		Terr = 1,
+		Colony = 2,
+		Unit = 3,
+		Build = 4
+	};
+	
 	struct Placeable;
 	
 	struct Place {
-		
+		virtual PlaceType place_type() = 0;
 	};
 
 	struct Placeable {

@@ -20,6 +20,9 @@ namespace col {
 
 		Colony(): Placeable(), id(-1) {}
 		
+		PlaceType place_type() {
+			return PlaceType::Colony;
+		}
 		
 		
 		Colony(Id const& id, string const& name): Placeable(), id(id), name(name) {

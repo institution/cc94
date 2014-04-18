@@ -46,7 +46,10 @@ namespace col{
 			biome(biome), phys(phys), colony(nullptr) 
 		{}
 		
-			
+		PlaceType place_type() {
+			return PlaceType::Terr;
+		}
+		
 		
 		bool has(Phys const& p) const {
 			return phys & p;

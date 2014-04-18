@@ -34,6 +34,11 @@ namespace col{
 		Build(BuildType const& type): type(&type) {	
 			//this->free_slots = type.slots;
 		}
+		
+		PlaceType place_type() {
+			return PlaceType::Build;
+		}
+		
 				
 	}; 
 	

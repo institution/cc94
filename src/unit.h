@@ -76,6 +76,9 @@ namespace col{
 		//task
 		//60/90
 		
+		PlaceType place_type() {
+			return PlaceType::Unit;
+		}
 				
 		
 		uint16 free_space;
