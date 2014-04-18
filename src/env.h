@@ -24,7 +24,7 @@ namespace col{
 	using Units = unordered_map<Unit::Id, Unit>;
 	
 	
-	using Colonies = map<Colony::Id, Colony>;
+	using Colonies = unordered_map<Colony::Id, Colony>;
 	using Players = map<Player::Id, Player>;
 		
 	
@@ -129,7 +129,7 @@ namespace col{
 				
 		template<class T>
 		typename T::Id next_id() {
-			return T::Id(++next_id_);
+			return typename T::Id{++next_id_};
 		}
 		
 		
@@ -466,7 +466,7 @@ namespace col{
 		
 		
 		
-		bool move_unit(Unit &u, Dir const& dir) {
+		bool order_move(Unit &u, Dir const& dir) {
 			/* Move unit
 			 */
 			
@@ -573,37 +573,23 @@ namespace col{
 		
 		bool colonize(Unit &u, string const& name) {
 			
-			// decrease unit time_left
-			if (u.time_left < 6) {
-				return 0;
-			}
-			u.time_left -= 6;			
+			auto& t = ref_terr(u);
 			
-			// unit terrain square
-			assert(u.place);
-			assert(typeid(u.place) == typeid(Terr));
+			auto time_cost = TIME_UNIT;
 			
-			auto& t = *static_cast<Terr*>(u.place);
+			if (run_map_task(u, time_cost)) {
+				// create colony
+				auto& c = create<Colony>(next_id<Colony>(), name);
+				move_in(t, c);
+				
+				// move unit into colony?
+				// TODO
 						
-			// next colony uid
-			Colony::Id id = colonies.size();
-			
-			// create colony
-			//auto& cc = colonies.emplace(id, Colony(id, name)).second;
-			
-			colonies.emplace(id, Colony(id, name));
-			
-			Colony &c = colonies[id];
-			
-			// colony at terrain square
-			move_in(t, c);
-
-			//move_in(c, create_build(10));
-			
-			// move unit into colony
-			// TODO
-			
-			return 1;
+				return 1;  // ok
+			}
+			else {
+				return 0;  // try next turn
+			}
 		}
 		
 		buildp create_build(BuildType::Id const& type_id) {
@@ -782,6 +768,10 @@ namespace col{
 	
 	template <>	inline Units& Env::get_cont<Unit>() {
 		return units;
+	}
+	
+	template <>	inline Colonies& Env::get_cont<Colony>() {
+		return colonies;
 	}
 	
 	template <>	inline UnitTypes& Env::get_cont<UnitType>() {

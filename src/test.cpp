@@ -11,13 +11,36 @@ using roll::replay;
 /*
  * build road *
  * move *
- * attack
+ * attack *
  * build colony 
- * work at colony manufacture
- * work at colony field
+ * work at colony manufacture (end turn)
+ * work at colony field (end turn)
  *  
  * 
  */
+
+
+
+TEST_CASE( "env::colonize", "env" ) {
+	
+	Env env;
+	
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(BIOME_PLAINS));
+	
+	auto u = env.create<Unit>(
+		1,
+		env.create<UnitType>(1).set_travel(LAND)
+	);
+	
+	env.move_in(env.ref_terr({0,0}), u);
+	
+	env.set_random_gen(replay({0}));
+	env.colonize(u, "Alamakota");	
+	
+	REQUIRE(env.ref_terr({0,0}).colony != nullptr);
+	
+}
 
 TEST_CASE( "env::move_unit", "env" ) {
 	
@@ -37,7 +60,7 @@ TEST_CASE( "env::move_unit", "env" ) {
 	REQUIRE(env.get_coords(u) == Coords(0,0));
 	
 	env.set_random_gen(replay({0}));
-	env.move_unit(u, Dir::D);	
+	env.order_move(u, Dir::D);	
 	
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 	

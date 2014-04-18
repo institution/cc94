@@ -23,7 +23,7 @@ namespace col {
 		Coords sel;
 		
 		enum class Mode{
-			AMERICA, COLONY, EUROPE
+			AMERICA, COLONY, EUROPE, REPORT
 		};
 		
 		Mode mode;

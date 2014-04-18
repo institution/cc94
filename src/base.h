@@ -13,6 +13,7 @@ namespace col {
 	using Coords = Vector2<Coord>;
 	
 	
+	
 	enum class Dir: int8{
 		Q=0, W=1, E=2,
 		A=3, S=4, D=5,
@@ -30,10 +31,11 @@ namespace col {
 
 	
 	enum class PlaceType{
-		Terr = 1,
-		Colony = 2,
+		Terr = 1,   
+		Colony = 2, 
 		Unit = 3,
-		Build = 4
+		Build = 4,
+		Europe = 5
 	};
 	
 	struct Placeable;

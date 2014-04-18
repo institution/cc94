@@ -15,13 +15,14 @@ namespace col {
 		}
 
 		virtual void exec(Game &game) const = 0;
-		virtual bool eq(Action & a) = 0;
+		virtual bool unsafe_eq(Action const& a) const = 0;
 
-		bool operator==(Action &a) {
-			try {
-				return this->eq(a);
+		bool operator==(Action const& other) const {
+			if (typeid(this) == typeid(other)) {
+				// same type so can call unsafe_eq
+				return unsafe_eq(other);					
 			}
-			catch (std::bad_cast) {
+			else {
 				return false;
 			}
 		}
@@ -32,6 +33,38 @@ namespace col {
 		
 	};
 
+	
+	struct OrderMove: Action {
+		Unit::Id uid;
+		Dir dir;
+		
+		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir const& dir): 
+			Action(pid),
+			uid(uid), dir(dir)
+		{}
+		
+	
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<OrderMove const&>(a);
+			return pid == a.pid and uid == b.uid and dir == b.dir;			
+		}
+		
+		Action* copy() {
+			return new OrderMove(*this);
+		}
+		
+		virtual ostream& dump(ostream& out) {
+			out << "OrderMove('" << pid << ")";
+		}
+		
+		void exec(Game &game) const {
+			game.order_move(
+				game.get<Unit>(uid),
+				dir
+			);
+		}
+		
+	};
 
 	struct AttackMove: Action {
 		Unit::Id iid;
@@ -41,8 +74,8 @@ namespace col {
 			this->dir = dir;
 		}
 		
-		bool eq(Action &a)  {
-			AttackMove& b = dynamic_cast<AttackMove&>(a);
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<AttackMove const&>(a);
 			return pid == a.pid and iid == b.iid and dir == b.dir;
 		}
 		
@@ -64,8 +97,8 @@ namespace col {
 		
 		EndTurn(Player::Id const& pid): Action(pid) {}
 		
-		bool eq(Action & a)  {
-			EndTurn& b = dynamic_cast<EndTurn&>(a);
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<EndTurn const&>(a);
 			return pid == a.pid;
 		}
 		
@@ -90,9 +123,9 @@ namespace col {
 			
 		}		
 
-		bool eq(Action & a)  {
-			Start& b = dynamic_cast<Start&>(a);
-			return pid = a.pid;
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<Start const&>(a);
+			return pid == a.pid;
 		}
 		
 		Action* copy() {

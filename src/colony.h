@@ -14,30 +14,23 @@ namespace col {
 		Id const id;
 		
 		vector<Unit*> units;
-		vector<buildp> builds;
+		vector<Build*> builds;
 
 		string name;
 
-		Colony(): Placeable(), id(-1) {}
-		
 		PlaceType place_type() {
 			return PlaceType::Colony;
 		}
 		
-		
-		Colony(Id const& id, string const& name): Placeable(), id(id), name(name) {
-			
-		}
-
-		Colony(Colony &&c): id(c.id), name(c.name), units(move(c.units)), builds(move(c.builds)) {
-			// place?
+		string const& get_name() const {
+			return name;
 		}
 		
-	private:
-		Colony(Colony const& c): id(c.id) {
-			// place?
-		}
-		
+		Colony(Id const& id, string const& name): 
+			Place(), Placeable(), 
+			id(id), 
+			name(name) 
+		{}
 			
 	};
 }
