@@ -63,11 +63,14 @@ namespace col{
 		
 		Id id;
 		UnitType const* type;
-		Coords pos;
-		Player const* player;	
+		Coords pos;  // unused
+		string name; // unused
+		Player const* player;
+		
 		
 		uint8 time_left;
-		
+		Workplace const* workplace;
+		Item workitem;		
 		
 		string const& get_name() const { return type->get_name(); }
 		uint8 const& get_travel() const { return type->get_travel(); }
@@ -75,17 +78,40 @@ namespace col{
 		uint8 const& get_attack() const { return type->get_attack(); }
 		uint8 const& get_combat() const { return type->get_combat(); }
 		
-		
 		// uint8 spec_id;
 		// int8 spec_lvl;
 		
-		string name;
+		Unit& set_work(Workplace const& place, Item const& item) {
+			workplace = &place;
+			workitem = item;
+			return *this;
+		}
 		
-		uint8 task;
-		uint8 param;
-		Dir dir;
+		Unit& clear_work() {
+			workplace = nullptr;
+			workitem = Item::None;
+			return *this;
+		}
 		
-		uint8 move_acc;
+		
+		/*
+		struct Order{
+			uint8 code;
+			uint8 arg;
+			Dir dir;
+			Order(uint8 const& code = ' ', Item const& arg = Item::none, Dir const& dir = Dir::S):
+				code(code), arg(arg), dir(dir)
+			{}
+		};
+		
+		Order order;
+		
+		Unit& set_order(Order const& ord) { 
+			order = ord; return *this; 
+		}
+		*/
+		
+		//uint8 move_acc;
 		
 		//task
 		//60/90
@@ -130,20 +156,8 @@ namespace col{
 			this->player = &player;
 		}
 		
-		
-		void turn() {
-			
-			time_left = 6;
-			
-			/*if (supply != -1) {
-				if (supply) {
-					supply -= 1;
-				}
-				else {				
-					hp -= 1;				
-				}
-			}*/
-						
+		Unit(Unit const&) {
+			assert(false);
 		}
 		
 

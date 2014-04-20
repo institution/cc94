@@ -43,7 +43,7 @@ namespace col{
 	*/
 
 
-	inline bool compatible(MType const& x, MType const& y) {
+	inline bool compatible(Travel const& x, Travel const& y) {
 		return x | y;
 	}
 	
@@ -172,11 +172,35 @@ namespace col{
 			// time progress
 			++turn_no;
 			
-			// all units - new movment
+			// all units - new movment, work
 			for (auto& item: units) {
-				item.second.turn();
+				cerr << "tuer: " << item.second << endl;
+				turn(item.second);
 			}
 			++mod;
+		}
+		
+				
+		void turn(Unit &u) {
+			
+			u.time_left = 6;
+			
+			if (u.workplace != nullptr) {
+				auto& t = ref_terr(u);
+				auto& c = t.get_colony();
+				c.add({u.workitem, u.workplace->get_yield(u.workitem, false)});
+				u.time_left = 0;
+			}
+			
+			/*if (supply != -1) {
+				if (supply) {
+					supply -= 1;
+				}
+				else {				
+					hp -= 1;				
+				}
+			}*/
+						
 		}
 		
 		void end_turn(Player::Id const& player_id) {
@@ -217,7 +241,7 @@ namespace col{
 		// terr - colony
 		void move_in(Terr &loc, Colony &obj) {
 			assert(loc.colony == nullptr);
-			loc.colony = &obj;
+			loc.set_colony(obj);
 			obj.place = &loc;
 		}
 		void move_out(Terr &loc, Colony &obj) {
@@ -450,16 +474,16 @@ namespace col{
 						
 			Terr& t = *static_cast<Terr*>(u.place);
 			// terrain checks
-			if (!t.passable_by(LAND)) {
+			if (!compatible(t.get_travel(), LAND)) {
 				return -3; // can build on land only
 			}
-			if (t.has(PHYS_ROAD)) {
+			if (t.has(Phys::Road)) {
 				return -4; // road already exists
 			}
 			
 			// execute
 			if (run_map_task(u, TIME_UNIT * 2)) {
-				t.add(PHYS_ROAD); 
+				t.add(Phys::Road); 
 			}			
 			return OK;
 		}
@@ -555,8 +579,30 @@ namespace col{
 		}
 		
 		
-		bool plow_field() {
+		bool plow_field(Unit& u) {
 			
+			// unit check
+			if (!compatible(u.get_travel(), LAND)) {
+				throw Error("need land based unit to perform this action");				
+			}
+			
+			auto& t = ref_terr(u);
+			
+			// terrain checks
+			if (!compatible(t.get_travel(), LAND)) {
+				throw Error("can build on land only");
+			}
+			
+			if (t.has(Phys::Plow)) {
+				throw Error("improvment already exists");
+			}
+			
+			// execute
+			if (run_map_task(u, TIME_UNIT * 2)) {
+				t.add(Phys::Plow); 
+			}			
+			
+			return OK;			
 		}
 		
 		bool clear_forest(Unit const& u) {

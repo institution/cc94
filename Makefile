@@ -4,6 +4,7 @@
 
 OBJS=b/iomm.o b/env.o b/objs.o b/csv.o b/roll.o b/console.o b/renderer.o b/pixfont.o b/ai.o b/ox.o b/terr.o b/unit.o b/envgame.o b/build.o
 
+
 OPTS=-g -fno-inline-functions
 
 main: b/main.o ${OBJS}

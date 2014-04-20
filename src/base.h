@@ -30,6 +30,85 @@ namespace col {
 	}
 
 	
+	
+	
+	
+	uint8 const TIME_UNIT = 6;
+	uint8 const SPACE_UNIT = 6;
+	// uint8 const COLONIZE_TP_COST = 6;
+	
+	
+	uint8 const WORK = 'w';
+	uint8 const ROAD = 'r';
+	uint8 const PLOW = 'p';
+	uint8 const BUILD = 'b';
+	
+	
+	using Travel = uint8;
+	Travel const LAND = 1;
+	Travel const SEA = 2;
+	
+	enum class Biome{
+		Tundra = 1, //boreal forest
+		Prairie = 4, // broadleaf forest
+		Plains = 3, // mixed_forest
+		Desert = 2, //scrub forest
+		Savannah = 6, //tropical forest				
+		Grassland = 5, //confier forest		
+		Marsh = 7, //wetland forest
+		Swamp = 8, //rain forest
+		Arctic = 10,
+		Ocean = 11,
+		SeaLane = 12
+	};
+	
+	
+	enum class Phys{
+		// this is conceptually an enumeration
+		// fact that it is also a flag is implementation specific
+		None = 0,
+		Hill = 1,
+		Mountain = 2,	
+		Road = 4,
+		Forest = 8,
+		MinorRiver = 16,
+		MajorRiver = 32,
+		Plow = 64,
+		Worker = 128
+	};
+	
+	inline uint8 flag(Phys const& p) {
+		return static_cast<uint8>(p);
+	}
+	
+	template<typename T>
+	inline uint8 enum_value(T const& t) {
+		return static_cast<uint8>(t);
+	}
+	
+	enum class Item{
+		None = 0,
+		Food = 23,
+		Sugar = 24,
+		Tobacco = 25,
+		Cotton = 26,
+		Furs = 27,
+		Lumber = 28,
+		Ore = 29,
+		Silver = 30,
+		Horses = 31,
+		Rum = 32,
+		Cigars = 33,
+		Cloth = 34,
+		Coats = 35,
+		TradeGoods = 36,
+		Tools = 37 ,
+		Muskets = 38
+	};
+	
+	
+	
+	
 	enum class PlaceType{
 		Terr = 1,   
 		Colony = 2, 
@@ -44,6 +123,12 @@ namespace col {
 		virtual PlaceType place_type() = 0;
 	};
 
+	struct Workplace{
+		virtual bool assign() = 0;
+		virtual bool leave() = 0;
+		virtual uint16 get_yield(Item const& item, bool const& is_expert) const = 0;
+	};
+	
 	struct Placeable {
 		Place *place;
 		
@@ -53,65 +138,15 @@ namespace col {
 	};
 	
 	
-	
-	uint8 const UNIT_OF_MOVEMENT = 12;
-	uint8 const TIME_UNIT = 6;
-	// uint8 const COLONIZE_TP_COST = 6;
-	
-	
-	using MovementType = uint8;
-	using MType = MovementType;
-	using Biome = uint8;
-	using Phys = uint8;
-	using Item = uint8;
+	struct Cargo {
+		Item item;
+		uint16 amount;
 		
-	
-	MovementType const MOVEMENT_TYPE_LAND = 1;
-	MovementType const MOVEMENT_TYPE_NAVAL = 2;
-	MovementType const MOVEMENT_TYPE_SEA = 2;
-	MType const LAND = 1;
-	MType const SEA = 2;
-	
-	
-	Biome const BIOME_TUNDRA = 1; //BOREAL FOREST
-	Biome const BIOME_PRAIRIE = 4; // BROADLEAF FOREST
-	Biome const BIOME_PLAINS = 3; // MIXED_FOREST
-	Biome const BIOME_DESERT = 2; //SCRUB FOREST
-	Biome const BIOME_SAVANNAH = 6; //TROPICAL FOREST				
-	Biome const BIOME_GRASSLAND = 5; //CONFIER FOREST		
-	Biome const BIOME_MARSH = 7; //WETLAND FOREST
-	Biome const BIOME_SWAMP = 8; //RAIN FOREST
-	Biome const BIOME_ARCTIC = 10;
-	Biome const BIOME_OCEAN = 11;
-	Biome const BIOME_SEA_LANE = 12;
-	
-	Phys const PHYS_NONE = 0;
-	Phys const PHYS_HILL = 1;
-	Phys const PHYS_MOUNTAIN = 2;	
-	Phys const PHYS_ROAD = 4;
-	Phys const PHYS_FOREST = 8;
-	Phys const PHYS_MINOR_RIVER = 16;
-	Phys const PHYS_MAJOR_RIVER = 32;
-	Phys const PHYS_DOCKS = 64;
-	
-	Item const ITEM_FOOD = 23;
-	Item const ITEM_SUGAR = 24;
-	Item const ITEM_TOBACCO = 25;
-	Item const ITEM_COTTON = 26;
-	Item const ITEM_FURS = 27;
-	Item const ITEM_LUMBER = 28;
-	Item const ITEM_ORE = 29;
-	Item const ITEM_SILVER = 30;
-	Item const ITEM_HORSES = 31;
-	Item const ITEM_RUM = 32;
-	Item const ITEM_CIGARS = 33;
-	Item const ITEM_CLOTH = 34;
-	Item const ITEM_COATS = 35;
-	Item const ITEM_TRADE_GOODS = 36;
-	Item const ITEM_TOOLS = 37 ;
-	Item const ITEM_MUSKETS = 38;
-	
-	
+		Cargo(Item const& item, uint16 const& amount):
+			item(item), amount(amount)
+		{}
+		
+	};
 	
 }
 

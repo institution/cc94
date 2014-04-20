@@ -243,14 +243,14 @@ namespace col {
 	{
 		
 		auto biome = tile.biome;
-		auto forest = tile.has(PHYS_FOREST);
-		auto hill = tile.has(PHYS_HILL);
-		auto mountain = tile.has(PHYS_MOUNTAIN);
+		auto forest = tile.has(Phys::Forest);
+		auto hill = tile.has(Phys::Hill);
+		auto mountain = tile.has(Phys::Mountain);
 		
 		
 		
 		
-		render_sprite(win, i*16, j*16, res(TERR, biome));
+		render_sprite(win, i*16, j*16, res(TERR, enum_value(biome)));
 		if (forest) {
 			render_sprite(win, i*16, j*16, res(PHYS, 65));
 		}

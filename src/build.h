@@ -25,20 +25,38 @@ namespace col{
 				
 	};
 	
-	struct Build: Place {
+	struct Build: Workplace {
 		
 		BuildType const* type;
-		//int8 free_slots;
-		Place *place;
+		int8 free_slots;
 		
-		Build(BuildType const& type): type(&type) {	
-			//this->free_slots = type.slots;
+		
+		Build(BuildType const& type): 
+			type(&type), 
+			free_slots(3) 
+		{}
+		
+		// Workplace
+		
+		uint16 get_yield(Item const& item, bool const& is_expert) const {
+			return 3;
 		}
 		
-		PlaceType place_type() {
-			return PlaceType::Build;
+		bool assign() {
+			if (!free_slots) {
+				return false;
+			}
+			free_slots -= 1;
+			return true;
 		}
-		
+			
+		bool leave() {
+			if (free_slots < 3) {
+				return false;
+			}
+			free_slots += 1;
+			return true;
+		}
 				
 	}; 
 	

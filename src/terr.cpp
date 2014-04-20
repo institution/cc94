@@ -5,58 +5,58 @@ namespace col{
 	int8 Terr::get_land_movement_cost() {
 		int8 base;
 
-		if (has(PHYS_ROAD) or has(PHYS_MINOR_RIVER) or has(PHYS_MAJOR_RIVER)) {
-			base = 4;
+		if (has(Phys::Road) or has(Phys::MinorRiver) or has(Phys::MajorRiver)) {
+			base = SPACE_UNIT / 3;
 		}
 		else {
 			switch (biome) {
-				case BIOME_TUNDRA:
-				case BIOME_PRAIRIE:
-				case BIOME_PLAINS:
-				case BIOME_DESERT:
-				case BIOME_SAVANNAH:
-				case BIOME_GRASSLAND:
-					base = 12;
+				case Biome::Tundra:
+				case Biome::Prairie:
+				case Biome::Plains:
+				case Biome::Desert:
+				case Biome::Savannah:
+				case Biome::Grassland:
+					base = SPACE_UNIT;
 					break;
-				case BIOME_MARSH:
-				case BIOME_SWAMP:
-				case BIOME_ARCTIC:
-					base = 18;
+				case Biome::Marsh:
+				case Biome::Swamp:
+				case Biome::Arctic:
+					base = SPACE_UNIT * 3 / 2;
 					break;
 				default:
 					cout << "invalid land biome: " << uint16(biome) << endl;
 					throw runtime_error("invalid land biome");
 			}
 
-			if (has(PHYS_FOREST)) {
+			if (has(Phys::Forest)) {
 				base *= 2;
 			}
 		}			
 
-		if (has(PHYS_HILL)) {
-			base += 6.0;
+		if (has(Phys::Hill)) {
+			base += SPACE_UNIT / 2;
 		}
 		else
-		if (has(PHYS_MOUNTAIN)) {
-			base += 12.0;
+		if (has(Phys::Mountain)) {
+			base += SPACE_UNIT;
 		}
 
 		return base;
 	}
 
 	int8 Terr::get_naval_movement_cost() {			
-		if (has(PHYS_DOCKS)) {
-			return 12;
+		if (colony != nullptr) {
+			return SPACE_UNIT;
 		}
 		else 
-		if (has(PHYS_MAJOR_RIVER) and !has(PHYS_HILL) and !has(PHYS_MOUNTAIN)) {
-			return 24;
+		if (has(Phys::MajorRiver) and !has(Phys::Hill) and !has(Phys::Mountain)) {
+			return SPACE_UNIT * 2;
 		}
 		else {
 			switch (biome) {
-				case BIOME_OCEAN:
-				case BIOME_SEA_LANE:
-					return 12;
+				case Biome::Ocean:
+				case Biome::SeaLane:
+					return SPACE_UNIT;
 				default:
 					throw runtime_error("invalid sea biome");
 			}
@@ -64,12 +64,12 @@ namespace col{
 
 	}
 
-	int8 Terr::get_movement_cost(MovementType const& movement_type) {
-		if (movement_type == MOVEMENT_TYPE_LAND) {
+	int8 Terr::get_movement_cost(Travel const& movement_type) {
+		if (movement_type == LAND) {
 			return get_land_movement_cost();
 		}
 		else
-		if (movement_type == MOVEMENT_TYPE_NAVAL) {
+		if (movement_type == SEA) {
 			return get_naval_movement_cost();
 		}
 		else {
@@ -77,16 +77,16 @@ namespace col{
 		}
 	}
 
-	uint8 Terr::get_movement_type() {
-		if (biome == BIOME_OCEAN or biome == BIOME_SEA_LANE) {
-			return MOVEMENT_TYPE_NAVAL;
+	Travel Terr::get_travel() {
+		if (biome == Biome::Ocean or biome == Biome::SeaLane) {
+			return SEA;
 		}
 		else {
-			if (has(PHYS_DOCKS)) {
-				return MOVEMENT_TYPE_NAVAL | MOVEMENT_TYPE_LAND;
+			if (colony != nullptr) {
+				return SEA | LAND;
 			}
 			else {
-				return MOVEMENT_TYPE_LAND;
+				return LAND;
 			}				
 		}					
 	}
@@ -100,12 +100,12 @@ namespace col{
 		return 1;			
 	}
 
-	int8 Terr::get_defensive_value(MovementType const& movement_type) {
-		if (movement_type == MOVEMENT_TYPE_LAND) {
+	int8 Terr::get_defensive_value(Travel const& t) {
+		if (t == LAND) {
 			return get_land_defensive_value();
 		}
 		else
-		if (movement_type == MOVEMENT_TYPE_NAVAL) {
+		if (t == SEA) {
 			return get_naval_defensive_value();
 		}
 		else {

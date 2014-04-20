@@ -24,14 +24,14 @@ namespace col{
 			
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-			movement_cost = stoi(xs[2]) * UNIT_OF_MOVEMENT;
+			movement_cost = stoi(xs[2]) * SPACE_UNIT;
 			defensive = stoi(xs[3]);			
 			movement_type = stoi(xs[15]);
 		}
 				
 	};
 	
-	struct Terr: Place {
+	struct Terr: Place, Workplace {
 		using Id = Coords;
 		
 		Biome biome;
@@ -42,36 +42,67 @@ namespace col{
 		
 		Terr(): colony(nullptr) {}
 		
-		explicit Terr(Biome const& biome, Phys const& phys = PHYS_NONE): 
+		explicit Terr(Biome const& biome, Phys const& phys = Phys::None): 
 			biome(biome), phys(phys), colony(nullptr) 
 		{}
+		
+		// Place
 		
 		PlaceType place_type() {
 			return PlaceType::Terr;
 		}
 		
+		// Workplace 
+		
+		uint16 get_yield(Item const& item, bool const& is_expert) const {
+			return 3;
+		}
+		
+		bool assign() {
+			if (has(Phys::Worker)) {
+				return false;
+			}
+			add(Phys::Worker);
+			return true;
+		}
+			
+		bool leave() {
+			if (!has(Phys::Worker)) {
+				return false;
+			}
+			sub(Phys::Worker);
+			return true;
+		}
+		
+		// Terr
+		
+		Colony& get_colony() {
+			assert(colony != nullptr);
+			return *colony;
+		}
+		
+		Terr& set_colony(Colony &c) {
+			colony = &c;
+			return *this;
+		}
 		
 		bool has(Phys const& p) const {
-			return phys & p;
+			return flag(phys) & flag(p);
 		}
 		
 		void add(Phys const& p) {
-			phys |= p;
+			phys = static_cast<Phys>(flag(phys) | flag(p));
 		}
 		
-		bool passable_by(MType const& mt) {
-			return get_movement_type() & mt;
+		void sub(Phys const& p) {
+			phys = static_cast<Phys>(flag(phys) & !flag(p));
 		}
+				
+		Travel get_travel();
 		
-		MovementType get_movement_type();
+		int8 get_movement_cost(Travel const& movement_type);
 		
-		MType get_travel() {
-			return get_movement_type();
-		}
-		
-		int8 get_movement_cost(MovementType const& movement_type);
-		
-		int8 get_defensive_value(MovementType const& movement_type);
+		int8 get_defensive_value(Travel const& movement_type);
 		
 		// max speed
 		

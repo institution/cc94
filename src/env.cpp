@@ -8,7 +8,26 @@ namespace col{
 	
 	
 	namespace io {
+		
+		template <>
+		size_t write<Biome>(ostream &f, const Biome &t) {
+			return write(f, enum_value(t));
+		}
 
+		template <>
+		size_t write<Phys>(ostream &f, const Phys &t) {
+			return write(f, enum_value(t));
+		}
+
+		template <>
+		void read<Biome>(Biome& t, istream& f) {
+			t = static_cast<Biome>(read<uint8>(f));
+		}
+
+		template <>
+		void read<Phys>(Phys& t, istream& f) {
+			t = static_cast<Phys>(read<uint8>(f));
+		}
 		
 		template <>
 		void read<Coords>(Coords &cs, istream &f) {
