@@ -134,7 +134,7 @@ namespace col{
 			
 			
 		Unit(
-			Id id, 
+			Id const& id, 
 			UnitType const &type
 		): Place(), Placeable() {	
 			this->id = id; 

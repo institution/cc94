@@ -12,7 +12,17 @@ namespace col {
 	using Coord = int16;
 	using Coords = Vector2<Coord>;
 	
-	
+	/* Dir code is yx in mod 3-1 (2 -> -1)
+	00 0  -1,-1
+	01 1  -1,0 
+	02 2  -1,1
+	10 3  0,-1
+	11 4  0,0
+	12 5  0,1
+	20 6  1,-1
+	21 7  1,0
+	22 8  1,1
+	*/
 	
 	enum class Dir: int8{
 		Q=0, W=1, E=2,
@@ -103,7 +113,11 @@ namespace col {
 		Coats = 35,
 		TradeGoods = 36,
 		Tools = 37 ,
-		Muskets = 38
+		Muskets = 38,
+		Hammers = 55,
+		Cross = 57,		
+		Fish = 58,
+		Bell = 63
 	};
 	
 	

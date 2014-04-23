@@ -1,12 +1,10 @@
 #include "env.h"
 
-namespace col{
-	
 
 
 	
 	
-	
+namespace col {
 	namespace io {
 		
 		template <>
@@ -82,17 +80,15 @@ namespace col{
 			l += write(f, unit.player->id);
 			return l;
 		}
-		
+		/*
 		template <>
-		Player read_obj<Player>(Env &env, istream &f) {
-			Player player;
+		void read_obj<Player>(Env &env, Player &player, istream &f) {
 			read(player.id, f);
 			read(player.name, f);
 			read(player.color, f);
-			read(player.flag_id, f);
-			return player;
+			read(player.flag_id, f);			
 		}
-
+		*/
 		
 		
 		template <>
@@ -110,7 +106,6 @@ namespace col{
 
 		
 	}
-	
-	
-	
 }
+	
+	

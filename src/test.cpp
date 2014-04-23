@@ -1,7 +1,14 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+
+#include <sstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+
 #include "env.h"
+#include "serialize.h"
 
 
 using namespace col;
@@ -15,7 +22,8 @@ using roll::replay;
  * build colony *
  * work at colony field (end turn) *
  * plow fields *
- * work at colony manufacture (end turn)
+ * work at colony manufacture (end turn) *
+ * 
  * construct building by working in lumber mill (col94 style)
  * load/unload cargo into ship
  * travel to europe by sea - exit_map(ship, dest) order
@@ -69,22 +77,66 @@ TEST_CASE( "colony", "" ) {
 		SECTION("work build") {
 		
 			// TODO: new colony gratis buildings
-			env.create<Build>(5, )
-			
-			auto& b = c.builds.at(0);
+			auto& b = env.create<Build>(1, env.create<BuildType>(1));
+			env.move_in(c, b);
 			
 			REQUIRE(b.assign() == true);
 			u.set_work(b, Item::Coats);
 
+			c.add({Item::Furs, 3});
+			
 			env.turn();
 
-			REQUIRE(c.get(Item::Coats) > 0);
+			REQUIRE(c.get(Item::Coats) == 3);
+			REQUIRE(c.get(Item::Furs) == 0);
 			REQUIRE(u.time_left == 0);
 		}
 
 	}
 	
 	
+	
+}
+
+
+TEST_CASE( "serialize", "" ) {
+	
+	Env env;
+	
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(Biome::Plains));
+	env.set_terr({1,0}, Terr(Biome::Plains));
+	
+	auto& u = env.create<Unit>(
+		1,
+		env.create<UnitType>(1).set_travel(LAND)
+	);
+	
+	env.move_in(env.ref_terr({0,0}), u);
+	
+	
+	std::stringstream stream;
+	 
+	
+	{
+		boost::archive::text_oarchive oa(stream);
+		oa << env;
+    }
+	
+	Env env2;
+	{
+		boost::archive::text_iarchive ia(stream);
+		ia >> env2;
+    }
+	
+	/*
+	REQUIRE(env.get_coords(u) == Coords(0,0));
+	
+	env.set_random_gen(replay({0}));
+	env.order_move(u, Dir::D);	
+	
+	REQUIRE(env.get_coords(u) == Coords(1,0));
+	*/
 	
 }
 

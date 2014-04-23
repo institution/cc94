@@ -36,8 +36,17 @@ using std::map;
 using std::vector;
 
 
-
-//------------------------------------------------------------------------------
+/*
+ * render colony on map
+ * render map road
+ * order units: arrows, R, B, P
+ * render disabled unit shield
+ * click to enter colony
+ * button to exit colony
+ * space for menu
+ * 
+ * 
+ */
 
 namespace col{
 

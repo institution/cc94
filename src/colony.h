@@ -15,13 +15,11 @@ namespace col {
 		using Id = uint32;
 		
 		Id const id;
-		
+		string name;
+		Storage storage;
 		vector<Unit*> units;
 		vector<Build*> builds;
-
-		string name;
 		
-		Storage storage;
 		
 		void add(Cargo const& c) {
 			auto key = enum_value(c.item);

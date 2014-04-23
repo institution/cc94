@@ -5,6 +5,9 @@ namespace col {
 	
 	namespace io{
 		
+		
+		
+		
 		template<>
 		void read<EnvGame>(EnvGame &env, istream &f) {
 			auto &terrain = env.terrs;
@@ -39,10 +42,19 @@ namespace col {
 			auto nplayers = read<Player::Id>(f);
 			cout << format("Players(%||):\n") % nplayers;
 			for (uint i = 0; i < nplayers; ++i) {
-				Player p(read_obj<Player>(env, f));
-				cout << "Player_read" << endl;
-				env.add_player(p);
-				cout << p << endl;
+				
+				//Player p(read_obj<Player>(env, f));
+				
+				cout << "Player_read~" << endl;
+				//env.add_player(p);
+				
+				
+	
+				//auto& space = env.create<Player>(id, Temp())
+				//read_obj(space, f)
+
+				
+				//cout << p << endl;
 			}
 			
 			

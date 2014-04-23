@@ -15,11 +15,13 @@
 #include <unordered_set>
 #include <utility>
 #include <tuple>
+#include <algorithm> 
 #include <boost/multi_array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
+#include <boost/serialization/split_member.hpp>
 #include "iomm.h"
 #include "roll.h"
 #include "aga2.hpp"
@@ -36,6 +38,7 @@ namespace col{
 	using std::unordered_set;
 	using std::unique_ptr;
 	using std::shared_ptr;
+	using std::make_shared;
 	using std::unordered_map;
 
 	using std::cout;

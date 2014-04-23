@@ -15,7 +15,13 @@ namespace col{
 		string name;
 		Id id;
 		
+		
 		BuildType() {}
+		
+		BuildType(Id const& id, string const& name = ""):
+			id(id), 
+			name(name)
+		{}
 		
 		BuildType(vector<string> const& xs) {
 			assert(xs.size() >= 2);
@@ -25,15 +31,20 @@ namespace col{
 				
 	};
 	
-	struct Build: Workplace {
+	struct Build: Workplace, Placeable {
+		using Id = uint32;
 		
+		Id id;
 		BuildType const* type;
 		int8 free_slots;
 		
 		
-		Build(BuildType const& type): 
+		Build(Id const& id, BuildType const& type): 
+			Workplace(),
+			Placeable(),
+			id(id),	
 			type(&type), 
-			free_slots(3) 
+			free_slots(3)
 		{}
 		
 		// Workplace

@@ -1,9 +1,11 @@
 #ifndef ENV_H
 #define ENV_H
 
+
 #include "col.h"
 #include "base.h"
 #include "objs.h"
+#include "player.h"
 #include "csv.h"
 #include "terr.h"
 #include "build.h"
@@ -11,6 +13,8 @@
 #include "roll.h"
 #include "error.h"
 #include <signal.h>
+
+
 
 
 namespace col{
@@ -22,69 +26,51 @@ namespace col{
 	
 	using Terrs = boost::multi_array<Terr, 2>;	
 	using Units = unordered_map<Unit::Id, Unit>;
-	
-	
-	using Colonies = unordered_map<Colony::Id, Colony>;
-	using Players = map<Player::Id, Player>;
+	using Builds = unordered_map<Build::Id, Build>;
+	using Colonies = unordered_map<Colony::Id, Colony>;	
+	using Players = unordered_map<Player::Id, Player>;
 		
 	
 	
-	
-	/* Dir code is yx in mod 3-1 (2 -> -1)
-	00 0  -1,-1
-	01 1  -1,0 
-	02 2  -1,1
-	10 3  0,-1
-	11 4  0,0
-	12 5  0,1
-	20 6  1,-1
-	21 7  1,0
-	22 8  1,1
-	*/
-
-
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x | y;
 	}
 	
+	
+	
+	
 	struct Env{
-		// terrain layer - const
-		// game layer - forest, plow, building, unit, resource, unit
 		
-		// static
-		Coord w, h;
-		
+		// mod
 		shared_ptr<TerrTypes> tts;
 		shared_ptr<BuildTypes> bts; 
 		shared_ptr<UnitTypes> uts; 
-		
-		
-		// modifiable
-		Terrs terrs;  
-		Units units;  
-		
-		
-		uint32 mod;
-
+				
+		// state		
+		Players players;
+		Units units;
+		Builds builds;
 		Colonies colonies;
-		Players players;   // ls of player id
-
+		Coord w, h;
+		Terrs terrs;
 		uint32 turn_no;
 		
+		// misc
+		uint32 mod;
 		boost::function<int (int range)> roll;
 		
-		Id next_id_;
+		
+		
 		Env() {
 			mod = 0;
 			turn_no = 0;
 			w = h = 0;
 			
 			units.reserve(10);
-			next_id_ = 0;
 			
-			tts.reset(new TerrTypes());
-			bts.reset(new BuildTypes());
-			uts.reset(new UnitTypes());
+			tts = make_shared<TerrTypes>();
+			bts = make_shared<BuildTypes>();
+			uts = make_shared<UnitTypes>();
 			
 			set_random_gen(roll::roll1);
 		}
@@ -94,7 +80,7 @@ namespace col{
 			return *this;
 		}
 		
-		
+
 		
 		template<class Type>
 		void loads(string const& fn) {
@@ -104,7 +90,6 @@ namespace col{
 			auto ls = read_conf(fn);
 			auto p = ls.begin();
 			auto e = ls.end();
-
 			
 			++p; // skip header
 			// load line by line
@@ -126,10 +111,14 @@ namespace col{
 			
 		template <typename T>
 		unordered_map<typename T::Id, T>& get_cont();
+		
+		template <typename T>
+		unordered_map<typename T::Id, T> const& get_cont() const;
 				
+		
 		template<class T>
 		typename T::Id next_id() {
-			return typename T::Id{++next_id_};
+			return 0;
 		}
 		
 		
@@ -180,6 +169,18 @@ namespace col{
 			++mod;
 		}
 		
+		Item get_material(Item const& item) {
+			switch (item) {
+				case Item::Rum: return Item::Sugar;
+				case Item::Cigars: return Item::Tobacco;
+				case Item::Cloth: return Item::Cotton;
+				case Item::Coats: return Item::Furs;
+				case Item::Hammers: return Item::Lumber;
+				case Item::Tools: return Item::Ore;
+				case Item::Muskets: return Item::Tools;				
+			}
+			return Item::None;
+		}
 				
 		void turn(Unit &u) {
 			
@@ -188,7 +189,21 @@ namespace col{
 			if (u.workplace != nullptr) {
 				auto& t = ref_terr(u);
 				auto& c = t.get_colony();
-				c.add({u.workitem, u.workplace->get_yield(u.workitem, false)});
+								
+				auto const& yield = u.workplace->get_yield(u.workitem, false);
+				auto const& needitem = get_material(u.workitem);
+				
+				uint16 prod;
+				if (needitem != Item::None) {
+					prod = std::min(yield, c.get(needitem));
+					c.sub({needitem, prod});
+				}
+				else {
+					prod = yield;
+				}
+				
+				c.add({u.workitem, prod});
+				
 				u.time_left = 0;
 			}
 			
@@ -251,10 +266,17 @@ namespace col{
 		}
 		
 		// colony - build
-		/*void move_in(Colony &loc, buildp &&objp) {
-			objp->place = &loc;
-			loc.builds.push_back(move(objp));			
-		}*/
+		void move_in(Colony &loc, Build &obj) {
+			loc.builds.push_back(&obj);
+			obj.place = &loc;
+		}
+		
+		void move_out(Colony &loc, Build &obj) {
+			auto& xs = loc.builds;
+			xs.erase(remove(xs.begin(), xs.end(), &obj), xs.end());
+			obj.place = nullptr;
+		}
+		
 		
 		/*
 		void move_in(Terr const& loc, Build const& obj) {
@@ -638,9 +660,6 @@ namespace col{
 			}
 		}
 		
-		buildp create_build(BuildType::Id const& type_id) {
-			return buildp( new Build( bts->at(10) ) );
-		}
 		
 		bool can_attack_move(Unit const& u, Dir const& dir) {
 			// square empty
@@ -752,16 +771,9 @@ namespace col{
 			units.at(icon_id).player = &players.at(player_id);
 			++mod;			
 		}
-		
-		void add_player(const Player &t) {
-			//assert(icon.id > 0);
-			cout << "Adding player: " << t.id << endl;
-			players[t.id] = t;
-			++mod;
-		}
-		
-		Player& get_player(const Player::Id &id) {
-			return players[id];			
+				
+		Player& get_player(Player::Id const& id) {
+			return players.at(id);
 		}
 		
 		const Player& get_player(const Player::Id &id) const {
@@ -784,7 +796,13 @@ namespace col{
 		}
 		
 		
+		template<class Archive>
+		void save(Archive & ar, uint const& version) const;
 		
+		template<class Archive>
+		void load(Archive & ar, uint const& version);
+		
+		BOOST_SERIALIZATION_SPLIT_MEMBER()
 		
 
 	};
@@ -812,12 +830,24 @@ namespace col{
 	}
 	
 	
+	
+	
+	
+	
 	template <>	inline Units& Env::get_cont<Unit>() {
 		return units;
 	}
 	
+	template <>	inline Builds& Env::get_cont<Build>() {
+		return builds;
+	}
+	
 	template <>	inline Colonies& Env::get_cont<Colony>() {
 		return colonies;
+	}
+	
+	template <>	inline Players& Env::get_cont<Player>() {
+		return players;
 	}
 	
 	template <>	inline UnitTypes& Env::get_cont<UnitType>() {
@@ -832,6 +862,34 @@ namespace col{
 		return *bts;
 	}
 
+	template <>	inline Units const& Env::get_cont<Unit>() const {
+		return units;
+	}
+	
+	template <>	inline Builds const& Env::get_cont<Build>() const {
+		return builds;
+	}
+	
+	template <>	inline Colonies const& Env::get_cont<Colony>() const {
+		return colonies;
+	}
+	
+	template <>	inline Players const& Env::get_cont<Player>() const {
+		return players;
+	}
+	
+	template <>	inline UnitTypes const& Env::get_cont<UnitType>() const {
+		return *uts;
+	}
+	
+	template <>	inline TerrTypes const& Env::get_cont<TerrType>() const {
+		return *tts;
+	}
+	
+	template <>	inline BuildTypes const& Env::get_cont<BuildType>() const {
+		return *bts;
+	}
+	
 }
 
 #endif

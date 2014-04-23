@@ -10,61 +10,32 @@
 
 namespace col {
 	
-	// map
-	// col
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	struct Player;
-	/*
-	struct Struct {
-		using Id = uint32;
-		SType *type; // name 
-		
-		People workers;
-				
-		Coord x, y;
-		
-		
-	};*/
-	
 
 	
+	struct Reserve {
+		
+	};
+	
+	struct Player;
 	
 	struct Color{
 		uint8 r,g,b;	
 		Color() {}
-		Color(uint8 r_, uint8 g_, uint8 b_): r(r_), g(g_), b(b_) {}
+		Color(uint8 r, uint8 g, uint8 b): r(r), g(g), b(b) {}
+		
+		
+		template<class A>
+		void serialize(A & ar, uint const& version) {
+			ar & r;		
+			ar & g;
+			ar & b;			
+		}
 	};
 	
 	ostream& operator<<(ostream &out, const Color &color);
 	
 	
-	struct Player {
-		using Id = uint32;
-		
-		Id id;
-		string name;
-		Color color;
-		uint8 flag_id;
-		
-		Player() {}
 
-		Player(Id id_, string name_, const Color &color_, uint32 flag_id_):
-			id(id_), name(name_), color(color_), flag_id(flag_id_) {
-		}
-		
-		
-
-	};
-	
-	ostream& operator<<(ostream &out, const Player &obj);
 
 }
 #endif

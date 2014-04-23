@@ -206,12 +206,12 @@ namespace col {
 					output.push_back("Usage: addp name colorname");					
 				}
 				else {				
-					envgame.add_player(Player(
+					envgame.create<Player>(
 						envgame.next_key_player(),
 						string(es[1]),
 						make_color_by_name(string(es[2])),
 						flag_id4color_name(string(es[2]))
-					));
+					);
 				}
 			}
 			else

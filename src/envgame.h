@@ -33,6 +33,12 @@ namespace col{
 		
 	};
 	
+	/*
+	void add_player() {
+		auto& id = next_id<Player>();
+		auto& p = create<Player>(id, );
+	}*/
+	
 	void copy(EnvGame &trg, EnvGame const& src);
 	
 	

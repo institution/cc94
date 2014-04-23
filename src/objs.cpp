@@ -2,9 +2,6 @@
 #include <type_traits>
 
 namespace col {
-	
-
-
 
 	
 	namespace io {
@@ -32,8 +29,5 @@ namespace col {
 	}
 	
 
-	ostream& operator<<(ostream &out, const Player &obj) {
-		out << "Player(" << "id"<<"="<<obj.id<<','<<"name"<<"="<<obj.name << ")";
-	}
 
 }
