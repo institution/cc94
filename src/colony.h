@@ -14,7 +14,7 @@ namespace col {
 		
 		using Id = uint32;
 		
-		Id const id;
+		Id id;
 		string name;
 		Storage storage;
 		vector<Unit*> units;
@@ -61,12 +61,16 @@ namespace col {
 		
 		
 		
-		Colony(Id const& id, string const& name): 
+		Colony(Id const& id, string const& name=""): 
 			Place(), Placeable(), 
 			id(id), 
 			name(name) 
 		{}
 		
+		Colony() = default;
+		Colony(Colony &&) = default;
+		
+		Colony(Colony const&) = delete;
 		
 		
 	};

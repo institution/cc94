@@ -23,10 +23,10 @@ namespace col{
 		{}
 		
 		
-		Player() = delete;
-		Player(Player const&) = delete;
-
+		Player() = default;
 		Player(Player&& p) = default;
+		
+		Player(Player const&) = delete;
 		
 		template<class A>
 		void serialize(A & ar, uint const& version) {

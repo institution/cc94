@@ -10,10 +10,10 @@ namespace col{
 	
 	
 	struct BuildType{
-		using Id = uint8;
+		using Id = uint32;
 		
-		string name;
 		Id id;
+		string name;
 		
 		
 		BuildType() {}
@@ -46,6 +46,10 @@ namespace col{
 			type(&type), 
 			free_slots(3)
 		{}
+		
+		Build() = default;
+		Build(Build &&) = default;
+		Build(Build const&) = delete;  // remove
 		
 		// Workplace
 		

@@ -139,11 +139,11 @@ namespace col {
 						break;
 					}
 					case 3: {
-						envgame.create_icon(
-							std::stoi(es.at(1)), // type_id
-							std::stoi(es.at(2)),  // player_id
-							Coords(sel[0], sel[1]) // x y
-						);
+						auto& c = envgame.get<UnitType>(std::stoi(es.at(1))); // type_id
+						auto& p = envgame.get<Player>(std::stoi(es.at(2)));  // player_id
+						auto& t = envgame.ref_terr(Coords(sel[0], sel[1]));  // coords
+						auto& u = envgame.create<Unit>(c, p);
+						envgame.move_in(t, u);
 						break;
 					}					
 				}
@@ -194,7 +194,8 @@ namespace col {
 					}
 					case 2: {
 						ofstream f(es.at(1), std::ios::binary);
-						io::write<EnvGame>(f, envgame);
+						//io::write<EnvGame>(f, envgame);
+						assert(0);
 						break;
 					}
 				}
@@ -207,7 +208,6 @@ namespace col {
 				}
 				else {				
 					envgame.create<Player>(
-						envgame.next_key_player(),
 						string(es[1]),
 						make_color_by_name(string(es[2])),
 						flag_id4color_name(string(es[2]))
@@ -240,6 +240,7 @@ namespace col {
 						));
 						break;
 					case 3:
+						/*
 						envgame.exec(AttackMove(
 							envgame.current_player_id,
 							envgame.ref_icon_at(sel).id,
@@ -250,6 +251,7 @@ namespace col {
 								)
 							)
 						));
+						 */
 						break;					
 				}
 				

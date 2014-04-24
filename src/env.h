@@ -54,6 +54,7 @@ namespace col{
 		Coord w, h;
 		Terrs terrs;
 		uint32 turn_no;
+		uint32 next_id;
 		
 		// misc
 		uint32 mod;
@@ -61,12 +62,16 @@ namespace col{
 		
 		
 		
-		Env() {
+		Env(): terrs(Coords(0,0), boost::fortran_storage_order()) {
+			
+			next_id = 0;
 			mod = 0;
 			turn_no = 0;
 			w = h = 0;
 			
 			units.reserve(10);
+			
+			
 			
 			tts = make_shared<TerrTypes>();
 			bts = make_shared<BuildTypes>();
@@ -116,14 +121,16 @@ namespace col{
 		unordered_map<typename T::Id, T> const& get_cont() const;
 				
 		
-		template<class T>
-		typename T::Id next_id() {
-			return 0;
+		//template<class T>
+		uint32 get_next_id() {
+			next_id = next_id + 1;
+			return next_id;
 		}
 		
 		
 		template<class T, class... A>
-		T& create(typename T::Id id, A&&... args) { 
+		T& create(A&&... args) { 
+			uint32 id = get_next_id();
 			auto& ts = get_cont<T>();
 			auto p = ts.emplace(piecewise_construct,
 				forward_as_tuple(id), 
@@ -132,7 +139,7 @@ namespace col{
 			
 			return (*p).second;
 		}
-				
+		
 		template <typename T>
 		void destroy(typename T::Id const& id) {
 			get_cont<T>().erase(id);			
@@ -326,94 +333,51 @@ namespace col{
 		}
 		*/
 		
-		
-	
-		
-		
-		Unit::Id create_icon(UnitType::Id type_id, Player::Id player_id, Coords xy) {
-			Unit::Id id = units.size();
+		Coords get_coords(Terr const& t) const {
 			
-			if (uts->find(type_id) == uts->end()) {
-				throw runtime_error(str(format("unit types: id not found: %||") % type_id));
-			}
-						
-			units[id] = Unit(
-				id,
-				uts->at(type_id),
-				xy,
-				players.at(player_id)
-			);
-			++mod;
-			return id;		
-		}
-		
-				
-		Terr& terr(Coords const& z) {
-			return terrs[z[1]][z[0]];
-		}
-		
-		Coords get_coords(Terr const& t) {
+			// offset = x*w + y
+			
 			uint32 offset = uint32(&t - &terrs[0][0]);
 			return Coords(offset % w, offset / w);
 		}
 		
-		Coords get_coords(Unit const& u) {
-			return get_coords(ref_terr(u));
+		Coords get_coords(Unit const& u) const {
+			return get_coords(get_terr(u));
 		}
 		
-		Terr& ref_terr(Coords const& z) {
-			if (!(0 <= z[0] and z[0] < w and 0 <= z[1] and z[1] < h)) {
-				throw Error("reffering terr outside the map");
-			}
-			return terrs[z[1]][z[0]];
+		
+		Terr & ref_terr(Coords const& z) {
+			return terrs(z);
 		}
 		
-		Terr& ref_terr(Unit const& u) {			
+		Terr & ref_terr(Placeable const& x) {
+			if (x.place->place_type() != PlaceType::Terr) {				
+				throw Error("unit not in field");
+			}			
+			return *static_cast<Terr*>(x.place);
+		}
+		
+		Terr const& get_terr(Coords const& z) const {
+			return terrs(z);
+		}
+		
+		Terr const& get_terr(Placeable const& u) const {			
 			if (u.place->place_type() != PlaceType::Terr) {				
 				throw Error("unit not in field");
 			}			
-			return *static_cast<Terr*>(u.place);
+			return *static_cast<Terr const*>(u.place);
 		}
-		
-		Env& set_terr(Coords const& z, Terr const& t) {
-			terrs[z[1]][z[0]] = t;
+				
+		Env & set_terr(Coords const& z, Terr const& t) {
+			terrs(z) = t;
 			return *this;
 		}
-		
-		Terr const& terr(Coords const& z) const {
-			return terrs[z[1]][z[0]];
-		}
-		
-		Env& resize(Coords const& dim) {
-			terrs.resize(boost::extents[dim[1]][dim[0]]);
-			w = dim[0];
-			h = dim[1];
+				
+		Env & resize(Coords const& dim) {
+			//terrs.resize(boost::extents[dim[1]][dim[0]]);
+			terrs.resize(dim);
+			w = dim[0]; h = dim[1];
 			return *this;
-		}
-		
-			/*for(Coord j = 0; j < dim[1]; ++j) {
-				for(Coord i = 0; i < dim[0]; ++i) {
-					terrs[j][i] = def;					
-				}
-			}*/
-		
-		
-		//TerrId& terr_id(Coord x, Coord y) {
-		//	return terrs[y][x];
-		//}
-		
-		//TerrType& get_terr_type(Coords const& xy) {
-		//	return tts.at(get_terr_id(xy[0], xy[1]));
-		//}
-		
-		Unit const* get_icon_at(Coords const& xy) const {
-			for (auto &p: units) {				
-				auto &c = p.second;
-				if (c.pos == xy) {
-					return &c;
-				}
-			}
-			return nullptr;			
 		}
 		
 		
@@ -422,25 +386,6 @@ namespace col{
 			return units.at(id);			
 		}
 		
-		
-		Unit* get_icon_at(Coords const& xy) {
-			for (auto &p: units) {				
-				auto &c = p.second;
-				if (c.pos == xy) {
-					return &c;
-				}
-			}
-			return nullptr;
-			
-		}
-		
-		Unit& ref_icon_at(Coords const& pos) {
-			auto p = get_icon_at(pos);
-			if (p) {
-				return *p;
-			}
-			throw runtime_error("no icon at location");
-		}
 		
 		
 	/*
@@ -550,7 +495,15 @@ namespace col{
 			return *t.units[0];
 		}
 		
-		bool order_attack(Unit &attacker, Dir const& dir) {
+		Unit const* get_defender_if_any(Terr const& t) const {
+			if (!t.units.size()) {
+				return nullptr;
+			}
+			return t.units[0];
+		}
+		
+		
+		bool order_attack(Unit & attacker, Dir const& dir) {
 			/* Order attack
 			 */
 			
@@ -647,7 +600,7 @@ namespace col{
 			
 			if (run_map_task(u, time_cost)) {
 				// create colony
-				auto& c = create<Colony>(next_id<Colony>(), name);
+				auto& c = create<Colony>(name);
 				move_in(t, c);
 				
 				// move unit into colony?
@@ -663,9 +616,9 @@ namespace col{
 		
 		bool can_attack_move(Unit const& u, Dir const& dir) {
 			// square empty
-			auto& ut = *(u.type);
-			auto dest = u.pos + vec4dir(dir);
-			auto tt = terr(dest);
+			//auto& ut = *(u.type);
+			//auto dest = u.pos + vec4dir(dir);
+			//auto tt = terr(dest);
 			
 			//if (!(ut.movement_type & tt.get_movement_type())) {
 			//	cout << "cannot move - noncompatible type" << endl;
@@ -689,13 +642,13 @@ namespace col{
 				// throw runtime_error("cant move - not enough moves");
 			//}
 			// enough movement
-			
+			/*
 			auto x = get_icon_at(dest);
 			if (x != nullptr && x->player == u.player) {
 				cout << "cannot move: square already occupied" << endl;
 				return false;				
 				//throw std::runtime_error("cannot move: square already occupied");
-			}
+			}*/
 			// dest square empty or occupied by enemy
 			
 			return true;			
@@ -704,6 +657,8 @@ namespace col{
 		
 		
 		void attack_move(Player::Id const& pid, Unit::Id const& iid, Dir const& dir) {
+			
+			/*
 			Unit *p = & icon4id(iid);
 			
 			if (!can_attack_move(*p, dir)) {
@@ -713,7 +668,7 @@ namespace col{
 			
 			auto dest = p->pos + vec4dir(dir);
 			auto q = get_icon_at(dest);
-			auto tt = terr(dest);
+			auto tt = get_terr(dest);
 			
 			if (q == nullptr) {
 				// move
@@ -733,7 +688,7 @@ namespace col{
 				//auto r = roll(attack + combat);
 
 				// cout << "combat " << r << endl;
-				/*
+				
 				if (r <= attack) {
 					//p->movement_used = p->type->movement;
 					p->pos = dest;
@@ -743,10 +698,11 @@ namespace col{
 				else {
 					destroy<Unit>(q->id);
 				}
-				 * */
+			
 
 			}
-			
+			*/
+				
 			++mod;			
 		}
 		
@@ -832,7 +788,16 @@ namespace col{
 	
 	
 	
-	
+
+	template <> inline
+	Terr & Env::get<Terr>(Terr::Id const& id) {
+		return ref_terr(id);
+	}
+
+	template <> inline
+	Terr const& Env::get(Terr::Id const& id) const {
+		return get_terr(id);
+	}
 	
 	template <>	inline Units& Env::get_cont<Unit>() {
 		return units;

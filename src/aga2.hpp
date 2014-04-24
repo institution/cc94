@@ -17,6 +17,14 @@ public:
     using Array = std::array<R,1>;
 
     using Iter = typename Array::iterator;
+    using iterator = typename Array::iterator;
+    using const_iterator = typename Array::const_iterator;
+    using value_type = typename Array::value_type;
+    using reference = typename Array::reference;
+    using const_reference = typename Array::const_reference;
+    using pointer = typename Array::pointer;
+    using difference_type = typename Array::difference_type;
+    using size_type = typename Array::size_type;
 
     Array arr;
 
@@ -50,12 +58,35 @@ public:
         return 1;
     }
 
-    Iter begin() {
+    bool empty() const {
+        return false;
+    }
+
+    iterator begin() {
         return arr.begin();
     }
 
-    Iter end() {
+    iterator end() {
         return arr.end();
+    }
+
+    const_iterator begin() const {
+        return arr.begin();
+    }
+
+    const_iterator end() const {
+        return arr.end();
+    }
+
+    void swap(Mv0& b) {
+        assert(false);
+    }
+
+    template<class A>
+    void serialize(A & ar, unsigned int const version) {
+        for (auto& c: *this) {
+            ar & c;
+        }
     }
 };
 
@@ -67,6 +98,14 @@ public:
     using Array = std::array<R,2>;
 
     using Iter = typename Array::iterator;
+    using iterator = typename Array::iterator;
+    using const_iterator = typename Array::const_iterator;
+    using value_type = typename Array::value_type;
+    using reference = typename Array::reference;
+    using const_reference = typename Array::const_reference;
+    using pointer = typename Array::pointer;
+    using difference_type = typename Array::difference_type;
+    using size_type = typename Array::size_type;
 
     Array arr;
 
@@ -97,12 +136,35 @@ public:
         return 2;
     }
 
-    Iter begin() {
+    bool empty() const {
+        return false;
+    }
+
+    iterator begin() {
         return arr.begin();
     }
 
-    Iter end() {
+    iterator end() {
         return arr.end();
+    }
+
+    const_iterator begin() const {
+        return arr.begin();
+    }
+
+    const_iterator end() const {
+        return arr.end();
+    }
+
+    void swap(Mv1& b) {
+        assert(false);
+    }
+
+    template<class A>
+    void serialize(A & ar, unsigned int const version) {
+        for (auto& c: *this) {
+            ar & c;
+        }
     }
 };
 
@@ -114,6 +176,14 @@ public:
     using Array = std::array<R,1>;
 
     using Iter = typename Array::iterator;
+    using iterator = typename Array::iterator;
+    using const_iterator = typename Array::const_iterator;
+    using value_type = typename Array::value_type;
+    using reference = typename Array::reference;
+    using const_reference = typename Array::const_reference;
+    using pointer = typename Array::pointer;
+    using difference_type = typename Array::difference_type;
+    using size_type = typename Array::size_type;
 
     Array arr;
 
@@ -147,12 +217,35 @@ public:
         return 1;
     }
 
-    Iter begin() {
+    bool empty() const {
+        return false;
+    }
+
+    iterator begin() {
         return arr.begin();
     }
 
-    Iter end() {
+    iterator end() {
         return arr.end();
+    }
+
+    const_iterator begin() const {
+        return arr.begin();
+    }
+
+    const_iterator end() const {
+        return arr.end();
+    }
+
+    void swap(Mv2& b) {
+        assert(false);
+    }
+
+    template<class A>
+    void serialize(A & ar, unsigned int const version) {
+        for (auto& c: *this) {
+            ar & c;
+        }
     }
 };
 
@@ -164,6 +257,14 @@ public:
     using Array = std::array<R,2>;
 
     using Iter = typename Array::iterator;
+    using iterator = typename Array::iterator;
+    using const_iterator = typename Array::const_iterator;
+    using value_type = typename Array::value_type;
+    using reference = typename Array::reference;
+    using const_reference = typename Array::const_reference;
+    using pointer = typename Array::pointer;
+    using difference_type = typename Array::difference_type;
+    using size_type = typename Array::size_type;
 
     Array arr;
 
@@ -194,12 +295,35 @@ public:
         return 2;
     }
 
-    Iter begin() {
+    bool empty() const {
+        return false;
+    }
+
+    iterator begin() {
         return arr.begin();
     }
 
-    Iter end() {
+    iterator end() {
         return arr.end();
+    }
+
+    const_iterator begin() const {
+        return arr.begin();
+    }
+
+    const_iterator end() const {
+        return arr.end();
+    }
+
+    void swap(Mv02& b) {
+        assert(false);
+    }
+
+    template<class A>
+    void serialize(A & ar, unsigned int const version) {
+        for (auto& c: *this) {
+            ar & c;
+        }
     }
 };
 

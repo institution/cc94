@@ -150,16 +150,18 @@ namespace col {
 	void render_icon(sf::RenderWindow &win, Env const& env, Unit const& unit) {
 		auto &p = env.get_player(unit.player->id);
 		
+		auto pos = env.get_coords(unit);
+		
 		auto type = unit.type->id;
 		switch (type / 256) {
 			case 0: 
-				render_shield(win, unit.pos[0]*16, unit.pos[1]*16, p.color);
-				render_sprite(win, unit.pos[0]*16, unit.pos[1]*16, res(ICON, type));
+				render_shield(win, pos[0]*16, pos[1]*16, p.color);
+				render_sprite(win, pos[0]*16, pos[1]*16, res(ICON, type));
 				break;
 			case 1: 
-				render_sprite(win, unit.pos[0]*16, unit.pos[1]*16, res(ICON, 4));
+				render_sprite(win, pos[0]*16, pos[1]*16, res(ICON, 4));
 				// flag:
-				render_sprite(win, unit.pos[0]*16+5, unit.pos[1]*16, res(ICON, unit.player->flag_id));
+				render_sprite(win, pos[0]*16+5, pos[1]*16, res(ICON, unit.player->flag_id));
 				break;
 		}
 		
@@ -204,12 +206,15 @@ namespace col {
 		uint i = 0;
 		for (auto &iunit: env.units) {
 			auto & unit = iunit.second;
-			if (unit.pos != con.sel) {
+			
+			auto upos = env.get_coords(unit);
+			
+			if (upos != con.sel) {
 				continue;
 			}
 			
 			auto type = unit.type->id;
-			if (type < 256 || unit.pos != con.sel) {
+			if (type < 256 || upos != con.sel) {
 				continue;
 			}
 			
@@ -278,7 +283,7 @@ namespace col {
 
 		for (uint j = 0; j < h; ++j) {
 			for (uint i = 0; i < w; ++i) {
-				render_tile(win, i, j, env.terr(Coords(i,j)));
+				render_tile(win, i, j, env.get_terr(Coords(i,j)));
 			}
 		}
 
@@ -320,7 +325,7 @@ namespace col {
 		
 
 		
-		Unit const* u = env.get_icon_at(con.sel);
+		Unit const* u = env.get_defender_if_any(env.get_terr(con.sel));
 		
 		if (u) {
 			

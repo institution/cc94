@@ -34,6 +34,63 @@ using roll::replay;
  */
 
 
+TEST_CASE( "env::get_coords", "" ) {
+	
+	Env env;
+	
+	env.resize({5,2});
+	// env.set_terr({4,1}, Terr(Biome::Plains));
+	
+	auto& b = env.terrs(Coords(0,0));
+	
+	cerr << &env.terrs(Coords(0,0)) - &b << endl;
+	cerr << &env.terrs(Coords(1,0)) - &b << endl;
+	cerr << &env.terrs(Coords(2,0)) - &b << endl;
+	
+	cerr << &env.terrs(Coords(0,1)) - &b << endl;
+	cerr << &env.terrs(Coords(1,1)) - &b << endl;
+	cerr << &env.terrs(Coords(2,1)) - &b << endl;
+	
+	// mem layout: 0   1   2   3   4   | 5   6   7   8   9
+	// mem layout: 0,0 1,0 2,0 3,0 4,0 | 0,1 1,1 2,1 3,1 4,1	
+	
+	REQUIRE(int(&env.terrs(Coords(0,0)) - &b) == 0);
+	REQUIRE(int(&env.terrs(Coords(1,0)) - &b) == 1);
+	REQUIRE(int(&env.terrs(Coords(2,0)) - &b) == 2);
+	
+	REQUIRE(int(&env.terrs(Coords(0,1)) - &b) == 5);
+	REQUIRE(int(&env.terrs(Coords(1,1)) - &b) == 6);
+	REQUIRE(int(&env.terrs(Coords(2,1)) - &b) == 7);
+	
+	
+	REQUIRE(env.get_coords(*(&b + 0)) == Coords(0,0));
+	REQUIRE(env.get_coords(*(&b + 1)) == Coords(1,0));
+	REQUIRE(env.get_coords(*(&b + 2)) == Coords(2,0));
+	
+	REQUIRE(env.get_coords(*(&b + 5)) == Coords(0,1));
+	REQUIRE(env.get_coords(*(&b + 6)) == Coords(1,1));
+	REQUIRE(env.get_coords(*(&b + 7)) == Coords(2,1));
+	
+	
+	
+	REQUIRE(env.get_coords(env.get_terr({4,1})) == Coords(4,1));
+	REQUIRE(env.get_coords(env.get_terr({0,0})) == Coords(0,0));
+	
+	
+}
+
+
+TEST_CASE( "get terr", "" ) {
+	
+	Env env;
+	
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(Biome::Plains));
+	
+	
+	auto& t = env.get<Terr>(Coords(0,0));
+		
+}
 
 TEST_CASE( "colony", "" ) {
 	
@@ -43,8 +100,8 @@ TEST_CASE( "colony", "" ) {
 	env.set_terr({0,0}, Terr(Biome::Plains));
 	
 	auto& u = env.create<Unit>(
-		1,
-		env.create<UnitType>(1).set_travel(LAND)
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Player>()
 	);
 	
 	auto& t = env.ref_terr({0,0});
@@ -77,7 +134,7 @@ TEST_CASE( "colony", "" ) {
 		SECTION("work build") {
 		
 			// TODO: new colony gratis buildings
-			auto& b = env.create<Build>(1, env.create<BuildType>(1));
+			auto& b = env.create<Build>(env.create<BuildType>());
 			env.move_in(c, b);
 			
 			REQUIRE(b.assign() == true);
@@ -107,16 +164,15 @@ TEST_CASE( "serialize", "" ) {
 	env.set_terr({0,0}, Terr(Biome::Plains));
 	env.set_terr({1,0}, Terr(Biome::Plains));
 	
-	auto& u = env.create<Unit>(
-		1,
-		env.create<UnitType>(1).set_travel(LAND)
+	auto& u = env.create<Unit>(		
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Player>()
 	);
 	
 	env.move_in(env.ref_terr({0,0}), u);
 	
 	
 	std::stringstream stream;
-	 
 	
 	{
 		boost::archive::text_oarchive oa(stream);
@@ -149,8 +205,8 @@ TEST_CASE( "env::move_unit", "" ) {
 	env.set_terr({1,0}, Terr(Biome::Plains));
 	
 	auto& u = env.create<Unit>(
-		1,
-		env.create<UnitType>(1).set_travel(LAND)
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Player>()
 	);
 	
 	env.move_in(env.ref_terr({0,0}), u);
@@ -166,21 +222,10 @@ TEST_CASE( "env::move_unit", "" ) {
 }
 
 
-TEST_CASE( "env::get_coords", "" ) {
-	
-	Env env;
-	
-	env.resize({5,3});
-	env.set_terr({4,1}, Terr(Biome::Plains));
-		
-	REQUIRE(env.get_coords(env.ref_terr({4,1})) == Coords(4,1));
-	
-}
-
 		
 			
 
-TEST_CASE( "env::order_attack", "" ) {
+TEST_CASE( "two units", "" ) {
 	
 	Env env;
 	
@@ -191,21 +236,31 @@ TEST_CASE( "env::order_attack", "" ) {
 	auto& t1 = env.ref_terr({0,0});
 	auto& t2 = env.ref_terr({1,0});
 	
-	auto& ut = env.create<UnitType>(1).set_travel(LAND);
+	auto& ut = env.create<UnitType>().set_travel(LAND);
 	ut.set_attack(2).set_combat(1);
 	
-	auto& u1 = env.create<Unit>(1, ut);
+	auto& p = env.create<Player>();
+	
+	auto& u1 = env.create<Unit>(ut, p);
 	env.move_in(t1, u1);
 	
-	auto& u2 = env.create<Unit>(2, ut);
+	auto& u2 = env.create<Unit>(ut, p);
 	env.move_in(t2, u2);
 	
-	env.set_random_gen(replay({1}));
-	env.order_attack(u1, Dir::D);
+	SECTION("have diffrent id") {
+		REQUIRE(u1.id != u2.id);  // regress
+	}
 	
-	REQUIRE(env.exist<Unit>(1) == true);
-	REQUIRE(env.exist<Unit>(2) == false);
-	
+	SECTION("can order attack") {
+		auto id1 = u1.id;
+		auto id2 = u2.id;
+
+		env.set_random_gen(replay({1}));
+		env.order_attack(u1, Dir::D);
+
+		REQUIRE(env.exist<Unit>(id1) == true);
+		REQUIRE(env.exist<Unit>(id2) == false);
+	}
 }
 
 TEST_CASE( "improve square", "" ) {
@@ -217,8 +272,8 @@ TEST_CASE( "improve square", "" ) {
 	
 	auto& t = env.ref_terr({0,0});
 	auto& u = env.create<Unit>(
-		1,
-		env.create<UnitType>(1).set_travel(LAND)
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Player>()
 	);
 	env.move_in(t, u);
 	

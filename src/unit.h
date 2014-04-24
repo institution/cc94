@@ -63,14 +63,11 @@ namespace col{
 		
 		Id id;
 		UnitType const* type;
-		Coords pos;  // unused
-		string name; // unused
 		Player const* player;
-		
-		
 		uint8 time_left;
 		Workplace const* workplace;
-		Item workitem;		
+		Item workitem;
+		uint16 free_space;
 		
 		string const& get_name() const { return type->get_name(); }
 		uint8 const& get_travel() const { return type->get_travel(); }
@@ -93,74 +90,34 @@ namespace col{
 			return *this;
 		}
 		
-		
-		/*
-		struct Order{
-			uint8 code;
-			uint8 arg;
-			Dir dir;
-			Order(uint8 const& code = ' ', Item const& arg = Item::none, Dir const& dir = Dir::S):
-				code(code), arg(arg), dir(dir)
-			{}
-		};
-		
-		Order order;
-		
-		Unit& set_order(Order const& ord) { 
-			order = ord; return *this; 
-		}
-		*/
-		
-		//uint8 move_acc;
-		
-		//task
-		//60/90
-		
 		PlaceType place_type() {
 			return PlaceType::Unit;
 		}
 				
 		
-		uint16 free_space;
-		
-
-		Unit(): Place(), Placeable(), time_left(6) {
-			name = "";
-			
-		}
 		
 		
-		
-			
-			
 		Unit(
 			Id const& id, 
-			UnitType const &type
-		): Place(), Placeable() {	
-			this->id = id; 
-			this->type = &type; 
-			this->time_left = 6;
-		}
+			UnitType const& type,
+			Player const& player
+		): 
+			Place(), 
+			Placeable(), 
+			id(id), 
+			type(&type), 
+			player(&player), 
+			time_left(6),
+			workplace(nullptr),
+			workitem(Item::None),
+			free_space(0)
+		{}
 		
+		Unit(Unit &&) = default;
+		Unit() = default;
 		
-		Unit(
-			Id id, 
-			UnitType const &type, 
-			Coords pos, 
-			Player const &player
-		): Place(), Placeable() {	
-			this->id = id; 
-			this->type = &type; 
-			this->pos = pos;
-			this->time_left = 6;
-			this->player = &player;
-		}
+		Unit(Unit const&) = delete;
 		
-		Unit(Unit const&) {
-			assert(false);
-		}
-		
-
 	}; 
 
 	ostream& operator<<(ostream &out, Unit const& obj);
