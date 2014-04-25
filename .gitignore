@@ -6,10 +6,14 @@
 COLONIZE
 nbproject
 
+# Dependencies
+*.d
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
+*.obj
 
 # Compiled Dynamic libraries
 *.so

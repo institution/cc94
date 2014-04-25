@@ -1,7 +1,7 @@
 #ifndef BASE2_H
 #define BASE2_H
 
-#include "col.h"
+#include "col.hpp"
 
 namespace col {
 	

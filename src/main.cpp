@@ -8,7 +8,7 @@
 #include <boost/multi_array.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include "col.h"
+#include "col.hpp"
 #include "iomm.h"
 #include "text.h"
 #include "env.h"

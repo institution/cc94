@@ -5,7 +5,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-#include "col.h"
+#include "col.hpp"
 #include "env.h"
 #include "console.h"
 #include "pixfont.h"

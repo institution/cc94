@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "aga2.hpp"
-#include "col.h"
+#include "col.hpp"
 #include "env.h" 
 
 

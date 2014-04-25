@@ -6,7 +6,7 @@
 #include <SFML/Graphics.hpp>
 
 
-#include "col.h"
+#include "col.hpp"
 #include "envgame.h"
 
 /*
