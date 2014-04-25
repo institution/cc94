@@ -324,22 +324,22 @@ namespace col {
 		
 		
 
-		
-		Unit const* u = env.get_defender_if_any(env.get_terr(con.sel));
-		
-		if (u) {
-			
-			auto moves = u->time_left;
-			
-			auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
-			
-			render_text(win, 
-				pos,
-				res_pixfont("tiny.png"),
-				s,
-				dim[0]
-			);
-			
+		if (env.in_bounds(con.sel)) {
+			auto& t = env.get_terr(con.sel);
+			if (t.units.size()) {
+				Unit const* u = env.get_defender_if_any(t);
+
+				auto moves = u->time_left;
+
+				auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
+
+				render_text(win, 
+					pos,
+					res_pixfont("tiny.png"),
+					s,
+					dim[0]
+				);
+			}
 		}
 		
 		

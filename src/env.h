@@ -333,6 +333,10 @@ namespace col{
 		}
 		*/
 		
+		bool in_bounds(Coords const& p) const {
+			return (0 <= p[0] and p[0] < w) and (0 <= p[1] and p[1] < h);				
+		}
+		
 		Coords get_coords(Terr const& t) const {
 			
 			// offset = x*w + y
@@ -380,6 +384,18 @@ namespace col{
 			return *this;
 		}
 		
+		Env & fill(Terr const& t) {
+			
+			for (Coord j = 0; j < h; ++j) {
+				for (Coord i = 0; i < w; ++i) {
+					auto& x = ref_terr(Coords(i,j));
+					x.biome = t.biome;
+					x.phys = t.phys;
+				}
+			}
+			
+			return *this;
+		}
 		
 		
 		Unit& icon4id(Unit::Id const& id) {

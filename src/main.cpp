@@ -121,10 +121,13 @@ int main()
 	env.loads<BuildType>("./col94/builds.csv");
 	env.loads<UnitType>("./col94/units.csv");
 	
-	ifstream f(fname, std::ios::binary);
-	io::read<EnvGame>(env, f);
-	f.close();	
+	//ifstream f(fname, std::ios::binary);
+	// 
+	//f.close();	
     
+	env.resize({8,8});
+	env.fill(Terr{Biome::Plains, Phys::None});
+	
 	Console con(env);
 		
 	auto last_env = env.mod - 1;

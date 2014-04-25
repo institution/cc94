@@ -9,6 +9,26 @@
 #include "col.h"
 #include "envgame.h"
 
+/*
+ * place biome plains|tundra|grassland|...
+ * place phys mountain
+ * place unit eng colonist
+ * clear unit
+ * clear phys
+ * move q|w|e|a|d|z|x|c
+ * 
+ * 
+ */
+
+
+
+
+
+
+
+
+
+
 namespace col {
 
 	struct Console{

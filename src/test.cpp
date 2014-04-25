@@ -180,6 +180,7 @@ TEST_CASE( "serialize", "" ) {
     }
 	
 	Env env2;
+	env2.uts = env.uts;
 	{
 		boost::archive::text_iarchive ia(stream);
 		ia >> env2;

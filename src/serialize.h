@@ -153,8 +153,19 @@ namespace col {
 				ar << x.type->id;
 				ar << x.player->id;
 				ar << x.time_left;
+				
+				
+				/*
 				ar << x.workitem;
+				
+				if (x.workplace) {
 				ar << x.workplace;
+				}
+				else {
+					ar << uint32(0);
+					ar << uint32(0);					
+				}
+				 * */
 				
 				// location
 				auto cr = env.get_coords(env.get_terr(x));
@@ -284,8 +295,11 @@ namespace col {
 				x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
 				x.player = & env.get<Player> ( read<Player::Id> (ar) );
 				ar >> x.time_left;
-				ar >> x.workplace;
-				ar >> x.workitem;
+				
+				
+				//ar >> x.workitem;
+				//ar >> x.workplace;
+				
 
 				auto key = x.id;
 				auto p = ps.emplace(key, std::move(x)).first;
