@@ -1,7 +1,6 @@
 *~
 *.pyc
 /main
-/model
 /core
 COLONIZE
 nbproject
