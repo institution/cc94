@@ -1,30 +1,57 @@
+# $@ -- The file name of the target of the rule.
+# $* -- The stem with which an implicit rule matches
+# $< -- The name of the first prerequisite.
+# $^ -- The names of all the prerequisites
+# $(VARS:%.cpp=%.o) -- pattern replace
 
-# *.cpp -> *.o
-# `find . -name '*.cpp' | rev | cut -c4- | rev | sed -e 's/$/o/' | tr '\n' ' '`
+# output files
+OUTS:=main test
 
-OBJS=b/iomm.o b/env.o b/objs.o b/csv.o b/roll.o b/console.o b/renderer.o b/pixfont.o b/ai.o b/ox.o b/terr.o b/unit.o b/envgame.o b/build.o b/player.o
+# compiler options
+CCOPTS:=-I./src -std=c++11 -g -fno-inline-functions 
+
+# linker options
+LLOPTS:=-lboost_serialization -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 
-OPTS=-g -fno-inline-functions -lboost_serialization
+# list of compiled source b/fname.cpp.o
+OBJS:=$(shell find src -name '*.cpp')
+OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
 
-main: b/main.o ${OBJS}
-	g++ b/main.o ${OBJS} -o main -I./src -L./lib -std=c++11 ${OPTS} -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+-include $(OBJS:%.obj=%.d)
 
-test: b/test.o ${OBJS}
-	g++ b/test.o ${OBJS} -o test -I./src -L./lib -std=c++11 ${OPTS} -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
-
-#test_ox: b/test_ox.o ${OBJS}
-#	g++ b/test_ox.o ${OBJS} -o test_ox -I./src -L./lib -std=c++11 -g -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
-
-#model: model.o iomm.o env.o
-#	g++ model.o iomm.o env.o -o model -I./include -L./lib -std=c++0x -g -lsfml-network
-
-b/main.o b/test.o b/test_ox.o: b/%.o: src/%.cpp
-	g++ -c -o $@ $< -std=c++11 ${OPTS}
-		
-${OBJS}: b/%.o: src/%.cpp src/%.h
-	g++ -c -o $@ $< -std=c++11 ${OPTS}
+# compiler
+${OBJS}: b/%.obj: src/%
+	g++ -c -MMD -MP -o $@ $< ${CCOPTS}
+	
+# linker
+#${OUTS}: $(OBJS)
+#	g++ -o $@ $^ ${LLOPTS}
 
 clean:
-	rm -f b/*.o main core.* test
+	rm -f b/* ${OUTS} core.*
+	
 
+# test
+TEST_D:=$(shell g++ -MM src/test.cpp -std=c++11)
+TEST_D:=$(TEST_D:\=)
+TEST_D:=$(TEST_D:%.o:=)
+TEST_D:=$(TEST_D:src/%.cpp=b/%.cpp.obj)
+TEST_D:=$(TEST_D:src/%.hpp=)
+TEST_D:=$(TEST_D:src/%.h=b/%.cpp.obj)
+
+test: ${TEST_D}
+	g++ -o $@ $^ ${LLOPTS}
+	
+# main
+MAIN_D:=$(shell g++ -MM src/main.cpp -std=c++11)
+MAIN_D:=$(MAIN_D:\=)
+MAIN_D:=$(MAIN_D:%.o:=)
+MAIN_D:=$(MAIN_D:src/%.cpp=b/%.cpp.obj)
+MAIN_D:=$(MAIN_D:src/%.hpp=)
+MAIN_D:=$(MAIN_D:src/%.h=b/%.cpp.obj)
+
+main: ${MAIN_D}
+	g++ -o $@ $^ ${LLOPTS}
+	
+	
