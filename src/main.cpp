@@ -10,7 +10,6 @@
 #include <boost/algorithm/string.hpp>
 #include "col.hpp"
 #include "iomm.h"
-#include "text.h"
 #include "env.h"
 #include "csv.h"
 #include "ai.h"

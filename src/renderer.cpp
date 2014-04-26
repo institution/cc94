@@ -46,15 +46,15 @@ namespace col {
 	
 	int16 render_text(
 		sf::RenderWindow &win, 
-		Vector2<int16> const& pos,
+		Vector2<int> const& pos,
 		PixFont const& font,
 		string const& text,
-		int16 width = 0
+		int width = 0
 	);
 	
 	
 	
-	const string 
+	string const
 		TERR = "COLONIZE/TERRAIN_SS",
 		ICON = "COLONIZE/ICONS_SS",
 		PHYS = "COLONIZE/PHYS0_SS",
@@ -88,8 +88,8 @@ namespace col {
 			Vector2<int16> const& pos, 
 			Vector2<int16> const& dim,
 			sf::Color const& fill_color,
-			int16 const& outline_thickness,
-			sf::Color const& outline_color
+			int16 const& outline_thickness = 0,
+			sf::Color const& outline_color = {0,0,0,255}
 	) {
 		sf::RectangleShape rectangle;
 		rectangle.setPosition(pos[0], pos[1]);
@@ -101,14 +101,15 @@ namespace col {
 	}
 	
 	
-	void render_shield(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
+	void render_shield(sf::RenderWindow &win, int16 x, int16 y, const Color &col) {
+		
 		win.draw(
 			RectShape(
-				Vector2<int16>(x+1, y+1), 
-				Vector2<int16>(6, 8), 
-				sf::Color(col.r,col.g,col.b, 255),
+				Vector2<int16>(x,y) + Vector2<int16>(1,1), 
+				{6, 8}, 
+				{col.r,col.g,col.b, 255},
 				1, 
-				sf::Color(0,0,0, 255)
+				{0,0,0, 255}
 			)
 		);
 	}
@@ -138,7 +139,7 @@ namespace col {
 		);		
 	}
 	
-	void render_sprite(sf::RenderWindow &win, uint16 x, uint16 y, const sf::Texture &img) {
+	void render_sprite(sf::RenderWindow &win, int x, int y, const sf::Texture &img) {
 		sf::Sprite s;
 		s.setPosition(x, y);
 		s.setTexture(img); 
@@ -244,7 +245,8 @@ namespace col {
 	
 	void render_tile(sf::RenderWindow &win, 
 			Coord const& i, Coord const& j, 
-			Terr const& tile) 
+			Terr const& tile,
+			Vector2<int> const& pos)
 	{
 		
 		auto biome = tile.biome;
@@ -252,18 +254,19 @@ namespace col {
 		auto hill = tile.has(Phys::Hill);
 		auto mountain = tile.has(Phys::Mountain);
 		
-		
-		
-		
-		render_sprite(win, i*16, j*16, res(TERR, enum_value(biome)));
+		int x = i*16+pos[0];
+		int y = j*16+pos[1];
+		 
+		 
+		render_sprite(win, x, y, res(TERR, enum_value(biome)));
 		if (forest) {
-			render_sprite(win, i*16, j*16, res(PHYS, 65));
+			render_sprite(win, x, y, res(PHYS, 65));
 		}
 		if (hill) {
-			render_sprite(win, i*16, j*16, res(PHYS, 49));
+			render_sprite(win, x, y, res(PHYS, 49));
 		}
 		if (mountain) {
-			render_sprite(win, i*16, j*16, res(PHYS, 33));
+			render_sprite(win, x, y, res(PHYS, 33));
 		}
 		
 		
@@ -276,14 +279,14 @@ namespace col {
 		}*/
 	}
 	
-	void render_map(sf::RenderWindow &win, const Env &env, const Console &con) 
+	void render_map(sf::RenderWindow &win, Env const& env, Console const& con, Vector2<int> const& pos) 
 	{
 		auto w = env.w;
 		auto h = env.h;
 
-		for (uint j = 0; j < h; ++j) {
-			for (uint i = 0; i < w; ++i) {
-				render_tile(win, i, j, env.get_terr(Coords(i,j)));
+		for (int j = 0; j < h; ++j) {
+			for (int i = 0; i < w; ++i) {
+				render_tile(win, i, j, env.get_terr(Coords(i,j)), pos);
 			}
 		}
 
@@ -291,12 +294,146 @@ namespace col {
 			render_icon(win, env, p.second);
 		}
 		
-		render_cursor(win, con.sel[0]*16, con.sel[1]*16);
+		render_cursor(win, con.sel[0]*16 + pos[0], con.sel[1]*16 + pos[1]);
 
 	}
 	
 	
+	void render_area(
+		sf::RenderWindow &win, 
+		sf::Texture const& tex,
+		Vector2<int> const& area_pos, 
+		Vector2<int> const& area_dim)
+	{
+		using sf::Sprite;
+		using sf::IntRect;
+		using sf::Vector2f;
+				
+		auto tile_dim = Vector2<int>(tex.getSize().x, tex.getSize().y);
+		auto area_end = area_pos + area_dim;
+				
+		int ei,ej;
+		
+		//cerr << format("area_dim: %||\n") % area_dim;
+		//cerr << format("area_pos: %||\n") % area_pos;
+		//cerr << format("tile_dim: %||\n") % tile_dim;
+		
+		// center
+		{
+			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], tile_dim[1]));
+			int i,j;			
+			j = area_pos[1];
+			while (j < area_end[1] - tile_dim[1]) {
+				i = area_pos[0];
+				while (i < area_end[0] - tile_dim[0]) {
+					s.setPosition(Vector2f(i, j));
+					win.draw(s);			
+					//cerr << i << endl;
+					i += tile_dim[0];
+				}
+				j += tile_dim[1];
+			}
+
+			ei = i;
+			ej = j;
+		}
+		
+		//cerr << format("e: %||,%||\n") % ei % ej;
+
+		
+		// bottom
+		{
+			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], area_end[1] - ej));
+			int i = area_pos[0], j = ej;
+			while (i < area_end[0] - tile_dim[0]) {
+				s.setPosition(Vector2f(i, j));
+				win.draw(s);
+				i += tile_dim[0];
+			}
+			ei = i;
+		}
+		
+		// right
+		{
+			auto s = Sprite(tex, IntRect(0, 0, area_end[0] - ei, tile_dim[1]));
+			int i = ei, j = area_pos[1];
+			while (j < area_end[1] - tile_dim[1]) {
+				s.setPosition(Vector2f(i, j));
+				win.draw(s);
+				j += tile_dim[1];
+			}
+			ej = j;
+		}
+		
+		// corner
+		{
+			auto s = Sprite(tex, sf::IntRect(0, 0, area_end[0] - ei, area_end[1] - ej));
+			int i = ei, j = ej;
+			s.setPosition(Vector2f(i, j));
+			win.draw(s);
+		}
+		
+		
+		
+		// alt but problematic
+		//sf::RectangleShape rectangle;
+		//rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
+		//rectangle.setTexture(&res("COLONIZE/WOODTILE_SS", 1));
+		//rectangle.setTextureRect(sf::IntRect(pos[0], pos[1], dim[0], dim[1]));
+		//win.draw(rectangle);
+		
+		
+	}
 	
+	void render_rect(sf::RenderWindow &win, 
+			Vector2<int> const& pos, Vector2<int> const& dim, 
+			sf::Color const& col)
+	{
+		sf::RectangleShape r;
+		r.setSize(sf::Vector2f(dim[0], dim[1]));
+		r.setFillColor(col);
+		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
+		//rectangle.setOutlineThickness(1);
+		r.setPosition(pos[0], pos[1]);		
+		win.draw(r);
+	}
+	
+	
+	void render_bar(sf::RenderWindow &win, 
+			Env const& env,
+			Console const& con,
+			Vector2<int> const& pos, 
+			Vector2<int> const& dim
+		) {
+		// pos - left top pix
+		// dim - size
+		
+		// pos = {0,0}
+		// dim = {320,7}
+				
+		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
+		
+		/*
+		if (env.in_bounds(con.sel)) {
+			auto& t = env.get_terr(con.sel);
+			if (t.units.size()) {
+				Unit const* u = env.get_defender_if_any(t);
+
+				auto moves = u->time_left;
+
+				auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
+
+				render_text(win, 
+					pos,
+					res_pixfont("tiny.png"),
+					s,
+					dim[0]
+				);
+			}
+		}
+		*/
+		
+	}
 	
 
 
@@ -304,24 +441,13 @@ namespace col {
 	void render_panel(sf::RenderWindow &win, 
 			Env const& env,
 			Console const& con,
-			Vector2<int16> const& pos, 
-			Vector2<int16> const& dim
+			Vector2<int> const& pos, 
+			Vector2<int> const& dim
 		) {
 		
-		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);
+		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 		
-		
-		
-		//get_icon_at
-		sf::RectangleShape rectangle;
-		rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
-		rectangle.setFillColor(sf::Color(50,0,0, 255));
-		rectangle.setOutlineColor(sf::Color(0,50,0, 255));
-		rectangle.setOutlineThickness(1);
-		rectangle.setPosition(pos[0], pos[1]);
-		
-		win.draw(rectangle);
-		
+		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
 		
 
 		if (env.in_bounds(con.sel)) {
@@ -374,10 +500,10 @@ namespace col {
 
 	int16 render_text(
 			sf::RenderWindow &win, 
-			Vector2<int16> const& pos,
+			Vector2<int> const& pos,
 			PixFont const& font,
 			string const& text,
-			int16 width
+			int width
 		) {
 
 		// width
@@ -470,7 +596,7 @@ namespace col {
 		for (int i = 0; i < ln; ++i) {
 			render_text(
 				app, 
-				Vector2<int16>(1, 192 - (ln-i)*8),
+				Vector2<int>(1, 192 - (ln-i)*8),
 				res_pixfont("tiny.png"),
 				con.output[i],
 				0
@@ -480,7 +606,7 @@ namespace col {
 		
 		render_text(
 			app, 
-			Vector2<int16>(1,192),
+			Vector2<int>(1,192),
 			res_pixfont("tiny.png"),
 			con.buffer,
 			0
@@ -493,26 +619,40 @@ namespace col {
 	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con) {
 		app.clear();
 		
+		int w = app.getSize().x/3;
+		int h = app.getSize().y/3;
+		
+		//cout << format("%||,%||\n") % w % h;
 		
 		if (con.mode == Console::Mode::COLONY) {
 			render_city(app, env, con);
 		}
 		else {
-			render_map(app, env, con);
+			render_map(app, env, con, {0,8});
 		}
 
 		//if (env.curr_player) {
 		//	render_playerind(app, 0, 0, env.curr_player->color);
 		//}
 
-			
+		// 79 x h-8
 		render_panel(app, env, con,			
-			Vector2<int16>(240,0),
-			Vector2<int16>(80,200)
+			Vector2<int>(w-79,8),
+			Vector2<int>(79,h-8)
 		);
+		
+		// vline
+		render_rect(app, {w-80,8}, {1,h-8}, {0,0,0,255});
 
 		
 		render_cmd(app, con);
+		
+		
+		render_bar(app, env, con, {0,0}, {w,7});
+		
+		// hline
+		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
+		
 		app.display();
 		
 	}

@@ -18,7 +18,7 @@
 
 
 namespace col{
-	using Id = uint32;
+	using Id = uint32; 
 	
 	using TerrTypes = unordered_map<TerrType::Id, TerrType>;
 	using BuildTypes = unordered_map<BuildType::Id, BuildType>;

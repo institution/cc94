@@ -16,7 +16,7 @@ using roll::replay;
 
 
 /*
- * build road *
+ * build road *   
  * move *
  * attack *
  * build colony *
