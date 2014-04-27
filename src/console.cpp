@@ -1,5 +1,10 @@
 #include "console.h"
 
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+#include "serialize.hpp"
+
 namespace col {
 
 	using boost::str;
@@ -99,6 +104,7 @@ namespace col {
 		}
 	}
 	
+	
 	void Console::handle_char(uint16 code) {
 		//cerr << "--" << code << endl;
 		
@@ -116,11 +122,24 @@ namespace col {
 			vector<string> es;
 			split(es, buffer, is_any_of(" "));
 
-			if (es[0] == "help") {
-				output.push_back("lsp  lsi  lsut");
+			auto& cmd = es[0];
+			
+			put(buffer);
+			
+			if (cmd == "list-players") {
+				for (auto &item: envgame.players) {						
+					put(str(format("%||") % item.second));
+				}
+			}
+			else if (cmd == "help" or cmd == "?") {
+				put("list-players");
+				put("list-units");
+				put("list-unit-types");
+				put("create-player");
+				put("create-unit");
+				
 				output.push_back("sel");				
 				output.push_back("addp addi");
-				output.push_back("delp deli");
 				output.push_back("move attack");
 				output.push_back("enter exit");
 				output.push_back("save turn");
@@ -143,30 +162,25 @@ namespace col {
 					}					
 				}				
 			}
-			else
-			if (es[0] == "lsi") {
+			else if (cmd == "list-units") {
 				for (auto &item: envgame.units) {
-					cout << item.second << endl;
-					output.push_back(str(format("%||\n") % item.second));
+					put(str(format("%||") % item.second));
 				}
 			}
-			else
-			if (es[0] == "lsut") {
+			else if (cmd == "list-unit-types") {
 				for (auto &utp: *envgame.uts) {
 					auto &ut = utp.second;
-					auto x = format("%u  %s\n") % uint16(ut.id) % ut.name;
-					output.push_back(str(x));
+					put(str(format("%u: %s") % uint16(ut.id) % ut.name));					
 				}
 			}
 			else
 			if (es[0] == "deli") {
 				envgame.destroy<Unit>(std::stoi(es[1]));
 			}
-			else
-			if (es[0] == "addi") {	
+			else if (cmd == "create-unit") {
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: addi type_id player_id\n");
+						put("Usage: create-unit <type_id> <player_id>");
 						break;
 					}
 					case 3: {
@@ -178,6 +192,22 @@ namespace col {
 						break;
 					}					
 				}
+			}
+			else if (cmd == "create-player") {
+				switch (es.size()) {
+					default: {
+						put("Usage: create-player <player-name> <color-name>");
+						break;
+					}
+					case 3: {
+						envgame.create<Player>(
+							string(es[1]), // name
+							make_color_by_name(string(es[2])), // color
+							flag_id4color_name(string(es[2]))  // flag_id
+						);
+						break;
+					}					
+				}				
 			}
 			else
 			if (es[0] == "sel") {	
@@ -206,43 +236,33 @@ namespace col {
 				}
 			}
 			else
-			if (es[0] == "lsp") {
-				for (auto &p: envgame.players) {
-					auto x = format("%||\n") % p.second;
-					output.push_back(str(x));
-				}
-			}
-			else
 			if (es[0] == "delp") {
 				envgame.del_player(std::stoi(es[1]));
 			}
-			else
-			if (es.at(0) == "save") {
+			else if (cmd == "save") {
 				switch (es.size()) {
-					default: {
-						output.push_back("Usage: save filename");
+					default: 
+						put("Usage: save <filename>");
 						break;
-					}
 					case 2: {
-						ofstream f(es.at(1), std::ios::binary);
-						//io::write<EnvGame>(f, envgame);
-						assert(0);
+							ofstream f(es.at(1), std::ios::binary);
+							boost::archive::text_oarchive oa(f);
+							oa << envgame;
+						}
 						break;
-					}
 				}
-
 			}
-			else
-			if (es[0] == "addp") {
-				if (es.size() < 3) {
-					output.push_back("Usage: addp name colorname");					
-				}
-				else {				
-					envgame.create<Player>(
-						string(es[1]),
-						make_color_by_name(string(es[2])),
-						flag_id4color_name(string(es[2]))
-					);
+			else if (cmd == "load") {
+				switch (es.size()) {
+					default: 
+						put("Usage: load <filename>");
+						break;
+					case 2: {
+							ifstream f(es.at(1), std::ios::binary);
+							boost::archive::text_iarchive oa(f);
+							oa >> envgame;
+						}
+						break;
 				}
 			}
 			else

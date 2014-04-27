@@ -32,7 +32,7 @@
 
 namespace col {
 
-	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`abcdefghijklmnoprstuwxyz{|}@~\r\b";
+	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`vabcdefghijklmnoprstuwxyz{|}@~\r\b";
 	
 	struct Console{
 		vector<string> output;
@@ -72,6 +72,11 @@ namespace col {
 			output.clear();
 			buffer = "";
 		}
+		
+		void put(string const& s) {
+			output.push_back(s);
+		}
+
 
 		void modified() {
 			++mod;

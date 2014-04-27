@@ -638,7 +638,7 @@ namespace col {
 
 		return x;
 	}
-	 * */
+	*/
 	
 	void render_cmd(sf::RenderWindow & app, col::Console const& con) {
 		if (!con.active) return;
