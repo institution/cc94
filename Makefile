@@ -8,13 +8,13 @@
 OUTS:=main test
 
 # compiler options
-CCOPTS:=-I./src -std=c++11 -g -fno-inline-functions 
+CCOPTS:=-I./src -std=c++11 -g -O0
 
 # linker options
 LLOPTS:=-lboost_serialization -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 
-# list of compiled source b/fname.cpp.o
+# list of compiled source b/fname.cpp.obj
 OBJS:=$(shell find src -name '*.cpp')
 OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
 
@@ -33,23 +33,15 @@ clean:
 	
 
 # test
-TEST_D:=$(shell g++ -MM src/test.cpp -std=c++11)
-TEST_D:=$(TEST_D:\=)
-TEST_D:=$(TEST_D:%.o:=)
-TEST_D:=$(TEST_D:src/%.cpp=b/%.cpp.obj)
-TEST_D:=$(TEST_D:src/%.hpp=)
-TEST_D:=$(TEST_D:src/%.h=b/%.cpp.obj)
+TEST_D:=$(shell g++ -MM src/test.cpp -std=c++11 | ./deps.py)
+TEST_D:=$(TEST_D:src/%.RRR=b/%.cpp.obj)
 
 test: ${TEST_D}
 	g++ -o $@ $^ ${LLOPTS}
 	
 # main
-MAIN_D:=$(shell g++ -MM src/main.cpp -std=c++11)
-MAIN_D:=$(MAIN_D:\=)
-MAIN_D:=$(MAIN_D:%.o:=)
-MAIN_D:=$(MAIN_D:src/%.cpp=b/%.cpp.obj)
-MAIN_D:=$(MAIN_D:src/%.hpp=)
-MAIN_D:=$(MAIN_D:src/%.h=b/%.cpp.obj)
+MAIN_D:=$(shell g++ -MM src/main.cpp -std=c++11 | ./deps.py)
+MAIN_D:=$(MAIN_D:src/%.RRR=b/%.cpp.obj)
 
 main: ${MAIN_D}
 	g++ -o $@ $^ ${LLOPTS}
