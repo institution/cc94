@@ -1,8 +1,13 @@
 #include "renderer.h"
 
+#include <boost/range/adaptor/reversed.hpp>
+
+
 namespace col {
 	
+	Layout const ly(320, 200);
 
+	
 	using Res = map<pair<string,uint>, sf::Texture>;
 	Res g_res;
 	
@@ -44,12 +49,13 @@ namespace col {
 	}
 	
 	
-	int16 render_text(
+	v2i render_text(
 		sf::RenderWindow &win, 
 		Vector2<int> const& pos,
 		PixFont const& font,
 		string const& text,
-		int width = 0
+		sf::Color const& bgcol,
+		int width
 	);
 	
 	
@@ -384,6 +390,20 @@ namespace col {
 		
 		
 	}
+	/*
+	void render_rect(sf::RenderWindow &win, 
+			sf::IntRect const& rr, 
+			sf::Color const& col)
+	{
+		sf::RectangleShape r;
+		r.setSize(sf::Vector2f(rr.width, rr.height));
+		r.setFillColor(col);
+		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
+		//rectangle.setOutlineThickness(1);
+		r.setPosition(rr.left, rr.top);
+		win.draw(r);
+	}
+	 */
 	
 	void render_rect(sf::RenderWindow &win, 
 			Vector2<int> const& pos, Vector2<int> const& dim, 
@@ -462,7 +482,8 @@ namespace col {
 				render_text(win, 
 					pos,
 					res_pixfont("tiny.png"),
-					s,
+					s,					
+					{0,0,0,0},
 					dim[0]
 				);
 			}
@@ -498,14 +519,18 @@ namespace col {
 		*/
 	}
 
-	int16 render_text(
+	v2i render_text(
 			sf::RenderWindow &win, 
-			Vector2<int> const& pos,
+			v2i const& pos,
 			PixFont const& font,
 			string const& text,
+			sf::Color const& bgcol,
 			int width
 		) {
 
+		// line height 7px (with sep)
+		int const FONT_HEIGHT = 6;
+		
 		// width
 
 		auto x = pos[0];
@@ -519,22 +544,48 @@ namespace col {
 		//auto line_height = font.GetCharacterSize();
 		//cout << "char hh:" << hh << endl;
 
+		y += 1; // horizontal separation
 		for (auto c: text) {
+			// newline
+			if (c == '\r') {
+				// nice 1px ending
+				if (bgcol.a != 0) {
+					render_rect(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
+				}
+				x = pos[0];
+				y += FONT_HEIGHT;
+				y += 1; // horizontal separation
+				continue;
+			}
+			
 			auto &g = font.glyphs.at(c);
 			auto &rr = g.rect;
-
-			//cout << uint16(c) << endl;			
-			// cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
-			// cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
-
+									
+			// out of space
+			if (width and x + rr.width >= width) {
+				x = pos[0];
+				y += FONT_HEIGHT;
+				y += 1; // horizontal separation	
+			}						
+			
+			x += 1; // vertical separation
+			
+			// background
+			if (bgcol.a != 0) {
+				//cout << v2i(x-1,y-1) << v2i(rr.width+1, rr.height+1) << endl;
+				render_rect(win, v2i(x-1,y-1), v2i(rr.width+1, rr.height+1), bgcol);
+			}
+			
+			
 			s.setPosition(x ,y);
 			s.setTextureRect(g.rect);
 			win.draw(s);
+			
 
-			x += rr.width + 1;
+			x += rr.width;
 		}
 
-		return x;
+		return v2i(x,y-1);
 	}
 
 	/*
@@ -589,16 +640,19 @@ namespace col {
 	}
 	 * */
 	
-	void render_cmd(sf::RenderWindow &app, const col::Console &con) {
-		
+	void render_cmd(sf::RenderWindow & app, col::Console const& con) {
+		if (!con.active) return;
 		
 		auto ln = con.output.size();
-		for (int i = 0; i < ln; ++i) {
-			render_text(
+		v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
+		
+		for (auto& line: boost::adaptors::reverse(con.output)) {
+			pos = render_text(
 				app, 
-				Vector2<int>(1, 192 - (ln-i)*8),
+				pos,
 				res_pixfont("tiny.png"),
-				con.output[i],
+				line + '\r',
+				{0,0,0,128},
 				0
 			);			
 		}
@@ -606,11 +660,13 @@ namespace col {
 		
 		render_text(
 			app, 
-			Vector2<int>(1,192),
+			ly.scr.pos,
 			res_pixfont("tiny.png"),
-			con.buffer,
+			con.buffer + "_",
+			{0,0,0,0},
 			0
 		);
+		
 	}
 			
 	
@@ -635,23 +691,31 @@ namespace col {
 		//	render_playerind(app, 0, 0, env.curr_player->color);
 		//}
 
-		// 79 x h-8
-		render_panel(app, env, con,			
-			Vector2<int>(w-79,8),
-			Vector2<int>(79,h-8)
-		);
+		// BACKGROUND
 		
-		// vline
-		render_rect(app, {w-80,8}, {1,h-8}, {0,0,0,255});
+		// bar top 
+		render_bar(app, env, con, {0,0}, {w,7});		
+		// hline under the bar
+		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
+		
+		
+		// panel right
+		render_panel(app, env, con,			
+			ly.pan.pos,
+			ly.pan.dim
+		);		
+		// vline left of the panel
+		render_rect(app, 
+			{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1}, 
+			{1, h-8}, 
+			{0,0,0,255}
+		);
 
+		
+		
 		
 		render_cmd(app, con);
 		
-		
-		render_bar(app, env, con, {0,0}, {w,7});
-		
-		// hline
-		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
 		
 		app.display();
 		

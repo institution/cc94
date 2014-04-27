@@ -124,7 +124,7 @@ int main()
 	// 
 	//f.close();	
     
-	env.resize({8,8});
+	env.resize({15,12});
 	env.fill(Terr{Biome::Plains, Phys::None});
 	
 	Console con(env);

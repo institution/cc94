@@ -9,6 +9,7 @@
 #include "env.h"
 #include "console.h"
 #include "pixfont.h"
+#include "layout.h"
 
 namespace col {
 	

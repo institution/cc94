@@ -8,6 +8,7 @@
 
 #include "col.hpp"
 #include "envgame.h"
+#include "layout.h"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -31,6 +32,8 @@
 
 namespace col {
 
+	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`abcdefghijklmnoprstuwxyz{|}@~\r\b";
+	
 	struct Console{
 		vector<string> output;
 		string buffer;
@@ -41,14 +44,23 @@ namespace col {
 		
 		// selected square
 		Coords sel;
+		unordered_set<char16_t> charset;
 		
 		enum class Mode{
 			AMERICA, COLONY, EUROPE, REPORT
 		};
 		
+		bool active;
+		
 		Mode mode;
 
 		Console(EnvGame &envgame_): envgame(envgame_) {
+			active = 0;
+			
+			for (auto c: CHARSET) {
+				charset.insert(c);
+			}
+			
 			
 			sel = Coords(-1,-1);
 			mod = 0;

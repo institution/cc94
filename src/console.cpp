@@ -4,6 +4,8 @@ namespace col {
 
 	using boost::str;
 	
+	Layout const ly(320, 200);
+
 	
 	Color make_color_by_name(const string &s) {
 		if (s == "red") {
@@ -51,15 +53,33 @@ namespace col {
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
 		auto type = event.type;
 	
-		if (type == sf::Event::TextEntered) {
-			handle_char(event.text.unicode);			
-		}		
-		else
+		
 		if (type == sf::Event::KeyReleased) {
+			//cerr << "key released!" << event.key.code << endl;
+			
 			if (event.key.code == sf::Keyboard::C) {
 				
-			}				
+			}
+			
+			
+			if (event.key.code == sf::Keyboard::Tilde or event.key.code == sf::Keyboard::Unknown) {
+				
+			}
 		}
+		else
+		if (type == sf::Event::TextEntered) {
+			
+					
+			if (event.text.unicode == u'`') {
+				active = !active;
+				modified();				
+			}
+			else {
+				if (active) {
+					handle_char(event.text.unicode);
+				}
+			}
+		}		
 		else
 		if (type == sf::Event::MouseButtonPressed)
 		{
@@ -71,8 +91,8 @@ namespace col {
 						event.mouseButton.y
 					)
 				);
-				sel[0] = mp.x / 16;
-				sel[1] = mp.y / 16;
+				sel[0] = (mp.x - ly.map.pos[0]) / ly.TERR_W;
+				sel[1] = (mp.y - ly.map.pos[1]) / ly.TERR_H;
 				
 				modified();
 			}
@@ -80,7 +100,18 @@ namespace col {
 	}
 	
 	void Console::handle_char(uint16 code) {
-		if (code == 13) {
+		//cerr << "--" << code << endl;
+		
+		if (charset.find(code) == charset.end()) {
+			return;
+		}
+		
+		if (code == u'\b') {
+			if (buffer.size()) {
+				buffer.pop_back();
+			}
+		}
+		else if (code == u'\r') {
 
 			vector<string> es;
 			split(es, buffer, is_any_of(" "));

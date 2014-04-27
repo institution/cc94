@@ -1,5 +1,5 @@
-#ifndef TERR_H
-#define TERR_H
+#ifndef TERR34_H
+#define TERR34_H
 
 #include "objs.h"
 #include "colony.h"

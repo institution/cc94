@@ -69,8 +69,8 @@ namespace col{
 	template <typename T>
 	using Vector2 = aga2::Mv1<T>;
 	
-	using Vector2i = Vector2<int16>;
-	using Vector2f = Vector2<float>;
+	using v2i = Vector2<int>;
+	using v2f = Vector2<float>;
 	
 	
 }
