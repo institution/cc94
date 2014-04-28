@@ -1,0 +1,221 @@
+category number description "connected to" generated 
+PHYS 001 -   
+PHYS 002 river   
+PHYS 003 river   
+PHYS 004 river   
+PHYS 005 river   
+PHYS 006 river   
+PHYS 007 river   
+PHYS 008 river   
+PHYS 009 river   
+PHYS 010 river   
+PHYS 011 river   
+PHYS 012 river   
+PHYS 013 river   
+PHYS 014 river   
+PHYS 015 river   
+PHYS 016 river   
+PHYS 017 river   
+PHYS 018 river   
+PHYS 019 river   
+PHYS 020 river   
+PHYS 021 river   
+PHYS 022 river   
+PHYS 023 river   
+PHYS 024 river   
+PHYS 025 river   
+PHYS 026 river   
+PHYS 027 river   
+PHYS 028 river   
+PHYS 029 river   
+PHYS 030 river   
+PHYS 031 river   
+PHYS 032 river   
+PHYS 033 mountain - 0 
+PHYS 034 mountain D 1 1
+PHYS 035 mountain A 2 2
+PHYS 036 mountain AD 3 
+PHYS 037 mountain X 4 4
+PHYS 038 mountain XD 5 
+PHYS 039 mountain XA 6 
+PHYS 040 mountain XAD 7 
+PHYS 041 mountain W 8 8
+PHYS 042 mountain WD 9 
+PHYS 043 mountain WA 10 
+PHYS 044 mountain WAD 11 
+PHYS 045 mountain WX 12 
+PHYS 046 mountain WXD 13 
+PHYS 047 mountain WXA 14 
+PHYS 048 mountain WXAD 15 
+PHYS 049 hill -  
+PHYS 050 hill D  
+PHYS 051 hill A  
+PHYS 052 hill AD  
+PHYS 053 hill X  
+PHYS 054 hill XD  
+PHYS 055 hill XA  
+PHYS 056 hill XAD  
+PHYS 057 hill W  
+PHYS 058 hill WD  
+PHYS 059 hill WA  
+PHYS 060 hill WAD  
+PHYS 061 hill WX  
+PHYS 062 hill WXD  
+PHYS 063 hill WXA  
+PHYS 064 hill WXAD  
+PHYS 065 forest -  
+PHYS 066 forest D  
+PHYS 067 forest A  
+PHYS 068 forest AD  
+PHYS 069 forest X  
+PHYS 070 forest XD  
+PHYS 071 forest XA  
+PHYS 072 forest XAD  
+PHYS 073 forest W  
+PHYS 074 forest WD  
+PHYS 075 forest WA  
+PHYS 076 forest WAD  
+PHYS 077 forest WX  
+PHYS 078 forest WXD  
+PHYS 079 forest WXA  
+PHYS 080 forest WXAD  
+PHYS 081 road -  
+PHYS 082 road W  1
+PHYS 083 road E  2
+PHYS 084 road D  3
+PHYS 085 road C  4
+PHYS 086 road X  5
+PHYS 087 road Z  6
+PHYS 088 road A  7
+PHYS 089 road Q  8
+PHYS 090 "small silver resource" -  
+PHYS 091 "oasis resource" -  
+PHYS 092 "crop resource" -  
+PHYS 093 "cotton resource" -  
+PHYS 094 "tobacco resource" -  
+PHYS 095 "sugar resource" -  
+PHYS 096 "ore resource" -  
+PHYS 097 "fish resource" -  
+PHYS 098 "beaver resource" -  
+PHYS 099 "game resource" -  
+PHYS 100 "prime timber resource" -  
+PHYS 101 - -  
+PHYS 102 "large silver resource" -  
+PHYS 103 "mineral deposit resource" -  
+PHYS 104 ruins -  
+PHYS 105 "diffuse pattern" W  
+PHYS 106 "diffuse pattern" D  
+PHYS 107 "diffuse pattern" X  
+PHYS 108 "diffuse pattern" A  
+PHYS 109 "black square 8x8" -  
+PHYS 110 "black square 8x8" -  
+PHYS 111 "black square 8x8" -  
+PHYS 112 "black square 8x8" -  
+PHYS 113 coast   
+PHYS 114 coast   
+PHYS 115 coast   
+PHYS 116 coast   
+PHYS 117 coast   
+PHYS 118 coast   
+PHYS 119 coast   
+PHYS 120 coast   
+PHYS 121 coast   
+PHYS 122 coast   
+PHYS 123 coast   
+PHYS 124 coast   
+PHYS 125 coast   
+PHYS 126 coast   
+PHYS 127 coast   
+PHYS 128 coast   
+PHYS 129 coast   
+PHYS 130 coast   
+PHYS 131 coast   
+PHYS 132 coast   
+PHYS 133 coast   
+PHYS 134 coast   
+PHYS 135 coast   
+PHYS 136 coast   
+PHYS 137 coast   
+PHYS 138 coast   
+PHYS 139 coast   
+PHYS 140 coast   
+PHYS 141 coast   
+PHYS 142 river   
+PHYS 143 river   
+PHYS 144 river   
+PHYS 145 river   
+PHYS 146 river   
+PHYS 147 river   
+PHYS 148 river   
+PHYS 149 fog-of-war -  
+PHYS 150 plow -  
+PHYS 151 coast   
+PHYS 152 coast   
+PHYS 153 coast   
+PHYS 154 coast   
+     
+     
+TERRAIN 001 tundra WADX  
+TERRAIN 002 prairie WADX  
+TERRAIN 003 plains WADX  
+TERRAIN 004 desert WADX  
+TERRAIN 005 savannah WADX  
+TERRAIN 006 grassland WADX  
+TERRAIN 007 marsh WADX  
+TERRAIN 008 swamp WADX  
+TERRAIN 009 "scrub forest" WADX  
+TERRAIN 010 arctic WADX  
+TERRAIN 011 ocean WADX  
+TERRAIN 012 sealane WADX  
+     
+TERRAIN 051 tundra W * 
+TERRAIN 052 prairie W * 
+TERRAIN 053 plains W * 
+TERRAIN 054 desert W * 
+TERRAIN 055 savannah W * 
+TERRAIN 056 grassland W * 
+TERRAIN 057 marsh W * 
+TERRAIN 058 swamp W * 
+TERRAIN 059 "scrub forest" W * 
+TERRAIN 060 arctic W * 
+TERRAIN 061 ocean W * 
+TERRAIN 062 sealane W * 
+     
+TERRAIN 101 tundra D * 
+TERRAIN 102 prairie D * 
+TERRAIN 103 plains D * 
+TERRAIN 104 desert D * 
+TERRAIN 105 savannah D * 
+TERRAIN 106 grassland D * 
+TERRAIN 107 marsh D * 
+TERRAIN 108 swamp D * 
+TERRAIN 109 "scrub forest" D * 
+TERRAIN 110 arctic D * 
+TERRAIN 111 ocean D * 
+TERRAIN 112 sealane D * 
+     
+TERRAIN 151 tundra X * 
+TERRAIN 152 prairie X * 
+TERRAIN 153 plains X * 
+TERRAIN 154 desert X * 
+TERRAIN 155 savannah X * 
+TERRAIN 156 grassland X * 
+TERRAIN 157 marsh X * 
+TERRAIN 158 swamp X * 
+TERRAIN 159 "scrub forest" X * 
+TERRAIN 160 arctic X * 
+TERRAIN 161 ocean X * 
+TERRAIN 162 sealane X * 
+     
+TERRAIN 201 tundra A * 
+TERRAIN 202 prairie A * 
+TERRAIN 203 plains A * 
+TERRAIN 204 desert A * 
+TERRAIN 205 savannah A * 
+TERRAIN 206 grassland A * 
+TERRAIN 207 marsh A * 
+TERRAIN 208 swamp A * 
+TERRAIN 209 "scrub forest" A * 
+TERRAIN 210 arctic A * 
+TERRAIN 211 ocean A * 
+TERRAIN 212 sealane A * 

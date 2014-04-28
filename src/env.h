@@ -37,7 +37,14 @@ namespace col{
 	}
 	
 	
-	
+	template<typename RET, typename THIS, typename ARG>
+	RET & get_defender_impl(THIS & self, ARG & t) {
+		if (! t.units.size()) {
+			throw Error("no defending unit");
+		}
+		return *(t.units)[0];
+	}
+
 	
 	struct Env{
 		
@@ -333,9 +340,14 @@ namespace col{
 		}
 		*/
 		
-		bool in_bounds(Coords const& p) const {
-			return (0 <= p[0] and p[0] < w) and (0 <= p[1] and p[1] < h);				
-		}
+		bool in_bounds(Coords const& p) const;
+		
+		template <Dir D>
+		bool in_bound(Coords const& p) const;
+		
+		template <Dir D>
+		bool on_bound(Coords const& p) const;
+		
 		
 		Coords get_coords(Terr const& t) const {
 			
@@ -379,8 +391,8 @@ namespace col{
 				
 		Env & resize(Coords const& dim) {
 			//terrs.resize(boost::extents[dim[1]][dim[0]]);
-			terrs.resize(dim);
 			w = dim[0]; h = dim[1];
+			terrs.resize(Coords(w,h));
 			return *this;
 		}
 		
@@ -504,12 +516,26 @@ namespace col{
 			
 		}
 		
-		Unit& get_defender(Terr const& t) {
-			if (!t.units.size()) {
-				throw Error("no defending unit");
-			}
-			return *t.units[0];
+		
+		bool has_defender(Coords const& pos) const {
+			return get_terr(pos).has_units();
 		}
+		
+		
+		
+		Unit const& get_defender(Terr const& t) const {
+			return get_defender_impl<Unit const&>(*this, t);			
+		}
+		
+		Unit & get_defender(Terr const& t) {
+			return get_defender_impl<Unit &>(*this, t);			
+		}
+		
+		//Unit & get_defender(Terr const& t) {
+		//	return const_cast<Unit &>( get_defender(t) );
+		//}
+		
+		
 		
 		Unit const* get_defender_if_any(Terr const& t) const {
 			if (!t.units.size()) {
@@ -870,6 +896,56 @@ namespace col{
 	template <>	inline BuildTypes const& Env::get_cont<BuildType>() const {
 		return *bts;
 	}
+	
+	
+	
+	template <> inline
+	bool Env::in_bound<Dir::A>(Coords const& p) const {
+		return 0 <= p[0];
+	}
+	
+	template <> inline
+	bool Env::in_bound<Dir::D>(Coords const& p) const {
+		return p[0] < w;
+	}
+	
+	template <> inline
+	bool Env::in_bound<Dir::W>(Coords const& p) const {
+		return 0 <= p[1];
+	}
+	
+	template <> inline
+	bool Env::in_bound<Dir::X>(Coords const& p) const {
+		return p[1] < h;
+	}
+	
+	template <> inline
+	bool Env::on_bound<Dir::A>(Coords const& p) const {
+		return 0 == p[0];
+	}
+	
+	template <> inline
+	bool Env::on_bound<Dir::D>(Coords const& p) const {
+		return p[0] == w - 1;
+	}
+	
+	template <> inline
+	bool Env::on_bound<Dir::W>(Coords const& p) const {
+		return 0 == p[1];
+	}
+	
+	template <> inline
+	bool Env::on_bound<Dir::X>(Coords const& p) const {
+		return p[1] == h - 1;
+	}
+	
+	
+	inline
+	bool Env::in_bounds(Coords const& p) const {
+		return in_bound<Dir::A>(p) and in_bound<Dir::D>(p)
+		   and in_bound<Dir::W>(p) and in_bound<Dir::X>(p);
+	}
+		
 	
 }
 

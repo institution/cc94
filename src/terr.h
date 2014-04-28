@@ -81,10 +81,21 @@ namespace col{
 			return *colony;
 		}
 		
+		bool has_colony() const {		
+			return colony != nullptr;
+		}
+		
+		
 		Terr& set_colony(Colony &c) {
 			colony = &c;
 			return *this;
 		}
+		
+		bool has_units() const {
+			return units.size();
+		}
+		
+		
 		
 		bool has(Phys const& p) const {
 			return flag(phys) & flag(p);
@@ -99,6 +110,8 @@ namespace col{
 		}
 				
 		Travel get_travel();
+		
+		Terr& set_biome(Biome const& b) { biome = b; return *this; }
 		
 		int8 get_movement_cost(Travel const& movement_type);
 		

@@ -15,6 +15,8 @@ namespace col {
 	
 	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con);
 
+	void preload_terrain();
+	
 }
 
 

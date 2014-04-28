@@ -2,8 +2,11 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
+#include "view_base.h"
 
 namespace col {
+	
+	
 	
 	Layout const ly(320, 200);
 
@@ -90,6 +93,44 @@ namespace col {
 	}
 	
 	
+	
+	
+	void preload(string const& d, uint const& i, Res::mapped_type const& tex) {
+		auto key = Res::key_type(d,i);
+		g_res[key] = tex;
+	}
+		
+	Res::mapped_type combine(Res::mapped_type const& tex, Res::mapped_type const& mask) {
+		/* Return new texture created by combining color from tex and alpha from mask (slow)
+		 */
+		
+		auto img = tex.copyToImage();
+		auto msk = mask.copyToImage();
+		
+		for (auto j = 0; j < img.getSize().y; ++j) {
+			for (auto i = 0; i < img.getSize().x; ++i) {
+				if (msk.getPixel(i,j).a == 0) {
+					img.setPixel(i,j,sf::Color(252,84,252,0));
+				}
+			}
+		}
+		
+		auto t = sf::Texture();
+		t.loadFromImage(img);
+		t.setSmooth(false);
+		return t;
+	}
+		
+	void preload_terrain() {
+		for (int i=1; i<13; ++i) {
+			preload(TERR,  50+i, combine(res(TERR, i), res(PHYS, 105)));
+			preload(TERR, 100+i, combine(res(TERR, i), res(PHYS, 106)));
+			preload(TERR, 150+i, combine(res(TERR, i), res(PHYS, 107)));
+			preload(TERR, 200+i, combine(res(TERR, i), res(PHYS, 108)));
+		}
+	}
+	
+	
 	sf::RectangleShape RectShape(
 			Vector2<int16> const& pos, 
 			Vector2<int16> const& dim,
@@ -152,27 +193,14 @@ namespace col {
 		win.draw(s);
 	}
 
-	
-	
-	void render_icon(sf::RenderWindow &win, Env const& env, Unit const& unit) {
-		auto &p = env.get_player(unit.player->id);
-		
-		auto pos = env.get_coords(unit);
-		
-		auto type = unit.type->id;
-		switch (type / 256) {
-			case 0: 
-				render_shield(win, pos[0]*16, pos[1]*16, p.color);
-				render_sprite(win, pos[0]*16, pos[1]*16, res(ICON, type));
-				break;
-			case 1: 
-				render_sprite(win, pos[0]*16, pos[1]*16, res(ICON, 4));
-				// flag:
-				render_sprite(win, pos[0]*16+5, pos[1]*16, res(ICON, unit.player->flag_id));
-				break;
-		}
-		
+	void render_sprite(sf::RenderWindow & win, v2i const& pix, sf::Texture const& img) {
+		sf::Sprite s;
+		s.setPosition(pix[0], pix[1]);
+		s.setTexture(img); 
+		win.draw(s);
 	}
+	
+	
 	
 
 	void render_city(sf::RenderWindow &win, Env const& env, Console const& con) {
@@ -236,7 +264,7 @@ namespace col {
 			}
 			
 			
-			cout << unit << endl;
+			//cout << unit << endl;
 			++i;
 		}
 		
@@ -249,40 +277,194 @@ namespace col {
 		
 	}
 	
-	void render_tile(sf::RenderWindow &win, 
-			Coord const& i, Coord const& j, 
-			Terr const& tile,
-			Vector2<int> const& pos)
+	Terr const& get_terr_ext(Env const& env, Coords const& p) {
+		Coords q;
+		auto w = env.w, h = env.h;
+		auto x = p[0], y = p[1];		
+		if (x < 0) {
+			if (y < 0) {
+				q = Coords(x+1,y+1);
+			}
+			else if (h <= y) {
+				q = Coords(x+1,y-1);
+			}
+			else {
+				q = Coords(x+1,y);
+			}
+		}
+		else if (w <= x) {
+			if (y < 0) {
+				q = Coords(x-1,y+1);
+			}
+			else if (h <= y) {
+				q = Coords(x-1,y-1);
+			}
+			else {
+				q = Coords(x-1,y);
+			}
+		}
+		else {
+			if (y < 0) {
+				q = Coords(x,y+1);
+			}
+			else if (h <= y) {
+				q = Coords(x,y-1);
+			}
+			else {
+				q = Coords(x,y);
+			}
+		}
+		return env.get_terr(q);		
+	}
+	
+	array<Terr const*, 9> make_terr_ext(Env const& env, Coords const& p) {
+		array<Terr const*, 9> arr;
+		for (auto dir: ALL_DIRS) {
+			arr[eval(dir)] = &get_terr_ext(env, p + vec4dir(dir));
+		}
+		return arr;
+	}
+	
+	Terr const& get(array<Terr const*, 9> const& loc, Dir const& dir) {
+		return *loc[eval(dir)];
+	}
+	
+	void render_terr(sf::RenderWindow &win, 
+			Coords const& pos, 
+			Env const& env,
+			Terr const& terr,
+			Vector2<int> const& map_pix)
 	{
 		
-		auto biome = tile.biome;
-		auto forest = tile.has(Phys::Forest);
-		auto hill = tile.has(Phys::Hill);
-		auto mountain = tile.has(Phys::Mountain);
+		auto biome = terr.biome;
+		auto forest = terr.has(Phys::Forest);
+		auto hill = terr.has(Phys::Hill);
+		auto mountain = terr.has(Phys::Mountain);
 		
-		int x = i*16+pos[0];
-		int y = j*16+pos[1];
-		 
-		 
-		render_sprite(win, x, y, res(TERR, enum_value(biome)));
-		if (forest) {
-			render_sprite(win, x, y, res(PHYS, 65));
-		}
-		if (hill) {
-			render_sprite(win, x, y, res(PHYS, 49));
-		}
-		if (mountain) {
-			render_sprite(win, x, y, res(PHYS, 33));
-		}
+		int x = pos[0] * ly.TERR_W + map_pix[0];
+		int y = pos[1] * ly.TERR_H + map_pix[1];
+		auto pix = v2i(x,y);
 		
 		
-		/*if (forest) {
-			//cout << uint16(tile) << endl;
-			//cout << uint16(terrain) << endl;
-			//cout << uint16(forest) << endl;
-			//cout << endl;
-			render_sprite(win, i*16, j*16, res(PHYS, 65));
-		}*/
+		
+		
+		auto loc = make_terr_ext(env, pos);
+		
+		// render biome
+		render_sprite(win, pix, res(TERR, eval(biome)));
+		
+		// rend neighs		
+		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::W).biome) +  50) );
+		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::D).biome) + 100) );
+		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::X).biome) + 150) );
+		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::A).biome) + 200) );
+		
+		
+		Phys phys;
+		int base;
+		uint8 idx;
+		
+		phys = Phys::Mountain;
+		base = 33;
+		if (terr.has(phys)) {
+			idx = 0;
+			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
+			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
+			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
+			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
+			render_sprite(win, pix, res(PHYS, base + idx));
+		}
+		
+		phys = Phys::Hill;
+		base = 49;
+		if (terr.has(phys)) {
+			idx = 0;
+			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
+			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
+			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
+			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
+			render_sprite(win, pix, res(PHYS, base + idx));
+		}
+		
+		phys = Phys::Forest;
+		base = 65;
+		if (terr.has(phys)) {
+			idx = 0;
+			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
+			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
+			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
+			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
+			render_sprite(win, pix, res(PHYS, base + idx));
+		}
+		
+		
+		phys = Phys::Plow;
+		base = 150;
+		if (terr.has(phys)) {
+			render_sprite(win, pix, res(PHYS, base));
+		}
+		
+		phys = Phys::Road;
+		base = 81;
+		if (terr.has(phys)) {
+			array<Dir,9> dirs = {
+				Dir::S, Dir::W, Dir::E, 
+				Dir::D, Dir::C, Dir::X,
+				Dir::Z, Dir::A, Dir::Q
+			};
+			bool r = false;
+			for (int i=1; i<9; ++i) {
+				if (loc[eval(dirs[i])]->has(phys)) {
+					render_sprite(win, pix, res(PHYS, base + i));
+					r = true;
+				}
+			}
+			if (!r) {
+				render_sprite(win, pix, res(PHYS, base));				
+			}
+		}
+		
+		// MinorRiver = 16,
+		// MajorRiver = 32,
+		
+
+		
+	}
+
+	void render_unit(sf::RenderWindow &win, 
+			Coords const& pos, 
+			Env const& env,
+			Terr const& terr,
+			Vector2<int> const& map_pix)
+	{
+		
+		int x = pos[0] * ly.TERR_W + map_pix[0];
+		int y = pos[1] * ly.TERR_H + map_pix[1];
+		auto pix = v2i(x,y);
+		
+		// colony icon
+		if (terr.has_colony()) {
+			// render colony
+			render_sprite(win, pix[0], pix[1], res(ICON, 4));
+		}
+		
+		// unit or colony flag
+		if (terr.has_units()) {
+			auto& unit = env.get_defender(terr);
+			
+			// tile owner
+			auto& player = unit.get_player();
+			
+			if (terr.has_colony()) {
+				// render owner flag over colony (unit in garrison)
+				render_sprite(win, pix[0] + 5, pix[1], res(ICON, player.get_flag_id()));
+			}
+			else {
+				// render unit in field
+				render_shield(win, pix[0], pix[1], player.get_color());
+				render_sprite(win, pix[0], pix[1], res(ICON, unit.get_type_id()));
+			}
+		}
 	}
 	
 	void render_map(sf::RenderWindow &win, Env const& env, Console const& con, Vector2<int> const& pos) 
@@ -292,13 +474,20 @@ namespace col {
 
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				render_tile(win, i, j, env.get_terr(Coords(i,j)), pos);
+				render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos);
 			}
 		}
 
-		for (auto &p: env.units) {
-			render_icon(win, env, p.second);
+		
+		for (int j = 0; j < h; ++j) {
+			for (int i = 0; i < w; ++i) {
+				render_unit(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos);
+			}
 		}
+		
+		//for (auto &p: env.units) {
+		//	render_icon(win, env, p.second);
+		//}
 		
 		render_cursor(win, con.sel[0]*16 + pos[0], con.sel[1]*16 + pos[1]);
 
@@ -455,9 +644,12 @@ namespace col {
 		
 	}
 	
-
-
-
+	
+		
+	
+	
+	
+	
 	void render_panel(sf::RenderWindow &win, 
 			Env const& env,
 			Console const& con,
@@ -469,25 +661,46 @@ namespace col {
 		
 		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
 		
-
+		// terrain info
+		/*
+		 * Biome: Plains 
+		 * road
+		 * 
+		 * 
+		 */
+		
+		
+		
 		if (env.in_bounds(con.sel)) {
+			
 			auto& t = env.get_terr(con.sel);
+
+			auto info = boost::str(
+				format("Biome: %||\nRoad: %||\n") % 
+					BIOME_NAMES.at(eval(t.biome)) % t.has(Phys::Road)
+			);
+
+
 			if (t.units.size()) {
-				Unit const* u = env.get_defender_if_any(t);
+				Unit const& u = env.get_defender(t);
 
-				auto moves = u->time_left;
-
-				auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
-
-				render_text(win, 
-					pos,
-					res_pixfont("tiny.png"),
-					s,					
-					{0,0,0,0},
-					dim[0]
+				info += boost::str(
+					format("Type: %||\nTime Left: %||/%||") % 
+						u.get_name() % int(u.time_left) % int(TIME_UNIT)
 				);
+
 			}
+			
+			
+			render_text(win, 
+				pos,
+				res_pixfont("tiny.png"),
+				info,
+				{0,0,0,0},
+				0
+			);
 		}
+		
 		
 		
 		
@@ -547,7 +760,7 @@ namespace col {
 		y += 1; // horizontal separation
 		for (auto c: text) {
 			// newline
-			if (c == '\r') {
+			if (c == '\r' or c =='\n') {
 				// nice 1px ending
 				if (bgcol.a != 0) {
 					render_rect(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);

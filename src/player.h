@@ -40,6 +40,9 @@ namespace col{
 		Player& set_color(Color const& c) { color = c; return *this; }
 		Player& set_flag_id(uint8 const& fi) { flag_id = fi; return *this; }
 		
+		uint8 const& get_flag_id() const { return flag_id; }
+		Color const& get_color() const { return color; }
+		
 	};
 	
 	ostream& operator<<(ostream &out, const Player &obj);

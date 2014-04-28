@@ -2,6 +2,7 @@
 #define BASE2_H
 
 #include "col.hpp"
+#include <array>
 
 namespace col {
 	
@@ -29,6 +30,9 @@ namespace col {
 		A=3, S=4, D=5,
 		Z=6, X=7, C=8
 	};
+	
+	//array<Dir const, 9> ALL_DIRS;
+	extern std::array<Dir const, 9> ALL_DIRS;
 
 	inline Coords vec4dir(Dir const& d) {
 		auto n = static_cast<int8>(d);
@@ -67,10 +71,12 @@ namespace col {
 		Grassland = 5, //confier forest		
 		Marsh = 7, //wetland forest
 		Swamp = 8, //rain forest
+		
 		Arctic = 10,
 		Ocean = 11,
 		SeaLane = 12
 	};
+	
 	
 	
 	enum class Phys{
@@ -87,13 +93,19 @@ namespace col {
 		Worker = 128
 	};
 	
-	inline uint8 flag(Phys const& p) {
+	inline 
+	uint8 flag(Phys const& p) {
 		return static_cast<uint8>(p);
 	}
 	
-	template<typename T>
-	inline uint8 enum_value(T const& t) {
+	template<typename T> inline 
+	uint8 enum_value(T const& t) {
 		return static_cast<uint8>(t);
+	}
+	
+	template<typename T> inline
+	uint8 eval(T const& t) {
+		return enum_value(t);
 	}
 	
 	enum class Item{

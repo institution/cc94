@@ -87,7 +87,7 @@ namespace col {
 				for(Coord i = 0; i < env.w; ++i) {
 					auto& x = env.get_terr(Coords(i,j));
 
-					cerr << Coords(i,j) << endl;
+					//cerr << Coords(i,j) << endl;
 					
 					// terr value
 					ar << x.biome;
@@ -173,7 +173,8 @@ namespace col {
 			}
 		}
 		
-		// turn info
+		cerr << "save misc" << endl;
+		// turn info		
 		ar << env.turn_no;
 		// next id
 		ar << next_id;
@@ -221,7 +222,7 @@ namespace col {
 					
 					auto& x = env.ref_terr(Coords(i,j));
 					
-					cerr << Coords(i,j) << endl;
+					//cerr << Coords(i,j) << endl;
 					
 					// terr value
 					ar >> x.biome;
@@ -308,6 +309,7 @@ namespace col {
 			}
 		}
 		
+		cerr << "load misc" << endl;
 		// turn info
 		ar >> env.turn_no;
 

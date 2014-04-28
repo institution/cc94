@@ -4,6 +4,7 @@
 #include <boost/archive/text_iarchive.hpp>
 
 #include "serialize.hpp"
+#include "view_base.h"
 
 namespace col {
 
@@ -59,11 +60,23 @@ namespace col {
 		auto type = event.type;
 	
 		
-		if (type == sf::Event::KeyReleased) {
+		if (type == sf::Event::KeyPressed) {
 			//cerr << "key released!" << event.key.code << endl;
 			
-			if (event.key.code == sf::Keyboard::C) {
+			if (event.key.code == sf::Keyboard::Up) {
 				
+				cerr << "key up" << endl;
+				
+				if (chi == history.end()) {
+					chi = history.begin();
+				}
+				
+				if (history.size()) {
+					buffer = *chi;
+					++chi;
+					
+					modified();
+				}
 			}
 			
 			
@@ -131,23 +144,74 @@ namespace col {
 					put(str(format("%||") % item.second));
 				}
 			}
+			else if (cmd == "list-orders") {
+				put("build-colony");
+				put("plow-fields");
+				put("clear-forest");
+				put("build-road");
+				put("move");
+			}
 			else if (cmd == "help" or cmd == "?") {
+				// save/load
+				put("save");
+				put("load");
+				// editor
 				put("list-players");
 				put("list-units");
 				put("list-unit-types");
+				put("list-orders");
 				put("create-player");
 				put("create-unit");
+				put("create-colony");
+				put("set-biome");
+				put("add-phys");				
+				// orders				
+				put("build-colony");
+				put("plow-fields");
+				put("clear-forest");
+				put("build-road");
+				put("move");
+				// gameplay
+				put("turn");
+				// misc
+				put("cls");
+				
 				
 				output.push_back("sel");				
 				output.push_back("addp addi");
 				output.push_back("move attack");
 				output.push_back("enter exit");
-				output.push_back("save turn");
 			}
-			else				
-			if (es[0] == "turn") {
+			else if (cmd == "add-phys") {
+				switch (es.size()) {
+					default: 
+						put("Usage: add-phys <phys-name>");
+						break;
+					case 2:
+						if (envgame.in_bounds(sel)) {
+							envgame.ref_terr(sel).add(get_phys_by_name(es.at(1)));
+						}
+						break;
+				}
+			}
+			else if (cmd == "cls") {
+				output.clear();
+			}	
+			else if (cmd == "set-biome") {
+				switch (es.size()) {
+					default: 
+						put("Usage: set-biome <biome-name>");
+						break;
+					case 2:
+						if (envgame.in_bounds(sel)) {
+							envgame.ref_terr(sel).set_biome(get_biome_by_name(es.at(1)));
+						}
+						break;
+				}
+			}			
+			else if (cmd == "turn") {
 				envgame.turn();
-				output.push_back(str(format("Turn %|| ") % envgame.turn_no));
+				put(str(format("Turn %||") % envgame.turn_no));
 			}
 			else				
 			if (es[0] == "endturn") {
@@ -272,40 +336,66 @@ namespace col {
 					stoi(es[2])
 				);
 			}
-			else
-			if (es.at(0) == "move") {
+			else if (cmd == "build-road") {
 				switch (es.size()) {
 					default:
-						output.push_back("Usage: move [icon_id] dx dy");
+						put("Usage: build-road");
 						break;
-					case 4:
-						envgame.exec(AttackMove(
-							envgame.current_player_id,
-							stoi(es.at(1)), // id
-							dir4vec(
-								Coords(
-									stoi(es.at(2)), // dx
-									stoi(es.at(3))  // dy
-								)
-							)
-						));
-						break;
-					case 3:
-						/*
-						envgame.exec(AttackMove(
-							envgame.current_player_id,
-							envgame.ref_icon_at(sel).id,
-							dir4vec(
-								Coords(
-									stoi(es.at(1)), // dx
-									stoi(es.at(2))  // dy
-								)
-							)
-						));
-						 */
+					case 1:						
+						if (envgame.has_defender(sel)) {
+							auto ret = envgame.build_road(
+								envgame.get_defender(envgame.get_terr(sel))								
+							);
+							put(str(format("ret = %||") % ret));
+						}
+						else {
+							put("no unit selected");
+						}
 						break;					
 				}
 				
+			}
+			else if (cmd == "build-colony") {
+				switch (es.size()) {
+					default:
+						put("Usage: build-colony <name>");
+						break;
+					case 2:						
+						if (envgame.has_defender(sel)) {
+							auto ret = envgame.colonize(
+								envgame.get_defender(envgame.get_terr(sel)),
+								es.at(1)
+							);							
+						}
+						else {
+							put("no unit selected");
+						}
+						break;					
+				}
+				
+			}
+			else if (cmd == "move") {
+				switch (es.size()) {
+					default:
+						put("Usage: move <dx> <dy>");
+						break;
+					case 3:						
+						if (envgame.has_defender(sel)) {
+							envgame.order_move(
+								envgame.get_defender(envgame.get_terr(sel)),
+								dir4vec(
+									Coords(
+										stoi(es.at(1)), // dx
+										stoi(es.at(2))  // dy
+									)
+								)
+							);
+						}
+						else {
+							put("no unit selected");
+						}
+						break;					
+				}
 			}
 			else
 			if (es.at(0) == "enter") {
@@ -347,7 +437,10 @@ namespace col {
 				
 			}
 
-			buffer = "";			
+			history.push_front(buffer);
+			buffer = "";
+			chi = history.begin();
+			
 		}			
 		else {
 			cout << char(code);

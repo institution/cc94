@@ -113,6 +113,7 @@ int main()
 	//tts = load_terr_types();
 	//cout << " " << tts.size() << " loaded." << endl;
 
+	preload_terrain();
 		
 	EnvGame env;
 

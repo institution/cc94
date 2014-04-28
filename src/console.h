@@ -4,6 +4,7 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <deque>
 
 
 #include "col.hpp"
@@ -37,6 +38,8 @@ namespace col {
 	struct Console{
 		vector<string> output;
 		string buffer;
+		std::deque<string> history;
+		std::deque<string>::iterator chi;
 		
 		EnvGame &envgame;
 		
@@ -61,7 +64,7 @@ namespace col {
 				charset.insert(c);
 			}
 			
-			
+			chi = history.begin();
 			sel = Coords(-1,-1);
 			mod = 0;
 			mode = Mode::AMERICA;

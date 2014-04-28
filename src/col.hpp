@@ -13,6 +13,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <array>
 #include <utility>
 #include <tuple>
 #include <algorithm> 
@@ -40,6 +41,7 @@ namespace col{
 	using std::shared_ptr;
 	using std::make_shared;
 	using std::unordered_map;
+	using std::array;
 
 	using std::cout;
 	using std::endl;

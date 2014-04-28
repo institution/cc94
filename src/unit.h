@@ -63,7 +63,7 @@ namespace col{
 		
 		Id id;
 		UnitType const* type;
-		Player const* player;
+		Player* player;
 		uint8 time_left;
 		Workplace const* workplace;
 		Item workitem;
@@ -73,8 +73,10 @@ namespace col{
 		uint8 const& get_travel() const { return type->get_travel(); }
 		uint8 const& get_speed() const { return type->get_speed(); }
 		uint8 const& get_attack() const { return type->get_attack(); }
-		uint8 const& get_combat() const { return type->get_combat(); }
-		
+		uint8 const& get_combat() const { return type->get_combat(); }		
+		UnitType const& get_type() const { return *type; }
+		UnitType::Id const& get_type_id() const { return type->id; }
+		Player & get_player() const { return *player; }
 		// uint8 spec_id;
 		// int8 spec_lvl;
 		
@@ -96,11 +98,22 @@ namespace col{
 				
 		
 		
+		Unit():
+			Place(), 
+			Placeable(), 
+			id(-1), 
+			type(nullptr), 
+			player(nullptr), 
+			time_left(0),
+			workplace(nullptr),
+			workitem(Item::None),
+			free_space(0)
+		{}
 		
 		Unit(
 			Id const& id, 
 			UnitType const& type,
-			Player const& player
+			Player & player
 		): 
 			Place(), 
 			Placeable(), 
@@ -114,8 +127,6 @@ namespace col{
 		{}
 		
 		Unit(Unit &&) = default;
-		Unit() = default;
-		
 		Unit(Unit const&) = delete;
 		
 	}; 
