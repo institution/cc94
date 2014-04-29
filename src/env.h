@@ -183,7 +183,7 @@ namespace col{
 			++mod;
 		}
 		
-		Item get_material(Item const& item) {
+		Item::type get_material(Item::type const& item) {
 			switch (item) {
 				case Item::Rum: return Item::Sugar;
 				case Item::Cigars: return Item::Tobacco;
@@ -342,10 +342,10 @@ namespace col{
 		
 		bool in_bounds(Coords const& p) const;
 		
-		template <Dir D>
+		template <Dir::t D>
 		bool in_bound(Coords const& p) const;
 		
-		template <Dir D>
+		template <Dir::t D>
 		bool on_bound(Coords const& p) const;
 		
 		
@@ -417,7 +417,7 @@ namespace col{
 		
 		
 	/*
-		void produce(Unit const& unit, Item const& item, Dir const& dir) {
+		void produce(Unit const& unit, Item::type const& item, Dir::t const& dir) {
 			
 			
 		}
@@ -485,7 +485,7 @@ namespace col{
 		
 		
 		
-		bool order_move(Unit &u, Dir const& dir) {
+		bool order_move(Unit &u, Dir::t const& dir) {
 			/* Move unit
 			 */
 			
@@ -545,7 +545,7 @@ namespace col{
 		}
 		
 		
-		bool order_attack(Unit & attacker, Dir const& dir) {
+		bool order_attack(Unit & attacker, Dir::t const& dir) {
 			/* Order attack
 			 */
 			
@@ -656,7 +656,7 @@ namespace col{
 		}
 		
 		
-		bool can_attack_move(Unit const& u, Dir const& dir) {
+		bool can_attack_move(Unit const& u, Dir::t const& dir) {
 			// square empty
 			//auto& ut = *(u.type);
 			//auto dest = u.pos + vec4dir(dir);
@@ -698,7 +698,7 @@ namespace col{
 		
 		
 		
-		void attack_move(Player::Id const& pid, Unit::Id const& iid, Dir const& dir) {
+		void attack_move(Player::Id const& pid, Unit::Id const& iid, Dir::t const& dir) {
 			
 			/*
 			Unit *p = & icon4id(iid);

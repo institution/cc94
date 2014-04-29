@@ -6,45 +6,45 @@ using std::unordered_map;
 
 namespace col {
 	unordered_map<uint8,string> BIOME_NAMES{
-		{eval(Biome::Tundra), "tundra"},
-		{eval(Biome::Prairie), "prairie"},
-		{eval(Biome::Plains), "plains"},
-		{eval(Biome::Desert), "desert"},
-		{eval(Biome::Savannah), "savannah"},
-		{eval(Biome::Grassland), "grassland"},
-		{eval(Biome::Marsh), "marsh"},
-		{eval(Biome::Swamp), "swamp"},
-		{eval(Biome::Arctic), "arctic"},
-		{eval(Biome::Ocean), "ocean"},
-		{eval(Biome::SeaLane), "sea_lane"},
+		{Biome::Tundra, "tundra"},
+		{Biome::Prairie, "prairie"},
+		{Biome::Plains, "plains"},
+		{Biome::Desert, "desert"},
+		{Biome::Savannah, "savannah"},
+		{Biome::Grassland, "grassland"},
+		{Biome::Marsh, "marsh"},
+		{Biome::Swamp, "swamp"},
+		{Biome::Arctic, "arctic"},
+		{Biome::Ocean, "ocean"},
+		{Biome::SeaLane, "sealane"},
 	};
 
-	Biome get_biome_by_name(string const& name) {
+	Biome::type get_biome_by_name(string const& name) {
 		for (auto& item: BIOME_NAMES) {
 			if (item.second == name) {
-				return static_cast<Biome>(item.first);
+				return item.first;
 			}
 		}
-		assert(0);
+		return Biome::None;
 	}
 	
-	unordered_map<uint8,string> PHYS_NAMES {
-		{eval(Phys::Hill), "hill"},
-		{eval(Phys::Mountain), "mountain"},
-		{eval(Phys::Road), "road"},
-		{eval(Phys::Forest), "forest"},
-		{eval(Phys::MinorRiver), "minor_river"},
-		{eval(Phys::MajorRiver), "major_river"},
-		{eval(Phys::Plow), "plow"}
+	unordered_map<Phys::type, string> PHYS_NAMES {
+		{Phys::Hill, "hill"},
+		{Phys::Mountain, "mountain"},
+		{Phys::Road, "road"},
+		{Phys::Forest, "forest"},
+		{Phys::MinorRiver, "minorriver"},
+		{Phys::MajorRiver, "majorriver"},
+		{Phys::Plow, "plow"}
 	};
 
-	Phys get_phys_by_name(string const& name) {
+	Phys::type get_phys_by_name(string const& name) {
 		for (auto& item: PHYS_NAMES) {
 			if (item.second == name) {
-				return static_cast<Phys>(item.first);
+				return item.first;
 			}
 		}
-		assert(0);
+		return Phys::None;
 	}
 	
 	

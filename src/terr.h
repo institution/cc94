@@ -34,15 +34,15 @@ namespace col{
 	struct Terr: Place, Workplace {
 		using Id = Coords;
 		
-		Biome biome;
-		Phys phys;
+		Biome::type biome;
+		Phys::type phys;
 		
 		vector<Unit*> units;
 		Colony* colony;
 		
 		Terr(): colony(nullptr) {}
 		
-		explicit Terr(Biome const& biome, Phys const& phys = Phys::None): 
+		explicit Terr(Biome::type const& biome, Phys::type const& phys = Phys::None): 
 			biome(biome), phys(phys), colony(nullptr) 
 		{}
 		
@@ -54,7 +54,7 @@ namespace col{
 		
 		// Workplace 
 		
-		uint16 get_yield(Item const& item, bool const& is_expert) const {
+		uint16 get_yield(Item::type const& item, bool const& is_expert) const {
 			return 3;
 		}
 		
@@ -97,21 +97,21 @@ namespace col{
 		
 		
 		
-		bool has(Phys const& p) const {
-			return flag(phys) & flag(p);
+		bool has(Phys::type const& p) const {
+			return phys & p;
 		}
 		
-		void add(Phys const& p) {
-			phys = static_cast<Phys>(flag(phys) | flag(p));
+		void add(Phys::type const& p) {
+			phys |= p;
 		}
 		
-		void sub(Phys const& p) {
-			phys = static_cast<Phys>(flag(phys) & !flag(p));
+		void sub(Phys::type const& p) {
+			phys &= !p;
 		}
 				
 		Travel get_travel();
 		
-		Terr& set_biome(Biome const& b) { biome = b; return *this; }
+		Terr& set_biome(Biome::type const& b) { biome = b; return *this; }
 		
 		int8 get_movement_cost(Travel const& movement_type);
 		

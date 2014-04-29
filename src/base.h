@@ -13,7 +13,7 @@ namespace col {
 	using Coord = int16;
 	using Coords = Vector2<Coord>;
 	
-	/* Dir code is yx in mod 3-1 (2 -> -1)
+	/* Dir::t code is yx in mod 3-1 (2 -> -1)
 	00 0  -1,-1
 	01 1  -1,0 
 	02 2  -1,1
@@ -25,22 +25,25 @@ namespace col {
 	22 8  1,1
 	*/
 	
-	enum class Dir: int8{
-		Q=0, W=1, E=2,
-		A=3, S=4, D=5,
-		Z=6, X=7, C=8
+	
+	namespace Dir{
+		using type = uint8;
+		using t = type;
+		type const 
+			Q=0, W=1, E=2,
+			A=3, S=4, D=5,
+			Z=6, X=7, C=8;
 	};
 	
-	//array<Dir const, 9> ALL_DIRS;
-	extern std::array<Dir const, 9> ALL_DIRS;
+	//array<Dir::t const, 9> ALL_DIRS;
+	extern std::array<Dir::t const, 9> ALL_DIRS;
 
-	inline Coords vec4dir(Dir const& d) {
-		auto n = static_cast<int8>(d);
-		return Coords((n % 3) - 1, (n / 3) - 1);
+	inline Coords vec4dir(Dir::t const& d) {
+		return Coords((d % 3) - 1, (d / 3) - 1);
 	}
 
-	inline Dir dir4vec(Coords const& d) {
-		return static_cast<Dir>((d[0] + 1) + (d[1] + 1) * 3);
+	inline Dir::t dir4vec(Coords const& d) {
+		return (d[0] + 1) + (d[1] + 1) * 3;
 	}
 
 	
@@ -62,75 +65,67 @@ namespace col {
 	Travel const LAND = 1;
 	Travel const SEA = 2;
 	
-	enum class Biome{
-		Tundra = 1, //boreal forest
-		Prairie = 4, // broadleaf forest
-		Plains = 3, // mixed_forest
-		Desert = 2, //scrub forest
-		Savannah = 6, //tropical forest				
-		Grassland = 5, //confier forest		
-		Marsh = 7, //wetland forest
-		Swamp = 8, //rain forest
-		
-		Arctic = 10,
-		Ocean = 11,
-		SeaLane = 12
-	};
-	
-	
-	
-	enum class Phys{
-		// this is conceptually an enumeration
-		// fact that it is also a flag is implementation specific
-		None = 0,
-		Hill = 1,
-		Mountain = 2,	
-		Road = 4,
-		Forest = 8,
-		MinorRiver = 16,
-		MajorRiver = 32,
-		Plow = 64,
-		Worker = 128
-	};
-	
-	inline 
-	uint8 flag(Phys const& p) {
-		return static_cast<uint8>(p);
+	namespace Biome{
+		using type = uint8;
+		type const 
+			None = 0,
+			Tundra = 1, //boreal forest
+			Prairie = 4, // broadleaf forest
+			Plains = 3, // mixed_forest
+			Desert = 2, //scrub forest
+			Savannah = 6, //tropical forest				
+			Grassland = 5, //confier forest		
+			Marsh = 7, //wetland forest
+			Swamp = 8, //rain forest
+			// 9 unused
+			Arctic = 10,
+			Ocean = 11,
+			SeaLane = 12;
 	}
 	
-	template<typename T> inline 
-	uint8 enum_value(T const& t) {
-		return static_cast<uint8>(t);
+	
+	
+	namespace Phys{
+		using type = uint8;
+		type const 
+			None = 0,
+			Hill = 1,
+			Mountain = 2,
+			Road = 4,
+			Forest = 8,
+			MinorRiver = 16,
+			MajorRiver = 32,
+			Plow = 64,
+			Worker = 128;
 	}
 	
-	template<typename T> inline
-	uint8 eval(T const& t) {
-		return enum_value(t);
-	}
 	
-	enum class Item{
-		None = 0,
-		Food = 23,
-		Sugar = 24,
-		Tobacco = 25,
-		Cotton = 26,
-		Furs = 27,
-		Lumber = 28,
-		Ore = 29,
-		Silver = 30,
-		Horses = 31,
-		Rum = 32,
-		Cigars = 33,
-		Cloth = 34,
-		Coats = 35,
-		TradeGoods = 36,
-		Tools = 37 ,
-		Muskets = 38,
-		Hammers = 55,
-		Cross = 57,		
-		Fish = 58,
-		Bell = 63
-	};
+	
+	namespace Item{
+		using type = uint8;
+		type const 
+			None = 0,
+			Food = 23,
+			Sugar = 24,
+			Tobacco = 25,
+			Cotton = 26,
+			Furs = 27,
+			Lumber = 28,
+			Ore = 29,
+			Silver = 30,
+			Horses = 31,
+			Rum = 32,
+			Cigars = 33,
+			Cloth = 34,
+			Coats = 35,
+			TradeGoods = 36,
+			Tools = 37 ,
+			Muskets = 38,
+			Hammers = 55,
+			Cross = 57,		
+			Fish = 58,
+			Bell = 63;
+	}
 	
 	
 	
@@ -152,7 +147,7 @@ namespace col {
 	struct Workplace{
 		virtual bool assign() = 0;
 		virtual bool leave() = 0;
-		virtual uint16 get_yield(Item const& item, bool const& is_expert) const = 0;
+		virtual uint16 get_yield(Item::type const& item, bool const& is_expert) const = 0;
 	};
 	
 	struct Placeable {
@@ -165,10 +160,10 @@ namespace col {
 	
 	
 	struct Cargo {
-		Item item;
+		Item::type item;
 		uint16 amount;
 		
-		Cargo(Item const& item, uint16 const& amount):
+		Cargo(Item::type const& item, uint16 const& amount):
 			item(item), amount(amount)
 		{}
 		

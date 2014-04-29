@@ -38,9 +38,9 @@ namespace col {
 	
 	struct OrderMove: Action {
 		Unit::Id uid;
-		Dir dir;
+		Dir::t dir;
 		
-		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir const& dir): 
+		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir): 
 			Action(pid),
 			uid(uid), dir(dir)
 		{}
@@ -70,8 +70,8 @@ namespace col {
 
 	struct AttackMove: Action {
 		Unit::Id iid;
-		Dir dir;
-		AttackMove(Player::Id const& pid, Unit::Id const& iid, Dir const& dir): Action(pid) {
+		Dir::t dir;
+		AttackMove(Player::Id const& pid, Unit::Id const& iid, Dir::t const& dir): Action(pid) {
 			this->iid = iid;
 			this->dir = dir;
 		}

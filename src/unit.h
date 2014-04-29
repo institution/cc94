@@ -66,7 +66,7 @@ namespace col{
 		Player* player;
 		uint8 time_left;
 		Workplace const* workplace;
-		Item workitem;
+		Item::type workitem;
 		uint16 free_space;
 		
 		string const& get_name() const { return type->get_name(); }
@@ -80,7 +80,7 @@ namespace col{
 		// uint8 spec_id;
 		// int8 spec_lvl;
 		
-		Unit& set_work(Workplace const& place, Item const& item) {
+		Unit& set_work(Workplace const& place, Item::type const& item) {
 			workplace = &place;
 			workitem = item;
 			return *this;

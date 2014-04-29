@@ -189,7 +189,13 @@ namespace col {
 						break;
 					case 2:
 						if (envgame.in_bounds(sel)) {
-							envgame.ref_terr(sel).add(get_phys_by_name(es.at(1)));
+							Phys::type p = get_phys_by_name(es.at(1));
+							if (p != Phys::None) {
+								envgame.ref_terr(sel).add(p);
+							}
+							else {
+								put("invalid phys name");								
+							}
 						}
 						break;
 				}
@@ -204,7 +210,13 @@ namespace col {
 						break;
 					case 2:
 						if (envgame.in_bounds(sel)) {
-							envgame.ref_terr(sel).set_biome(get_biome_by_name(es.at(1)));
+							Biome::type b = get_biome_by_name(es.at(1));
+							if (b != Biome::None) {
+								envgame.ref_terr(sel).set_biome(b);
+							}
+							else {
+								put("invalid biome name");						
+							}							
 						}
 						break;
 				}

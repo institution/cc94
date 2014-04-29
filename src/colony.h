@@ -22,7 +22,7 @@ namespace col {
 		
 		
 		void add(Cargo const& c) {
-			auto key = enum_value(c.item);
+			auto key = c.item;
 			if (storage.count(key)) {
 				storage[key] += c.amount; 
 			}
@@ -32,7 +32,7 @@ namespace col {
 		}
 
 		void sub(Cargo const& c) {
-			auto key = enum_value(c.item);
+			auto key = c.item;
 			if (get(c.item) <= c.amount) {
 				storage[key] -= c.amount; 
 			}
@@ -41,8 +41,8 @@ namespace col {
 			}
 		}
 		
-		uint16 get(Item const& item) {
-			auto key = enum_value(item);
+		uint16 get(Item::type const& item) {
+			auto key = item;
 			if (storage.count(key)) {
 				return storage.at(key);
 			}

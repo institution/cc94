@@ -317,17 +317,36 @@ namespace col {
 		return env.get_terr(q);		
 	}
 	
+	using LocalArea = array<Terr const*, 9>;
+	
 	array<Terr const*, 9> make_terr_ext(Env const& env, Coords const& p) {
 		array<Terr const*, 9> arr;
 		for (auto dir: ALL_DIRS) {
-			arr[eval(dir)] = &get_terr_ext(env, p + vec4dir(dir));
+			arr[(dir)] = &get_terr_ext(env, p + vec4dir(dir));
 		}
 		return arr;
 	}
 	
-	Terr const& get(array<Terr const*, 9> const& loc, Dir const& dir) {
-		return *loc[eval(dir)];
+	Terr const& get(array<Terr const*, 9> const& loc, Dir::t const& dir) {
+		return *loc[(dir)];
 	}
+	
+	int get_wxad_index(LocalArea const& loc, Phys::type const& phys) {
+		int idx = 0;
+		if ( get(loc, Dir::W).has(phys) ) idx |= 8;
+		if ( get(loc, Dir::X).has(phys) ) idx |= 4;
+		if ( get(loc, Dir::A).has(phys) ) idx |= 2;
+		if ( get(loc, Dir::D).has(phys) ) idx |= 1;
+		return idx;
+	}
+	
+	array<Dir::t,8> CLOCKWISE_DIRS = {
+		Dir::W, Dir::E, Dir::D, Dir::C, Dir::X, Dir::Z, Dir::A, Dir::Q
+	};
+	
+			
+	
+	
 	
 	void render_terr(sf::RenderWindow &win, 
 			Coords const& pos, 
@@ -346,88 +365,87 @@ namespace col {
 		auto pix = v2i(x,y);
 		
 		
-		
-		
 		auto loc = make_terr_ext(env, pos);
 		
 		// render biome
-		render_sprite(win, pix, res(TERR, eval(biome)));
+		render_sprite(win, pix, res(TERR, (biome)));
 		
-		// rend neighs		
-		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::W).biome) +  50) );
-		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::D).biome) + 100) );
-		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::X).biome) + 150) );
-		render_sprite(win, pix, res(TERR, eval(get(loc, Dir::A).biome) + 200) );
+		// render neighs pattern	
+		render_sprite(win, pix, res(TERR, (get(loc, Dir::W).biome) +  50) );
+		render_sprite(win, pix, res(TERR, (get(loc, Dir::D).biome) + 100) );
+		render_sprite(win, pix, res(TERR, (get(loc, Dir::X).biome) + 150) );
+		render_sprite(win, pix, res(TERR, (get(loc, Dir::A).biome) + 200) );
 		
-		
-		Phys phys;
-		int base;
-		uint8 idx;
-		
-		phys = Phys::Mountain;
-		base = 33;
-		if (terr.has(phys)) {
-			idx = 0;
-			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
-			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
-			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
-			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
-			render_sprite(win, pix, res(PHYS, base + idx));
+		// phys feats & improvments
+		if (terr.has(Phys::Mountain)) {
+			render_sprite(win, pix, res(PHYS, 33 + get_wxad_index(loc, Phys::Mountain)));
+		}
+				
+		if (terr.has(Phys::Hill)) {			
+			render_sprite(win, pix, res(PHYS, 49 + get_wxad_index(loc, Phys::Hill)));
 		}
 		
-		phys = Phys::Hill;
-		base = 49;
-		if (terr.has(phys)) {
-			idx = 0;
-			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
-			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
-			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
-			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
-			render_sprite(win, pix, res(PHYS, base + idx));
+		if (terr.has(Phys::Plow)) {
+			render_sprite(win, pix, res(PHYS, 150));
 		}
 		
-		phys = Phys::Forest;
-		base = 65;
-		if (terr.has(phys)) {
-			idx = 0;
-			if (loc[eval(Dir::W)]->has(phys)) idx |= 8;
-			if (loc[eval(Dir::X)]->has(phys)) idx |= 4;
-			if (loc[eval(Dir::A)]->has(phys)) idx |= 2;
-			if (loc[eval(Dir::D)]->has(phys)) idx |= 1;
-			render_sprite(win, pix, res(PHYS, base + idx));
+		if (terr.has(Phys::Forest)) {			
+			render_sprite(win, pix, res(PHYS, 65 + get_wxad_index(loc, Phys::Forest)));
 		}
 		
-		
-		phys = Phys::Plow;
-		base = 150;
-		if (terr.has(phys)) {
-			render_sprite(win, pix, res(PHYS, base));
-		}
-		
-		phys = Phys::Road;
-		base = 81;
-		if (terr.has(phys)) {
-			array<Dir,9> dirs = {
-				Dir::S, Dir::W, Dir::E, 
-				Dir::D, Dir::C, Dir::X,
-				Dir::Z, Dir::A, Dir::Q
-			};
-			bool r = false;
-			for (int i=1; i<9; ++i) {
-				if (loc[eval(dirs[i])]->has(phys)) {
-					render_sprite(win, pix, res(PHYS, base + i));
-					r = true;
+		if (terr.has(Phys::MajorRiver)) {
+			if (terr.biome != Biome::Ocean) {
+				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
+				if (ind) {
+					render_sprite(win, pix, res(PHYS, 1 + ind));
+				}
+				else {
+					render_sprite(win, pix, res(PHYS, 16));
 				}
 			}
-			if (!r) {
-				render_sprite(win, pix, res(PHYS, base));				
+			else {
+				for (int i = 0; i < 8; i += 2) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::MajorRiver) ) {
+						render_sprite(win, pix, res(PHYS, 141 + (i >> 1)));
+					}
+				}
 			}
+			
+		}
+		else if (terr.has(Phys::MinorRiver)) {
+			if (terr.biome != Biome::Ocean) {
+				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
+				if (ind) {
+					render_sprite(win, pix, res(PHYS, 17 + ind));
+				}
+				else {
+					render_sprite(win, pix, res(PHYS, 32));
+				}
+			}
+			else {
+				for (int i = 0; i < 8; i += 2) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::MinorRiver) ) {
+						render_sprite(win, pix, res(PHYS, 145 + (i >> 1)));
+					}
+				}
+			}			
 		}
 		
-		// MinorRiver = 16,
-		// MajorRiver = 32,
 		
-
+		
+						
+		if (terr.has(Phys::Road)) {
+			bool r = false;			
+			for (int i=0; i<8; ++i) {
+				if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::Road) ) {
+					render_sprite(win, pix, res(PHYS, 82 + i));
+					r = true;
+				}
+			}			
+			if (!r) {
+				render_sprite(win, pix, res(PHYS, 81));				
+			}
+		}
 		
 	}
 
@@ -677,7 +695,7 @@ namespace col {
 
 			auto info = boost::str(
 				format("Biome: %||\nRoad: %||\n") % 
-					BIOME_NAMES.at(eval(t.biome)) % t.has(Phys::Road)
+					BIOME_NAMES.at((t.biome)) % t.has(Phys::Road)
 			);
 
 
