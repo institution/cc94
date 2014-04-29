@@ -68,7 +68,9 @@ namespace col {
 		ICON = "COLONIZE/ICONS_SS",
 		PHYS = "COLONIZE/PHYS0_SS",
 		ARCH = "COLONIZE/PARCH_SS",
-		BUILDING = "COLONIZE/BUILDING_SS";
+		BUILD = "COLONIZE/BUILDING_SS",
+		DIFFUSE = "DIFFUSE*",
+		COAST = "COAST*";
 
 	Res::mapped_type const& res(string const& d, uint const& i) {
 
@@ -100,34 +102,73 @@ namespace col {
 		g_res[key] = tex;
 	}
 		
-	Res::mapped_type combine(Res::mapped_type const& tex, Res::mapped_type const& mask) {
-		/* Return new texture created by combining color from tex and alpha from mask (slow)
-		 */
+	Res::mapped_type replace_black(Res::mapped_type const& inn_, Res::mapped_type const& tex_, v2i const& t) {
+		/* Create new texture
 		
-		auto img = tex.copyToImage();
-		auto msk = mask.copyToImage();
+		mask colors meaning:
+		 transparent -> transparent
+		 black -> take from tex
+		 else -> take from mask
 		
-		for (auto j = 0; j < img.getSize().y; ++j) {
-			for (auto i = 0; i < img.getSize().x; ++i) {
-				if (msk.getPixel(i,j).a == 0) {
-					img.setPixel(i,j,sf::Color(252,84,252,0));
+		 t -- tex offset vector
+		 
+		*/
+		
+		auto out = inn_.copyToImage();
+		auto inn = inn_.copyToImage();
+		auto tex = tex_.copyToImage();
+		
+		for (auto j = 0; j < out.getSize().y; ++j) {
+			for (auto i = 0; i < out.getSize().x; ++i) {
+				if (inn.getPixel(i,j) == sf::Color(0,0,0,255)) {
+					out.setPixel(i,j, tex.getPixel(t[0] + i, t[1] + j));
 				}
 			}
 		}
 		
-		auto t = sf::Texture();
-		t.loadFromImage(img);
-		t.setSmooth(false);
-		return t;
+		auto ret = sf::Texture();
+		ret.loadFromImage(out);
+		ret.setSmooth(false);
+		return ret;
 	}
-		
+	
+	v2i get_loffset(int l) {
+		switch(l){
+			case 0: return v2i(0,0);
+			case 1: return v2i(8,0);
+			case 2: return v2i(8,8);
+			case 3: return v2i(0,8);
+		}
+	}
+	
+	void preload_coast(Biome::type bio, int start) {
+		for (int k = 0; k < 8; ++k) {
+			for (int l = 0; l < 4; ++l) {
+				int ind = (k<<2) + l;
+				preload(COAST, start + ind, 
+					replace_black(
+						res(PHYS, 109+ind), res(TERR, bio), get_loffset(l)
+					)
+				);
+			}
+		}
+	}
+	
+	void preload_coast() {		
+		// 109 - 140
+		preload_coast(Biome::Ocean, 0);
+		preload_coast(Biome::SeaLane, 50);		
+	}
+	
 	void preload_terrain() {
 		for (int i=1; i<13; ++i) {
-			preload(TERR,  50+i, combine(res(TERR, i), res(PHYS, 105)));
-			preload(TERR, 100+i, combine(res(TERR, i), res(PHYS, 106)));
-			preload(TERR, 150+i, combine(res(TERR, i), res(PHYS, 107)));
-			preload(TERR, 200+i, combine(res(TERR, i), res(PHYS, 108)));
+			preload(DIFFUSE,  0+i, replace_black(res(PHYS, 105), res(TERR, i), {0,0}));
+			preload(DIFFUSE, 50+i, replace_black(res(PHYS, 106), res(TERR, i), {0,0}));
+			preload(DIFFUSE, 100+i, replace_black(res(PHYS, 107), res(TERR, i), {0,0}));
+			preload(DIFFUSE, 150+i, replace_black(res(PHYS, 108), res(TERR, i), {0,0}));
 		}
+		
+		preload_coast();
 	}
 	
 	
@@ -256,10 +297,10 @@ namespace col {
 			auto & pos = coords[i];
 			switch (type/ 256) {
 				case 1:
-					render_sprite(win, pos[0], pos[1], res(BUILDING, type % 255));
+					render_sprite(win, pos[0], pos[1], res(BUILD, type % 255));
 					break;
 				default:
-					render_sprite(win, pos[0], pos[1], res(BUILDING, -1));
+					render_sprite(win, pos[0], pos[1], res(BUILD, -1));
 					break;
 			}
 			
@@ -270,9 +311,8 @@ namespace col {
 		
 		for (; i<15; ++i) {		
 			auto & pos = coords[i];
-			render_sprite(win, pos[0], pos[1], res(BUILDING, trees[i]));
+			render_sprite(win, pos[0], pos[1], res(BUILD, trees[i]));
 		}
-		
 		
 		
 	}
@@ -346,7 +386,45 @@ namespace col {
 	
 			
 	
+	int get_coast_index(uint8 const& l, Terr const& t0, Terr const& t1, Terr const& t2) {
+		uint8 k = 
+			(!is_water_biome(t2.biome) << 2) +
+			(!is_water_biome(t1.biome) << 1) +
+			(!is_water_biome(t0.biome) << 0);
+		return (k<<2) + l;
+	}
 	
+	/*
+	Biome::type get_render_biome(LocalArea const& loc) {
+		auto b = get(loc, Dir::S).biome;
+		
+		if (is_water_biome(b)) {
+			auto c = get(loc, Dir::A);
+			if (!is_water_biome(c)) return c;
+			
+			c = get(loc, Dir::X);
+			if (!is_water_biome(c)) return c;
+			
+			c = get(loc, Dir::D);
+			if (!is_water_biome(c)) return c;
+			
+			c = get(loc, Dir::W);
+			if (!is_water_biome(c)) return c;
+		}
+		return b;
+	}*/
+	
+	void render_diffuse_from(sf::RenderWindow &win, 
+		v2i const& pix,
+		LocalArea const& loc,
+		Dir::type d,
+		int offset
+	) {
+		auto b = get(loc, d).biome;
+		if (!is_water_biome(b)) {
+			render_sprite(win, pix, res(DIFFUSE, b + offset) );
+		}
+	}
 	
 	void render_terr(sf::RenderWindow &win, 
 			Coords const& pos, 
@@ -371,10 +449,47 @@ namespace col {
 		render_sprite(win, pix, res(TERR, (biome)));
 		
 		// render neighs pattern	
-		render_sprite(win, pix, res(TERR, (get(loc, Dir::W).biome) +  50) );
-		render_sprite(win, pix, res(TERR, (get(loc, Dir::D).biome) + 100) );
-		render_sprite(win, pix, res(TERR, (get(loc, Dir::X).biome) + 150) );
-		render_sprite(win, pix, res(TERR, (get(loc, Dir::A).biome) + 200) );
+		render_diffuse_from(win, pix, loc, Dir::W, 0);
+		render_diffuse_from(win, pix, loc, Dir::D, 50);
+		render_diffuse_from(win, pix, loc, Dir::X, 100);
+		render_diffuse_from(win, pix, loc, Dir::A, 150);
+		
+		
+		// coast
+		// 01
+	    // 32
+		
+		if (is_water_biome(terr.biome)) {
+			int base;
+			switch (terr.biome) {
+				case Biome::Ocean: 
+					base = 0;
+					break;
+				case Biome::SeaLane: 
+					base = 50;
+					break;
+				default:
+					assert(0); // unknown water terr type
+			}
+			
+			render_sprite(win, pix + v2i(0,0), res(COAST, 
+				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
+			));
+			
+			render_sprite(win, pix + v2i(8,0), res(COAST, 
+				base + get_coast_index(1, get(loc,Dir::W), get(loc,Dir::E), get(loc,Dir::D))
+			));
+			
+			render_sprite(win, pix + v2i(8,8), res(COAST, 
+				base + get_coast_index(2, get(loc,Dir::D), get(loc,Dir::C), get(loc,Dir::X))
+			));
+			
+			render_sprite(win, pix + v2i(0,8), res(COAST, 
+				base + get_coast_index(3, get(loc,Dir::X), get(loc,Dir::Z), get(loc,Dir::A))
+			));
+			
+		}
+		
 		
 		// phys feats & improvments
 		if (terr.has(Phys::Mountain)) {
@@ -394,7 +509,7 @@ namespace col {
 		}
 		
 		if (terr.has(Phys::MajorRiver)) {
-			if (terr.biome != Biome::Ocean) {
+			if (!is_water_biome(terr.biome)) {
 				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
 				if (ind) {
 					render_sprite(win, pix, res(PHYS, 1 + ind));
@@ -413,7 +528,7 @@ namespace col {
 			
 		}
 		else if (terr.has(Phys::MinorRiver)) {
-			if (terr.biome != Biome::Ocean) {
+			if (!is_water_biome(terr.biome)) {
 				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
 				if (ind) {
 					render_sprite(win, pix, res(PHYS, 17 + ind));
@@ -430,10 +545,7 @@ namespace col {
 				}
 			}			
 		}
-		
-		
-		
-						
+					
 		if (terr.has(Phys::Road)) {
 			bool r = false;			
 			for (int i=0; i<8; ++i) {
@@ -693,10 +805,20 @@ namespace col {
 			
 			auto& t = env.get_terr(con.sel);
 
+			
+			string phys_info;
+			for (auto const& item: PHYS_NAMES) {
+				auto const& phys = item.first;
+				auto const& name = item.second;
+				
+				if (t.has(phys)) phys_info += name + ",";
+			}
+			
 			auto info = boost::str(
-				format("Biome: %||\nRoad: %||\n") % 
-					BIOME_NAMES.at((t.biome)) % t.has(Phys::Road)
+				format("Biome: %||\n[%||]\n") % 
+					BIOME_NAMES.at((t.biome)) % phys_info
 			);
+			
 
 
 			if (t.units.size()) {

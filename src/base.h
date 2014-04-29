@@ -58,7 +58,7 @@ namespace col {
 	uint8 const WORK = 'w';
 	uint8 const ROAD = 'r';
 	uint8 const PLOW = 'p';
-	uint8 const BUILD = 'b';
+	//uint8 const BUILD = 'b';
 	
 	
 	using Travel = uint8;
@@ -81,6 +81,11 @@ namespace col {
 			Arctic = 10,
 			Ocean = 11,
 			SeaLane = 12;
+	}
+	
+	inline
+	bool is_water_biome(Biome::type b) {
+		return b == Biome::Ocean or b == Biome::SeaLane;
 	}
 	
 	
