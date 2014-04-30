@@ -173,8 +173,8 @@ namespace col {
 	
 	
 	sf::RectangleShape RectShape(
-			Vector2<int16> const& pos, 
-			Vector2<int16> const& dim,
+			v2i const& pos, 
+			v2i const& dim,
 			sf::Color const& fill_color,
 			int16 const& outline_thickness = 0,
 			sf::Color const& outline_color = {0,0,0,255}
@@ -193,7 +193,7 @@ namespace col {
 		
 		win.draw(
 			RectShape(
-				Vector2<int16>(x,y) + Vector2<int16>(1,1), 
+				v2i(x,y) + v2i(1,1), 
 				{6, 8}, 
 				{col.r,col.g,col.b, 255},
 				1, 
@@ -206,8 +206,8 @@ namespace col {
 	void render_playerind(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
 		win.draw(
 			RectShape(
-				Vector2<int16>(x, y), 
-				Vector2<int16>(1, 1), 
+				v2i(x, y), 
+				v2i(1, 1), 
 				sf::Color(col.r,col.g,col.b, 255),
 				0, 
 				sf::Color(0,0,0, 0)
@@ -218,8 +218,8 @@ namespace col {
 	void render_cursor(sf::RenderWindow &win, uint16 x, uint16 y) {
 		win.draw(
 			RectShape(
-				Vector2<int16>(x+1, y+1), 
-				Vector2<int16>(14, 14), 
+				v2i(x+1, y+1), 
+				v2i(14, 14), 
 				sf::Color(0,0,0, 0),
 				1, 
 				sf::Color(255,255,255, 255)
@@ -239,6 +239,35 @@ namespace col {
 		s.setPosition(pix[0], pix[1]);
 		s.setTexture(img); 
 		win.draw(s);
+	}
+	
+	void render_sprite(sf::RenderWindow & win, 
+		v2i const& pix, v2i const& dim, 
+		sf::Texture const& img
+	) {
+		v2i tex_dim(img.getSize().x, img.getSize().y);
+		
+		auto free = dim - tex_dim;
+		v2i voffset(free[0]/2, free[1]/2);
+		
+		render_sprite(win, pix + voffset, img);
+	}
+	
+	void render_area(
+		sf::RenderWindow &win, 
+		sf::Color const& color,
+		Vector2<int> const& area_pos, 
+		Vector2<int> const& area_dim)
+	{
+		win.draw(
+			RectShape(
+				area_pos, 
+				area_dim, 
+				color,
+				0, 
+				{0,0,0,0}
+			)
+		);
 	}
 	
 	void render_area(
@@ -377,6 +406,45 @@ namespace col {
 		// render units
 		for (auto& u: terr.units) {
 			
+		}
+		
+		
+		// render storage
+		
+		render_area(win, {76,100,172,255}, ly.city_res.pos, ly.city_res.dim);
+		
+		int width = 16;
+		
+		auto pix = ly.city_res.pos;
+		for (auto item: COLONY_ITEMS) {
+			
+			// num of items
+			int num = 0;
+			auto p = col.storage.find(item);
+			if (p != col.storage.end()) {
+				num = (*p).second;
+			}
+			
+			// render icon
+			render_sprite(win,
+				pix,
+				v2i(width,12),
+				res(ICON, item)
+			);
+
+			// render number
+			render_text(
+				win,
+				pix + v2i(0,1+12),
+				res_pixfont("tiny.png"),
+				std::to_string(num),
+				{0,0,0,0},
+				0
+			);
+
+
+
+			pix[0] += width;
 		}
 		
 				
