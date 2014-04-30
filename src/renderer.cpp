@@ -241,80 +241,145 @@ namespace col {
 		win.draw(s);
 	}
 	
+	void render_area(
+		sf::RenderWindow &win, 
+		sf::Texture const& tex,
+		Vector2<int> const& area_pos, 
+		Vector2<int> const& area_dim)
+	{
+		using sf::Sprite;
+		using sf::IntRect;
+		using sf::Vector2f;
+				
+		auto tile_dim = Vector2<int>(tex.getSize().x, tex.getSize().y);
+		auto area_end = area_pos + area_dim;
+				
+		int ei,ej;
+		
+		//cerr << format("area_dim: %||\n") % area_dim;
+		//cerr << format("area_pos: %||\n") % area_pos;
+		//cerr << format("tile_dim: %||\n") % tile_dim;
+		
+		// center
+		{
+			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], tile_dim[1]));
+			int i,j;			
+			j = area_pos[1];
+			while (j < area_end[1] - tile_dim[1]) {
+				i = area_pos[0];
+				while (i < area_end[0] - tile_dim[0]) {
+					s.setPosition(Vector2f(i, j));
+					win.draw(s);			
+					//cerr << i << endl;
+					i += tile_dim[0];
+				}
+				j += tile_dim[1];
+			}
+
+			ei = i;
+			ej = j;
+		}
+		
+		//cerr << format("e: %||,%||\n") % ei % ej;
+
+		
+		// bottom
+		{
+			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], area_end[1] - ej));
+			int i = area_pos[0], j = ej;
+			while (i < area_end[0] - tile_dim[0]) {
+				s.setPosition(Vector2f(i, j));
+				win.draw(s);
+				i += tile_dim[0];
+			}
+			ei = i;
+		}
+		
+		// right
+		{
+			auto s = Sprite(tex, IntRect(0, 0, area_end[0] - ei, tile_dim[1]));
+			int i = ei, j = area_pos[1];
+			while (j < area_end[1] - tile_dim[1]) {
+				s.setPosition(Vector2f(i, j));
+				win.draw(s);
+				j += tile_dim[1];
+			}
+			ej = j;
+		}
+		
+		// corner
+		{
+			auto s = Sprite(tex, sf::IntRect(0, 0, area_end[0] - ei, area_end[1] - ej));
+			int i = ei, j = ej;
+			s.setPosition(Vector2f(i, j));
+			win.draw(s);
+		}
+		
+		
+		
+		// alt but problematic
+		//sf::RectangleShape rectangle;
+		//rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
+		//rectangle.setTexture(&res("COLONIZE/WOODTILE_SS", 1));
+		//rectangle.setTextureRect(sf::IntRect(pos[0], pos[1], dim[0], dim[1]));
+		//win.draw(rectangle);
+		
+		
+	}
 	
 	
 
 	void render_city(sf::RenderWindow &win, Env const& env, Console const& con) {
 		
-		auto bg = res(ARCH, 1);
+		/*
+		 
+		 			
+			// panel right
+			render_panel(app, env, con,			
+				ly.pan.pos,
+				ly.pan.dim
+			);		
+			// vline left of the panel
+			render_rect(app, 
+				{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1}, 
+				{1, h-8}, 
+				{0,0,0,255}
+			);
+		 
+		 
+		 */
 		
-		auto w = bg.getSize().x;
-		auto h = bg.getSize().y;
 		
-		for (uint8 j = 0; j < 5; ++j) {
-			for (uint8 i = 0; i < 7; ++i) {
-				render_sprite(win, i*w, 8+j*h, bg);
-			}
-		}
+		// render area
+		auto sand_tex = res(ARCH, 1);
+		render_area(win, sand_tex, ly.city.pos, ly.city.dim);
 		
-		// tree pattern
-		uint16 TREES = 43;
-		uint16 HILL = 44;
-		uint16 TWO = 45;
-		uint16 COAST = 46;
-		uint16 B1 = TWO;
-		uint16 B2 = HILL;
-		uint16 B3 = TREES;
-		
-		vector<Coords> coords({
-			Coords(7,15), Coords(54,22), Coords(90,13), Coords(144,13), Coords(172,15),
-			Coords(7,42), Coords(37,45), Coords(66,52), Coords(96,52), Coords(129,54),
-			Coords(9,77), Coords(14,100), Coords(68,87), Coords(124,58), Coords(121,107)
+		// relative positions
+		vector<v2i> pixs({
+			v2i(6,6), v2i(56,5), v2i(87,3), v2i(145,7), v2i(173,10),
+			v2i(8,33), v2i(37,37), v2i(67,45), v2i(96,45), v2i(128,45),
+			v2i(10,68), v2i(15,94), v2i(66,79), v2i(123,47), v2i(123,98)
 		});
 		
-		vector<uint16> trees{
-			HILL, B1, B3, B1, B1,
-			B1, TWO, B1, TWO, HILL,
-			HILL, B2, TREES, COAST, B2
-		};
 		
 		
-		uint i = 0;
-		for (auto &iunit: env.units) {
-			auto & unit = iunit.second;
+		auto& terr = env.get_terr(con.sel);
+		auto& col = terr.get_colony();
+		
+		// render buildings
+		for (int i = 0; i < col.builds.size(); ++i) {
+			auto& b = col.builds.at(i);
+						
+			render_sprite(win, ly.city.pos + pixs.at(i), res(BUILD, b.get_type_id()));
 			
-			auto upos = env.get_coords(unit);
-			
-			if (upos != con.sel) {
-				continue;
-			}
-			
-			auto type = unit.type->id;
-			if (type < 256 || upos != con.sel) {
-				continue;
-			}
-			
-			auto & pos = coords[i];
-			switch (type/ 256) {
-				case 1:
-					render_sprite(win, pos[0], pos[1], res(BUILD, type % 255));
-					break;
-				default:
-					render_sprite(win, pos[0], pos[1], res(BUILD, -1));
-					break;
-			}
-			
-			
-			//cout << unit << endl;
-			++i;
 		}
 		
-		for (; i<15; ++i) {		
-			auto & pos = coords[i];
-			render_sprite(win, pos[0], pos[1], res(BUILD, trees[i]));
+		// render units
+		for (auto& u: terr.units) {
+			
 		}
 		
-		
+				
 	}
 	
 	Terr const& get_terr_ext(Env const& env, Coords const& p) {
@@ -624,91 +689,7 @@ namespace col {
 	}
 	
 	
-	void render_area(
-		sf::RenderWindow &win, 
-		sf::Texture const& tex,
-		Vector2<int> const& area_pos, 
-		Vector2<int> const& area_dim)
-	{
-		using sf::Sprite;
-		using sf::IntRect;
-		using sf::Vector2f;
-				
-		auto tile_dim = Vector2<int>(tex.getSize().x, tex.getSize().y);
-		auto area_end = area_pos + area_dim;
-				
-		int ei,ej;
-		
-		//cerr << format("area_dim: %||\n") % area_dim;
-		//cerr << format("area_pos: %||\n") % area_pos;
-		//cerr << format("tile_dim: %||\n") % tile_dim;
-		
-		// center
-		{
-			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], tile_dim[1]));
-			int i,j;			
-			j = area_pos[1];
-			while (j < area_end[1] - tile_dim[1]) {
-				i = area_pos[0];
-				while (i < area_end[0] - tile_dim[0]) {
-					s.setPosition(Vector2f(i, j));
-					win.draw(s);			
-					//cerr << i << endl;
-					i += tile_dim[0];
-				}
-				j += tile_dim[1];
-			}
-
-			ei = i;
-			ej = j;
-		}
-		
-		//cerr << format("e: %||,%||\n") % ei % ej;
-
-		
-		// bottom
-		{
-			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], area_end[1] - ej));
-			int i = area_pos[0], j = ej;
-			while (i < area_end[0] - tile_dim[0]) {
-				s.setPosition(Vector2f(i, j));
-				win.draw(s);
-				i += tile_dim[0];
-			}
-			ei = i;
-		}
-		
-		// right
-		{
-			auto s = Sprite(tex, IntRect(0, 0, area_end[0] - ei, tile_dim[1]));
-			int i = ei, j = area_pos[1];
-			while (j < area_end[1] - tile_dim[1]) {
-				s.setPosition(Vector2f(i, j));
-				win.draw(s);
-				j += tile_dim[1];
-			}
-			ej = j;
-		}
-		
-		// corner
-		{
-			auto s = Sprite(tex, sf::IntRect(0, 0, area_end[0] - ei, area_end[1] - ej));
-			int i = ei, j = ej;
-			s.setPosition(Vector2f(i, j));
-			win.draw(s);
-		}
-		
-		
-		
-		// alt but problematic
-		//sf::RectangleShape rectangle;
-		//rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
-		//rectangle.setTexture(&res("COLONIZE/WOODTILE_SS", 1));
-		//rectangle.setTextureRect(sf::IntRect(pos[0], pos[1], dim[0], dim[1]));
-		//win.draw(rectangle);
-		
-		
-	}
+	
 	/*
 	void render_rect(sf::RenderWindow &win, 
 			sf::IntRect const& rr, 
@@ -1033,11 +1014,30 @@ namespace col {
 		
 		//cout << format("%||,%||\n") % w % h;
 		
+		// bar top 
+		render_bar(app, env, con, {0,0}, {w,7});		
+		// hline under the bar
+		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
+		
+		
 		if (con.mode == Console::Mode::COLONY) {
 			render_city(app, env, con);
 		}
 		else {
+			// map
 			render_map(app, env, con, {0,8});
+			
+			// panel right
+			render_panel(app, env, con,			
+				ly.pan.pos,
+				ly.pan.dim
+			);		
+			// vline left of the panel
+			render_rect(app, 
+				{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1}, 
+				{1, h-8}, 
+				{0,0,0,255}
+			);
 		}
 
 		//if (env.curr_player) {
@@ -1046,29 +1046,7 @@ namespace col {
 
 		// BACKGROUND
 		
-		// bar top 
-		render_bar(app, env, con, {0,0}, {w,7});		
-		// hline under the bar
-		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
-		
-		
-		// panel right
-		render_panel(app, env, con,			
-			ly.pan.pos,
-			ly.pan.dim
-		);		
-		// vline left of the panel
-		render_rect(app, 
-			{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1}, 
-			{1, h-8}, 
-			{0,0,0,255}
-		);
-
-		
-		
-		
 		render_cmd(app, con);
-		
 		
 		app.display();
 		

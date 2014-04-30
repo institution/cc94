@@ -81,6 +81,11 @@ namespace col{
 			return *colony;
 		}
 		
+		Colony const& get_colony() const {
+			assert(colony != nullptr);
+			return *colony;
+		}
+		
 		bool has_colony() const {		
 			return colony != nullptr;
 		}

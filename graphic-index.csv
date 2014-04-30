@@ -111,34 +111,34 @@ PHYS 109 "black square 8x8" -
 PHYS 110 "black square 8x8" -  
 PHYS 111 "black square 8x8" -  
 PHYS 112 "black square 8x8" -  
-PHYS 113 coast A  "CONNECTED TO TERAIN"
-PHYS 114 coast W  
-PHYS 115 coast D  
-PHYS 116 coast X  
-PHYS 117 coast   
-PHYS 118 coast   
-PHYS 119 coast   
-PHYS 120 coast   
-PHYS 121 coast   
-PHYS 122 coast   
-PHYS 123 coast   
-PHYS 124 coast   
-PHYS 125 coast   
-PHYS 126 coast   
-PHYS 127 coast   
-PHYS 128 coast   
-PHYS 129 coast   
-PHYS 130 coast   
-PHYS 131 coast   
-PHYS 132 coast   
-PHYS 133 coast   
-PHYS 134 coast   
-PHYS 135 coast   
-PHYS 136 coast   
-PHYS 137 coast   
-PHYS 138 coast   
-PHYS 139 coast   
-PHYS 140 coast   
+PHYS 113 coast8x8 AZ  "CONNECTED TO TERAIN"
+PHYS 114 coast8x8 QW  
+PHYS 115 coast8x8 ED  
+PHYS 116 coast8x8 XC  
+PHYS 117 coast8x8   
+PHYS 118 coast8x8   
+PHYS 119 coast8x8   
+PHYS 120 coast8x8   
+PHYS 121 coast8x8   
+PHYS 122 coast8x8   
+PHYS 123 coast8x8   
+PHYS 124 coast8x8   
+PHYS 125 coast8x8   
+PHYS 126 coast8x8   
+PHYS 127 coast8x8   
+PHYS 128 coast8x8   
+PHYS 129 coast8x8   
+PHYS 130 coast8x8   
+PHYS 131 coast8x8   
+PHYS 132 coast8x8   
+PHYS 133 coast8x8   
+PHYS 134 coast8x8   
+PHYS 135 coast8x8   
+PHYS 136 coast8x8   
+PHYS 137 coast8x8   
+PHYS 138 coast8x8   
+PHYS 139 coast8x8   
+PHYS 140 coast8x8   
 PHYS 141 "major river estuary" W  
 PHYS 142 "major river estuary" D  
 PHYS 143 "major river estuary" X  

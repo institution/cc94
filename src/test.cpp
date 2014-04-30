@@ -105,8 +105,9 @@ TEST_CASE( "colony", "" ) {
 	);
 	
 	auto& t = env.ref_terr({0,0});
-	
 	env.move_in(t, u);
+	
+	env.loads<BuildType>("./col94/builds.csv");
 
 	
 	SECTION("build") {
@@ -133,9 +134,7 @@ TEST_CASE( "colony", "" ) {
 		
 		SECTION("work build") {
 		
-			// TODO: new colony gratis buildings
-			auto& b = env.create<Build>(env.create<BuildType>());
-			env.move_in(c, b);
+			auto& b = c.builds.at(0);  // 
 			
 			REQUIRE(b.assign() == true);
 			u.set_work(b, Item::Coats);

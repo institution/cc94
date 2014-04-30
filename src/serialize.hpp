@@ -105,33 +105,22 @@ namespace col {
 			ar << tmp;
 			for (auto& p: ps) {
 				auto& x = p.second;
-
-				// unit
+					
+				cerr << "save colony name = " << x.name << endl;
+				
+				// colony
 				ar << x.id;
 				ar << x.name;
 				ar << x.storage;
 
-				// location
-				auto cr = env.get_coords(env.get_terr(x));
-				ar << cr;
-
-			}
-		}
-
-		// builds
-		cerr << "save builds" << endl;
-		{
-			auto& ps = env.get_cont<Build>();
-			auto tmp = ps.size();
-			ar << tmp;
-			for (auto& p: ps) {
-				auto& x = p.second;
-
-				// unit
-				ar << x.id;
-				ar << x.type->id;
-				ar << x.free_slots;			
-
+				// buildings
+				for (auto& b: x.builds) {
+					cerr << "save building type id = " << b.type->id << endl;
+					// build
+					ar << b.type->id;
+					ar << b.free_slots;	
+				}
+				
 				// location
 				auto cr = env.get_coords(env.get_terr(x));
 				ar << cr;
@@ -248,38 +237,26 @@ namespace col {
 				auto key = x.id;
 				auto p = ps.emplace(key, std::move(x)).first;
 				
+				auto& col = (*p).second;
+				
+				cerr << "loaded colony name = " << col.name << endl;
+				
+				// buildings
+				for (auto& b: col.builds) {
+					auto build_type_id = read<BuildType::Id>(ar);
+					cerr << "load building type id = " << build_type_id << endl;
+
+					b.type = & env.get<BuildType>( build_type_id );
+					ar >> b.free_slots;	
+				}
+				
+				
 				// location
 				env.move_in(env.ref_terr(read<Coords>(ar)), (*p).second);
 
 			}
 		}
 
-		
-		
-		// builds
-		cerr << "load builds" << endl;
-		{
-			auto& ps = env.get_cont<Build>();
-			size_t tmp;
-			ar >> tmp;
-			for (int i=0; i<tmp; ++i) {
-				
-				Build x;
-				ar >> x.id;
-				x.type = & env.get<BuildType>( read<BuildType::Id>(ar) );
-				ar >> x.free_slots;	
-				
-				auto key = x.id;
-				ps.emplace(key, std::move(x));
-				
-				// location
-				Coords cr;
-				ar >> cr;
-				//env.move_in(, x);
-
-			}
-		}
-		
 		
 		// units
 		cerr << "load units" << endl;

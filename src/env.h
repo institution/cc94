@@ -26,7 +26,7 @@ namespace col{
 	
 	using Terrs = boost::multi_array<Terr, 2>;	
 	using Units = unordered_map<Unit::Id, Unit>;
-	using Builds = unordered_map<Build::Id, Build>;
+	//using Builds = unordered_map<Build::Id, Build>;
 	using Colonies = unordered_map<Colony::Id, Colony>;	
 	using Players = unordered_map<Player::Id, Player>;
 		
@@ -56,7 +56,7 @@ namespace col{
 		// state		
 		Players players;
 		Units units;
-		Builds builds;
+		//Builds builds;
 		Colonies colonies;
 		Coord w, h;
 		Terrs terrs;
@@ -278,20 +278,7 @@ namespace col{
 			loc.colony = nullptr;
 			obj.place = nullptr;
 		}
-		
-		// colony - build
-		void move_in(Colony &loc, Build &obj) {
-			loc.builds.push_back(&obj);
-			obj.place = &loc;
-		}
-		
-		void move_out(Colony &loc, Build &obj) {
-			auto& xs = loc.builds;
-			xs.erase(remove(xs.begin(), xs.end(), &obj), xs.end());
-			obj.place = nullptr;
-		}
-		
-		
+				
 		/*
 		void move_in(Terr const& loc, Build const& obj) {
 			 obj.place = &loc;
@@ -374,6 +361,10 @@ namespace col{
 		}
 		
 		Terr const& get_terr(Coords const& z) const {
+			return terrs(z);
+		}
+		
+		Terr & get_terr(Coords const& z) {
 			return terrs(z);
 		}
 		
@@ -633,6 +624,14 @@ namespace col{
 			
 		}
 		
+		void burn_colony(Terr & t) {
+			assert(t.has_colony());
+			
+			auto& col = t.get_colony();
+			move_out(t, col);
+			auto id = col.id;
+			destroy<Colony>(id);			
+		}
 		
 		bool colonize(Unit &u, string const& name) {
 			
@@ -644,6 +643,33 @@ namespace col{
 				// create colony
 				auto& c = create<Colony>(name);
 				move_in(t, c);
+								
+				BuildType::Id const TREE_1 = 45;
+				BuildType::Id const TREE_2 = 44;
+				BuildType::Id const TREE_3 = 43;
+				BuildType::Id const COAST = 46;
+				BuildType::Id const CARPENTERS_SHOP = 36;
+				BuildType::Id const FENCE = 17;
+				BuildType::Id const CHURCH = 38;
+				BuildType::Id const TOWN_HALL = 10;
+				
+				colony_construct(c, CARPENTERS_SHOP, 0);
+				colony_construct(c, TREE_1, 1);
+				colony_construct(c, TREE_3, 2);
+				colony_construct(c, TREE_1, 3);
+				colony_construct(c, TREE_1, 4);
+				
+				colony_construct(c, TREE_1, 5);
+				colony_construct(c, TREE_1, 6);
+				colony_construct(c, TREE_1, 7);
+				colony_construct(c, TREE_1, 8);
+				colony_construct(c, TREE_2, 9);
+				
+				colony_construct(c, TREE_2, 10);
+				colony_construct(c, TREE_2, 11);
+				colony_construct(c, TOWN_HALL, 12);
+				colony_construct(c, COAST, 13);
+				colony_construct(c, FENCE, 14);
 				
 				// move unit into colony?
 				// TODO
@@ -655,6 +681,10 @@ namespace col{
 			}
 		}
 		
+		void colony_construct(Colony & colony, BuildType::Id type_id, int slot) {
+			auto& type = get<BuildType>(type_id);
+			colony.construct_building(type, slot);
+		}
 		
 		bool can_attack_move(Unit const& u, Dir::t const& dir) {
 			// square empty
@@ -844,11 +874,7 @@ namespace col{
 	template <>	inline Units& Env::get_cont<Unit>() {
 		return units;
 	}
-	
-	template <>	inline Builds& Env::get_cont<Build>() {
-		return builds;
-	}
-	
+		
 	template <>	inline Colonies& Env::get_cont<Colony>() {
 		return colonies;
 	}
@@ -872,11 +898,7 @@ namespace col{
 	template <>	inline Units const& Env::get_cont<Unit>() const {
 		return units;
 	}
-	
-	template <>	inline Builds const& Env::get_cont<Build>() const {
-		return builds;
-	}
-	
+		
 	template <>	inline Colonies const& Env::get_cont<Colony>() const {
 		return colonies;
 	}

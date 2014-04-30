@@ -163,8 +163,9 @@ namespace col {
 				put("create-player");
 				put("create-unit");
 				put("create-colony");
+				put("delete-colony");
 				put("set-biome");
-				put("add-phys");				
+				put("add-phys");
 				// orders				
 				put("build-colony");
 				put("plow-fields");
@@ -283,6 +284,22 @@ namespace col {
 						);
 						break;
 					}					
+				}				
+			}
+			else if (cmd == "delete-colony") {
+				switch (es.size()) {
+					default: 
+						put("Usage: delete-colony");
+						break;
+					case 1: 
+						auto &t = envgame.get_terr(sel);
+						if (t.has_colony()) {
+							envgame.burn_colony(t);
+						}
+						else {
+							put("there is no colony at selected location");
+						}
+						break;								
 				}				
 			}
 			else

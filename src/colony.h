@@ -17,9 +17,15 @@ namespace col {
 		Id id;
 		string name;
 		Storage storage;
-		vector<Unit*> units;
-		vector<Build*> builds;
 		
+		// vector<Unit*> units;
+		
+		array<Build,15> builds;
+		
+		Build& construct_building(BuildType const& type, int slot) {
+			builds.at(slot) = Build(type);
+			return builds[slot];
+		}		
 		
 		void add(Cargo const& c) {
 			auto key = c.item;
@@ -62,10 +68,14 @@ namespace col {
 		
 		
 		Colony(Id const& id, string const& name=""): 
-			Place(), Placeable(), 
+			Place(), 
+			Placeable(), 
 			id(id), 
-			name(name) 
+			name(name),
+			builds()
 		{}
+		
+		
 		
 		Colony() = default;
 		Colony(Colony &&) = default;

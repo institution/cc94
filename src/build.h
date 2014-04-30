@@ -31,25 +31,26 @@ namespace col{
 				
 	};
 	
-	struct Build: Workplace, Placeable {
-		using Id = uint32;
+	struct Build: Workplace {
 		
-		Id id;
 		BuildType const* type;
 		int8 free_slots;
 		
-		
-		Build(Id const& id, BuildType const& type): 
+		Build(BuildType const& type): 
 			Workplace(),
-			Placeable(),
-			id(id),	
 			type(&type), 
 			free_slots(3)
 		{}
 		
 		Build() = default;
 		Build(Build &&) = default;
-		Build(Build const&) = delete;  // remove
+		Build(Build const&) = default;
+		Build& operator=(Build const&) = default;
+		
+		
+		BuildType::Id get_type_id() const {
+			return type->id;
+		}
 		
 		// Workplace
 		

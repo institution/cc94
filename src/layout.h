@@ -14,7 +14,7 @@ namespace col{
 		static int const TERR_W = 16;
 		static int const TERR_H = 16;
 		
-		Box scr, bar, pan, map;
+		Box scr, bar, pan, map, city;
 
 		Layout(int const& w, int const& h) {
 
@@ -33,6 +33,11 @@ namespace col{
 			map = Box(
 				scr.pos[0], bar.end[1] + LINE,
 				scr.dim[0] - pan.dim[0] - LINE, scr.dim[1] - bar.dim[1] - LINE
+			);
+			
+			city = Box(
+				map.pos[0], map.pos[1],
+				199, 121
 			);
 		}
 
