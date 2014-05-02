@@ -139,13 +139,36 @@ TEST_CASE( "colony", "" ) {
 			REQUIRE(b.assign() == true);
 			u.set_work(b, Item::Coats);
 
-			c.add({Item::Furs, 3});
-			
-			env.turn();
+			SECTION("just enough") {
+				c.add({Item::Furs, 3});
 
-			REQUIRE(c.get(Item::Coats) == 3);
-			REQUIRE(c.get(Item::Furs) == 0);
-			REQUIRE(u.time_left == 0);
+				env.turn();
+
+				REQUIRE(c.get(Item::Coats) == 3);
+				REQUIRE(c.get(Item::Furs) == 0);
+				REQUIRE(u.time_left == 0);
+			}
+			
+			SECTION("not enough") {
+				c.add({Item::Furs, 1});
+
+				env.turn();
+
+				REQUIRE(c.get(Item::Coats) == 1);
+				REQUIRE(c.get(Item::Furs) == 0);
+				REQUIRE(u.time_left == 0);
+			}
+			
+			SECTION("more than enough") {
+				c.add({Item::Furs, 5});
+
+				env.turn();
+
+				REQUIRE(c.get(Item::Coats) == 3);
+				REQUIRE(c.get(Item::Furs) == 2);
+				REQUIRE(u.time_left == 0);
+			}
+			
 		}
 
 	}

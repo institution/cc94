@@ -48,7 +48,7 @@ namespace col{
 		
 		// Place
 		
-		PlaceType place_type() {
+		PlaceType::type place_type() {
 			return PlaceType::Terr;
 		}
 		
