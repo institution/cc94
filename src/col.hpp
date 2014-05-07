@@ -10,7 +10,6 @@
 #include <string>
 #include <map>
 #include <functional>
-#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <array>
@@ -74,6 +73,8 @@ namespace col{
 	using v2i = Vector2<int>;
 	using v2f = Vector2<float>;
 
+	//template <typename T>
+	//unique_ptr<T> make_unique()
 
 }
 

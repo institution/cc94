@@ -5,11 +5,11 @@
 
 namespace col {
 
-	
+
 	using Game = Env;
-	
+
 	struct Action {
-		
+
 		Player::Id pid;
 
 		Action(Player::Id const& pid) {
@@ -22,7 +22,7 @@ namespace col {
 		bool operator==(Action const& other) const {
 			if (typeid(this) == typeid(other)) {
 				// same type so can call unsafe_eq
-				return unsafe_eq(other);					
+				return unsafe_eq(other);
 			}
 			else {
 				return false;
@@ -30,117 +30,105 @@ namespace col {
 		}
 
 		virtual Action* copy() = 0;
-		virtual ostream& dump(ostream& out) = 0;
 
-		
+		virtual ostream& dump(ostream& out) const = 0;
+
 	};
 
-	
+	//struct BuildColony: Action {
+	// BuildRoad
+	// PlowFields
+	// ClearForest
+	// Assign
+	// Sell
+	// Load
+
+
 	struct OrderMove: Action {
 		Unit::Id uid;
 		Dir::t dir;
-		
-		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir): 
+
+		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
 			Action(pid),
 			uid(uid), dir(dir)
 		{}
-		
-	
+
+
 		bool unsafe_eq(Action const& a) const {
 			auto b = static_cast<OrderMove const&>(a);
-			return pid == a.pid and uid == b.uid and dir == b.dir;			
+			return pid == a.pid and uid == b.uid and dir == b.dir;
 		}
-		
+
 		Action* copy() {
 			return new OrderMove(*this);
 		}
-		
-		virtual ostream& dump(ostream& out) {
-			out << "OrderMove('" << pid << ")";
-		}
-		
+
 		void exec(Game &game) const {
 			game.order_move(
 				game.get<Unit>(uid),
 				dir
 			);
 		}
-		
+
+		virtual ostream& dump(ostream& out) const {
+			out << "OrderMove('" << pid << ")";
+		}
+
+
 	};
 
-	struct AttackMove: Action {
-		Unit::Id iid;
-		Dir::t dir;
-		AttackMove(Player::Id const& pid, Unit::Id const& iid, Dir::t const& dir): Action(pid) {
-			this->iid = iid;
-			this->dir = dir;
-		}
-		
-		bool unsafe_eq(Action const& a) const {
-			auto b = static_cast<AttackMove const&>(a);
-			return pid == a.pid and iid == b.iid and dir == b.dir;
-		}
-		
-		Action* copy() {
-			return new AttackMove(*this);
-		}
-		
-		virtual ostream& dump(ostream& out) {
-			out << "AttackMove('" << pid << ")";
-		}
-		
-		void exec(Game &game) const {
-			game.attack_move(pid, iid, dir);
-		}
-		
-	};
+	struct Ready: Action {
 
-	struct EndTurn: Action {
-		
-		EndTurn(Player::Id const& pid): Action(pid) {}
-		
+		Ready(Player::Id const& pid): Action(pid) {}
+
 		bool unsafe_eq(Action const& a) const {
-			auto b = static_cast<EndTurn const&>(a);
+			auto b = static_cast<Ready const&>(a);
 			return pid == a.pid;
 		}
-		
+
 		Action* copy() {
-			return new EndTurn(*this);
+			return new Ready(*this);
 		}
-		
-		virtual ostream& dump(ostream& out) {
-			out << "EndTurn('" << pid << ")";
-		}
-		
+
 		void exec(Game &game) const {
-			game.end_turn(pid);
+			game.ready(pid);
 		}
+
+		virtual ostream& dump(ostream& out) const {
+			out << "Ready('" << pid << ")";
+		}
+
 	};
-	
-	
+
+
 	struct Start: Action {
 		Start(Player::Id const& pid): Action(pid) {}
-		
+
 		void exec(Game &game) const {
-			
-		}		
+
+		}
 
 		bool unsafe_eq(Action const& a) const {
 			auto b = static_cast<Start const&>(a);
 			return pid == a.pid;
 		}
-		
+
 		Action* copy() {
 			return new Start(*this);
 		}
-		
-		virtual ostream& dump(ostream& out) {
+
+		virtual ostream& dump(ostream& out) const {
 			out << "Start('" << pid << "')";
 		}
-		
-	};	
 
-	
-	
+	};
+
+
+	inline
+	ostream& operator<<(ostream& o, Action const& a) {
+		a.dump(o);
+	}
+
+
 }
 #endif

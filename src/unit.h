@@ -125,7 +125,7 @@ namespace col{
 
 		Order::type order;
 		Workplace * workplace;
-		Item::type workitem;
+		Item workitem;
 		uint slot;
 
 		uint16 free_space;
@@ -141,7 +141,7 @@ namespace col{
 		// uint8 spec_id;
 		// int8 spec_lvl;
 
-		Unit& set_work(Workplace & place, Item::type const& item) {
+		Unit& set_work(Workplace & place, Item const& item) {
 			workplace = &place;
 			workitem = item;
 			return *this;
@@ -150,7 +150,7 @@ namespace col{
 		Unit& set_work() {
 			// clear work
 			workplace = nullptr;
-			workitem = Item::None;
+			workitem = ItemNone;
 			return *this;
 		}
 
@@ -164,7 +164,7 @@ namespace col{
 			time_left(0),
 			workplace(nullptr),
 			order(Order::Unknown),
-			workitem(Item::None),
+			workitem(ItemNone),
 			free_space(0)
 		{}
 
@@ -180,7 +180,7 @@ namespace col{
 			time_left(6),
 			workplace(nullptr),
 			order(Order::Unknown),
-			workitem(Item::None),
+			workitem(ItemNone),
 			free_space(0)
 		{}
 

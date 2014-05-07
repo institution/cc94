@@ -320,6 +320,8 @@ namespace col {
 		cerr << "load misc" << endl;
 		// turn info
 		ar >> env.turn_no;
+		// next id
+		ar >> env.next_id;
 
 		// current player
 		//l += write(f, env.current_player_id);
@@ -327,6 +329,8 @@ namespace col {
 	}
 
 
+
+	
 }
 
 #endif

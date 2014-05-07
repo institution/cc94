@@ -474,7 +474,6 @@ namespace col {
 				if (unit.workplace->place_type() == PlaceType::Build) {
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
 
-
 					auto& pix = pixs[i];
 					render(unit, pix + v2i(num_workers.at(i)*5 + 10, 15));
 					num_workers.at(i) += 1;
@@ -485,6 +484,7 @@ namespace col {
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
 
 					render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * 16);
+					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * 16);
 
 				}
 			}

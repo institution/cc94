@@ -47,30 +47,30 @@ namespace col {
 		return Phys::None;
 	}
 	
-	unordered_map<Item::type, string> ITEM_NAMES {
-		{Item::Food, "food"},
-		{Item::Sugar, "sugar"},
-		{Item::Tobacco, "tobacco"},
-		{Item::Cotton, "cotton"},
-		{Item::Furs, "furs"},
-		{Item::Lumber, "lumber"},
-		{Item::Ore, "ore"},
-		{Item::Silver, "silver"},
-		{Item::Horses, "horses"},
-		{Item::Rum, "rum"},
-		{Item::Cigars, "cigars"},
-		{Item::Cloth, "cloth"},
-		{Item::Coats, "coats"},
-		{Item::TradeGoods, "tradegoods"},
-		{Item::Tools, "tools"},
-		{Item::Muskets, "muskets"},
-		{Item::Hammers, "hammers"},
-		{Item::Cross, "cross"},		
-		{Item::Fish, "fish"},
-		{Item::Bell, "bell"}
+	unordered_map<Item, string> ITEM_NAMES {
+		{ItemFood, "food"},
+		{ItemSugar, "sugar"},
+		{ItemTobacco, "tobacco"},
+		{ItemCotton, "cotton"},
+		{ItemFurs, "furs"},
+		{ItemLumber, "lumber"},
+		{ItemOre, "ore"},
+		{ItemSilver, "silver"},
+		{ItemHorses, "horses"},
+		{ItemRum, "rum"},
+		{ItemCigars, "cigars"},
+		{ItemCloth, "cloth"},
+		{ItemCoats, "coats"},
+		{ItemTradeGoods, "tradegoods"},
+		{ItemTools, "tools"},
+		{ItemMuskets, "muskets"},
+		{ItemHammers, "hammers"},
+		{ItemCross, "cross"},		
+		{ItemFish, "fish"},
+		{ItemBell, "bell"}
 	};
 
-	Item::type get_item_by_name(string const& name) {
+	Item get_item_by_name(string const& name) {
 		for (auto& item: ITEM_NAMES) {
 			if (item.second == name) {
 				return item.first;

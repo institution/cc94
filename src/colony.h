@@ -55,7 +55,7 @@ namespace col {
 			}
 		}
 
-		uint16 get(Item::type const& item) {
+		uint16 get(Item const& item) {
 			auto key = item;
 			if (storage.count(key)) {
 				return storage.at(key);

@@ -1,18 +1,36 @@
 #include "envgame.h"
 
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+
 namespace col {
-	
-	
-	
+
+
+
 	void copy(EnvGame &trg, EnvGame const& src)
 	{
-		assert(0);
+		trg.clear();
+
 		trg.uts = src.uts;
-		
-		std::stringstream buf;
-		//io::write<EnvGame>(buf, src);		
-		//io::read<EnvGame>(trg, buf);		
+		trg.tts = src.tts;
+		trg.bts = src.bts;
+
+
+		std::stringstream f;
+
+		{
+			boost::archive::text_oarchive ar(f);
+			ar << src;
+		}
+
+		{
+			boost::archive::text_iarchive ar(f);
+			ar >> trg;
+		}
+
 	}
-	
-	
+
+
 }

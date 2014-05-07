@@ -7,69 +7,80 @@
 #include "action.h"
 
 namespace col{
-	
+
 	using std::unique_ptr;
-	
+
 	struct EnvGame: Env {
-		// add concept of "current player"
 		// add player score
-		// extract actions and create_random_action function
-		
-		
-		Player::Id current_player_id;
-		
-		EnvGame(): Env() {
-			current_player_id = -1;
+		// extract actions
+		// create_random_action function
+
+
+
+
+		bool verbose;
+
+
+		EnvGame(bool verbose = false): Env(), verbose(verbose) {
+
 		}
-				
-		int32 get_result(Player::Id pid) {
-			
-		}
-		
+
+
 		void exec(Action const& a) {
+			assert(a.pid == get_current_player().id);
+			if (verbose) {
+				cerr << "Exec " << a << endl;
+			}
 			a.exec(*this);
 		}
-		
-		
+
+
+		// Action create_random_action
+
+		uint32 get_result(Player::Id pid) {
+
+			// num of units
+			uint32 score = 0;
+			for (auto& p: units) {
+				if (p.second.get_player().id == pid) {
+					score += 1;
+				}
+			}
+
+
+		}
+
+
+		unique_ptr<Action> create_random_action() {
+			// OrderMove or Ready
+
+			for (auto& it: units) {
+				auto& u = it.second;
+				if (u.time_left) {
+
+					return unique_ptr<Action>(new OrderMove(get_current_player().id, u.id, roll::roll2(0, 8)));
+
+				}
+			}
+			return unique_ptr<Action>(new Ready(get_current_player().id));
+
+		}
 	};
-	
+
 	/*
 	void add_player() {
 		auto& id = next_id<Player>();
 		auto& p = create<Player>(id, );
 	}*/
-	
-	void copy(EnvGame &trg, EnvGame const& src);
-	
-	
-		/*
-	unique_ptr<Action> create_random_action() {		
-		//AttackMove or EndTurn
-			
-		
-		if (!game.end) {			
-			int i = roll::roll(0, game.free);
-						
-			int j = 0;
-			while (j < 9) {
-				if (game.bs[j] == '.') {
-					//cout << "i = "<< i << endl;
-					if (i == 0) break;
-					--i;
-				}
-				++j;
-			}			
-			return unique_ptr<Action>(new Move(game.player, j));
-			
-		}
-		else {
-			return unique_ptr<Action>(nullptr); 
-		}
-		
-	}
-		 */
 
-	
+	void copy(EnvGame &trg, EnvGame const& src);
+
+
+
+
+
+
+
 }
 
 #endif

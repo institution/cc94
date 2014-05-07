@@ -59,7 +59,7 @@ namespace col{
 		}
 
 
-		uint16 get_yield(Item::type const& item, bool const& is_expert) const {
+		uint16 get_yield(Item const& item, bool const& is_expert) const {
 			return 3;
 		}
 

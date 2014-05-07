@@ -1,5 +1,6 @@
 #include "console.h"
 
+
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -7,7 +8,6 @@
 #include "view_base.h"
 
 namespace col {
-
 	using boost::str;
 
 	Layout const ly(320, 200);
@@ -226,15 +226,28 @@ namespace col {
 				envgame.turn();
 				put(str(format("Turn %||") % envgame.turn_no));
 			}
-			else
-			if (es[0] == "ready") {
+			else if (cmd == "ai") {
+				// show preffered move for player id = 1
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: endturn [player_id]\n");
+						output.push_back("Usage: ai\n");
+						break;
+					}
+					case 1: {
+						//envgame
+						run_ai();
+						break;
+					}
+				}
+			}
+			else if (cmd == "ready") {
+				switch (es.size()) {
+					default: {
+						output.push_back("Usage: ready <player_id>\n");
 						break;
 					}
 					case 2: {
-						envgame.exec(EndTurn(std::stoi(es.at(1))));
+						envgame.exec(Ready(std::stoi(es.at(1))));
 						break;
 					}
 				}

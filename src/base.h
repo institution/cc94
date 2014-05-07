@@ -2,6 +2,7 @@
 #define BASE2_H
 
 #include "col.hpp"
+#include "enum.hpp"
 #include <array>
 
 namespace col {
@@ -119,31 +120,35 @@ namespace col {
 
 
 
-	namespace Item{
-		using type = uint8;
-		type const
-			None = 0,
-			Food = 23,
-			Sugar = 24,
-			Tobacco = 25,
-			Cotton = 26,
-			Furs = 27,
-			Lumber = 28,
-			Ore = 29,
-			Silver = 30,
-			Horses = 31,
-			Rum = 32,
-			Cigars = 33,
-			Cloth = 34,
-			Coats = 35,
-			TradeGoods = 36,
-			Tools = 37 ,
-			Muskets = 38,
-			Hammers = 55,
-			Cross = 57,
-			Fish = 58,
-			Bell = 63;
-	}
+	struct Item: Enum<> {
+		using Enum<>::Enum;
+	};
+
+	constexpr
+	Item const
+		ItemNone{0},
+		ItemFood{23},
+		ItemSugar{24},
+		ItemTobacco{25},
+		ItemCotton{26},
+		ItemFurs{27},
+		ItemLumber{28},
+		ItemOre{29},
+		ItemSilver{30},
+		ItemHorses{31},
+		ItemRum{32},
+		ItemCigars{33},
+		ItemCloth{34},
+		ItemCoats{35},
+		ItemTradeGoods{36},
+		ItemTools{37 },
+		ItemMuskets{38},
+		ItemHammers{55},
+		ItemCross{57},
+		ItemFish{58},
+		ItemBell{63};
+
+
 
 
 
@@ -168,7 +173,7 @@ namespace col {
 	struct Workplace{
 		virtual bool assign() = 0;
 		virtual bool leave() = 0;
-		virtual uint16 get_yield(Item::type const& item, bool const& is_expert) const = 0;
+		virtual uint16 get_yield(Item const& item, bool const& is_expert) const = 0;
 		virtual PlaceType::type place_type() = 0;
 	};
 
@@ -182,10 +187,10 @@ namespace col {
 
 
 	struct Cargo {
-		Item::type item;
+		Item item;
 		uint16 amount;
 
-		Cargo(Item::type const& item, uint16 const& amount):
+		Cargo(Item const& item, uint16 const& amount):
 			item(item), amount(amount)
 		{}
 
@@ -202,6 +207,18 @@ namespace col {
 	}
 
 
+}
+
+
+namespace std {
+	template <>
+	struct hash<col::Item>
+	{
+		size_t operator()(col::Item const& x) const
+		{
+			return hash<int>()(x.val);
+		}
+	};
 }
 
 #endif

@@ -1,7 +1,7 @@
 name,id,space
-Stockade,1,0
-Fort,2,0
-Fortress,3,0
+Stockade,1,99
+Fort,2,99
+Fortress,3,99
 Armory,4,3
 Magazine,5,3
 Arsenal,6,3

@@ -48,24 +48,68 @@ namespace col{
 
 	struct Env{
 
-		// mod
+		// const
 		shared_ptr<TerrTypes> tts;
 		shared_ptr<BuildTypes> bts;
 		shared_ptr<UnitTypes> uts;
 
 		// state
 		Players players;
-		Units units;
-		//Builds builds;
 		Colonies colonies;
+		Units units;
+
+		Players::iterator p_current_player;
+
+		// map state
 		Coord w, h;
 		Terrs terrs;
+
+		// global state
 		uint32 turn_no;
 		uint32 next_id;
 
-		// misc
+		// misc non game state
 		uint32 mod;
 		boost::function<int (int range)> roll;
+
+
+
+		void clear() {
+			units.clear();
+			colonies.clear();
+			players.clear();
+
+			resize({0,0});
+
+			next_id = 0;
+			turn_no = 0;
+
+			p_current_player = players.begin();
+
+			mod++;
+		}
+
+
+
+		Player & get_current_player() {
+
+			return (*p_current_player).second;
+		}
+
+		void ready(Player const& p) {
+
+			assert(get_current_player().id == p.id);
+
+			if (p_current_player != players.end()) {
+				p_current_player++;
+			}
+			else {
+				turn();  // TURN !!!
+				p_current_player == players.begin();
+			}
+
+		}
+
 
 
 
@@ -85,6 +129,8 @@ namespace col{
 			uts = make_shared<UnitTypes>();
 
 			set_random_gen(roll::roll1);
+
+			p_current_player = players.end();
 		}
 
 		Env& set_random_gen(boost::function<int (int range)> const& func) {
@@ -183,17 +229,17 @@ namespace col{
 			++mod;
 		}
 
-		Item::type get_material(Item::type const& item) {
+		Item get_material(Item const& item) {
 			switch (item) {
-				case Item::Rum: return Item::Sugar;
-				case Item::Cigars: return Item::Tobacco;
-				case Item::Cloth: return Item::Cotton;
-				case Item::Coats: return Item::Furs;
-				case Item::Hammers: return Item::Lumber;
-				case Item::Tools: return Item::Ore;
-				case Item::Muskets: return Item::Tools;
+				case ItemRum: return ItemSugar;
+				case ItemCigars: return ItemTobacco;
+				case ItemCloth: return ItemCotton;
+				case ItemCoats: return ItemFurs;
+				case ItemHammers: return ItemLumber;
+				case ItemTools: return ItemOre;
+				case ItemMuskets: return ItemTools;
 			}
-			return Item::None;
+			return ItemNone;
 		}
 
 
@@ -230,7 +276,7 @@ namespace col{
 				auto const& needitem = get_material(u.workitem);
 
 				uint16 prod;
-				if (needitem != Item::None) {
+				if (needitem != ItemNone) {
 					prod = std::min(yield, c.get(needitem));
 					c.sub({needitem, prod});
 				}
@@ -438,7 +484,7 @@ namespace col{
 
 
 	/*
-		void produce(Unit const& unit, Item::type const& item, Dir::t const& dir) {
+		void produce(Unit const& unit, Item const& item, Dir::t const& dir) {
 
 
 		}
@@ -829,7 +875,7 @@ namespace col{
 			return dir4vec(get_coords(to) - get_coords(from));
 		}
 
-		bool assign(int num, Unit & unit, Item::type item) {
+		bool assign(int num, Unit & unit, Item item) {
 			auto & terr = get_terr(unit);
 
 			if (num < 16) {
