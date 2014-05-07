@@ -27,7 +27,6 @@ namespace col{
 
 
 		void exec(Action const& a) {
-			assert(a.pid == get_current_player().id);
 			if (verbose) {
 				cerr << "Exec " << a << endl;
 			}
@@ -37,34 +36,67 @@ namespace col{
 
 		// Action create_random_action
 
-		uint32 get_result(Player::Id pid) {
+		float get_result(Player::Id pid) {
 
-			// num of units
-			uint32 score = 0;
+			// % of units
+			float score = 0, total = 0;
 			for (auto& p: units) {
 				if (p.second.get_player().id == pid) {
 					score += 1;
 				}
+				total += 1;
 			}
 
+			if (total) {
+				return score/total;
+			}
+			else {
+				return score;
+			}
 
 		}
 
 
-		unique_ptr<Action> create_random_action() {
+		unique_ptr<Action> create_random_action(Player::Id const& pid) {
 			// OrderMove or Ready
+
+			if (!in_progress()) {
+				return unique_ptr<Action>(nullptr);
+			}
 
 			for (auto& it: units) {
 				auto& u = it.second;
-				if (u.time_left) {
+				if (u.get_player().id == pid and u.time_left and u.order != Order::Space) {
+					auto dir = roll::roll2(0, 8);
+					if (dir != Dir::S) {
+						auto dest_pos = get_coords(u) + vec4dir(dir);
+						if (in_bounds(dest_pos)) {
+							auto& dest = get_terr(dest_pos);
 
-					return unique_ptr<Action>(new OrderMove(get_current_player().id, u.id, roll::roll2(0, 8)));
-
+							if (has_defender(dest) and get_defender(dest).get_player().id != pid) {
+								return unique_ptr<Action>(new OrderAttack(pid, u.id, dir));
+							}
+							else {
+								return unique_ptr<Action>(new OrderMove(pid, u.id, dir));
+							}
+						}
+						else {
+							u.order = Order::Space;
+						}
+					}
+					else {
+						u.order = Order::Space;
+					}
 				}
 			}
-			return unique_ptr<Action>(new Ready(get_current_player().id));
+			return unique_ptr<Action>(new Ready(pid));
 
 		}
+
+		unique_ptr<Action> create_random_action() {
+			return create_random_action(get_current_player().id);
+		}
+
 	};
 
 	/*

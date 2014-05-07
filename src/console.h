@@ -72,14 +72,18 @@ namespace col {
 		}
 
 		void run_ai() {
-			for (int i=0; i<1; ++i) {
+			cerr << "<<< AI --------------- >>>" << endl;
+
+
+			for (int i=0; i<20; ++i) {
 
 				//cout << "dumping tree before step: " << endl;
 				//dump(root, 8);
 				//cout << endl;
 
 				copy(game_copy, envgame);
-
+				game_copy.verbose = 1;
+				game_copy.turn_limit = game_copy.turn_no + 10; // look ahead 10 turns
 				//cout << "after reset:" << endl;
 				//dump(gw.game);
 
@@ -94,7 +98,7 @@ namespace col {
 			}
 
 			cout << "dumping tree: " << endl;
-			dump(root, 2);
+			dump(root, 4);
 
 			// select preferred move
 			NodeType *node = mcts::preferred_node(root);

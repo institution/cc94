@@ -12,15 +12,15 @@ namespace col {
 
 		Player::Id pid;
 
-		Action(Player::Id const& pid) {
-			this->pid = pid;
+		Action(Player::Id const& pid): pid(pid) {
+
 		}
 
 		virtual void exec(Game &game) const = 0;
 		virtual bool unsafe_eq(Action const& a) const = 0;
 
 		bool operator==(Action const& other) const {
-			if (typeid(this) == typeid(other)) {
+			if (typeid(*this) == typeid(other)) {
 				// same type so can call unsafe_eq
 				return unsafe_eq(other);
 			}
@@ -71,7 +71,41 @@ namespace col {
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "OrderMove('" << pid << ")";
+			out << "OrderMove("<<","<<pid<<","<<uid<<","<<int(dir)<<")";
+		}
+
+
+	};
+
+
+	struct OrderAttack: Action {
+		Unit::Id uid;
+		Dir::t dir;
+
+		OrderAttack(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
+			Action(pid),
+			uid(uid), dir(dir)
+		{}
+
+
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<OrderAttack const&>(a);
+			return pid == a.pid and uid == b.uid and dir == b.dir;
+		}
+
+		Action* copy() {
+			return new OrderAttack(*this);
+		}
+
+		void exec(Game &game) const {
+			game.order_move(
+				game.get<Unit>(uid),
+				dir
+			);
+		}
+
+		virtual ostream& dump(ostream& out) const {
+			out << "OrderAttack("<<","<<pid<<","<<uid<<","<<int(dir)<<")";
 		}
 
 
@@ -91,11 +125,11 @@ namespace col {
 		}
 
 		void exec(Game &game) const {
-			game.ready(pid);
+			game.ready(game.get<Player>(pid));
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "Ready('" << pid << ")";
+			out << "Ready("<<pid<<")";
 		}
 
 	};
@@ -105,7 +139,7 @@ namespace col {
 		Start(Player::Id const& pid): Action(pid) {}
 
 		void exec(Game &game) const {
-
+			game.start(game.get<Player>(pid));
 		}
 
 		bool unsafe_eq(Action const& a) const {
@@ -118,7 +152,7 @@ namespace col {
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "Start('" << pid << "')";
+			out << "Start("<<pid<<")";
 		}
 
 	};

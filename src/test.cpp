@@ -8,7 +8,9 @@
 
 
 #include "env.h"
+#include "envgame.h"
 #include "serialize.hpp"
+#include "action.h"
 
 
 using namespace col;
@@ -99,14 +101,17 @@ TEST_CASE( "turn sequence", "" ) {
 
 	auto& p1 = env.create<Player>();
 
+	env.start(p1);
+
 	SECTION("1p") {
 		auto t = env.turn_no;
 
 		REQUIRE(env.get_current_player().id == p1.id);
 		env.ready(p1);
+		REQUIRE(env.get_current_player().id == p1.id);
 		REQUIRE(env.turn_no == t + 1);
 
-		REQUIRE(env.get_current_player().id == p1.id);
+
 	}
 
 	auto& p2 = env.create<Player>();
@@ -116,13 +121,9 @@ TEST_CASE( "turn sequence", "" ) {
 
 		REQUIRE(env.get_current_player().id == p1.id);
 		env.ready(p1);
-		REQUIRE(env.turn_no == t);
-
-		REQUIRE(env.get_current_player().id == p2.id);
 		env.ready(p2);
-		REQUIRE(env.turn_no == t+1);
-
 		REQUIRE(env.get_current_player().id == p1.id);
+		REQUIRE(env.turn_no == t+1);
 
 	}
 
@@ -215,6 +216,45 @@ TEST_CASE( "colony", "" ) {
 }
 
 
+
+TEST_CASE( "scoring", "" ) {
+
+	EnvGame env;
+
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(Biome::Plains));
+	env.set_terr({1,0}, Terr(Biome::Plains));
+
+	auto& p1 = env.create<Player>();
+	auto& p2 = env.create<Player>();
+
+	auto& ut = env.create<UnitType>();
+
+	REQUIRE(env.get_result(p1.id) == 0.0f);
+	REQUIRE(env.get_result(p2.id) == 0.0f);
+
+
+	auto& u1 = env.create<Unit>(ut, p1);
+
+	REQUIRE(env.get_result(p1.id) == 1.0f);
+	REQUIRE(env.get_result(p2.id) == 0.0f);
+
+	auto& u2 = env.create<Unit>(ut, p2);
+
+	REQUIRE(env.get_result(p1.id) == 0.5f);
+	REQUIRE(env.get_result(p2.id) == 0.5f);
+
+}
+
+
+TEST_CASE( "actions equality", "" ) {
+
+	REQUIRE(OrderMove(1,1,1) == OrderMove(1,1,1));
+	REQUIRE(!(OrderMove(1,1,1) == OrderAttack(1,1,1)));
+	REQUIRE(!(OrderMove(1,1,1) == OrderMove(1,1,2)));
+
+}
+
 TEST_CASE( "serialize", "" ) {
 
 	Env env;
@@ -230,20 +270,44 @@ TEST_CASE( "serialize", "" ) {
 
 	env.move_in(env.ref_terr({0,0}), u);
 
+	SECTION("save/load unstarted game") {
 
-	std::stringstream stream;
+		std::stringstream stream;
 
-	{
-		boost::archive::text_oarchive oa(stream);
-		oa << env;
-    }
+		{
+			boost::archive::text_oarchive oa(stream);
+			oa << env;
+		}
 
-	Env env2;
-	env2.uts = env.uts;
-	{
-		boost::archive::text_iarchive ia(stream);
-		ia >> env2;
-    }
+		Env env2;
+		env2.uts = env.uts;
+		{
+			boost::archive::text_iarchive ia(stream);
+			ia >> env2;
+		}
+
+	}
+
+	SECTION("save/load started game") {
+
+		env.start(u.get_player());
+
+		std::stringstream stream;
+
+		{
+			boost::archive::text_oarchive oa(stream);
+			oa << env;
+		}
+
+		Env env2;
+		env2.uts = env.uts;
+		{
+			boost::archive::text_iarchive ia(stream);
+			ia >> env2;
+		}
+
+	}
+
 
 	/*
 	REQUIRE(env.get_coords(u) == Coords(0,0));

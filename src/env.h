@@ -45,7 +45,6 @@ namespace col{
 		return *(t.units)[0];
 	}
 
-
 	struct Env{
 
 		// const
@@ -67,6 +66,8 @@ namespace col{
 		// global state
 		uint32 turn_no;
 		uint32 next_id;
+		uint8 state; // runlevels: 0 - prepare, 1 - playing, 2 - ended
+		uint32 turn_limit; // nonzero => end game when turn_no >= turn_limit
 
 		// misc non game state
 		uint32 mod;
@@ -83,8 +84,9 @@ namespace col{
 
 			next_id = 0;
 			turn_no = 0;
+			state = 0;
 
-			p_current_player = players.begin();
+			p_current_player = players.end();
 
 			mod++;
 		}
@@ -92,20 +94,40 @@ namespace col{
 
 
 		Player & get_current_player() {
-
 			return (*p_current_player).second;
+		}
+
+		Player const& get_current_player() const {
+			return (*p_current_player).second;
+		}
+
+
+		Env& set_current_player_id(Player::Id const& pid) {
+			p_current_player = players.find(pid);
+
+			if (p_current_player == players.end()) {
+				throw Error("unexpected error");
+			}
+
+			return *this;
+
+		}
+
+
+		void start(Player const& p) {
+			set_current_player_id(p.id);
+			state = 1; // game started
 		}
 
 		void ready(Player const& p) {
 
 			assert(get_current_player().id == p.id);
 
-			if (p_current_player != players.end()) {
-				p_current_player++;
-			}
-			else {
+			++p_current_player;
+
+			if (p_current_player == players.end()) {
 				turn();  // TURN !!!
-				p_current_player == players.begin();
+				p_current_player = players.begin();
 			}
 
 		}
@@ -115,22 +137,16 @@ namespace col{
 
 		Env(): terrs(Coords(0,0), boost::fortran_storage_order()) {
 
-			next_id = 0;
-			mod = 0;
-			turn_no = 0;
-			w = h = 0;
-
-			units.reserve(10);
-
-
-
 			tts = make_shared<TerrTypes>();
 			bts = make_shared<BuildTypes>();
 			uts = make_shared<UnitTypes>();
 
 			set_random_gen(roll::roll1);
 
-			p_current_player = players.end();
+			turn_limit = 0;
+
+			clear();
+
 		}
 
 		Env& set_random_gen(boost::function<int (int range)> const& func) {
@@ -215,7 +231,9 @@ namespace col{
 
 
 
-
+		bool in_progress() const {
+			return state == 1;
+		}
 
 		void turn() {
 			// time progress
@@ -223,9 +241,14 @@ namespace col{
 
 			// all units - new movment, work
 			for (auto& item: units) {
-				cerr << "tuer: " << item.second << endl;
+				// cerr << "turn calc for: " << item.second << endl;
 				turn(item.second);
 			}
+
+			if (turn_no >= turn_limit) {
+				state = 2;
+			}
+
 			++mod;
 		}
 
@@ -267,6 +290,10 @@ namespace col{
 		void turn(Unit &u) {
 
 			u.time_left = 6;
+
+			if (u.order == Order::Space) {
+				u.order == Order::Unknown;
+			}
 
 			if (u.workplace != nullptr) {
 				auto& terr = ref_terr(u);
@@ -588,7 +615,9 @@ namespace col{
 			return get_terr(pos).has_units();
 		}
 
-
+		bool has_defender(Terr const& terr) const {
+			return terr.has_units();
+		}
 
 		Unit const& get_defender(Terr const& t) const {
 			return get_defender_impl<Unit const&>(*this, t);
@@ -611,6 +640,10 @@ namespace col{
 			return t.units[0];
 		}
 
+		//Terr & get_dest(Unit &u, Dir) {
+		//	return get_terr(get_coords(u) + vec4dir(dir));
+		//}
+
 
 		bool order_attack(Unit & attacker, Dir::t const& dir) {
 			/* Order attack
@@ -630,6 +663,10 @@ namespace col{
 
 			if (attacker.get_attack() == 0) {
 				throw Error("this unit has no offensive capability");
+			}
+
+			if (!has_defender(dest)) {
+				throw Error("no-one to attack");
 			}
 
 			auto& defender = get_defender(dest);

@@ -170,18 +170,18 @@ namespace col {
 				put("clear-forest");
 				put("build-road");
 				put("move");
+				put("attack");
 				put("assign");
 				put("leave");
-				// gameplay
+				// game turn sequence
+				put("start");
 				put("ready");
 				put("turn");
 				// misc
+				put("score");
 				put("cls");
 				put("enter");
 				put("exit");
-
-
-
 			}
 			else if (cmd == "add-phys") {
 				switch (es.size()) {
@@ -203,6 +203,17 @@ namespace col {
 			}
 			else if (cmd == "cls") {
 				output.clear();
+			}
+			else if (cmd == "score") {
+				switch (es.size()) {
+					default:
+						put("Usage: score <player_id>");
+						break;
+					case 2:
+						auto f = envgame.get_result(stoi(es.at(1)));
+						put(to_string(f));
+						break;
+				}
 			}
 			else if (cmd == "set-biome") {
 				switch (es.size()) {
@@ -240,10 +251,22 @@ namespace col {
 					}
 				}
 			}
+			else if (cmd == "start") {
+				switch (es.size()) {
+					default: {
+						output.push_back("Usage: start <player_id>\n");
+						break;
+					}
+					case 2: {
+						envgame.exec(Start(std::stoi(es.at(1))));
+						break;
+					}
+				}
+			}
 			else if (cmd == "ready") {
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: ready <player_id>\n");
+						output.push_back("Usage: ready [player_id]\n");
 						break;
 					}
 					case 2: {
@@ -485,6 +508,29 @@ namespace col {
 						break;
 				}
 			}
+			else if (cmd == "attack") {
+				switch (es.size()) {
+					default:
+						put("Usage: attack <dx> <dy>");
+						break;
+					case 3:
+						if (envgame.has_defender(sel)) {
+							envgame.order_attack(
+								envgame.get_defender(envgame.get_terr(sel)),
+								dir4vec(
+									Coords(
+										stoi(es.at(1)), // dx
+										stoi(es.at(2))  // dy
+									)
+								)
+							);
+						}
+						else {
+							put("no unit selected");
+						}
+						break;
+				}
+			}
 			else
 			if (es.at(0) == "enter") {
 				switch (es.size()) {
@@ -531,11 +577,11 @@ namespace col {
 
 		}
 		else {
-			cout << char(code);
+			//cout << char(code);
 			buffer.push_back(char(code));
 		}
 
-		cout.flush();
+		//cout.flush();
 		++mod;
 	}
 

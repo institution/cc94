@@ -821,7 +821,7 @@ namespace col {
 			}
 			else {
 
-				cerr << "rend unit at " << pix << endl;
+				//cerr << "rend unit at " << pix << endl;
 				// render unit in field
 				render_shield(win, pix[0], pix[1], player.get_color());
 				render_sprite(win, pix[0], pix[1], res(ICON, unit.get_type_id()));

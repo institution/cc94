@@ -180,10 +180,17 @@ namespace col {
 		ar << env.turn_no;
 		// next id
 		ar << next_id;
-
-
+		// state
+		ar << state;
 		// current player
-		//l += write(f, env.current_player_id);
+		if (env.state == 1) {
+			ar << env.get_current_player().id;
+		}
+		else {
+			write<Player::Id>(ar, -1);
+		}
+
+
 
 	}
 
@@ -322,6 +329,15 @@ namespace col {
 		ar >> env.turn_no;
 		// next id
 		ar >> env.next_id;
+		// state
+		ar >> env.state;
+		// current player
+		if (env.state == 1) {
+			env.set_current_player_id(read<Player::Id>(ar));
+		}
+		else {
+			read<Player::Id>(ar);
+		}
 
 		// current player
 		//l += write(f, env.current_player_id);
@@ -330,7 +346,7 @@ namespace col {
 
 
 
-	
+
 }
 
 #endif
