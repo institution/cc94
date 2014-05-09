@@ -2,7 +2,7 @@
 *.pyc
 /main
 /core
-COLONIZE
+COLONIZE*
 nbproject
 
 # Dependencies
