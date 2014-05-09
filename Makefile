@@ -18,6 +18,7 @@ LLOPTS:=-lboost_serialization -lsfml-graphics -lsfml-window -lsfml-system -lsfml
 
 
 # list of compiled source b/fname.cpp.obj
+$(shell mkdir -p b)
 OBJS:=$(shell find src -name '*.cpp')
 OBJS:=$(filter-out $(IGNORE_SRC),$(OBJS))
 OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)

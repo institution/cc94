@@ -12,7 +12,7 @@ import operator
 # PIL bugfix
 Image.isNumberType = lambda x: isinstance(x, (int,float))
 
-prefix = './'
+prefix = os.path.split(__file__)[0]
 
 def export_pallete(pal, dname):
 	img = Image.new('P', (160,160), 0)
@@ -41,7 +41,13 @@ def read_pallete(data, dname):
 
 
 def get_dname(fname):
-	dname = prefix + '/' + fname.replace('.', '_')
+	""" Get destination file path
+	"""
+	#import pdb; pdb.set_trace();
+	
+	ddirname = os.path.basename(fname).replace('.', '_')
+	
+	dname = os.path.join(prefix, 'COLONIZE', ddirname)
 	os.makedirs(dname, exist_ok=True)
 	return dname
 
@@ -208,6 +214,7 @@ def main():
 		unpack(fname)
 
 
+
 def unpack(fname):
 	# ------------------------------
 	print('unpacking {}'.format(fname))
@@ -246,6 +253,7 @@ def unpack(fname):
 	
 	# ------------------------------
 	for i,ti in enumerate(tis):
+
 		ofile = '{}/{:0>3}.png'.format(dname, i+1)
 		
 		print('* tile {}; width={}; height={}; path={};'.format(i+1, ti.width, ti.height, ofile))
