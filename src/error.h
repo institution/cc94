@@ -3,9 +3,9 @@
 
 #include <stdexcept>
 #include <string>
-	
+
 namespace col {
-	
+
 
 	class Error: public std::runtime_error {
 		public:
@@ -13,6 +13,7 @@ namespace col {
 			explicit Error (const char* what_arg): std::runtime_error(what_arg) {}
 	};
 
+	
 
 }
 

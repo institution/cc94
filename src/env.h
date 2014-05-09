@@ -45,6 +45,8 @@ namespace col{
 		return *(t.units)[0];
 	}
 
+	using ErrorMsg = char const*;
+
 	struct Env{
 
 		// const
@@ -110,24 +112,27 @@ namespace col{
 			}
 
 			return *this;
-
 		}
 
 
-		void start(Player const& p) {
-			set_current_player_id(p.id);
-			state = 1; // game started
+		void start(Player const& p, bool exec=1) {
+			if (exec) {
+				set_current_player_id(p.id);
+				state = 1; // game started
+			}
 		}
 
-		void ready(Player const& p) {
+		void ready(Player const& p, bool exec=1) {
 
 			assert(get_current_player().id == p.id);
 
-			++p_current_player;
+			if (exec) {
+				++p_current_player;
 
-			if (p_current_player == players.end()) {
-				turn();  // TURN !!!
-				p_current_player = players.begin();
+				if (p_current_player == players.end()) {
+					turn();  // TURN !!!
+					p_current_player = players.begin();
+				}
 			}
 
 		}
@@ -549,65 +554,81 @@ namespace col{
 			}
 		}
 
-		Code build_road(Unit &u) {
+		Code build_road(Unit &u, bool exec=1) {
 			/* Build road on land terrain square (cost ~ 1.5 turns)
 			 */
 
 			// unit checks
 			if (u.place->place_type() != PlaceType::Terr) {
-				return -1; // unit not on terrain
+				throw Error("unit not on terrain");
 			}
 			if (!compatible(u.get_travel(), LAND)) {
-				return -2; // must be land based unit
+				throw Error("must be land based unit");
 			}
 
 			Terr& t = *static_cast<Terr*>(u.place);
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
-				return -3; // can build on land only
+				throw Error("can build on land only");
 			}
 			if (t.has(Phys::Road)) {
-				return -4; // road already exists
+				throw Error("road already exists");
 			}
 
 			// execute
-			if (run_map_task(u, TIME_UNIT * 2)) {
-				t.add(Phys::Road);
+			if (exec)  {
+				if (run_map_task(u, TIME_UNIT * 2)) {
+					t.add(Phys::Road);
+					return 1;
+				}
+				return 0;
 			}
-			return OK;
+			return -1; // unspecified
 		}
 
 
-
-		bool order_move(Unit &u, Dir::t const& dir) {
+		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {
 			/* Move unit
 			 */
 
+			// static check
 			if (dir == Dir::S) {
 				throw Error("already here");
 			}
 
-			// get terr
-			auto& orig = ref_terr(u);
-			auto& dest = ref_terr(get_coords(orig) + vec4dir(dir));
+			auto & orig = ref_terr(u);
+			auto dest_coords = get_coords(orig) + vec4dir(dir);
+
+			if (!in_bounds(dest_coords)) {
+				throw Error("destination outside of map");
+			}
+
+			auto & dest = ref_terr(dest_coords);
 
 			if (!compatible(u.get_travel(), dest.get_travel())) {
 				throw Error("cannot travel through this terrain");
 			}
 
-			// cost to move = 1t
-			auto time_cost = TIME_UNIT;
+			// dynamic check
+			if (has_defender(dest)) {
+				if (get_defender(dest).get_player().id != u.get_player().id) {
+					throw Error("destination occupied by enemy");
+				}
+			}
 
 			// execute
-			if (run_map_task(u, time_cost)) {
-				move_out(orig, u);
-				move_in(dest, u);
-				return 1; // success
-			}
-			else {
+			if (exec) {
+				// cost to move = 1t
+				auto time_cost = TIME_UNIT;
+
+				if (run_map_task(u, time_cost)) {
+					move_out(orig, u);
+					move_in(dest, u);
+					return 1; // success
+				}
 				return 0; // try next turn
 			}
-
+			return -1; // unspecified
 		}
 
 
@@ -645,7 +666,7 @@ namespace col{
 		//}
 
 
-		bool order_attack(Unit & attacker, Dir::t const& dir) {
+		bool order_attack(Unit & attacker, Dir::t const& dir, bool exec=1) {
 			/* Order attack
 			 */
 
@@ -655,7 +676,11 @@ namespace col{
 
 			// get terr
 			auto& orig = ref_terr(attacker);
-			auto& dest = ref_terr(get_coords(orig) + vec4dir(dir));
+			auto dest_coords = get_coords(orig) + vec4dir(dir);
+			if (!in_bounds(dest_coords)) {
+				throw Error("target outside of map");
+			}
+			auto & dest = ref_terr(dest_coords);
 
 			if (!compatible(attacker.get_travel(), dest.get_travel())) {
 				throw Error("this unit cannot attack accross that terrain");
@@ -675,32 +700,32 @@ namespace col{
 			auto time_cost = TIME_UNIT;
 
 			// execute
-			if (run_map_task(attacker, time_cost)) {
-				// fight
-				auto attack_base = attacker.get_attack();
-				auto attack = attack_base;
-				auto combat_base = defender.get_combat();
-				auto combat = combat_base;
+			if (exec) {
+				if (run_map_task(attacker, time_cost)) {
+					// fight
+					auto attack_base = attacker.get_attack();
+					auto attack = attack_base;
+					auto combat_base = defender.get_combat();
+					auto combat = combat_base;
 
-				if (check(attack, attack + combat)) {
-					move_out(dest, defender);
-					destroy<Unit>(defender.id);
-				}
-				else {
-					move_out(orig, attacker);
-					destroy<Unit>(attacker.id);
-				}
+					if (check(attack, attack + combat)) {
+						move_out(dest, defender);
+						destroy<Unit>(defender.id);
+					}
+					else {
+						move_out(orig, attacker);
+						destroy<Unit>(attacker.id);
+					}
 
-				return 1; // command executed
-			}
-			else {
+					return 1; // command executed
+				}
 				return 0; // try next turn
 			}
-
+			return -1;
 		}
 
 
-		bool plow_field(Unit& u) {
+		bool plow_field(Unit& u, bool exec=1) {
 
 			// unit check
 			if (!compatible(u.get_travel(), LAND)) {
@@ -719,11 +744,14 @@ namespace col{
 			}
 
 			// execute
-			if (run_map_task(u, TIME_UNIT * 2)) {
-				t.add(Phys::Plow);
+			if (exec) {
+				if (run_map_task(u, TIME_UNIT * 2)) {
+					t.add(Phys::Plow);
+					return 1;
+				}
+				return 0;
 			}
-
-			return OK;
+			return -1;
 		}
 
 		bool clear_forest(Unit const& u) {
@@ -746,52 +774,55 @@ namespace col{
 			destroy<Colony>(id);
 		}
 
-		bool colonize(Unit &u, string const& name) {
+		bool colonize(Unit &u, string const& name, bool exec=1) {
 
 			auto& t = ref_terr(u);
 
-			auto time_cost = TIME_UNIT;
-
-			if (run_map_task(u, time_cost)) {
-				// create colony
-				auto& c = create<Colony>(name);
-				move_in(t, c);
-
-				BuildType::Id const TREE_1 = 45;
-				BuildType::Id const TREE_2 = 44;
-				BuildType::Id const TREE_3 = 43;
-				BuildType::Id const COAST = 46;
-				BuildType::Id const CARPENTERS_SHOP = 36;
-				BuildType::Id const FENCE = 17;
-				BuildType::Id const CHURCH = 38;
-				BuildType::Id const TOWN_HALL = 10;
-
-				colony_construct(c, CARPENTERS_SHOP, 0);
-				colony_construct(c, TREE_1, 1);
-				colony_construct(c, TREE_3, 2);
-				colony_construct(c, TREE_1, 3);
-				colony_construct(c, TREE_1, 4);
-
-				colony_construct(c, TREE_1, 5);
-				colony_construct(c, TREE_1, 6);
-				colony_construct(c, TREE_1, 7);
-				colony_construct(c, TREE_1, 8);
-				colony_construct(c, TREE_2, 9);
-
-				colony_construct(c, TREE_2, 10);
-				colony_construct(c, TREE_2, 11);
-				colony_construct(c, TOWN_HALL, 12);
-				colony_construct(c, COAST, 13);
-				colony_construct(c, FENCE, 14);
-
-				// move unit into colony?
-				// TODO
-
-				return 1;  // ok
+			if (t.has_colony()) {
+				throw Error("already colonized");
 			}
-			else {
+
+			if (exec) {
+				auto time_cost = TIME_UNIT;
+				if (run_map_task(u, time_cost)) {
+					// create colony
+					auto& c = create<Colony>(name);
+					move_in(t, c);
+
+					BuildType::Id const TREE_1 = 45;
+					BuildType::Id const TREE_2 = 44;
+					BuildType::Id const TREE_3 = 43;
+					BuildType::Id const COAST = 46;
+					BuildType::Id const CARPENTERS_SHOP = 36;
+					BuildType::Id const FENCE = 17;
+					BuildType::Id const CHURCH = 38;
+					BuildType::Id const TOWN_HALL = 10;
+
+					colony_construct(c, CARPENTERS_SHOP, 0);
+					colony_construct(c, TREE_1, 1);
+					colony_construct(c, TREE_3, 2);
+					colony_construct(c, TREE_1, 3);
+					colony_construct(c, TREE_1, 4);
+
+					colony_construct(c, TREE_1, 5);
+					colony_construct(c, TREE_1, 6);
+					colony_construct(c, TREE_1, 7);
+					colony_construct(c, TREE_1, 8);
+					colony_construct(c, TREE_2, 9);
+
+					colony_construct(c, TREE_2, 10);
+					colony_construct(c, TREE_2, 11);
+					colony_construct(c, TOWN_HALL, 12);
+					colony_construct(c, COAST, 13);
+					colony_construct(c, FENCE, 14);
+
+					// move unit into colony?
+					// TODO
+					return 1;  // ok
+				}
 				return 0;  // try next turn
 			}
+			return -1;
 		}
 
 		void colony_construct(Colony & colony, BuildType::Id type_id, int slot) {
@@ -799,138 +830,77 @@ namespace col{
 			colony.construct_building(type, slot);
 		}
 
-		bool can_attack_move(Unit const& u, Dir::t const& dir) {
-			// square empty
-			//auto& ut = *(u.type);
-			//auto dest = u.pos + vec4dir(dir);
-			//auto tt = terr(dest);
 
-			//if (!(ut.movement_type & tt.get_movement_type())) {
-			//	cout << "cannot move - noncompatible type" << endl;
-			//	return false;
-				// throw runtime_error("cant move - noncompatible type");
-			//}
-			// compatible terrain type
-
-			/*
-			moves_left = u.time_left * ut.movement;
-
-			moves_need = tt.get_movement_cost(ut.movement_type)
-
-			moves_left < moves_need
-				u.time_left -= moves_need / ut.movement
-			*/
-
-			//if (ut.movement < tt.get_movement_cost(ut.movement_type) + u.movement_used) {
-			//	cout << "cannot move - not enough moves" << endl;
-			//	return false;
-				// throw runtime_error("cant move - not enough moves");
-			//}
-			// enough movement
-			/*
-			auto x = get_icon_at(dest);
-			if (x != nullptr && x->player == u.player) {
-				cout << "cannot move: square already occupied" << endl;
-				return false;
-				//throw std::runtime_error("cannot move: square already occupied");
-			}*/
-			// dest square empty or occupied by enemy
-
-			return true;
-		}
-
-
-
-		void attack_move(Player::Id const& pid, Unit::Id const& iid, Dir::t const& dir) {
-
-			/*
-			Unit *p = & icon4id(iid);
-
-			if (!can_attack_move(*p, dir)) {
-				cout << "!!!!!!!!" << endl;
-				throw std::runtime_error("cannot attack move");
+		int8 get_defense_bonus(Terr const& terr, Travel const& trav) {
+			if (trav == LAND) {
+				return get_land_defense_bonus(terr);
 			}
-
-			auto dest = p->pos + vec4dir(dir);
-			auto q = get_icon_at(dest);
-			auto tt = get_terr(dest);
-
-			if (q == nullptr) {
-				// move
-
-				//p->movement_used += tt.get_movement_cost(p->get_movement_type());
-				p->pos = dest;
+			else if (trav == SEA) {
+				return get_sea_defense_bonus(terr);
 			}
 			else {
-				//attack
-				auto attack_base = p->type->attack;
-				auto attack = attack_base;
-				auto combat_base = q->type->combat;
-				//auto combat = combat_base + uint8(0.25 * tt.get_defensive_value(q->get_movement_type()) * combat_base);
-
-				assert(attack > 0);
-
-				//auto r = roll(attack + combat);
-
-				// cout << "combat " << r << endl;
-
-				if (r <= attack) {
-					//p->movement_used = p->type->movement;
-					p->pos = dest;
-
-					destroy<Unit>(q->id);
-				}
-				else {
-					destroy<Unit>(q->id);
-				}
-
-
+				throw runtime_error("aaa");
 			}
-			*/
+		}
 
-			++mod;
+		int8 get_land_defense_bonus(Terr const& terr) {
+			return 1;
+		}
+
+		int8 get_sea_defense_bonus(Terr const& terr){
+			return 1;
 		}
 
 
-		//RangeXY<Units> all(Coord x, Coord y) const {
-		//	return RangeXY<Units>(units, x, y);
-		//}
-
-
-
-
-
-
-		//Unit::Id create_icon(istream &f) {
-		//	Unit icon(read_obj<Unit>(*this, f));
-		//	env.units[icon.id] = icon;
-		//	return icon.id;
-		//}
 
 
 		Dir::type get_dir_to_from(Terr const& to, Terr const& from) {
 			return dir4vec(get_coords(to) - get_coords(from));
 		}
 
-		bool assign(int num, Unit & unit, Item item) {
+		bool assign_to_building(Terr & terr, int num, Unit & unit, Item item, bool exec=1) {
+			// assign to building
+			if (!terr.has_colony()) {
+				throw Error("no colony");
+			}
+			auto & col = terr.get_colony();
+			auto& b = col.builds.at(num);
+
+			if (exec and b.assign()) {
+				unit.set_work(b, item);
+				return 1;
+			}
+			return 0;
+		}
+
+		bool assign_to_field(Terr & terr, int num, Unit & unit, Item item, bool exec=1) {
+			// assign to filed
+			auto& field = get_terr(vec4dir(num-16) + get_coords(terr));
+
+			if (exec and field.assign()) {
+				unit.set_work(field, item);
+				return 1;
+			}
+
+			return 0;
+		}
+
+
+		bool assign(int num, Unit & unit, Item item, bool exec=1) {
+
 			auto & terr = get_terr(unit);
 
-			if (num < 16) {
-				cerr << "assign to building" << endl;
-				auto & col = terr.get_colony();
-				auto& b = col.builds.at(num);
-				if (b.assign()) {
-					unit.set_work(b, item);
-					return true;
-				}
+			if (num < 0) {
+				throw Error("invalid place index");
+			}
+			else if (num < 16) {
+				return assign_to_building(terr, num, unit, item, exec);
+			}
+			else if (num < 25) {
+				return assign_to_field(terr, num, unit, item, exec);
 			}
 			else {
-				cerr << "assign field" << endl;
-				auto& field = get_terr(vec4dir(num-16) + get_coords(terr));
-				if (field.assign()) {
-					unit.set_work(field, item);
-					return true;
-				}
+				throw Error("invalid place index");
 			}
 
 			return false;

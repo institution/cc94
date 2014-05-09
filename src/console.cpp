@@ -142,6 +142,12 @@ namespace col {
 					put(str(format("%||") % item.second));
 				}
 			}
+			else if (cmd == "comment") {
+
+			}
+			else if (cmd == "print") {
+				put(buffer.substr(6));
+			}
 			else if (cmd == "list-orders") {
 				put("build-colony");
 				put("plow-fields");
@@ -180,6 +186,8 @@ namespace col {
 				// misc
 				put("score");
 				put("cls");
+				put("print");
+				put("comment");
 				put("enter");
 				put("exit");
 			}
@@ -246,7 +254,7 @@ namespace col {
 					}
 					case 1: {
 						//envgame
-						run_ai();
+						put(string("AI action: ") + run_ai());
 						break;
 					}
 				}

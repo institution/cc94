@@ -68,6 +68,19 @@ namespace col{
 				auto& u = it.second;
 				if (u.get_player().id == pid and u.time_left and u.order != Order::Space) {
 					auto dir = roll::roll2(0, 8);
+
+					{
+						auto r = unique_ptr<Action>(new OrderAttack(pid, u.id, dir));
+						if ((*r).is_allowed(*this)) return r;
+					}
+
+					{
+						auto r = unique_ptr<Action>(new OrderMove(pid, u.id, dir));
+						if ((*r).is_allowed(*this)) return r;
+					}
+
+					u.order = Order::Space;
+					/*
 					if (dir != Dir::S) {
 						auto dest_pos = get_coords(u) + vec4dir(dir);
 						if (in_bounds(dest_pos)) {
@@ -87,6 +100,7 @@ namespace col{
 					else {
 						u.order = Order::Space;
 					}
+					*/
 				}
 			}
 			return unique_ptr<Action>(new Ready(pid));
@@ -105,7 +119,7 @@ namespace col{
 		auto& p = create<Player>(id, );
 	}*/
 
-	void copy(EnvGame &trg, EnvGame const& src);
+	void copy_det(EnvGame &trg, EnvGame const& src, Player::Id const& pid);
 
 
 

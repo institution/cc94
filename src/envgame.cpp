@@ -9,14 +9,15 @@ namespace col {
 
 
 
-	void copy(EnvGame &trg, EnvGame const& src)
+	void copy_det(EnvGame &trg, EnvGame const& src, Player::Id const& pid)
 	{
+
+		// copy availbe information
 		trg.clear();
 
 		trg.uts = src.uts;
 		trg.tts = src.tts;
 		trg.bts = src.bts;
-
 
 		std::stringstream f;
 
@@ -29,6 +30,9 @@ namespace col {
 			boost::archive::text_iarchive ar(f);
 			ar >> trg;
 		}
+
+		// determinisation
+		//roll::seed();
 
 	}
 

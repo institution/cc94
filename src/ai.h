@@ -196,9 +196,14 @@ namespace mcts {
 			float w = iter->win;
 			float n = iter->total;
 			float value = w / n + EXPLORE_FACTOR * sqrt(2 * ln_t / n);
-			if (value > best_value) {
-				best_value = value;
-				best_node = iter;
+
+			// check is action valid
+			// in running state there must be at least one valid action
+			if (iter->action->is_allowed(game)) {
+				if (value > best_value) {
+					best_value = value;
+					best_node = iter;
+				}
 			}
 			iter = iter->right_neigh;
 		}

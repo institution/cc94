@@ -1,6 +1,7 @@
 #ifndef ACTION2_H
 #define ACTION2_H
 
+#include <sstream>
 #include "env.h"
 
 namespace col {
@@ -16,8 +17,18 @@ namespace col {
 
 		}
 
-		virtual void exec(Game &game) const = 0;
+		virtual void exec(Game &game, bool exec=1) const = 0;
 		virtual bool unsafe_eq(Action const& a) const = 0;
+
+		bool is_allowed(Game &game) const {
+			try {
+				this->exec(game, 0);
+			}
+			catch (Error const& e) {
+				return 0;
+			}
+			return 1;
+		}
 
 		bool operator==(Action const& other) const {
 			if (typeid(*this) == typeid(other)) {
@@ -34,6 +45,13 @@ namespace col {
 		virtual ostream& dump(ostream& out) const = 0;
 
 	};
+
+	inline
+	string to_string(Action const& a) {
+		std::stringstream s;
+		a.dump(s);
+		return s.str();
+	}
 
 	//struct BuildColony: Action {
 	// BuildRoad
@@ -63,15 +81,16 @@ namespace col {
 			return new OrderMove(*this);
 		}
 
-		void exec(Game &game) const {
+		void exec(Game &game, bool exec=1) const {
 			game.order_move(
 				game.get<Unit>(uid),
-				dir
+				dir,
+				exec
 			);
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "OrderMove("<<","<<pid<<","<<uid<<","<<int(dir)<<")";
+			out << "OrderMove("<<pid<<","<<uid<<","<<int(dir)<<")";
 		}
 
 
@@ -97,15 +116,16 @@ namespace col {
 			return new OrderAttack(*this);
 		}
 
-		void exec(Game &game) const {
-			game.order_move(
+		void exec(Game &game, bool exec=1) const {
+			game.order_attack(
 				game.get<Unit>(uid),
-				dir
+				dir,
+				exec
 			);
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "OrderAttack("<<","<<pid<<","<<uid<<","<<int(dir)<<")";
+			out << "OrderAttack("<<pid<<","<<uid<<","<<int(dir)<<")";
 		}
 
 
@@ -124,8 +144,8 @@ namespace col {
 			return new Ready(*this);
 		}
 
-		void exec(Game &game) const {
-			game.ready(game.get<Player>(pid));
+		void exec(Game &game, bool exec=1) const {
+			game.ready(game.get<Player>(pid), exec);
 		}
 
 		virtual ostream& dump(ostream& out) const {
@@ -138,8 +158,8 @@ namespace col {
 	struct Start: Action {
 		Start(Player::Id const& pid): Action(pid) {}
 
-		void exec(Game &game) const {
-			game.start(game.get<Player>(pid));
+		void exec(Game &game, bool exec=1) const {
+			game.start(game.get<Player>(pid), exec);
 		}
 
 		bool unsafe_eq(Action const& a) const {

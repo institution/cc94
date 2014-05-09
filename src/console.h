@@ -71,7 +71,7 @@ namespace col {
 			//unique_ptr<Action> tmp(new OXSim::Start('X'));
 		}
 
-		void run_ai() {
+		string run_ai() {
 			cerr << "<<< AI --------------- >>>" << endl;
 
 
@@ -81,7 +81,7 @@ namespace col {
 				//dump(root, 8);
 				//cout << endl;
 
-				copy(game_copy, envgame);
+				copy_det(game_copy, envgame, 1);
 				game_copy.verbose = 1;
 				game_copy.turn_limit = game_copy.turn_no + 10; // look ahead 10 turns
 				//cout << "after reset:" << endl;
@@ -103,6 +103,8 @@ namespace col {
 			// select preferred move
 			NodeType *node = mcts::preferred_node(root);
 			cout << "preferred move: " << *node->action << endl;
+
+			return to_string(*node->action);
 
 		}
 

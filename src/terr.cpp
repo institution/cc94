@@ -1,7 +1,7 @@
 #include "terr.h"
 
 namespace col{
-	
+
 	int8 Terr::get_land_movement_cost() {
 		int8 base;
 
@@ -31,7 +31,7 @@ namespace col{
 			if (has(Phys::Forest)) {
 				base *= 2;
 			}
-		}			
+		}
 
 		if (has(Phys::Hill)) {
 			base += SPACE_UNIT / 2;
@@ -44,11 +44,11 @@ namespace col{
 		return base;
 	}
 
-	int8 Terr::get_naval_movement_cost() {			
+	int8 Terr::get_naval_movement_cost() {
 		if (colony != nullptr) {
 			return SPACE_UNIT;
 		}
-		else 
+		else
 		if (has(Phys::MajorRiver) and !has(Phys::Hill) and !has(Phys::Mountain)) {
 			return SPACE_UNIT * 2;
 		}
@@ -87,31 +87,10 @@ namespace col{
 			}
 			else {
 				return LAND;
-			}				
-		}					
+			}
+		}
 	}
 
-	int8 Terr::get_land_defensive_value() {
-		return 1;
 
-	}
 
-	int8 Terr::get_naval_defensive_value() {
-		return 1;			
-	}
-
-	int8 Terr::get_defensive_value(Travel const& t) {
-		if (t == LAND) {
-			return get_land_defensive_value();
-		}
-		else
-		if (t == SEA) {
-			return get_naval_defensive_value();
-		}
-		else {
-			throw runtime_error("aaa");
-		}
-	}	
-
-	
 }

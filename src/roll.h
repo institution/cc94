@@ -5,8 +5,13 @@
 #include <vector>
 #include <initializer_list>
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/random_device.hpp>
+
+
 
 namespace roll{
 
@@ -16,15 +21,27 @@ namespace roll{
 		boost::random::uniform_int_distribution<> dist(a, b-1);
 		return dist(gen);
 	}
-	
-	
+
+
 	int roll1(int b);
-	
+
 	inline void seed() {
-		gen.seed(std::time(0));
+
+
+		boost::random_device seed_gen;
+		gen.seed(seed_gen());
+
+		/*std::ifstream f("/dev/random");
+		int s;
+		f.read((char*)(&s), sizeof(s));
+		std::cout << "rand seed = " << s << std::endl;
+		gen.seed(s);
+		*/
 	}
-	
-	
+
+
+
+
 	struct replay{
 		int index;
 		std::vector<int> nums;
@@ -41,8 +58,8 @@ namespace roll{
 			return n;
 		}
 	};
-	
-	
+
+
 }
 
 #endif
