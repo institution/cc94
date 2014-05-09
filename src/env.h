@@ -955,25 +955,6 @@ namespace col{
 
 
 
-	namespace io {
-		template <typename C>
-		typename C::mapped_type const* read_ptr(C const& cs, istream &f) {
-			auto key = read<typename C::key_type>(f);
-			return &cs.at(key);
-		}
-
-		template <typename C>
-		typename C::mapped_type* read_ptr(C &cs, istream &f) {
-			auto key = read<typename C::key_type>(f);
-			return &cs.at(key);
-		}
-
-		template <typename T>
-		T read_obj(Env &env, istream &f);
-
-		template <typename T>
-		size_t write_obj(ostream &f, T const &t);
-	}
 
 
 

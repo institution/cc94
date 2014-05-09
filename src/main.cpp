@@ -12,7 +12,6 @@
 #include <boost/archive/text_iarchive.hpp>
 
 #include "col.hpp"
-#include "iomm.h"
 #include "env.h"
 #include "csv.h"
 #include "ai.h"
@@ -107,9 +106,9 @@ int main(int argc, char* argv[])
 
 	string fname("./aaa.mp");
 
-	const uint SCL = 3;
-	sf::RenderWindow app(sf::VideoMode(320 * SCL, 200 * SCL, 32), "SFML Window");
-	sf::View view(sf::FloatRect(0, 0, 320, 200));
+
+	sf::RenderWindow app(sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32), "AI Col");
+	sf::View view(sf::FloatRect(0, 0, SCREEN_W, SCREEN_H));
 	app.setView(view);
 
 

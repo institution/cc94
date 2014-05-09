@@ -1,9 +1,13 @@
 #include "csv.h"
 
+#include <fstream>
+#include <stdexcept>
+#include <boost/format.hpp>
 #include <boost/spirit/include/support_istream_iterator.hpp>
 
+
 namespace col{
-	
+
 	vector<vector<string>> read_conf(const string &fname)
 	{
 		namespace spirit = boost::spirit;
@@ -17,8 +21,10 @@ namespace col{
 		using std::endl;
 		using std::ifstream;
 		using std::vector;
+		using boost::format;
+		using std::runtime_error;
 
-		ifstream in(fname);
+		std::ifstream in(fname);
 		if (!in.is_open()) {
 			throw runtime_error(str(format("cannot open file %||") % fname));
 		}
@@ -40,7 +46,7 @@ namespace col{
 		ws = (*lit(' '));
 		comment = lit(';') >> *char_("a-zA-Z0-9 ");
 		word = *(char_("a-zA-Z0-9 ")|char_('-')|char_('_')|char_('\'')|char_('(')|char_(')'));
-		line = (word % lit(',')) >> (-comment);	
+		line = (word % lit(',')) >> (-comment);
 		lines  = (-line) % eol;
 
 		vector<vector<string>> vss;
@@ -49,12 +55,12 @@ namespace col{
 			//((*~char_(',')) % ','),
 			lines,
 			//((ws >> data >> ws) % sep),
-			qi::blank, 
+			qi::blank,
 			vss
 		);
-		
+
 		return vss;
 	}
-	
-	
+
+
 }

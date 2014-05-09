@@ -10,7 +10,7 @@
 namespace col {
 	using boost::str;
 
-	Layout const ly(320, 200);
+	Layout const ly(SCREEN_W, SCREEN_H);
 
 
 	Color make_color_by_name(const string &s) {

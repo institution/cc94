@@ -22,7 +22,6 @@
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/serialization/split_member.hpp>
-#include "iomm.h"
 #include "roll.h"
 #include "aga2.hpp"
 
@@ -65,6 +64,21 @@ namespace col{
 
 	using std::piecewise_construct;
 	using std::forward_as_tuple;
+
+	using std::ostream;
+	using std::istream;
+	using std::size_t;
+
+	using std::uint8_t;
+
+	using uint8 = std::uint8_t;
+	using uint16 = std::uint16_t;
+	using uint32 = std::uint32_t;
+	using uint = std::uint32_t;
+
+	using int8 = std::int8_t;
+	using int16 = std::int16_t;
+	using int32 = std::int32_t;
 
 
 	template <typename T>

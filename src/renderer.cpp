@@ -8,7 +8,7 @@ namespace col {
 
 
 
-	Layout const ly(320, 200);
+	Layout const ly(SCREEN_W, SCREEN_H);
 
 
 	using Res = map<pair<string,uint>, sf::Texture>;
@@ -230,7 +230,7 @@ namespace col {
 		win.draw(
 			RectShape(
 				v2i(x+1, y+1),
-				v2i(14, 14),
+				v2i(TILE_DIM-2, TILE_DIM-2),
 				sf::Color(0,0,0, 0),
 				1,
 				sf::Color(255,255,255, 255)
@@ -483,8 +483,8 @@ namespace col {
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
 
-					render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * 16);
-					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * 16);
+					render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
+					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
 
 				}
 			}
@@ -699,19 +699,21 @@ namespace col {
 					assert(0); // unknown water terr type
 			}
 
+			uint8 const h = TILE_DIM >> 1;
+
 			render_sprite(win, pix + v2i(0,0), res(COAST,
 				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
 			));
 
-			render_sprite(win, pix + v2i(8,0), res(COAST,
+			render_sprite(win, pix + v2i(h,0), res(COAST,
 				base + get_coast_index(1, get(loc,Dir::W), get(loc,Dir::E), get(loc,Dir::D))
 			));
 
-			render_sprite(win, pix + v2i(8,8), res(COAST,
+			render_sprite(win, pix + v2i(h,h), res(COAST,
 				base + get_coast_index(2, get(loc,Dir::D), get(loc,Dir::C), get(loc,Dir::X))
 			));
 
-			render_sprite(win, pix + v2i(0,8), res(COAST,
+			render_sprite(win, pix + v2i(0,h), res(COAST,
 				base + get_coast_index(3, get(loc,Dir::X), get(loc,Dir::Z), get(loc,Dir::A))
 			));
 
@@ -856,7 +858,7 @@ namespace col {
 		//	render_icon(win, env, p.second);
 		//}
 
-		render_cursor(win, con.sel[0]*16 + pos[0], con.sel[1]*16 + pos[1]);
+		render_cursor(win, con.sel[0]*TILE_DIM + pos[0], con.sel[1]*TILE_DIM + pos[1]);
 
 	}
 
@@ -899,9 +901,6 @@ namespace col {
 		) {
 		// pos - left top pix
 		// dim - size
-
-		// pos = {0,0}
-		// dim = {320,7}
 
 		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
 
@@ -996,33 +995,6 @@ namespace col {
 
 
 
-
-
-
-
-
-		/*
-		i = d/w;
-		j = dy/h;
-
-		sf::Sprite s;
-		s.SetImage();
-
-		s.
-
-
-		render_sprite(app, 320-80, 0, );
-
-
-		s.SetPosition(x + rr.Left ,y + rr.Top + 6);
-		s.SetSubRect(sf::IntRect(
-			(r.Left * img.GetWidth()) +0.5,
-			(r.Top * img.GetHeight()) +0.5,
-			(r.Right * img.GetWidth()) +0.5,
-			(r.Bottom * img.GetHeight()) +0.5
-		));
-		win.Draw(s);
-		*/
 	}
 
 	/*
@@ -1230,8 +1202,8 @@ namespace col {
 	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con) {
 		app.clear();
 
-		int w = app.getSize().x/3;
-		int h = app.getSize().y/3;
+		int w = app.getSize().x/GLOBAL_SCALE;
+		int h = app.getSize().y/GLOBAL_SCALE;
 
 		//cout << format("%||,%||\n") % w % h;
 
