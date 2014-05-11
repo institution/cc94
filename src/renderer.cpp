@@ -19,6 +19,7 @@ namespace col {
 
 	using ResPixFont = map<string, PixFont>;
 	ResPixFont g_pixfonts;
+	
 
 	ResFont::mapped_type const& res_font(string const& name, uint8 size) {
 		auto p = g_fonts.find(name);
@@ -275,6 +276,7 @@ namespace col {
 		void operator()(Res::mapped_type const& res, v2i const& pos, v2i const& dim);
 		void operator()(Unit const& unit, v2i const& pos);
 		void operator()(Unit const& unit, v2i const& pos, v2i const& dim);
+		void operator()(Item const& item, v2i const& pos);
 	};
 
 	void Renderer::operator()(Res::mapped_type const& res, v2i const& pos) {
@@ -293,6 +295,9 @@ namespace col {
 		render_sprite(win, pos, res(ICON, unit.get_type_id()));
 	}
 
+	void Renderer::operator()(Item const& item, v2i const& pos) {
+		render_sprite(win, pos, res(ICON, item));
+	}
 
 	void render_area(
 		sf::RenderWindow &win,

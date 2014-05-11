@@ -40,7 +40,7 @@ namespace col {
 			}
 		}
 
-		virtual Action* copy() = 0;
+		virtual Action* copy() const = 0;
 
 		virtual ostream& dump(ostream& out) const = 0;
 
@@ -77,13 +77,19 @@ namespace col {
 			return pid == a.pid and uid == b.uid and dir == b.dir;
 		}
 
-		Action* copy() {
+		Action* copy() const {
 			return new OrderMove(*this);
 		}
 
 		void exec(Game &game, bool exec=1) const {
+			auto& c = game.get_cont<Unit>();
+			auto it = c.find(uid);
+			if (it == c.end()) {
+				throw Error("no unit with this id");
+			}
+
 			game.order_move(
-				game.get<Unit>(uid),
+				(*it).second,
 				dir,
 				exec
 			);
@@ -112,16 +118,23 @@ namespace col {
 			return pid == a.pid and uid == b.uid and dir == b.dir;
 		}
 
-		Action* copy() {
+		Action* copy() const {
 			return new OrderAttack(*this);
 		}
 
 		void exec(Game &game, bool exec=1) const {
+			auto& c = game.get_cont<Unit>();
+			auto it = c.find(uid);
+			if (it == c.end()) {
+				throw Error("no unit with this id");
+			}
+
 			game.order_attack(
-				game.get<Unit>(uid),
+				(*it).second,
 				dir,
 				exec
 			);
+
 		}
 
 		virtual ostream& dump(ostream& out) const {
@@ -140,7 +153,7 @@ namespace col {
 			return pid == a.pid;
 		}
 
-		Action* copy() {
+		Action* copy() const {
 			return new Ready(*this);
 		}
 
@@ -167,7 +180,7 @@ namespace col {
 			return pid == a.pid;
 		}
 
-		Action* copy() {
+		Action* copy() const {
 			return new Start(*this);
 		}
 

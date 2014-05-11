@@ -1,14 +1,12 @@
 #ifndef BASE2_H
 #define BASE2_H
 
-#include "col.hpp"
-#include "enum.hpp"
 #include <array>
+#include "enum.hpp"
+#include "col.hpp"
+#include "item.h"
 
 namespace col {
-
-	using Code = int16;
-	Code const OK = 0;
 
 
 	using Coord = int16;
@@ -75,9 +73,17 @@ namespace col {
 	//uint8 const BUILD = 'b';
 
 
-	using Travel = uint8;
+	struct Travel: Enum<uint8> {
+		using Enum<uint8>::Enum;
+	};
+
+	//using Travel = uint8;
 	Travel const LAND = 1;
 	Travel const SEA = 2;
+
+	//string get_name(Travel const& tr) {
+	//
+	//}
 
 	namespace Biome{
 		using type = uint8;
@@ -118,35 +124,6 @@ namespace col {
 			Worker = 128;
 	}
 
-
-
-	struct Item: Enum<> {
-		using Enum<>::Enum;
-	};
-
-	constexpr
-	Item const
-		ItemNone{0},
-		ItemFood{23},
-		ItemSugar{24},
-		ItemTobacco{25},
-		ItemCotton{26},
-		ItemFurs{27},
-		ItemLumber{28},
-		ItemOre{29},
-		ItemSilver{30},
-		ItemHorses{31},
-		ItemRum{32},
-		ItemCigars{33},
-		ItemCloth{34},
-		ItemCoats{35},
-		ItemTradeGoods{36},
-		ItemTools{37 },
-		ItemMuskets{38},
-		ItemHammers{55},
-		ItemCross{57},
-		ItemFish{58},
-		ItemBell{63};
 
 
 

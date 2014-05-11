@@ -184,9 +184,11 @@ namespace col {
 		ar << state;
 		// current player
 		if (env.state == 1) {
+			cerr << "save current player" << env.get_current_player().id << endl;
 			ar << env.get_current_player().id;
 		}
 		else {
+			cerr << "save current player INV STATE: " << env.state << endl;
 			write<Player::Id>(ar, -1);
 		}
 

@@ -11,7 +11,7 @@ OUTS:=main test
 IGNORE_SRC:=src/tree.cpp
 
 # compiler options
-CCOPTS:=-I./src -std=c++11 -g -O0
+CCOPTS:=-I./src -I./inc -std=c++11 -g -O0
 
 # linker options
 LLOPTS:=-lboost_serialization -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network

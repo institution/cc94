@@ -387,6 +387,15 @@ TEST_CASE( "two units", "" ) {
 	}
 }
 
+
+TEST_CASE( "compatible", "[env][misc]" ) {	
+	REQUIRE(compatible(LAND,SEA) == false);
+	REQUIRE(compatible(SEA,LAND) == false);
+	REQUIRE(compatible(LAND,LAND) == true);
+	REQUIRE(compatible(SEA,SEA) == true);
+}
+
+
 TEST_CASE( "improve square", "" ) {
 
 	Env env;
@@ -404,16 +413,22 @@ TEST_CASE( "improve square", "" ) {
 	SECTION("build road") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE( env.build_road(u) == OK );
+		REQUIRE( env.build_road(u) == true );
 		REQUIRE( t.has(Phys::Road)       );
 
-		REQUIRE( env.build_road(u) != OK);
+		try {
+			env.build_road(u); REQUIRE(false);
+		}
+		catch (Error const& e) {
+			REQUIRE(true);
+		}
+		
 	}
 
 	SECTION("plow field") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE( env.plow_field(u) == OK );
+		REQUIRE( env.plow_field(u) == true );
 		REQUIRE( t.has(Phys::Plow)       );
 	}
 

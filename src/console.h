@@ -31,12 +31,26 @@
 
 
 
-
-
-
 namespace col {
 
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`vabcdefghijklmnoprstuwxyz{|}@~\r\b";
+
+
+	// mouse events: normal, drag&drop
+
+	/*
+	struct DragDrop {
+		enum class Obj {
+			None, Item, Unit
+		};
+
+		Obj what;
+		union Arg{
+			Item * item;
+			Unit * unit;
+		} arg;
+	}*/
+
 
 	struct Console{
 		vector<string> output;
@@ -48,78 +62,22 @@ namespace col {
 
 		uint32 mod;
 
+		// ai
+		using Ais = unordered_map<Player::Id, Ai>;
 
-		// experimental ai section
-
-		EnvGame game_copy;
-
-		// mcts tree node type
-		using NodeType = tree::Node<Action>;
-
-		NodeType *root;
-
-
-		void init_ai() {
-
-			auto tmp = unique_ptr<Action>(new Start(1));
-			root = new NodeType(tmp);
-
-
-			// = new NodeType(tmp);
-			//roll::seed();
-			//make_unique(Start())
-			//unique_ptr<Action> tmp(new OXSim::Start('X'));
-		}
-
-		string run_ai() {
-			cerr << "<<< AI --------------- >>>" << endl;
-
-
-			for (int i=0; i<20; ++i) {
-
-				//cout << "dumping tree before step: " << endl;
-				//dump(root, 8);
-				//cout << endl;
-
-				copy_det(game_copy, envgame, 1);
-				game_copy.verbose = 1;
-				game_copy.turn_limit = game_copy.turn_no + 10; // look ahead 10 turns
-				//cout << "after reset:" << endl;
-				//dump(gw.game);
-
-				//cout << "step" << endl;
-				mcts::step(root, game_copy, 1);
-
-				//cout << "game state after play: " << endl;
-				//dump(gw.game);
-				//cout << endl;
-
-
-			}
-
-			cout << "dumping tree: " << endl;
-			dump(root, 4);
-
-			// select preferred move
-			NodeType *node = mcts::preferred_node(root);
-			cout << "preferred move: " << *node->action << endl;
-
-			return to_string(*node->action);
-
-		}
-
-
-
+		Ais ais;
 
 
 		// selected square
 		Coords sel;
 		unordered_set<char16_t> charset;
 
+		// active screen
 		enum class Mode{
 			AMERICA, COLONY, EUROPE, REPORT
 		};
 
+		// is console active - keyboard focus
 		bool active;
 
 		Mode mode;
@@ -137,21 +95,27 @@ namespace col {
 			mode = Mode::AMERICA;
 			clear();
 
-			// ai
-			root = nullptr;
 
-			init_ai();
-		}
-
-		~Console() {
-			if (root) {
-				delete root;
-			}
 		}
 
 		Console() = delete;
 		Console(Console const&) = delete;
 		Console const& operator=(Console const&) = delete;
+
+
+		void create_ai(Player::Id const& pid) {
+			ais.emplace(pid, pid);
+		}
+
+		void exec(Action const& action) {
+			envgame.exec(action);
+
+			for (auto &p: ais) {
+				auto& ai = p.second;
+				ai.apply(action);
+			}
+
+		}
 
 		void clear() {
 			output.clear();

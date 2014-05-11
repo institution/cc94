@@ -183,6 +183,12 @@ namespace col {
 				put("start");
 				put("ready");
 				put("turn");
+				put("info");
+				// ai
+				put("ai");
+				//put("create-ai");				
+				//put("exec-ai");
+				//put("list-ais");
 				// misc
 				put("score");
 				put("cls");
@@ -211,6 +217,19 @@ namespace col {
 			}
 			else if (cmd == "cls") {
 				output.clear();
+			}
+			else if (cmd == "info") {
+				switch (es.size()) {
+					default:
+						put("Usage: info");
+						break;
+					case 1:
+						put("Turn: " + to_string(envgame.get_turn_no()) + "; " +
+							"Player: " + envgame.get_current_player().name  + "; " +
+							"State: " + to_string(envgame.state)
+						);
+						break;
+				}
 			}
 			else if (cmd == "score") {
 				switch (es.size()) {
@@ -245,16 +264,56 @@ namespace col {
 				envgame.turn();
 				put(str(format("Turn %||") % envgame.turn_no));
 			}
-			else if (cmd == "ai") {
-				// show preffered move for player id = 1
+			else if (cmd == "ai") {				
+				// calculate and show preffered move for current player
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: ai\n");
+						output.push_back("Usage: ai <num>\n");
+						break;
+					}
+					case 2: {
+						if (envgame.in_progress()) {
+							auto const& pid = envgame.get_current_player().id;
+							cerr << "looking for ai assigned to pid = " << pid << endl;
+							auto it = ais.find(pid);
+							if (it == ais.end()) {
+								put("no ai created for this player");
+							}
+							else {
+								assert((*it).second.pid == pid); // impossible
+								auto const& a = (*it).second.calc(envgame, stoi(es.at(1)), 1);
+								put(string("preferred action: ") + to_string(a));
+							}
+						}
+						else {
+							put("game in regress; start game first");
+						}
+						break;
+					}
+				}
+			}
+			else if (cmd == "create-ai") {				
+				// calculate and show preffered move for current player
+				switch (es.size()) {
+					default: {
+						output.push_back("Usage: create-ai\n");
 						break;
 					}
 					case 1: {
-						//envgame
-						put(string("AI action: ") + run_ai());
+						if (envgame.in_progress()) {
+							auto const& pid = envgame.get_current_player().id;
+							
+							auto it = ais.find(pid);
+							if (it != ais.end()) {
+								put("ai already exists");
+							}
+							else {
+								create_ai(pid);								
+							}
+						}
+						else {
+							put("game in regress; start game first");
+						}
 						break;
 					}
 				}
@@ -279,6 +338,10 @@ namespace col {
 					}
 					case 2: {
 						envgame.exec(Ready(std::stoi(es.at(1))));
+						break;
+					}
+					case 1: {
+						envgame.exec(Ready(envgame.get_current_player().id));
 						break;
 					}
 				}
@@ -500,15 +563,16 @@ namespace col {
 						break;
 					case 3:
 						if (envgame.has_defender(sel)) {
-							envgame.order_move(
-								envgame.get_defender(envgame.get_terr(sel)),
+							exec(OrderMove(							
+								envgame.get_current_player().id,
+								envgame.get_defender(envgame.get_terr(sel)).id,
 								dir4vec(
 									Coords(
 										stoi(es.at(1)), // dx
 										stoi(es.at(2))  // dy
 									)
 								)
-							);
+							));
 						}
 						else {
 							put("no unit selected");
@@ -523,15 +587,16 @@ namespace col {
 						break;
 					case 3:
 						if (envgame.has_defender(sel)) {
-							envgame.order_attack(
-								envgame.get_defender(envgame.get_terr(sel)),
+							exec(OrderAttack(
+								envgame.get_current_player().id,
+								envgame.get_defender(envgame.get_terr(sel)).id,
 								dir4vec(
 									Coords(
 										stoi(es.at(1)), // dx
 										stoi(es.at(2))  // dy
 									)
 								)
-							);
+							));
 						}
 						else {
 							put("no unit selected");

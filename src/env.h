@@ -33,7 +33,7 @@ namespace col{
 
 
 	inline bool compatible(Travel const& x, Travel const& y) {
-		return x | y;
+		return x & y;
 	}
 
 
@@ -94,12 +94,23 @@ namespace col{
 		}
 
 
+		int get_turn_no() const {
+			return turn_no;
+		}
 
 		Player & get_current_player() {
+			if (p_current_player == players.end()) {
+				cerr << "no current player set" << endl;
+				throw Critical("no current player set");
+			}
 			return (*p_current_player).second;
 		}
 
 		Player const& get_current_player() const {
+			if (p_current_player == players.end()) {
+				cerr << "no current player set" << endl;
+				throw Critical("no current player set");
+			}
 			return (*p_current_player).second;
 		}
 
@@ -132,6 +143,7 @@ namespace col{
 				if (p_current_player == players.end()) {
 					turn();  // TURN !!!
 					p_current_player = players.begin();
+					cerr << "curr player set to " << get_current_player().name << endl;
 				}
 			}
 
@@ -229,6 +241,16 @@ namespace col{
 			return get_cont<T>().at(id);
 		}
 
+		//template <typename T>
+		//auto find(typename T::Id const& id) -> get_cont<T>()::iterator {
+		//	return get_cont<T>().find(id);
+		//}
+
+		//template <typename T>
+		//auto find(typename T::Id const& id) const -> decltype(get_cont<T>().find(id)) {
+		//	return get_cont<T>().find(id);
+		//}
+
 		template <typename T>
 		bool exist(typename T::Id const& id) {
 			return get_cont<T>().count(id);
@@ -250,7 +272,7 @@ namespace col{
 				turn(item.second);
 			}
 
-			if (turn_no >= turn_limit) {
+			if (turn_limit > 0 and turn_no >= turn_limit) {
 				state = 2;
 			}
 
@@ -554,7 +576,7 @@ namespace col{
 			}
 		}
 
-		Code build_road(Unit &u, bool exec=1) {
+		bool build_road(Unit &u, bool exec=1) {
 			/* Build road on land terrain square (cost ~ 1.5 turns)
 			 */
 

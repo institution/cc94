@@ -67,8 +67,8 @@ namespace col{
 			for (auto& it: units) {
 				auto& u = it.second;
 				if (u.get_player().id == pid and u.time_left and u.order != Order::Space) {
-					auto dir = roll::roll2(0, 8);
-
+					auto dir = roll::roll2(0, 9);
+					
 					{
 						auto r = unique_ptr<Action>(new OrderAttack(pid, u.id, dir));
 						if ((*r).is_allowed(*this)) return r;
