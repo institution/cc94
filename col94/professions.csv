@@ -1,0 +1,16 @@
+Name,Res,Food,Sugar,Tobacco,Cotton,Furs,Lumber,Ore,Silver,Horses,Rum,Cigars,Cloth,Coats,Trade Goods,Tools,Muskets
+Profession,Id,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38
+Farmer,,,,,,,,,,,,,,,,,
+Sugar Planter,,,,,,,,,,,,,,,,,
+Tobacco Planter,,,,,,,,,,,,,,,,,
+Cotton Planter,,,,,,,,,,,,,,,,,
+Fur Trapper,,,,,,,,,,,,,,,,,
+Lumberjack,,,,,,,,,,,,,,,,,
+Ore Miner,,,,,,,,,,,,,,,,,
+Silver Miner,,,,,,,,,,,,,,,,,
+Distiler,,,-1,,,,,,,,1,,,,,,
+Tobaconnist,,,,-1,,,,,,,,1,,,,,
+Weaver,,,,,-1,,,,,,,,1,,,,
+Fur Trader,,,,,,-1,,,,,,,,1,,,
+Blacksmith,,,,,,,,-1,,,,,,,,1,
+Gunsmith,,,,,,,,,,,,,,,,-1,1
