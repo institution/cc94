@@ -14,11 +14,14 @@ IGNORE_SRC:=src/tree.cpp
 CCOPTS:=-I./src -I./inc -std=c++11 -g -O0
 
 # linker options
-LLOPTS:=-lboost_serialization -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
+
+# assert dirs
+$(shell mkdir -p b)
+$(shell mkdir -p bin)
 
 # list of compiled source b/fname.cpp.obj
-$(shell mkdir -p b)
 OBJS:=$(shell find src -name '*.cpp')
 OBJS:=$(filter-out $(IGNORE_SRC),$(OBJS))
 OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
@@ -31,10 +34,10 @@ ${OBJS}: b/%.obj: src/%
 	
 # linker
 ${OUTS}: $(OBJS)
-	g++ -o $@ $(filter-out b/$(filter-out $@,$(OUTS)).cpp.obj,$(OBJS)) ${LLOPTS}
+	g++ -o bin/$@ $(filter-out b/$(filter-out $@,$(OUTS)).cpp.obj,$(OBJS)) ${LLOPTS}
 
 clean:
-	rm -f b/* ${OUTS} core.*
+	rm -f b/* bin/*
 	
 
 # test
