@@ -68,7 +68,7 @@ namespace col{
 		// global state
 		uint32 turn_no;
 		uint32 next_id;
-		uint8 state; // runlevels: 0 - prepare, 1 - playing, 2 - ended
+		uint8 state; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 		uint32 turn_limit; // nonzero => end game when turn_no >= turn_limit
 
 		// misc non game state
@@ -98,37 +98,34 @@ namespace col{
 			return turn_no;
 		}
 
-		Player & get_current_player() {
-			if (p_current_player == players.end()) {
-				cerr << "no current player set" << endl;
-				throw Critical("no current player set");
-			}
-			return (*p_current_player).second;
-		}
 
 		Player const& get_current_player() const {
-			if (p_current_player == players.end()) {
-				cerr << "no current player set" << endl;
-				throw Critical("no current player set");
+			if (!in_progress()) {
+				assert(p_current_player == players.end());
+				throw Error("no current player: game in regress");
 			}
+			assert(p_current_player != players.end());
 			return (*p_current_player).second;
 		}
 
+		Player & get_current_player() {
+			return const_cast<Player&>(
+				static_cast<Env const*>	(this) -> get_current_player() );
+		}
 
-		Env& set_current_player_id(Player::Id const& pid) {
-			p_current_player = players.find(pid);
-
-			if (p_current_player == players.end()) {
-				throw Error("unexpected error");
+		Env& set_current_player(Player const& p) {
+			auto it = players.find(p.id);
+			if (it == players.end()) {
+				throw Error("no such player");
 			}
-
+			p_current_player = it;
 			return *this;
 		}
 
 
 		void start(Player const& p, bool exec=1) {
 			if (exec) {
-				set_current_player_id(p.id);
+				set_current_player(get<Player>(p.id));
 				state = 1; // game started
 			}
 		}
@@ -232,14 +229,21 @@ namespace col{
 		}
 
 		template <typename T>
-		T& get(typename T::Id const& id) {
-			return get_cont<T>().at(id);
+		T const& get(typename T::Id const& id) const {
+			auto it = get_cont<T>().find(id);
+			if (it == get_cont<T>().end()) {
+				throw Error("no such object");
+			}
+			return (*it).second;
 		}
 
 		template <typename T>
-		T const& get(typename T::Id const& id) const {
-			return get_cont<T>().at(id);
+		T & get(typename T::Id const& id) {
+			return const_cast<T&> (
+				static_cast<Env const*> (this) -> get<T>(id) );
 		}
+
+
 
 		//template <typename T>
 		//auto find(typename T::Id const& id) -> get_cont<T>()::iterator {

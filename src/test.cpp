@@ -130,8 +130,11 @@ TEST_CASE( "turn sequence", "" ) {
 }
 
 
+
 TEST_CASE( "colony", "" ) {
 
+	string const CSV_PATH = "../col94/";
+	
 	Env env;
 
 	env.resize({1,1});
@@ -145,7 +148,7 @@ TEST_CASE( "colony", "" ) {
 	auto& t = env.ref_terr({0,0});
 	env.move_in(t, u);
 
-	env.loads<BuildType>("./col94/builds.csv");
+	env.loads<BuildType>(CSV_PATH + "builds.csv");
 
 
 	SECTION("build") {
@@ -416,13 +419,7 @@ TEST_CASE( "improve square", "" ) {
 		REQUIRE( env.build_road(u) == true );
 		REQUIRE( t.has(Phys::Road)       );
 
-		try {
-			env.build_road(u); REQUIRE(false);
-		}
-		catch (Error const& e) {
-			REQUIRE(true);
-		}
-		
+		REQUIRE_THROWS_AS(env.build_road(u), Error);				
 	}
 
 	SECTION("plow field") {

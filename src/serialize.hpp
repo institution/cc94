@@ -335,7 +335,9 @@ namespace col {
 		ar >> env.state;
 		// current player
 		if (env.state == 1) {
-			env.set_current_player_id(read<Player::Id>(ar));
+			env.set_current_player(
+				env.get<Player>(
+					read<Player::Id>(ar) ) );
 		}
 		else {
 			read<Player::Id>(ar);

@@ -10,6 +10,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/program_options.hpp>
+#include <boost/program_options/positional_options.hpp>
+
+
 
 #include "col.hpp"
 #include "env.h"
@@ -102,9 +106,56 @@ namespace col{
 
 int main(int argc, char* argv[])
 {
-	using namespace col;
+	string const CSV_PATH = "../col94/";
+
 
 	string fname("./aaa.mp");
+	
+	// handle options
+	/*{
+	 	namespace po = boost::program_options;
+
+		// declare options
+		po::options_description generic("Allowed options");
+		generic.add_options()
+			("help,h", "produce help message")
+			("version,v", "print version string")		
+		;
+
+		
+		po::options_description positional;
+		positional.add_options()
+			("savefile,f", po::value< vector<string> >(), "load savefile")		
+		;
+
+		po::positional_options_description positional_mark;
+		positional_mark.add("savefile", 1);
+
+		// parse
+		po::variables_map params;
+		po::store(
+			po::command_line_parser(argc, argv)
+				.options(generic)
+				.positional(positional_mark)
+				.run(), 
+			params
+		);
+		po::notify(params);
+
+		// handle
+		if (params.count("help")) {
+			cout << generic << "\n";
+			cout << positional << "\n";
+			return 1;
+		}
+
+		if (params.count("savefile")) {
+			fname = params["savefile"].as< vector<string> >().at(0);
+		}
+	}*/
+	
+	
+	using namespace col;
 
 
 	sf::RenderWindow app(sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32), "AI Col");
@@ -121,9 +172,9 @@ int main(int argc, char* argv[])
 
 	EnvGame env;
 
-	env.loads<TerrType>("./col94/terrs.csv");
-	env.loads<BuildType>("./col94/builds.csv");
-	env.loads<UnitType>("./col94/units.csv");
+	env.loads<TerrType>(CSV_PATH + "terrs.csv");
+	env.loads<BuildType>(CSV_PATH + "builds.csv");
+	env.loads<UnitType>(CSV_PATH + "units.csv");
 
 	//ifstream f(fname, std::ios::binary);
 	//

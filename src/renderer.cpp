@@ -63,15 +63,16 @@ namespace col {
 	);
 
 
+	
 
 	string const
-		TERR = "COLONIZE/TERRAIN_SS",
-		ICON = "COLONIZE/ICONS_SS",
-		PHYS = "COLONIZE/PHYS0_SS",
-		ARCH = "COLONIZE/PARCH_SS",
-		BUILD = "COLONIZE/BUILDING_SS",
+		TERR = RES_PATH + "TERRAIN_SS",
+		ICON = RES_PATH + "ICONS_SS",
+		PHYS = RES_PATH + "PHYS0_SS",
+		ARCH = RES_PATH + "PARCH_SS",
+		BUILD = RES_PATH + "BUILDING_SS",
 		DIFFUSE = "DIFFUSE*",
-		COAST = "COAST*";
+		COAST = "*COAST*";
 
 	Res::mapped_type const& res(string const& d, uint const& i) {
 
@@ -907,7 +908,7 @@ namespace col {
 		// pos - left top pix
 		// dim - size
 
-		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
+		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);
 
 		/*
 		if (env.in_bounds(con.sel)) {
@@ -946,7 +947,7 @@ namespace col {
 
 		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, res("COLONIZE/WOODTILE_SS", 1), pos, dim);
+		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);
 
 		// terrain info
 		/*
