@@ -1,6 +1,8 @@
 #ifndef ENV_H
 #define ENV_H
 
+#include <signal.h>
+#include <list>
 
 #include "col.hpp"
 #include "base.h"
@@ -12,7 +14,6 @@
 #include "unit.h"
 #include "roll.h"
 #include "error.h"
-#include <signal.h>
 
 
 
@@ -28,8 +29,8 @@ namespace col{
 	using Units = unordered_map<Unit::Id, Unit>;
 	//using Builds = unordered_map<Build::Id, Build>;
 	using Colonies = unordered_map<Colony::Id, Colony>;
+	// using Players = unordered_map<Player::Id, Player>;
 	using Players = unordered_map<Player::Id, Player>;
-
 
 
 	inline bool compatible(Travel const& x, Travel const& y) {
@@ -59,7 +60,7 @@ namespace col{
 		Colonies colonies;
 		Units units;
 
-		Players::iterator p_current_player;
+		Player::Id cpid;
 
 		// map state
 		Coord w, h;
@@ -75,6 +76,8 @@ namespace col{
 		uint32 mod;
 		boost::function<int (int range)> roll;
 
+		int verbose{0};
+		int action_count{0};
 
 
 		void clear() {
@@ -88,7 +91,7 @@ namespace col{
 			turn_no = 0;
 			state = 0;
 
-			p_current_player = players.end();
+			cpid = -1;
 
 			mod++;
 		}
@@ -101,11 +104,9 @@ namespace col{
 
 		Player const& get_current_player() const {
 			if (!in_progress()) {
-				assert(p_current_player == players.end());
 				throw Error("no current player: game in regress");
 			}
-			assert(p_current_player != players.end());
-			return (*p_current_player).second;
+			return players.at(cpid);
 		}
 
 		Player & get_current_player() {
@@ -118,30 +119,46 @@ namespace col{
 			if (it == players.end()) {
 				throw Error("no such player");
 			}
-			p_current_player = it;
+			cpid = p.id;
 			return *this;
 		}
 
 
-		void start(Player const& p, bool exec=1) {
-			if (exec) {
-				set_current_player(get<Player>(p.id));
-				state = 1; // game started
+		void start() {
+			state = 1;
+			cpid = 0;
+			while (players.find(cpid) == players.end()) {
+				if (cpid > 10) {
+					throw Critical("need at least one player to start game");
+				}
+				++cpid;
 			}
 		}
 
 		void ready(Player const& p, bool exec=1) {
 
-			assert(get_current_player().id == p.id);
+			if (get_current_player().id != p.id) {
+				if (exec) {
+					throw Critical("not your turn");
+				}
+				else {
+					throw Error("not your turn");
+				}
+			}
 
 			if (exec) {
-				++p_current_player;
-
-				if (p_current_player == players.end()) {
-					turn();  // TURN !!!
-					p_current_player = players.begin();
-					cerr << "curr player set to " << get_current_player().name << endl;
+				++cpid;
+				while (players.find(cpid) == players.end()) {
+					if (cpid > 10) {
+						turn();     // TURN HERE
+						cpid = 0;
+					}
+					else {
+						++cpid;
+					}
 				}
+
+				record_action();
 			}
 
 		}
@@ -149,7 +166,10 @@ namespace col{
 
 
 
-		Env(): terrs(Coords(0,0), boost::fortran_storage_order()) {
+		explicit
+		Env(int verbose=0): terrs(Coords(0,0), boost::fortran_storage_order()) {
+
+			this->verbose = verbose;
 
 			tts = make_shared<TerrTypes>();
 			bts = make_shared<BuildTypes>();
@@ -559,7 +579,9 @@ namespace col{
 
 		bool check(int L, int M) {
 			int r = roll(M); // 0, M-1
-			cerr << str(format("check %||/%|| -> %||\n") % L % M % (r+1));
+			if (verbose) {
+				cerr << str(format("check %||/%|| -> %||\n") % L % M % (r+1));
+			}
 			return r < L;
 
 		}
@@ -574,7 +596,8 @@ namespace col{
 				return check(time_left, time_cost);
 			}
 			else {
-				cerr << "check no need" << endl;
+				if (verbose)
+					cerr << "check no need" << endl;
 				u.time_left -= time_cost;
 				return 1;
 			}
@@ -613,6 +636,10 @@ namespace col{
 		}
 
 
+		void record_action() {
+			action_count += 1;
+		}
+
 		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {
 			/* Move unit
 			 */
@@ -643,19 +670,28 @@ namespace col{
 			}
 
 			// execute
+
 			if (exec) {
+
 				// cost to move = 1t
 				auto time_cost = TIME_UNIT;
 
 				if (run_map_task(u, time_cost)) {
 					move_out(orig, u);
 					move_in(dest, u);
+					record_action();
 					return 1; // success
 				}
-				return 0; // try next turn
+				else {
+					record_action();
+					return 0; // try next turn
+				}
 			}
-			return -1; // unspecified
+			else {
+				return -1; // unspecified
+			}
 		}
+
 
 
 		bool has_defender(Coords const& pos) const {
@@ -730,11 +766,18 @@ namespace col{
 				if (run_map_task(attacker, time_cost)) {
 					// fight
 					auto attack_base = attacker.get_attack();
-					auto attack = attack_base;
+					auto attack = attack_base * (1.0 + 0.5);  // attack bonus
 					auto combat_base = defender.get_combat();
-					auto combat = combat_base;
+					auto combat = combat_base * (1.0 + get_defense_bonus(dest, defender.get_travel()));
 
-					if (check(attack, attack + combat)) {
+					if (verbose) {
+						cout << " -------- combat -------- \n";
+						cout << "attack = " << attack_base << " + " << attack_base * 0.5 << endl;
+						cout << "combat = " << combat_base << " + " << combat_base * get_defense_bonus(dest, defender.get_travel()) << endl;
+						cout << "odds   " << attack*10 << " : " << combat*10 << endl;
+					}
+
+					if (check(attack*10, (attack + combat)*10)) {
 						move_out(dest, defender);
 						destroy<Unit>(defender.id);
 					}
@@ -743,11 +786,17 @@ namespace col{
 						destroy<Unit>(attacker.id);
 					}
 
+					record_action();
 					return 1; // command executed
 				}
-				return 0; // try next turn
+				else {
+					record_action();
+					return 0; // try next turn
+				}
 			}
-			return -1;
+			else {
+				return -1;
+			}
 		}
 
 
@@ -857,7 +906,7 @@ namespace col{
 		}
 
 
-		int8 get_defense_bonus(Terr const& terr, Travel const& trav) {
+		float get_defense_bonus(Terr const& terr, Travel const& trav) {
 			if (trav == LAND) {
 				return get_land_defense_bonus(terr);
 			}
@@ -869,12 +918,21 @@ namespace col{
 			}
 		}
 
-		int8 get_land_defense_bonus(Terr const& terr) {
-			return 1;
+		float get_land_defense_bonus(Terr const& terr) {
+			if (terr.has(Phys::Mountain)) {
+				return 1.00;
+			}
+			else if (terr.has(Phys::Hill)) {
+				return 0.50;
+			}
+			else if (terr.has(Phys::Forest)) {
+				return 0.50;
+			}
+			return 0.0;
 		}
 
-		int8 get_sea_defense_bonus(Terr const& terr){
-			return 1;
+		float get_sea_defense_bonus(Terr const& terr){
+			return 0.0;
 		}
 
 

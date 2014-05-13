@@ -31,6 +31,8 @@ namespace col {
 			ar >> trg;
 		}
 
+		trg.action_count = src.action_count;
+		
 		// determinisation
 		//roll::seed();
 

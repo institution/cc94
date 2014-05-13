@@ -168,7 +168,7 @@ namespace col {
 	};
 
 
-	struct Start: Action {
+	/*struct Start: Action {
 		Start(Player::Id const& pid): Action(pid) {}
 
 		void exec(Game &game, bool exec=1) const {
@@ -188,7 +188,7 @@ namespace col {
 			out << "Start("<<pid<<")";
 		}
 
-	};
+	};*/
 
 
 	inline

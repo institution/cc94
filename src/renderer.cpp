@@ -28,7 +28,7 @@ namespace col {
 		}
 		else {
 			auto &font = g_fonts[name];
-			auto path = str(format("./font/%||") % name);
+			auto path = FONT_PATH + name;
 			if (!font.loadFromFile(path)) {
 
 				throw std::runtime_error("cannot load font");
@@ -46,7 +46,7 @@ namespace col {
 		}
 		else {
 			auto &font = g_pixfonts[name];
-			auto path = str(format("./font/%||") % name);
+			auto path = FONT_PATH + name;
 			font.load(path);
 			return font;
 		}
@@ -216,10 +216,10 @@ namespace col {
 			Coords const& delta);
 
 
-	void render_playerind(sf::RenderWindow &win, uint16 x, uint16 y, const Color &col) {
+	void render_pixel(sf::RenderWindow &win, v2i pix, const Color &col) {
 		win.draw(
 			RectShape(
-				v2i(x, y),
+				pix,
 				v2i(1, 1),
 				sf::Color(col.r,col.g,col.b, 255),
 				0,
@@ -957,8 +957,16 @@ namespace col {
 		 *
 		 */
 
-
-
+		string info;
+		
+		string player_name = "EDITING";
+		if (env.in_progress()) {
+			player_name = env.get_current_player().name;
+		}
+		
+		// Turn 5, England 
+		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
+			
 		if (env.in_bounds(con.sel)) {
 
 			auto& t = env.get_terr(con.sel);
@@ -972,8 +980,8 @@ namespace col {
 				if (t.has(phys)) phys_info += name + ",";
 			}
 
-			auto info = boost::str(
-				format("Biome: %||\n[%||]\n") %
+			info += boost::str(
+				format("\n%||\n[%||]\n") %
 					BIOME_NAMES.at((t.biome)) % phys_info
 			);
 
@@ -983,24 +991,25 @@ namespace col {
 				Unit const& u = env.get_defender(t);
 
 				info += boost::str(
-					format("Type: %||\nTime Left: %||/%||") %
+					format("\n%||\nTime left: %||/%||") %
 						u.get_name() % int(u.time_left) % int(TIME_UNIT)
 				);
 
 			}
-
-
-			render_text(win,
-				pos,
-				res_pixfont("tiny.png"),
-				info,
-				{0,0,0,0},
-				0
-			);
 		}
-
-
-
+		
+		render_text(win,
+			pos,
+			res_pixfont("tiny.png"),
+			info,
+			{0,0,0,0},
+			0
+		);
+		
+		// bottom right: player indicator
+		if (env.in_progress()) {
+			render_pixel(win, pos + v2i(dim[0]-1,0), env.get_current_player().color);
+		}
 	}
 
 	/*

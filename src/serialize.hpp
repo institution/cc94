@@ -59,9 +59,10 @@ namespace col {
     void Env::save(Archive & ar, uint const& ver) const
 	{
 		auto& env = *this;
+		auto verbose = 0;
 
 		// players
-		cerr << "save players" << endl;
+		if (verbose) cerr << "save players" << endl;
 		{
 			auto& ps = env.get_cont<Player>();
 			auto tmp = ps.size();
@@ -78,7 +79,7 @@ namespace col {
 		}
 
 		// terrain
-		cerr << "save terrain" << endl;
+		if (verbose) cerr << "save terrain" << endl;
 		{
 			ar << env.w;
 			ar << env.h;
@@ -98,7 +99,7 @@ namespace col {
 		}
 
 		// colonies
-		cerr << "save colonies" << endl;
+		if (verbose) cerr << "save colonies" << endl;
 		{
 			auto& ps = env.get_cont<Colony>();
 			auto tmp = ps.size();
@@ -106,7 +107,7 @@ namespace col {
 			for (auto& p: ps) {
 				auto& x = p.second;
 
-				cerr << "save colony name = " << x.name << endl;
+				if (verbose) cerr << "save colony name = " << x.name << endl;
 
 				// colony
 				ar << x.id;
@@ -115,7 +116,7 @@ namespace col {
 
 				// buildings
 				for (auto& b: x.builds) {
-					cerr << "save building type id = " << b.type->id << endl;
+					if (verbose) cerr << "save building type id = " << b.type->id << endl;
 					// build
 					ar << b.type->id;
 					ar << b.free_slots;
@@ -129,7 +130,7 @@ namespace col {
 		}
 
 		// units
-		cerr << "save units" << endl;
+		if (verbose) cerr << "save units" << endl;
 		{
 			auto& ps = env.get_cont<Unit>();
 			auto tmp = ps.size();
@@ -175,7 +176,7 @@ namespace col {
 			}
 		}
 
-		cerr << "save misc" << endl;
+		if (verbose) cerr << "save misc" << endl;
 		// turn info
 		ar << env.turn_no;
 		// next id
@@ -184,11 +185,11 @@ namespace col {
 		ar << state;
 		// current player
 		if (env.state == 1) {
-			cerr << "save current player" << env.get_current_player().id << endl;
+			if (verbose) cerr << "save current player" << env.get_current_player().id << endl;
 			ar << env.get_current_player().id;
 		}
 		else {
-			cerr << "save current player INV STATE: " << env.state << endl;
+			if (verbose) cerr << "save current player INV STATE: " << env.state << endl;
 			write<Player::Id>(ar, -1);
 		}
 
@@ -200,9 +201,13 @@ namespace col {
     void Env::load(Archive & ar, uint const& ver)
 	{
 		auto& env = *this;
+		auto verbose = env.verbose;
 
 		// players
-		cerr << "load players" << endl;
+		if (verbose) {
+			cerr << "load players" << endl;
+		}
+
 		{
 			auto& ps = env.get_cont<Player>();
 			size_t tmp;
@@ -221,7 +226,10 @@ namespace col {
 		}
 
 		// terrain
-		cerr << "load terrain" << endl;
+		if (verbose) {
+			cerr << "load terrain" << endl;
+		}
+
 		{
 			ar >> env.w;
 			ar >> env.h;
@@ -244,7 +252,10 @@ namespace col {
 		}
 
 		// colonies
-		cerr << "load colonies" << endl;
+		if (verbose) {
+			cerr << "load colonies" << endl;
+		}
+
 		{
 			auto& ps = env.get_cont<Colony>();
 			size_t tmp;
@@ -281,7 +292,10 @@ namespace col {
 
 
 		// units
-		cerr << "load units" << endl;
+		if (verbose) {
+			cerr << "load units" << endl;
+		}
+
 		{
 			auto& ps = env.get_cont<Unit>();
 			size_t tmp;
@@ -326,7 +340,9 @@ namespace col {
 			}
 		}
 
-		cerr << "load misc" << endl;
+		if (verbose) {
+			cerr << "load misc" << endl;
+		}
 		// turn info
 		ar >> env.turn_no;
 		// next id

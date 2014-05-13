@@ -101,7 +101,7 @@ TEST_CASE( "turn sequence", "" ) {
 
 	auto& p1 = env.create<Player>();
 
-	env.start(p1);
+	env.start();
 
 	SECTION("1p") {
 		auto t = env.turn_no;
@@ -293,7 +293,7 @@ TEST_CASE( "serialize", "" ) {
 
 	SECTION("save/load started game") {
 
-		env.start(u.get_player());
+		env.start();
 
 		std::stringstream stream;
 

@@ -237,7 +237,7 @@ namespace mcts {
 
 
 	template <typename Node, typename Game>
-	void step(Node *root, Game &game, int verbose=0) {
+	void step(Node *root, Game &game, int verbose) {
 		Node *node = root;
 
 		if (verbose) {
@@ -268,7 +268,8 @@ namespace mcts {
 		}
 		else {
 			// terminal node - so what?
-			cout << "step/expand: TERMINAL NODE REACHED" << endl;
+			if (verbose)
+				cout << "step/expand: TERMINAL NODE REACHED" << endl;
 			node->terminal = 1;
 		}
 

@@ -268,48 +268,25 @@ namespace col {
 				// calculate and show preffered move for current player
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: ai <num>\n");
+						output.push_back("Usage: ai <num> <exec>\n");
 						break;
 					}
-					case 2: {
+					case 3: {
 						if (envgame.in_progress()) {
 							auto const& pid = envgame.get_current_player().id;
-							cerr << "looking for ai assigned to pid = " << pid << endl;
 							auto it = ais.find(pid);
 							if (it == ais.end()) {
-								put("no ai created for this player");
+								put("creating ai for this player");
+								create_ai(pid);
 							}
-							else {
-								assert((*it).second.pid == pid); // impossible
-								auto const& a = (*it).second.calc(envgame, stoi(es.at(1)), 1);
-								put(string("preferred action: ") + to_string(a));
-							}
-						}
-						else {
-							put("game in regress; start game first");
-						}
-						break;
-					}
-				}
-			}
-			else if (cmd == "create-ai") {				
-				// calculate and show preffered move for current player
-				switch (es.size()) {
-					default: {
-						output.push_back("Usage: create-ai\n");
-						break;
-					}
-					case 1: {
-						if (envgame.in_progress()) {
-							auto const& pid = envgame.get_current_player().id;
 							
-							auto it = ais.find(pid);
-							if (it != ais.end()) {
-								put("ai already exists");
+							auto& ai = ais.at(pid);
+							auto const& a = ai.calc(envgame, stoi(es.at(1)), 0);
+							put(string("action: ") + to_string(a));
+							if (stoi(es.at(2)) == 1) {
+								exec(a);
 							}
-							else {
-								create_ai(pid);								
-							}
+
 						}
 						else {
 							put("game in regress; start game first");
@@ -321,11 +298,11 @@ namespace col {
 			else if (cmd == "start") {
 				switch (es.size()) {
 					default: {
-						output.push_back("Usage: start <player_id>\n");
+						output.push_back("Usage: start\n");
 						break;
 					}
-					case 2: {
-						envgame.exec(Start(std::stoi(es.at(1))));
+					case 1: {
+						envgame.start();
 						break;
 					}
 				}
@@ -337,11 +314,11 @@ namespace col {
 						break;
 					}
 					case 2: {
-						envgame.exec(Ready(std::stoi(es.at(1))));
+						exec(Ready(std::stoi(es.at(1))));
 						break;
 					}
 					case 1: {
-						envgame.exec(Ready(envgame.get_current_player().id));
+						exec(Ready(envgame.get_current_player().id));
 						break;
 					}
 				}

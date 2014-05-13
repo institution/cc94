@@ -15,6 +15,8 @@ namespace col {
 	int const GLOBAL_SCALE = 3;
 
 	string const RES_PATH = "../COLONIZE/";
+	string const FONT_PATH = "../font/";
+
 
 	extern std::unordered_map<uint8,string> BIOME_NAMES;
 	Biome::type get_biome_by_name(string const& name);

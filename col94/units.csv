@@ -1,10 +1,10 @@
-name,id,movement,attack,combat,slots,size,category,icon,movementtype
+name,id,movement,attack,combat,slots,size,category,icon,travel
 Colonists,101,1,0,1,0,1,A,101,1
 Horses,30,4,0,0,0,1,A,30,1
 Soldiers,103,1,2,2,0,1,A,103,1
 Pioneers,102,1,0,1,0,1,A,102,1
 Missionaries,106,1,0,1,0,1,A,106,1
-Dragoons,105,4,10,3,0,1,A,105,1
+Dragoons,105,4,3,3,0,1,A,105,1
 Scouts,104,4,1,1,0,1,A,104,1
 Regulars,126,1,5,5,0,1,A,126,1
 Cont. Cav.,130,4,5,5,0,1,A,130,1

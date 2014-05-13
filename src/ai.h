@@ -59,6 +59,7 @@ namespace col {
 		void apply(Action const& a) {
 			/* Choose tree branch */
 			mcts::apply(root, a);
+			action_count += 1;
 		}
 
 		Action const& preferred() {
@@ -90,6 +91,10 @@ namespace col {
 				return -- preffered action
 			*/
 
+			if (action_count != game.action_count) {
+				throw Critical("unsynchronized");
+			}
+
 			for (int i=0; i<limit; ++i) {
 
 				//cout << "dumping tree before step: " << endl;
@@ -104,13 +109,13 @@ namespace col {
 
 				//
 				game_copy.verbose = verbose;
-				game_copy.turn_limit = game_copy.turn_no + 10; // look ahead 10 turns
+				game_copy.turn_limit = game_copy.turn_no + 100; // look ahead 20 turns
 
 				//cout << "after reset:" << endl;
 				//dump(gw.game);
 
 				//cout << "step" << endl;
-				mcts::step(root, game_copy, pid);
+				mcts::step(root, game_copy, verbose);
 
 				//cout << "game state after play: " << endl;
 				//dump(gw.game);
@@ -118,9 +123,11 @@ namespace col {
 
 			}
 
-			if (verbose) {
+			//if (verbose)
 				dump(root, 4);
-			}
+
+
+
 
 			// select preferred move
 			NodeType *node = mcts::preferred_node(root);

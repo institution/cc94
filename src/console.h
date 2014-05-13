@@ -105,6 +105,8 @@ namespace col {
 
 		void create_ai(Player::Id const& pid) {
 			ais.emplace(pid, pid);
+			auto it = ais.find(pid);
+			(*it).second.action_count = envgame.action_count;
 		}
 
 		void exec(Action const& action) {

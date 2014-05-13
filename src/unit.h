@@ -31,8 +31,8 @@ namespace col{
 		string const& get_name() const { return name; }
 		uint8 const& get_travel() const { return travel; }
 		uint8 const& get_speed() const { return speed; }
-		uint8 const& get_attack() const { return attack; }
-		uint8 const& get_combat() const { return combat; }
+		float get_attack() const { return attack; }
+		float get_combat() const { return combat; }
 
 
 		UnitType() {}
@@ -133,8 +133,8 @@ namespace col{
 		string const& get_name() const { return type->get_name(); }
 		uint8 const& get_travel() const { return type->get_travel(); }
 		uint8 const& get_speed() const { return type->get_speed(); }
-		uint8 const& get_attack() const { return type->get_attack(); }
-		uint8 const& get_combat() const { return type->get_combat(); }
+		float get_attack() const { return type->get_attack(); }
+		float get_combat() const { return type->get_combat(); }
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }
 		Player & get_player() const { return *player; }
