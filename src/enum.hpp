@@ -2,6 +2,7 @@
 #define ENUM2_H
 
 #include <limits>
+#include <memory>
 
 template<typename T>
 struct Enum{
@@ -25,6 +26,15 @@ struct Enum{
 		ar & val;
 	}
 
+	struct hash
+	{
+		size_t operator()(Enum<T> const& x) const
+		{
+			return x.val;
+			//return std::hash<int>()(x.val);
+		}
+	};
+
 };
 
 template<typename T = int> class Enum;
@@ -36,7 +46,8 @@ namespace std {
 	{
 		size_t operator()(Enum<T> const& x) const
 		{
-			return hash<int>()(x.val);
+			return x.val;
+			//return hash<int>()(x.val);
 		}
 	};
 }

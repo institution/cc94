@@ -135,33 +135,7 @@ namespace col{
 			}
 		}
 
-		void ready(Player const& p, bool exec=1) {
 
-			if (get_current_player().id != p.id) {
-				if (exec) {
-					throw Critical("not your turn");
-				}
-				else {
-					throw Error("not your turn");
-				}
-			}
-
-			if (exec) {
-				++cpid;
-				while (players.find(cpid) == players.end()) {
-					if (cpid > 10) {
-						turn();     // TURN HERE
-						cpid = 0;
-					}
-					else {
-						++cpid;
-					}
-				}
-
-				record_action();
-			}
-
-		}
 
 
 
@@ -286,6 +260,36 @@ namespace col{
 			return state == 1;
 		}
 
+
+		void ready(Player const& p, bool exec=1) {
+
+			if (get_current_player().id != p.id) {
+				if (exec) {
+					throw Critical("not your turn");
+				}
+				else {
+					throw Error("not your turn");
+				}
+			}
+
+			if (exec) {
+				++cpid;
+				while (players.find(cpid) == players.end()) {
+					if (cpid > 10) {
+						turn();     // TURN HERE
+						cpid = 0;
+					}
+					else {
+						++cpid;
+					}
+				}
+
+				record_action();
+			}
+
+		}
+
+
 		void turn() {
 			// time progress
 			++turn_no;
@@ -343,7 +347,7 @@ namespace col{
 			u.time_left = 6;
 
 			if (u.order == Order::Space) {
-				u.order == Order::Unknown;
+				u.order = Order::Unknown;
 			}
 
 			if (u.workplace != nullptr) {
@@ -376,10 +380,6 @@ namespace col{
 				}
 			}*/
 
-		}
-
-		void end_turn(Player::Id const& player_id) {
-			// player declares no more actions
 		}
 
 		/*void switch_next_player() {
@@ -830,14 +830,16 @@ namespace col{
 		}
 
 		bool clear_forest(Unit const& u) {
-			uint8 time_cost = TIME_UNIT * 3;  // 3t
+			//uint8 time_cost = TIME_UNIT * 3;  // 3t
 
 
+			return 0;
 		}
 
 
 		bool plant_forest() {
 
+			return 0;
 		}
 
 		void burn_colony(Terr & t) {

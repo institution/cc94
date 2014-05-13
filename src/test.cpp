@@ -91,6 +91,7 @@ TEST_CASE( "get terr", "" ) {
 
 
 	auto& t = env.get<Terr>(Coords(0,0));
+	REQUIRE(t.biome == Biome::Plains);
 
 }
 
@@ -237,12 +238,12 @@ TEST_CASE( "scoring", "" ) {
 	REQUIRE(env.get_result(p2.id) == 0.0f);
 
 
-	auto& u1 = env.create<Unit>(ut, p1);
+	env.create<Unit>(ut, p1);
 
 	REQUIRE(env.get_result(p1.id) == 1.0f);
 	REQUIRE(env.get_result(p2.id) == 0.0f);
 
-	auto& u2 = env.create<Unit>(ut, p2);
+	env.create<Unit>(ut, p2);
 
 	REQUIRE(env.get_result(p1.id) == 0.5f);
 	REQUIRE(env.get_result(p2.id) == 0.5f);

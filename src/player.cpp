@@ -6,6 +6,7 @@ namespace col{
 		out << format("Player(id=%||,name=%||)") % obj.id % obj.name;
 		
 		//out << "Player(" << "id"<<"="<<obj.id<<','<<"name"<<"="<<obj.name << ")";
+		return out;
 	}
 	
 	

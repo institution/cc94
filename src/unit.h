@@ -14,8 +14,8 @@ namespace col{
 	struct UnitType {
 		using Id = uint32;
 
+		Id id;
 		string name;
-		Id id; // const
 		uint8 speed;  // flat tiles per 1t (TIME_UNIT)
 		uint8 attack; // attack strength
 		uint8 combat; // defense strength
@@ -124,11 +124,45 @@ namespace col{
 		uint8 time_left;
 
 		Order::type order;
+
 		Workplace * workplace;
 		Item workitem;
 		uint slot;
 
 		uint16 free_space;
+
+
+		Unit():
+			Placeable(),
+			id(-1),
+			type(nullptr),
+			player(nullptr),
+			time_left(0),
+			order(Order::Unknown),
+			workplace(nullptr),
+			workitem(ItemNone),
+			free_space(0)
+		{}
+
+		Unit(
+			Id const& id,
+			UnitType const& type,
+			Player & player
+		):
+			Placeable(),
+			id(id),
+			type(&type),
+			player(&player),
+			time_left(6),
+			order(Order::Unknown),
+			workplace(nullptr),
+			workitem(ItemNone),
+			free_space(0)
+		{}
+
+		Unit(Unit &&) = default;
+		Unit(Unit const&) = delete;
+
 
 		string const& get_name() const { return type->get_name(); }
 		uint8 const& get_travel() const { return type->get_travel(); }
@@ -153,40 +187,6 @@ namespace col{
 			workitem = ItemNone;
 			return *this;
 		}
-
-
-
-		Unit():
-			Placeable(),
-			id(-1),
-			type(nullptr),
-			player(nullptr),
-			time_left(0),
-			workplace(nullptr),
-			order(Order::Unknown),
-			workitem(ItemNone),
-			free_space(0)
-		{}
-
-		Unit(
-			Id const& id,
-			UnitType const& type,
-			Player & player
-		):
-			Placeable(),
-			id(id),
-			type(&type),
-			player(&player),
-			time_left(6),
-			workplace(nullptr),
-			order(Order::Unknown),
-			workitem(ItemNone),
-			free_space(0)
-		{}
-
-		Unit(Unit &&) = default;
-		Unit(Unit const&) = delete;
-
 	};
 
 	ostream& operator<<(ostream &out, Unit const& obj);

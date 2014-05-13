@@ -727,21 +727,25 @@ Mv02<R> operator-(Mv02<R> const& x, Mv02<R> const& y) {
 template <class R>
 std::ostream& operator<<(std::ostream& t, const Mv0<R>& x) {
     t << "Mv0<R>(" << x[0] << ")";
+    return t;
 }
 
 template <class R>
 std::ostream& operator<<(std::ostream& t, const Mv1<R>& x) {
     t << "Mv1<R>(" << x[0] << "," << x[1] << ")";
+    return t;
 }
 
 template <class R>
 std::ostream& operator<<(std::ostream& t, const Mv2<R>& x) {
     t << "Mv2<R>(" << x[0] << ")";
+    return t;
 }
 
 template <class R>
 std::ostream& operator<<(std::ostream& t, const Mv02<R>& x) {
     t << "Mv02<R>(" << x[0] << "," << x[1] << ")";
+    return t;
 }
 
 // const

@@ -521,7 +521,7 @@ namespace col {
 						break;
 					case 2:
 						if (envgame.has_defender(sel)) {
-							auto ret = envgame.colonize(
+							envgame.colonize(
 								envgame.get_defender(envgame.get_terr(sel)),
 								es.at(1)
 							);

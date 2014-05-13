@@ -10,8 +10,11 @@ OUTS:=main test
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
 
+WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic
+# -Wall -Wextra 
+
 # compiler options
-CCOPTS:=-I./src -I./inc -std=c++11 -g -O0
+CCOPTS:=-I./src -I./inc -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
 
 # linker options
 LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network

@@ -7,6 +7,7 @@ namespace col{
 		//out << (format(
 		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
 		//) % t.id % t.type->id % t.x % t.y % t.player->id);
+		return out;
 	}
 	
 }

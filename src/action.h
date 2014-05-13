@@ -97,6 +97,7 @@ namespace col {
 
 		virtual ostream& dump(ostream& out) const {
 			out << "OrderMove("<<pid<<","<<uid<<","<<int(dir)<<")";
+			return out;
 		}
 
 
@@ -139,6 +140,7 @@ namespace col {
 
 		virtual ostream& dump(ostream& out) const {
 			out << "OrderAttack("<<pid<<","<<uid<<","<<int(dir)<<")";
+			return out;
 		}
 
 
@@ -163,6 +165,7 @@ namespace col {
 
 		virtual ostream& dump(ostream& out) const {
 			out << "Ready("<<pid<<")";
+			return out;
 		}
 
 	};
@@ -194,6 +197,7 @@ namespace col {
 	inline
 	ostream& operator<<(ostream& o, Action const& a) {
 		a.dump(o);
+		return o;
 	}
 
 

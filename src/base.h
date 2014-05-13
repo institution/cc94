@@ -32,7 +32,7 @@ namespace col {
 			Q=0, W=1, E=2,
 			A=3, S=4, D=5,
 			Z=6, X=7, C=8;
-	};
+	}
 
 	//array<Dir::t const, 9> ALL_DIRS;
 	extern std::array<Dir::t const, 9> ALL_DIRS;
@@ -58,7 +58,7 @@ namespace col {
 			Work = 'w',
 			PlowFields = 'P',
 			ClearForset = 'p';
-	};
+	}
 
 
 
@@ -139,7 +139,7 @@ namespace col {
 			Unit = 3,
 			Build = 4,
 			Europe = 5;
-	};
+	}
 
 	struct Placeable;
 

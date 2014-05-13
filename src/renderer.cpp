@@ -120,8 +120,8 @@ namespace col {
 		auto inn = inn_.copyToImage();
 		auto tex = tex_.copyToImage();
 
-		for (auto j = 0; j < out.getSize().y; ++j) {
-			for (auto i = 0; i < out.getSize().x; ++i) {
+		for (uint j = 0; j < out.getSize().y; ++j) {
+			for (uint i = 0; i < out.getSize().x; ++i) {
 				if (inn.getPixel(i,j) == sf::Color(0,0,0,255)) {
 					out.setPixel(i,j, tex.getPixel(t[0] + i, t[1] + j));
 				}
@@ -145,6 +145,7 @@ namespace col {
 			case 2: return v2i(8,8);
 			case 3: return v2i(0,8);
 		}
+		throw Critical("invalid 'l'");
 	}
 
 	void preload_coast(Biome::type bio, int start) {
@@ -445,7 +446,7 @@ namespace col {
 		auto& col = terr.get_colony();
 
 		// render buildings
-		for (int i = 0; i < col.builds.size(); ++i) {
+		for (uint i = 0; i < col.builds.size(); ++i) {
 			auto& b = col.builds.at(i);
 
 			render_sprite(win, ly.city.pos + pixs.at(i), res(BUILD, b.get_type_id()));
@@ -848,12 +849,11 @@ namespace col {
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
 				render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos,
-					delta
-				);
+					delta 
+				); 
 			}
 		}
-
-
+		
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
 				render_unit(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos, delta);

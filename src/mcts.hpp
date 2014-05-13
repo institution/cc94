@@ -275,7 +275,7 @@ namespace mcts {
 
 		// play
 		// cout << "mcts::step - play" << endl;
-		while (ra = game.create_random_action()) {
+		while ((ra = game.create_random_action())) {
 			game.exec(*ra);
 		}
 

@@ -6,6 +6,7 @@ namespace ox{
 		out << g.bs[0] << g.bs[1] << g.bs[2] << "\n"
 			<< g.bs[3] << g.bs[4] << g.bs[5] << "   player: '" << g.player << "'\n"
 			<< g.bs[6] << g.bs[7] << g.bs[8] << "\n";
+		return out;
 	}
 
 	void dump(OX const& ox) {

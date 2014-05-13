@@ -212,7 +212,7 @@ namespace col {
 			auto& ps = env.get_cont<Player>();
 			size_t tmp;
 			ar >> tmp;
-			for (int i=0; i<tmp; ++i) {
+			for (size_t i=0; i<tmp; ++i) {
 
 				Player x;
 				ar >> x.id;
@@ -260,7 +260,7 @@ namespace col {
 			auto& ps = env.get_cont<Colony>();
 			size_t tmp;
 			ar >> tmp;
-			for (int i=0; i<tmp; ++i) {
+			for (size_t i=0; i<tmp; ++i) {
 
 				Colony x;
 				ar >> x.id;
@@ -300,7 +300,7 @@ namespace col {
 			auto& ps = env.get_cont<Unit>();
 			size_t tmp;
 			ar >> tmp;
-			for (int i=0; i<tmp; ++i) {
+			for (size_t i=0; i<tmp; ++i) {
 
 
 				Unit x;
