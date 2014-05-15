@@ -94,9 +94,9 @@ namespace col {
 			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
 		}
 
-		void click_colony_build(Terr const& terr) {
-			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
-		}
+		//void click_colony_build(Colony const& col) {
+		//	cout << "click_colony_build: " << envgame.get_coords(terr) << endl;
+		//}
 
 		void click_map_tile(Terr const& terr) {
 			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
@@ -180,6 +180,9 @@ namespace col {
 
 		void handle_char(uint16 code);
 		void handle(sf::RenderWindow const&, sf::Event const&);
+
+		void command(string const& line);
+
 
 	};
 

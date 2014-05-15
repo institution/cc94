@@ -532,6 +532,7 @@ namespace col {
 			auto& unit = *p;
 			if (unit.workplace != nullptr) {
 				if (unit.workplace->place_type() == PlaceType::Build) {
+					// unit on building
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
 
 					auto& pix = pixs[i];
@@ -539,6 +540,7 @@ namespace col {
 					num_workers.at(i) += 1;
 				}
 				else  {
+					// unit on filed
 					assert(unit.workplace->place_type() == PlaceType::Terr);
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
@@ -550,6 +552,15 @@ namespace col {
 					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
 
 				}
+				
+			}
+			else {
+				// unit on fence
+				int i = 14;
+				auto& pix = pixs[i];
+				render(unit, pix + v2i(num_workers.at(i)*5 + 10, 15));
+				num_workers.at(i) += 1;
+
 			}
 
 		}
