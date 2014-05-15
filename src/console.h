@@ -5,7 +5,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <deque>
-
+#include <functional>
 
 #include "col.hpp"
 #include "envgame.h"
@@ -51,6 +51,15 @@ namespace col {
 		} arg;
 	}*/
 
+	inline
+	bool overlap(Box const& b, v2i const& pos) {
+		return
+			b.pos[0] <= pos[0] and
+			b.pos[1] <= pos[1] and
+			pos[0] <= b.end[0] and
+			pos[1] <= b.end[1];
+	}
+
 
 	struct Console{
 		vector<string> output;
@@ -76,6 +85,42 @@ namespace col {
 		enum class Mode{
 			AMERICA, COLONY, EUROPE, REPORT
 		};
+
+		void reset_hotspots() {
+			hts.clear();
+		}
+
+		void click_colony_field(Terr const& terr) {
+			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
+		}
+
+		void click_colony_build(Terr const& terr) {
+			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
+		}
+
+		void click_map_tile(Terr const& terr) {
+			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
+		}
+
+
+		using HotSpots = std::vector<std::pair<Box, std::function<void()>>>;
+
+		HotSpots hts;
+
+		void onclick(v2i const& pos, v2i const& dim, std::function<void()> cl) {
+			hts.push_back({Box(pos, dim), cl});
+		}
+
+		void click(v2i const& pos) {
+			for (auto& p: hts) {
+				if (overlap(p.first, pos)) {
+					p.second();
+				}
+			}
+		}
+
+
+		int sel_unit_id{-1};
 
 		// is console active - keyboard focus
 		bool active;

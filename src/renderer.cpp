@@ -255,6 +255,23 @@ namespace col {
 		win.draw(s);
 	}
 
+	
+	void render_terr(sf::RenderWindow &win,
+		Coords const& pos,
+		Env const& env,
+		Terr const& terr,
+		Vector2<int> const& map_pix,
+		Coords const& delta
+	);
+
+	
+	void render_area(
+		sf::RenderWindow &win,
+		sf::Texture const& tex,
+		Vector2<int> const& area_pos,
+		Vector2<int> const& area_dim
+	);
+
 
 	void render_sprite(sf::RenderWindow & win,
 		v2i const& pix, v2i const& dim,
@@ -268,6 +285,8 @@ namespace col {
 		render_sprite(win, pix + voffset, img);
 	}
 
+	using Texture = Res::mapped_type;
+	
 	struct Renderer{
 		sf::RenderWindow &win;
 		Env const& env;
@@ -279,6 +298,10 @@ namespace col {
 		void operator()(Unit const& unit, v2i const& pos);
 		void operator()(Unit const& unit, v2i const& pos, v2i const& dim);
 		void operator()(Item const& item, v2i const& pos);
+		
+		void fill(Texture const& tex, v2i const& pos, v2i const& dim);
+		void fill(Color const& color, v2i const& pos, v2i const& dim);
+		
 	};
 
 	void Renderer::operator()(Res::mapped_type const& res, v2i const& pos) {
@@ -301,30 +324,25 @@ namespace col {
 		render_sprite(win, pos, res(ICON, item));
 	}
 
-	void render_area(
-		sf::RenderWindow &win,
-		sf::Color const& color,
-		Vector2<int> const& area_pos,
-		Vector2<int> const& area_dim)
-	{
+	void Renderer::fill(Texture const& tex, v2i const& pos, v2i const& dim) {
+		render_area(win, tex, pos, dim);
+	}
+	
+	void Renderer::fill(Color const& color, v2i const& pos, v2i const& dim) {
 		win.draw(
 			RectShape(
-				area_pos,
-				area_dim,
-				color,
+				pos,
+				dim,
+				sf::Color(color.r, color.g, color.b, color.a),
 				0,
 				{0,0,0,0}
 			)
 		);
 	}
+		
+	
 
-	void render_terr(sf::RenderWindow &win,
-		Coords const& pos,
-		Env const& env,
-		Terr const& terr,
-		Vector2<int> const& map_pix,
-		Coords const& delta);
-
+	
 	void render_area(
 		sf::RenderWindow &win,
 		sf::Texture const& tex,
@@ -412,8 +430,20 @@ namespace col {
 	}
 
 
+	
+	struct Style{
+		v2i align_{0,0};
+		bool tile_{0};
+				
+		v2i const& align() const { return align_; }
+		Style & align(v2i const& align) { align_ = align; return *this; }
 
-	void render_city(sf::RenderWindow &win, Env const& env, Console const& con) {
+		bool const& tile() const { return tile_; }
+		Style & tile(bool const& tile) { tile_ = tile; return *this; }
+		
+	};
+
+	void render_city(sf::RenderWindow &win, Env const& env, Console & con) {
 		/*
 			// panel right
 			render_panel(app, env, con,
@@ -428,10 +458,17 @@ namespace col {
 			);
 		*/
 
-
+		auto render = Renderer{win,env};
+		
+		auto T1 = v2i(23,27);
+		auto T2 = v2i(44,22);
+		auto T3 = v2i(53,37);
+		auto T4 = v2i(75,48);
+			
+		
 		// render area
 		auto sand_tex = res(ARCH, 1);
-		render_area(win, sand_tex, ly.city.pos, ly.city.dim);
+		render.fill(sand_tex, ly.city.pos, ly.city.dim);
 
 		// relative positions
 		vector<v2i> pixs({
@@ -439,7 +476,12 @@ namespace col {
 			v2i(8,33), v2i(37,37), v2i(67,45), v2i(96,45), v2i(128,45),
 			v2i(10,68), v2i(15,94), v2i(66,79), v2i(123,47), v2i(123,98)
 		});
-
+		
+		vector<v2i> dims({
+			T2,T1,T3,T1,T1,
+			T1,T1,T1,T1,T2,
+			T2,T2,T3,T4,T2			
+		});
 
 
 		auto& terr = env.get_terr(con.sel);
@@ -448,28 +490,39 @@ namespace col {
 		// render buildings
 		for (uint i = 0; i < col.builds.size(); ++i) {
 			auto& b = col.builds.at(i);
-
-			render_sprite(win, ly.city.pos + pixs.at(i), res(BUILD, b.get_type_id()));
+			auto& build_tex = res(BUILD, b.get_type_id());
+			render(build_tex, ly.city.pos + pixs.at(i));
 
 		}
-
-		auto render = Renderer{win,env};
 
 		// render fields
 		{
 			auto pix = ly.city_fields.pos;
 			auto pos = env.get_coords(terr);
 
+			auto base_coords = Coords(pos[0]-1, pos[1]-1);
+			
 			for (int j = pos[1]-1; j <= pos[1]+1; ++j) {
 				for (int i = pos[0]-1; i <= pos[0]+1; ++i) {
-					render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pix,
-						Coords(pos[0]-1, pos[1]-1)
+					
+					auto& terr = env.get_terr(Coords(i,j));
+					
+					auto delta_coords = Coords(i,j) - base_coords;
+					
+					render_terr(win, Coords(i, j), env, terr, pix,
+						base_coords
+					);
+								
+					cout << "aaa: " << pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM << endl;
+					
+					con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, v2i(TILE_DIM, TILE_DIM),
+						[&con, &terr](){ con.click_colony_field(terr); }
 					);
 				}
 			}
 		}
 
-
+		
 
 		// render units
 		array<uint8,16> num_workers;
@@ -490,7 +543,10 @@ namespace col {
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
 
-					render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
+					render(unit, 
+						ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM, 
+						v2i(TILE_DIM,TILE_DIM)
+					);
 					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
 
 				}
@@ -501,7 +557,7 @@ namespace col {
 
 		// render storage
 
-		render_area(win, {76,100,172,255}, ly.city_res.pos, ly.city_res.dim);
+		render.fill({76,100,172,255}, ly.city_res.pos, ly.city_res.dim);
 
 		int width = 16;
 
@@ -1211,14 +1267,15 @@ namespace col {
 
 	}
 
+	
 
 
-
-	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con) {
+	void render(sf::RenderWindow &app, col::Env & env, col::Console & con) {
 		app.clear();
+		con.reset_hotspots();
 
-		int w = app.getSize().x/GLOBAL_SCALE;
-		int h = app.getSize().y/GLOBAL_SCALE;
+		int w = app.getSize().x / GLOBAL_SCALE;
+		int h = app.getSize().y / GLOBAL_SCALE;
 
 		//cout << format("%||,%||\n") % w % h;
 

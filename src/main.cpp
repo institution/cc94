@@ -198,7 +198,6 @@ int main(int argc, char* argv[])
 	while (app.isOpen())
 	{
 
-
 		if ((env.mod != last_env) || (con.mod != last_con)) {
 			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
 

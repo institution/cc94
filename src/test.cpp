@@ -11,6 +11,7 @@
 #include "envgame.h"
 #include "serialize.hpp"
 #include "action.h"
+#include "tree2.hpp"
 
 
 using namespace col;
@@ -35,6 +36,41 @@ using roll::replay;
  *
  */
 
+
+
+
+
+TEST_CASE( "tree2", "" ) {
+	using NodeType = tree2::Node<int>;
+	
+	auto root = NodeType(0);
+	root.insert_child(1);
+	root.insert_child(2);
+	root.insert_child(3);
+
+	auto const& const_root = root;
+	
+	// iteration
+	for (auto& node: root) {
+		cerr << node << endl;
+	}	
+	
+	// const iteration
+	for (auto& node: const_root) {
+		cerr << node << endl;
+	}
+	
+	// find
+	REQUIRE((*root.find_child(2)).payload == 2);
+	
+	// const find
+	REQUIRE((*const_root.find_child(2)).payload == 2);
+	
+	
+
+	REQUIRE(true);
+	
+}
 
 TEST_CASE( "env::get_coords", "" ) {
 

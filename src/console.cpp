@@ -99,7 +99,26 @@ namespace col {
 		else
 		if (type == sf::Event::MouseButtonPressed)
 		{
-			if (event.mouseButton.button == sf::Mouse::Right)
+			
+			if (event.mouseButton.button == sf::Mouse::Left)
+			{
+				if (mode == Mode::COLONY) {
+					sf::Vector2f mp = app.mapPixelToCoords(
+						sf::Vector2i(
+							event.mouseButton.x,
+							event.mouseButton.y
+						)
+					);
+					
+					click(v2i(mp.x, mp.y));
+
+					modified();
+				}
+			}
+			
+			
+			
+			if (mode == Mode::AMERICA and event.mouseButton.button == sf::Mouse::Right)
 			{
 				sf::Vector2f mp = app.mapPixelToCoords(
 					sf::Vector2i(

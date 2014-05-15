@@ -1,12 +1,18 @@
-#ifndef LAYOUT7_HPP
-#define LAYOUT7_HPP
+#ifndef VIEW3_H
+#define VIEW3_H
 
 #include "box.h"
+#include "tree2.h"
 #include "view_base.h"
 
 namespace col{
 
+	struct View {
 
+		on
+
+	};
+	
 
 	struct Layout {
 
@@ -14,6 +20,7 @@ namespace col{
 		static int const LINE = 1;
 		static int const TERR_W = TILE_DIM;
 		static int const TERR_H = TILE_DIM;
+
 
 		Box scr, bar, pan, map, city, city_res, city_fields;
 
@@ -56,6 +63,7 @@ namespace col{
 	};
 
 
-
 }
+
+
 #endif

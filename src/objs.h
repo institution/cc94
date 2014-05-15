@@ -18,9 +18,9 @@ namespace col {
 	struct Player;
 
 	struct Color{
-		uint8 r,g,b;
+		uint8 r,g,b,a;
 		Color() {}
-		Color(uint8 r, uint8 g, uint8 b): r(r), g(g), b(b) {}
+		Color(uint8 r, uint8 g, uint8 b, uint8 a = 0): r(r), g(g), b(b), a(a) {}
 
 
 		template<class A>
@@ -28,6 +28,7 @@ namespace col {
 			ar & r;
 			ar & g;
 			ar & b;
+			ar & a;
 		}
 	};
 

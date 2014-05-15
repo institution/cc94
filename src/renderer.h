@@ -12,11 +12,11 @@
 #include "layout.h"
 
 namespace col {
-	
-	void render(sf::RenderWindow &app, const col::Env &env, const col::Console &con);
+
+	void render(sf::RenderWindow &app, col::Env & env, col::Console & con);
 
 	void preload_terrain();
-	
+
 }
 
 
