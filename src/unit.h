@@ -2,6 +2,7 @@
 #define UNIT2_H
 
 #include "objs.h"
+#include "error.h"
 
 namespace col{
 
@@ -172,16 +173,35 @@ namespace col{
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }
 		Player & get_player() const { return *player; }
+
+		bool assigned() {
+			return workplace != nullptr;
+		}
 		// uint8 spec_id;
 		// int8 spec_lvl;
 
 		Unit& set_work(Workplace & place, Item const& item) {
+			if (assigned()) {
+				if (!workplace->leave()) {
+					throw Critical("should leave");
+				}
+			}
+
+			if (!place.assign()) {
+				throw Critical("should assign");
+			}
+
 			workplace = &place;
 			workitem = item;
 			return *this;
 		}
 
 		Unit& set_work() {
+			if (assigned()) {
+				if (!workplace->leave()) {
+					throw Critical("should leave");
+				}
+			}
 			// clear work
 			workplace = nullptr;
 			workitem = ItemNone;

@@ -5,6 +5,9 @@
 using std::unordered_map;
 
 namespace col {
+	
+	//tile_dim = v2i(TILE_DIM, TILE_DIM);
+	
 	unordered_map<uint8,string> BIOME_NAMES{
 		{Biome::Tundra, "tundra"},
 		{Biome::Prairie, "prairie"},

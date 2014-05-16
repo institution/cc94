@@ -63,19 +63,23 @@ namespace col{
 			return 3;
 		}
 
-		bool assign() {
+		bool assign(bool const& exec=1) {
 			if (!free_slots) {
 				return false;
 			}
-			free_slots -= 1;
+			if (exec) {
+				free_slots -= 1;
+			}
 			return true;
 		}
 
-		bool leave() {
-			if (free_slots < 3) {
+		bool leave(bool const& exec=1) {
+			if (free_slots >= 3) {
 				return false;
 			}
-			free_slots += 1;
+			if (exec) {
+				free_slots += 1;
+			}
 			return true;
 		}
 

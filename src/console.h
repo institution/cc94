@@ -79,6 +79,7 @@ namespace col {
 
 		// selected square
 		Coords sel;
+		Unit::Id sel_unit_id;
 		unordered_set<char16_t> charset;
 
 		// active screen
@@ -111,16 +112,25 @@ namespace col {
 			hts.push_back({Box(pos, dim), cl});
 		}
 
+		void onclick(v2i const& pos, v2i const& dim, string const& cmd) {
+			onclick(pos, dim,
+				[this,cmd](){ command(cmd); }
+			);
+		}
+
 		void click(v2i const& pos) {
-			for (auto& p: hts) {
+			for (int i = hts.size(); 0 < i; --i) {
+				auto& p = hts[i-1];
 				if (overlap(p.first, pos)) {
 					p.second();
+					break;
 				}
 			}
 		}
 
 
-		int sel_unit_id{-1};
+
+
 
 		// is console active - keyboard focus
 		bool active;
@@ -167,6 +177,7 @@ namespace col {
 		void clear() {
 			output.clear();
 			buffer = "";
+			sel_unit_id = -1;
 		}
 
 		void put(string const& s) {

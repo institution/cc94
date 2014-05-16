@@ -17,6 +17,7 @@ namespace col {
 	string const RES_PATH = "../COLONIZE/";
 	string const FONT_PATH = "../font/";
 
+	v2i const tile_dim = v2i(TILE_DIM, TILE_DIM);
 
 	extern std::unordered_map<uint8,string> BIOME_NAMES;
 	Biome::type get_biome_by_name(string const& name);

@@ -38,6 +38,10 @@ namespace col {
 		}
 	}
 
+	v2i get_dim(sf::Texture const& t) {
+		auto const& s = t.getSize();
+		return v2i(s.x, s.y); 
+	}
 
 	ResPixFont::mapped_type const& res_pixfont(string const& name) {
 		auto p = g_pixfonts.find(name);
@@ -197,7 +201,6 @@ namespace col {
 
 
 	void render_shield(sf::RenderWindow &win, int16 x, int16 y, const Color &col) {
-
 		win.draw(
 			RectShape(
 				v2i(x,y) + v2i(1,1),
@@ -210,6 +213,7 @@ namespace col {
 	}
 
 	void render_unit(sf::RenderWindow &win,
+			Console & con,
 			Coords const& pos,
 			Env const& env,
 			Terr const& terr,
@@ -229,18 +233,27 @@ namespace col {
 		);
 	}
 
-	void render_cursor(sf::RenderWindow &win, uint16 x, uint16 y) {
+	
+	void render_outline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Color const& c) {
+		/* Draw 1px thick outline border of pos,dim box 
+		*/
 		win.draw(
 			RectShape(
-				v2i(x+1, y+1),
-				v2i(TILE_DIM-2, TILE_DIM-2),
+				pos,
+				dim,
 				sf::Color(0,0,0, 0),
 				1,
-				sf::Color(255,255,255, 255)
+				sf::Color(c.r, c.g, c.b, c.a)
 			)
 		);
 	}
 
+	void render_inline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Color const& c) {
+		/* Draw 1px thick inside border of pos,dim box 
+		*/
+		render_outline(win, pos + v2i(1,1),	dim - v2i(2,2), c);		
+	}	
+	
 	void render_sprite(sf::RenderWindow &win, int x, int y, const sf::Texture &img) {
 		sf::Sprite s;
 		s.setPosition(x, y);
@@ -277,12 +290,19 @@ namespace col {
 		v2i const& pix, v2i const& dim,
 		sf::Texture const& img
 	) {
-		v2i tex_dim(img.getSize().x, img.getSize().y);
-
+		v2i tex_dim = get_dim(img);
+				
 		auto free = dim - tex_dim;
 		v2i voffset(free[0]/2, free[1]/2);
 
 		render_sprite(win, pix + voffset, img);
+	}
+	
+	void render_sprite2(sf::RenderWindow & win,
+		v2i const& pix, v2i const& dim,
+		sf::Texture const& img
+	) {
+		render_sprite(win, pix, img);
 	}
 
 	using Texture = Res::mapped_type;
@@ -488,11 +508,25 @@ namespace col {
 		auto& col = terr.get_colony();
 
 		// render buildings
-		for (uint i = 0; i < col.builds.size(); ++i) {
-			auto& b = col.builds.at(i);
-			auto& build_tex = res(BUILD, b.get_type_id());
-			render(build_tex, ly.city.pos + pixs.at(i));
-
+		{
+			// render in reverse order to make sure that docks clickarea will not obscure other builds
+			int i = col.builds.size();
+			while (i > 0) {
+				i = i - 1;
+				
+				auto workplace_id = i;
+				
+				auto& b = col.builds.at(i);
+				auto& build_tex = res(BUILD, b.get_type_id());
+				auto build_pos = ly.city.pos + pixs.at(i);
+				auto build_dim = get_dim(build_tex);
+				
+				render_sprite(win, build_pos, build_tex);
+								
+				con.onclick(build_pos, build_dim,
+					str(format("work %|| food") % workplace_id)
+				);			
+			}
 		}
 
 		// render fields
@@ -502,6 +536,7 @@ namespace col {
 
 			auto base_coords = Coords(pos[0]-1, pos[1]-1);
 			
+			int field_id = 16;
 			for (int j = pos[1]-1; j <= pos[1]+1; ++j) {
 				for (int i = pos[0]-1; i <= pos[0]+1; ++i) {
 					
@@ -512,12 +547,13 @@ namespace col {
 					render_terr(win, Coords(i, j), env, terr, pix,
 						base_coords
 					);
-								
-					cout << "aaa: " << pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM << endl;
-					
-					con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, v2i(TILE_DIM, TILE_DIM),
-						[&con, &terr](){ con.click_colony_field(terr); }
+															
+					string cmd = str(format("work %|| food") % field_id);					
+					con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, tile_dim,
+						[&con,cmd](){ con.command(cmd); }
 					);
+					
+					field_id += 1;
 				}
 			}
 		}
@@ -530,13 +566,25 @@ namespace col {
 
 		for (auto& p: terr.units) {
 			auto& unit = *p;
+			
+			auto& unit_tex = res(ICON, unit.get_type_id());
+			v2i unit_pos;
+			v2i unit_dim;
+			
 			if (unit.workplace != nullptr) {
 				if (unit.workplace->place_type() == PlaceType::Build) {
 					// unit on building
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
 
-					auto& pix = pixs[i];
-					render(unit, pix + v2i(num_workers.at(i)*5 + 10, 15));
+					//auto& build = col.builds.at(i);
+					//auto& build_tex = res(BUILD, build.get_type_id());
+					//auto build_dim = get_dim(build_tex);
+					
+					auto const& build_end = ly.city.pos + pixs.at(i) + dims.at(i);
+					
+					unit_dim = get_dim(unit_tex);					
+					unit_pos = build_end - v2i(num_workers.at(i)*5+5, -1) - unit_dim;
+					
 					num_workers.at(i) += 1;
 				}
 				else  {
@@ -545,10 +593,8 @@ namespace col {
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
 
-					render(unit, 
-						ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM, 
-						v2i(TILE_DIM,TILE_DIM)
-					);
+					unit_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
+					unit_dim = v2i(TILE_DIM,TILE_DIM);
 					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
 
 				}
@@ -557,13 +603,31 @@ namespace col {
 			else {
 				// unit on fence
 				int i = 14;
-				auto& pix = pixs[i];
-				render(unit, pix + v2i(num_workers.at(i)*5 + 10, 15));
+				auto& pix = pixs[i];				
+				unit_pos = pix + v2i(num_workers.at(i)*5 + 10, 15);
+				unit_dim = get_dim(unit_tex);
 				num_workers.at(i) += 1;
 
 			}
-
+			
+			// render unit tex
+			render_sprite(win, unit_pos, unit_dim, unit_tex);
+			
+			// add click selector
+			string cmd = "sel " + to_string(unit.id);
+			con.onclick(unit_pos, unit_dim,
+				[&con,cmd]() { con.command(cmd); }
+			);
+			
+			// render unit frame if selected
+			if (unit.id == con.sel_unit_id) {
+				render_outline(win, unit_pos, unit_dim, {255,100,100,255});
+			}
+		
 		}
+		
+		
+		
 
 
 		// render storage
@@ -603,7 +667,22 @@ namespace col {
 
 			pix[0] += width;
 		}
+		
+		// render EXIT button
+		render.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
+		
+		render_text(
+			win,
+			ly.city_exit.pos + v2i(1,1),
+			res_pixfont("tiny.png"),
+			"Ret",
+			{0,0,0,0},
+			0
+		);
 
+		con.onclick(ly.city_exit.pos, ly.city_exit.dim,
+			[&con, &terr](){ con.command("exit"); }
+		);
 
 		// render fields
 		//render_fields(win, env, con, ly.city_fields.pos, );
@@ -868,6 +947,7 @@ namespace col {
 
 
 	void render_unit(sf::RenderWindow &win,
+			Console & con,
 			Coords const& pos,
 			Env const& env,
 			Terr const& terr,
@@ -882,6 +962,13 @@ namespace col {
 		if (terr.has_colony()) {
 			// render colony
 			render_sprite(win, pix[0], pix[1], res(ICON, 4));
+			
+			con.onclick(pix, v2i(TILE_DIM, TILE_DIM),
+				[&con, pos](){ 
+					con.command(str(format("sel %|| %||") % pos[0] % pos[1]));
+					con.command("enter"); 
+				}
+			);
 		}
 
 		// unit or colony flag
@@ -894,6 +981,7 @@ namespace col {
 			if (terr.has_colony()) {
 				// render owner flag over colony (unit in garrison)
 				render_sprite(win, pix[0] + 5, pix[1], res(ICON, player.get_flag_id()));
+				
 			}
 			else {
 
@@ -907,7 +995,7 @@ namespace col {
 
 
 
-	void render_map(sf::RenderWindow &win, Env const& env, Console const& con, Vector2<int> const& pos,
+	void render_map(sf::RenderWindow &win, Env const& env, Console & con, v2i const& pos,
 			Coords const& delta)
 	{
 		auto w = env.w;
@@ -923,7 +1011,7 @@ namespace col {
 		
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				render_unit(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos, delta);
+				render_unit(win, con, Coords(i, j), env, env.get_terr(Coords(i,j)), pos, delta);
 			}
 		}
 
@@ -931,8 +1019,12 @@ namespace col {
 		//	render_icon(win, env, p.second);
 		//}
 
-		render_cursor(win, con.sel[0]*TILE_DIM + pos[0], con.sel[1]*TILE_DIM + pos[1]);
-
+		// cursor
+		render_inline(win, 
+			v2i(con.sel[0] * TILE_DIM + pos[0], con.sel[1] * TILE_DIM + pos[1]),
+			tile_dim, 
+			{255,255,255,255}
+		);
 	}
 
 
@@ -953,7 +1045,7 @@ namespace col {
 	 */
 
 	void render_rect(sf::RenderWindow &win,
-			Vector2<int> const& pos, Vector2<int> const& dim,
+			v2i const& pos, v2i const& dim,
 			sf::Color const& col)
 	{
 		sf::RectangleShape r;
@@ -964,6 +1056,7 @@ namespace col {
 		r.setPosition(pos[0], pos[1]);
 		win.draw(r);
 	}
+
 
 
 	void render_bar(sf::RenderWindow &win,
@@ -1007,9 +1100,9 @@ namespace col {
 
 	void render_panel(sf::RenderWindow &win,
 			Env const& env,
-			Console const& con,
-			Vector2<int> const& pos,
-			Vector2<int> const& dim
+			Console & con,
+			v2i const& pos,
+			v2i const& dim
 		) {
 
 		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
@@ -1073,9 +1166,39 @@ namespace col {
 			0
 		);
 		
-		// bottom right: player indicator
+		// top right: player indicator
 		if (env.in_progress()) {
 			render_pixel(win, pos + v2i(dim[0]-1,0), env.get_current_player().color);
+		}
+			
+		auto ren = Renderer(win, env);
+			
+		// render START / NEXT TURN button
+		{
+			string lab, cmd;
+			if (env.in_progress()) {
+				lab = "Ready";
+				cmd = "ready";
+			}
+			else {
+				lab = "Start";
+				cmd = "start";
+			}
+
+			ren.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
+
+			render_text(
+				win,
+				ly.city_exit.pos + v2i(1,1),
+				res_pixfont("tiny.png"),
+				lab,
+				{0,0,0,0},
+				0
+			);
+
+			con.onclick(ly.city_exit.pos, ly.city_exit.dim,
+				[&con,cmd](){ con.command(cmd); }
+			);
 		}
 	}
 

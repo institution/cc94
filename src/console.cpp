@@ -102,18 +102,18 @@ namespace col {
 			
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-				if (mode == Mode::COLONY) {
-					sf::Vector2f mp = app.mapPixelToCoords(
-						sf::Vector2i(
-							event.mouseButton.x,
-							event.mouseButton.y
-						)
-					);
-					
-					click(v2i(mp.x, mp.y));
 
-					modified();
-				}
+				sf::Vector2f mp = app.mapPixelToCoords(
+					sf::Vector2i(
+						event.mouseButton.x,
+						event.mouseButton.y
+					)
+				);
+
+				click(v2i(mp.x, mp.y));
+
+				modified();
+				
 			}
 			
 			
@@ -229,7 +229,7 @@ namespace col {
 			put("move");
 			put("attack");
 			put("assign");
-			put("leave");
+			put("work");
 			// game turn sequence
 			put("start");
 			put("ready");
@@ -354,6 +354,7 @@ namespace col {
 				}
 				case 1: {
 					envgame.start();
+					put("Game started!");
 					break;
 				}
 			}
@@ -441,11 +442,22 @@ namespace col {
 		if (es[0] == "sel") {
 			switch (es.size()) {
 				default: {
-					output.push_back("Usage: sel x y\n");
+					output.push_back("Usage: sel <x> <y> OR sel <unit_id>\n");
 					break;
 				}
 				case 3: {
 					sel = Coords(std::stoi(es.at(1)), std::stoi(es.at(2)));
+					break;
+				}
+				case 2: {
+					auto unit_id = std::stoi(es.at(1));
+					try {
+						envgame.get<Unit>(unit_id);
+						sel_unit_id = unit_id;
+					}
+					catch (Error const& e) {
+						put(e.what());
+					}					
 					break;
 				}
 			}
@@ -552,19 +564,31 @@ namespace col {
 					break;
 			}
 		}
-		else if (cmd == "leave") {
+		else if (cmd == "work") {
 			switch (es.size()) {
 				default:
-					put("Usage: leave <number> <unit-id>");
+					put("Usage: work <number> <item-name>");
 					break;
-				case 4:
+				case 3:
 					auto number = stoi(es.at(1));
-					auto unit_id = stoi(es.at(2));
-					auto &unit = envgame.get<Unit>(unit_id);
-					envgame.leave(number, unit);
+					if (0 <= number and number <= 16+9) {
+						
+						try {
+							auto item = get_item_by_name(es.at(2));						
+							auto &unit = envgame.get<Unit>(sel_unit_id);						
+							envgame.assign(number, unit, item);
+						}
+						catch (Error const& e) {
+							put(string("ERROR: ") + e.what());
+						}
+						
+					}
+					else {
+						put("number must be in [0,25] range");
+					}
 					break;
 			}
-		}
+		}		
 		else if (cmd == "build-colony") {
 			switch (es.size()) {
 				default:

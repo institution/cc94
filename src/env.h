@@ -952,7 +952,11 @@ namespace col{
 			auto & col = terr.get_colony();
 			auto& b = col.builds.at(num);
 
-			if (exec and b.assign()) {
+			if (!b.assign(0)) {
+				throw Error("building full");
+			}
+
+			if (exec) {
 				unit.set_work(b, item);
 				return 1;
 			}
@@ -963,7 +967,11 @@ namespace col{
 			// assign to filed
 			auto& field = get_terr(vec4dir(num-16) + get_coords(terr));
 
-			if (exec and field.assign()) {
+			if (!field.assign(0)) {
+				throw Error("field occupied");
+			}
+
+			if (exec) {
 				unit.set_work(field, item);
 				return 1;
 			}
@@ -991,12 +999,6 @@ namespace col{
 
 			return false;
 
-		}
-
-		bool leave(int num, Unit & u) {
-			auto & t = get_terr(u);
-			auto & c = t.get_colony();
-			return c.leave(num, u);
 		}
 
 		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {

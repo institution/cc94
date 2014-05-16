@@ -148,8 +148,8 @@ namespace col {
 	};
 
 	struct Workplace{
-		virtual bool assign() = 0;
-		virtual bool leave() = 0;
+		virtual bool assign(bool const& exec=1) = 0;
+		virtual bool leave(bool const& exec=1) = 0;
 		virtual uint16 get_yield(Item const& item, bool const& is_expert) const = 0;
 		virtual PlaceType::type place_type() = 0;
 	};

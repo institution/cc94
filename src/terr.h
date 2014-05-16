@@ -58,19 +58,23 @@ namespace col{
 			return 3;
 		}
 
-		bool assign() {
+		bool assign(bool const& exec=1) {
 			if (has(Phys::Worker)) {
 				return false;
 			}
-			add(Phys::Worker);
+			if (exec) {
+				add(Phys::Worker);
+			}
 			return true;
 		}
 
-		bool leave() {
+		bool leave(bool const& exec=1) {
 			if (!has(Phys::Worker)) {
 				return false;
 			}
-			sub(Phys::Worker);
+			if (exec) {
+				sub(Phys::Worker);
+			}
 			return true;
 		}
 
@@ -120,7 +124,7 @@ namespace col{
 
 		int8 get_movement_cost(Travel const& movement_type);
 
-		
+
 		// max speed
 
 		int8 get_land_movement_cost();

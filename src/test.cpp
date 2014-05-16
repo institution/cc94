@@ -196,6 +196,22 @@ TEST_CASE( "colony", "" ) {
 
 		auto& c = t.get_colony();
 
+		
+		SECTION("multiple assign to same building") {
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+			REQUIRE(env.assign(3, u, ItemFood) == true);
+		}
+
+		
 		SECTION("work field") {
 
 			REQUIRE(t.assign() == true);
