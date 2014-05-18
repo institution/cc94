@@ -6,6 +6,7 @@
 #include "objs.h"
 #include "colony.h"
 
+
 namespace col{
 
 
@@ -40,6 +41,12 @@ namespace col{
 	Alt const HILL_LEVEL = 2;
 	Alt const MOUNTAIN_LEVEL = 3;
 
+	Alt const AltSea = 0;
+	Alt const AltFlat = 1;
+	Alt const AltHill = 2;
+	Alt const AltMountain = 3;
+
+
 
 	struct Terr: Place, Workplace {
 		using Id = Coords;
@@ -55,7 +62,7 @@ namespace col{
 		// Constructors
 		//Terr(): biome(BiomePlains), phys(PhysNone), alt(SEA_LEVEL), colony(nullptr) {}
 
-		explicit Terr(Biome const& biome=BiomePlains, Phys const& phys = PhysNone, Alt const& alt = SEA_LEVEL):
+		explicit Terr(Alt const& alt = AltSea, Biome const& biome = BiomePlains, Phys const& phys = PhysNone):
 			biome(biome), phys(phys), alt(alt), colony(nullptr)
 		{}
 
@@ -67,9 +74,8 @@ namespace col{
 		}
 
 		// Workplace
-		uint16 get_yield(Item const& item, bool const& is_expert) const {
-			return 3;
-		}
+		uint16 get_yield(Item const& item, bool const& is_expert) const;
+
 
 		bool assign(bool const& exec=1) {
 			if (has(PhysWorker)) {
@@ -83,7 +89,12 @@ namespace col{
 
 		bool leave(bool const& exec=1) {
 			if (!has(PhysWorker)) {
-				return false;
+				if (!exec) {
+					throw Error("no worker to leave this place");
+				}
+				else {
+					throw Critical("no worker to leave this place");
+				}
 			}
 			if (exec) {
 				sub(PhysWorker);
@@ -124,7 +135,7 @@ namespace col{
 		}
 
 		void sub(Phys const& p) {
-			phys = phys & (!p);
+			phys = phys & (~p);
 		}
 
 		Biome const& get_biome() const { return biome; }

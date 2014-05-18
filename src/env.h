@@ -981,6 +981,25 @@ namespace col{
 			return 0;
 		}
 
+		Workplace const& get_workplace_by_index(Unit const& unit, int num) const {
+			auto const& terr = get_terr(unit);
+			if (num < 0) {
+				throw Critical("invalid place index");
+			}
+			else if (num < 16) {
+				if (!terr.has_colony()) {
+					throw Critical("no colony");
+				}
+				auto const& col = terr.get_colony();
+				return col.builds.at(num);
+			}
+			else if (num < 25) {
+				return get_terr(vec4dir(num-16) + get_coords(terr));
+			}
+			else {
+				throw Critical("invalid place index");
+			}
+		}
 
 		bool assign(int num, Unit & unit, Item item, bool exec=1) {
 

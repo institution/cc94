@@ -13,9 +13,8 @@ namespace col {
 	constexpr
 	Phys const
 		PhysNone = 0,
-		// bits 0 and 1 reserved for height
-		// Unused = 1,
-		PhysSeaLane = 2,   
+		// unused = 1,
+		PhysSeaLane = 2,   // in original probably was alternative with road or smth?; and 2 bits were reserved for height
 		PhysRoad = 4,
 		PhysForest = 8,
 		PhysMinorRiver = 16,

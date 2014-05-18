@@ -185,8 +185,32 @@ namespace col {
 		//cout.flush();
 		++mod;
 	}
-
 	
+	Item Console::get_next_workitem(Workplace const& workplace, Item const& item) {
+		// return next item availbe for production in this workplace
+
+		// ble :P
+		auto lst = unordered_set<Item>{ItemNone,ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
+			ItemLumber,ItemOre,ItemSilver,ItemHorses,ItemRum,ItemCigars,
+			ItemCloth,ItemCoats,ItemTradeGoods,ItemTools,ItemMuskets,
+			ItemHammers,ItemCross,ItemFish,ItemBell
+		};
+		
+		// hmm, works!
+		auto it = item + 1;
+		while (it != item) {
+			if (lst.count(it)) {
+				if (workplace.get_yield(it, 0) > 0) {
+					return it;
+				}
+				it = it + 1;
+			}
+			else {
+				it = 0;
+			}
+		}
+		return ItemNone;		
+	}
 	
 	
 	void Console::command(string const& line) {
@@ -569,20 +593,40 @@ namespace col {
 			}
 		}
 		else if (cmd == "assign") {
+			
+			
+			
 			switch (es.size()) {
 				default:
-					put("Usage: assign <number> <unit-id> <item-name>");
+					put("Usage: assign <number> <unit-id> [item-name]");
 					break;
-				case 4:
-					auto number = stoi(es.at(1));
-					if (0 <= number and number <= 16+9) {
-						auto unit_id = stoi(es.at(2));
-						auto item = get_item_by_name(es.at(3));
-						auto &unit = envgame.get<Unit>(unit_id);
-						envgame.assign(number, unit, item);
+				case 4: {
+						auto number = stoi(es.at(1));
+						if (0 <= number and number <= 16+9) {
+							auto unit_id = stoi(es.at(2));
+							auto item = get_item_by_name(es.at(3));
+							auto &unit = envgame.get<Unit>(unit_id);
+							envgame.assign(number, unit, item);
+						}
+						else {
+							put("number must be in [0,25] range");
+						}
 					}
-					else {
-						put("number must be in [0,25] range");
+					break;
+				case 3: {
+					auto number = stoi(es.at(1));
+						if (0 <= number and number <= 16+9) {
+							auto unit_id = stoi(es.at(2));
+							auto &unit = envgame.get<Unit>(unit_id);
+
+							auto const& wp = envgame.get_workplace_by_index(unit, number);
+							auto const& it = get_next_workitem(wp, unit.get_workitem());
+
+							envgame.assign(number, unit, it);
+						}
+						else {
+							put("number must be in [0,25] range");
+						}
 					}
 					break;
 			}
@@ -590,16 +634,25 @@ namespace col {
 		else if (cmd == "work") {
 			switch (es.size()) {
 				default:
-					put("Usage: work <number> <item-name>");
+					put("Usage: work <number>");
 					break;
-				case 3:
+				case 2:
 					auto number = stoi(es.at(1));
-					if (0 <= number and number <= 16+9) {
-						
+					if (0 <= number and number <= 16+9) {						
 						try {
-							auto item = get_item_by_name(es.at(2));						
-							auto &unit = envgame.get<Unit>(sel_unit_id);						
-							envgame.assign(number, unit, item);
+							auto &unit = envgame.get<Unit>(sel_unit_id);
+							
+							Item const& curr_item = unit.get_workitem();
+							if (curr_item != PhysNone) {
+								envgame.assign(number, unit, curr_item);
+							}
+							else {
+								auto const& wp = envgame.get_workplace_by_index(unit, number);
+								auto const& item = get_next_workitem(wp, curr_item);
+							
+								// TODO: ACTION: run by exec
+								envgame.assign(number, unit, item);
+							}
 						}
 						catch (Error const& e) {
 							put(string("ERROR: ") + e.what());
@@ -611,7 +664,31 @@ namespace col {
 					}
 					break;
 			}
-		}		
+		}
+		else if (cmd == "worknext") {
+			switch (es.size()) {
+				default:
+					put("Usage: worknext");
+					break;
+				case 1:
+					try {
+						auto & unit = envgame.get<Unit>(sel_unit_id);
+						
+						assert(unit.workplace);
+						
+						auto const& wp = *unit.workplace;
+						auto const& item = get_next_workitem(wp, unit.get_workitem());
+
+						// TODO: ACTION: THIS MUST BE WRAPPED IN ACTION
+						unit.set_workitem(item);	
+					}
+					catch (Error const& e) {
+						put(string("ERROR: ") + e.what());
+					}
+					break;
+			}
+		}
+		
 		else if (cmd == "build-colony") {
 			switch (es.size()) {
 				default:

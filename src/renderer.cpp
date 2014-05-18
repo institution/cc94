@@ -532,7 +532,7 @@ namespace col {
 				render_sprite(win, build_pos, build_tex);
 								
 				con.onclick(build_pos, build_dim,
-					str(format("work %|| food") % workplace_id)
+					str(format("work %||") % workplace_id)
 				);			
 			}
 		}
@@ -556,7 +556,7 @@ namespace col {
 						base_coords
 					);
 															
-					string cmd = str(format("work %|| food") % field_id);					
+					string cmd = str(format("work %||") % field_id);					
 					con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, tile_dim,
 						[&con,cmd](){ con.command(cmd); }
 					);
@@ -580,6 +580,12 @@ namespace col {
 			v2i unit_dim;
 			
 			if (unit.workplace != nullptr) {
+				
+				// produced item
+				auto const& item_tex = res(ICON, get_item_icon_id(unit.workitem));
+				auto const& item_dim = get_dim(item_tex);
+				v2i item_pos;
+				
 				if (unit.workplace->place_type() == PlaceType::Build) {
 					// unit on building
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
@@ -596,15 +602,8 @@ namespace col {
 					
 					num_workers.at(i) += 1;
 					
+					item_pos = build_pos;
 					
-					// render produced item					
-					auto const& item_tex = res(ICON, unit.workitem);
-					auto const& item_dim = get_dim(item_tex);
-					render_sprite(win,
-						build_pos,
-						item_dim + v2i(2,2),
-						item_tex						
-					);
 					
 				}
 				else  {
@@ -616,19 +615,36 @@ namespace col {
 					unit_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
 					unit_dim = v2i(TILE_DIM,TILE_DIM);
 					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
+										
+					item_pos = unit_pos;
 					
-					// render produced items
-					auto const& item_tex = res(ICON, unit.workitem);
-					auto const& item_dim = get_dim(item_tex);
-					render_sprite(win,
-						unit_pos,
-						item_dim + v2i(2,2),
-						item_tex						
-					);
-					
-					//t.get_yield(unit.workitem);
-
 				}
+				
+				auto num = unit.workplace->get_yield(unit.workitem, 0);
+				
+				// render produced item
+				render_sprite(win,
+						item_pos,
+						item_dim + v2i(2,2),
+						item_tex					
+				);
+				/*for (int i=0; i < num; ++i) {
+					render_sprite(win,
+						item_pos + v2i(i*3,0),
+						item_dim + v2i(2,2),
+						item_tex					
+					);
+				}*/
+				
+				// number of produced items
+				render_text(
+					win,
+					item_pos,
+					res_pixfont("tiny.png"),
+					std::to_string(num),
+					{0,0,0,255},
+					0
+				);
 				
 			}
 			else {
@@ -644,10 +660,17 @@ namespace col {
 			// render unit tex
 			render_sprite(win, unit_pos, unit_dim, unit_tex);
 			
-			// add click selector
-			string cmd = "sel " + to_string(unit.id);
+			// add click select unit or item switch
+			auto unit_id = unit.id;
 			con.onclick(unit_pos, unit_dim,
-				[&con,cmd]() { con.command(cmd); }
+				[&con,unit_id]() { 
+					if (unit_id == con.sel_unit_id) {
+						con.command("worknext"); 
+					}
+					else {
+						con.command("sel " + to_string(unit_id)); 
+					}
+				}
 			);
 			
 			// render unit frame if selected
@@ -681,7 +704,7 @@ namespace col {
 			render_sprite(win,
 				pix,
 				v2i(width,12),
-				res(ICON, item)
+				res(ICON, get_item_icon_id(item))
 			);
 
 			// render number

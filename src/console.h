@@ -174,6 +174,8 @@ namespace col {
 
 		}
 
+		Item get_next_workitem(Workplace const& workplace, Item const& item = ItemNone);
+
 		void clear() {
 			output.clear();
 			buffer = "";

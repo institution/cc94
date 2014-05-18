@@ -55,6 +55,7 @@ namespace col{
 			// unused column 7
 			// unused column 8
 			set_travel(stoi(xs[9]));
+
 		}
 
 	};
@@ -195,6 +196,10 @@ namespace col{
 			workitem = item;
 			return *this;
 		}
+
+		Item const& get_workitem() const { return workitem; }
+		Unit & set_workitem(Item const& workitem) { this->workitem = workitem; return *this; }
+
 
 		Unit& set_work() {
 			if (assigned()) {

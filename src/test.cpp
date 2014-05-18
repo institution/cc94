@@ -52,12 +52,12 @@ TEST_CASE( "tree2", "" ) {
 	
 	// iteration
 	for (auto& node: root) {
-		cerr << node << endl;
+		cout << node << endl;
 	}	
 	
 	// const iteration
 	for (auto& node: const_root) {
-		cerr << node << endl;
+		cout << node << endl;
 	}
 	
 	// find
@@ -72,58 +72,40 @@ TEST_CASE( "tree2", "" ) {
 	
 }
 
-TEST_CASE( "env::get_coords", "" ) {
-
-	Env env;
-
-	env.resize({5,2});
-	// env.set_terr({4,1}, Terr(BiomePlains));
-
-	auto& b = env.terrs(Coords(0,0));
-
-	cerr << &env.terrs(Coords(0,0)) - &b << endl;
-	cerr << &env.terrs(Coords(1,0)) - &b << endl;
-	cerr << &env.terrs(Coords(2,0)) - &b << endl;
-
-	cerr << &env.terrs(Coords(0,1)) - &b << endl;
-	cerr << &env.terrs(Coords(1,1)) - &b << endl;
-	cerr << &env.terrs(Coords(2,1)) - &b << endl;
-
-	// mem layout: 0   1   2   3   4   | 5   6   7   8   9
-	// mem layout: 0,0 1,0 2,0 3,0 4,0 | 0,1 1,1 2,1 3,1 4,1
-
-	REQUIRE(int(&env.terrs(Coords(0,0)) - &b) == 0);
-	REQUIRE(int(&env.terrs(Coords(1,0)) - &b) == 1);
-	REQUIRE(int(&env.terrs(Coords(2,0)) - &b) == 2);
-
-	REQUIRE(int(&env.terrs(Coords(0,1)) - &b) == 5);
-	REQUIRE(int(&env.terrs(Coords(1,1)) - &b) == 6);
-	REQUIRE(int(&env.terrs(Coords(2,1)) - &b) == 7);
-
-
-	REQUIRE(env.get_coords(*(&b + 0)) == Coords(0,0));
-	REQUIRE(env.get_coords(*(&b + 1)) == Coords(1,0));
-	REQUIRE(env.get_coords(*(&b + 2)) == Coords(2,0));
-
-	REQUIRE(env.get_coords(*(&b + 5)) == Coords(0,1));
-	REQUIRE(env.get_coords(*(&b + 6)) == Coords(1,1));
-	REQUIRE(env.get_coords(*(&b + 7)) == Coords(2,1));
 
 
 
-	REQUIRE(env.get_coords(env.get_terr({4,1})) == Coords(4,1));
-	REQUIRE(env.get_coords(env.get_terr({0,0})) == Coords(0,0));
-
-
+TEST_CASE( "terr", "" ) {
+	Terr t(AltFlat, BiomePlains, PhysForest);
+	REQUIRE(t.has(PhysForest));
+	
+	SECTION("phys: worker does not change forest") {
+		t.add(PhysWorker);
+		REQUIRE(t.has(PhysWorker));
+		REQUIRE(t.has(PhysForest));		
+		t.sub(PhysWorker);
+		REQUIRE(t.has(PhysForest));
+	}
+	
+	SECTION("yield food mixed forest no-expert == 4") {
+		REQUIRE(4 == t.get_yield(ItemFood, 0));
+	}
+	
+	SECTION("yield food sea") {
+		Terr t(AltSea, BiomePlains);
+		REQUIRE(t.get_yield(ItemFood, 0) == 4);	
+	}
+	
+			
+	
 }
-
 
 TEST_CASE( "get terr", "" ) {
 
 	Env env;
 
 	env.resize({1,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 
 
 	auto& t = env.get<Terr>(Coords(0,0));
@@ -175,14 +157,14 @@ TEST_CASE( "colony", "" ) {
 	Env env;
 
 	env.resize({1,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
-
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
 		env.create<Player>()
 	);
 
-	auto& t = env.ref_terr({0,0});
+	auto& t = env.get_terr({0,0});	
 	env.move_in(t, u);
 
 	env.loads<BuildType>(CSV_PATH + "builds.csv");
@@ -210,11 +192,9 @@ TEST_CASE( "colony", "" ) {
 			REQUIRE(env.assign(3, u, ItemFood) == true);
 			REQUIRE(env.assign(3, u, ItemFood) == true);
 		}
-
 		
 		SECTION("work field") {
 
-			REQUIRE(t.assign() == true);
 			u.set_work(t, ItemFood);
 
 			REQUIRE(u.workplace == &t);
@@ -230,7 +210,6 @@ TEST_CASE( "colony", "" ) {
 
 			auto& b = c.builds.at(0);  //
 
-			REQUIRE(b.assign() == true);
 			u.set_work(b, ItemCoats);
 
 			SECTION("just enough") {
@@ -278,8 +257,8 @@ TEST_CASE( "scoring", "" ) {
 	EnvGame env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
-	env.set_terr({1,0}, Terr(BiomePlains));
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& p1 = env.create<Player>();
 	auto& p2 = env.create<Player>();
@@ -316,8 +295,8 @@ TEST_CASE( "serialize", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
-	env.set_terr({1,0}, Terr(BiomePlains));
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -381,8 +360,8 @@ TEST_CASE( "env::move_unit", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
-	env.set_terr({1,0}, Terr(BiomePlains));
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -410,8 +389,8 @@ TEST_CASE( "two units", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(BiomePlains));
-	env.set_terr({1,0}, Terr(BiomePlains));
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& t1 = env.ref_terr({0,0});
 	auto& t2 = env.ref_terr({1,0});
@@ -455,7 +434,7 @@ TEST_CASE( "compatible", "[env][misc]" ) {
 TEST_CASE( "improve square", "" ) {
 
 	Env env;
-	env.resize({1,1}).set_terr({0,0}, Terr(BiomePlains));
+	env.resize({1,1}).set_terr({0,0}, Terr(AltFlat, BiomePlains));
 
 
 
