@@ -9,33 +9,39 @@
 namespace col {
 	struct Item: Enum<> {
 		using Enum<>::Enum;
+
+		string const& get_name() const;
+		int get_serial_id() const;
 	};
+
+	inline
+	int Item::get_serial_id() const {
+		return get_value();
+	}
 
 	constexpr
 	Item const
 		ItemNone{0},
-		ItemFood{23},
-		ItemSugar{24},
-		ItemTobacco{25},
-		ItemCotton{26},
-		ItemFurs{27},
-		ItemLumber{28},
-		ItemOre{29},
-		ItemSilver{30},
-		ItemHorses{31},
-		ItemRum{32},
-		ItemCigars{33},
-		ItemCloth{34},
-		ItemCoats{35},
-		ItemTradeGoods{36},
-		ItemTools{37},
-		ItemMuskets{38},
-		ItemHammers{55},
-		ItemCross{57},
-		ItemFish{58},
-		ItemBell{63};
-
-	string get_name(Item const& item);
+		ItemFood{1},
+		ItemSugar{2},
+		ItemTobacco{3},
+		ItemCotton{4},
+		ItemFurs{5},
+		ItemLumber{6},
+		ItemOre{7},
+		ItemSilver{8},
+		ItemHorses{9},
+		ItemRum{10},
+		ItemCigars{11},
+		ItemCloth{12},
+		ItemCoats{13},
+		ItemTradeGoods{14},
+		ItemTools{15},
+		ItemMuskets{16},
+		ItemHammers{17},
+		ItemCross{18},
+		ItemFish{19},
+		ItemBell{20};
 
 
 }

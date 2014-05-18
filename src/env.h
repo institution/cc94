@@ -620,14 +620,14 @@ namespace col{
 			if (!compatible(t.get_travel(), LAND)) {
 				throw Error("can build on land only");
 			}
-			if (t.has(Phys::Road)) {
+			if (t.has(PhysRoad)) {
 				throw Error("road already exists");
 			}
 
 			// execute
 			if (exec)  {
 				if (run_map_task(u, TIME_UNIT * 2)) {
-					t.add(Phys::Road);
+					t.add(PhysRoad);
 					return 1;
 				}
 				return 0;
@@ -814,14 +814,14 @@ namespace col{
 				throw Error("can build on land only");
 			}
 
-			if (t.has(Phys::Plow)) {
+			if (t.has(PhysPlow)) {
 				throw Error("improvment already exists");
 			}
 
 			// execute
 			if (exec) {
 				if (run_map_task(u, TIME_UNIT * 2)) {
-					t.add(Phys::Plow);
+					t.add(PhysPlow);
 					return 1;
 				}
 				return 0;
@@ -921,13 +921,15 @@ namespace col{
 		}
 
 		float get_land_defense_bonus(Terr const& terr) {
-			if (terr.has(Phys::Mountain)) {
+			auto const& alt = terr.get_alt();
+
+			if (alt == MOUNTAIN_LEVEL) {
 				return 1.00;
 			}
-			else if (terr.has(Phys::Hill)) {
+			else if (alt == HILL_LEVEL) {
 				return 0.50;
 			}
-			else if (terr.has(Phys::Forest)) {
+			else if (terr.has(PhysForest)) {
 				return 0.50;
 			}
 			return 0.0;

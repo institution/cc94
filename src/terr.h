@@ -1,6 +1,8 @@
 #ifndef TERR34_H
 #define TERR34_H
 
+#include "phys.h"
+#include "biome.h"
 #include "objs.h"
 #include "colony.h"
 
@@ -31,55 +33,65 @@ namespace col{
 
 	};
 
+	using Alt = uint8;
+
+	Alt const SEA_LEVEL = 0;
+	Alt const FLATLAND_LEVEL = 1;
+	Alt const HILL_LEVEL = 2;
+	Alt const MOUNTAIN_LEVEL = 3;
+
+
 	struct Terr: Place, Workplace {
 		using Id = Coords;
 
-		Biome::type biome;
-		Phys::type phys;
+		Biome biome;
+		Phys phys;
+		Alt alt;
 
 		vector<Unit*> units;
 		Colony* colony;
 
-		Terr(): colony(nullptr) {}
 
-		explicit Terr(Biome::type const& biome, Phys::type const& phys = Phys::None):
-			biome(biome), phys(phys), colony(nullptr)
+		// Constructors
+		//Terr(): biome(BiomePlains), phys(PhysNone), alt(SEA_LEVEL), colony(nullptr) {}
+
+		explicit Terr(Biome const& biome=BiomePlains, Phys const& phys = PhysNone, Alt const& alt = SEA_LEVEL):
+			biome(biome), phys(phys), alt(alt), colony(nullptr)
 		{}
 
-		// Place
 
+
+		// Place
 		PlaceType::type place_type() {
 			return PlaceType::Terr;
 		}
 
 		// Workplace
-
 		uint16 get_yield(Item const& item, bool const& is_expert) const {
 			return 3;
 		}
 
 		bool assign(bool const& exec=1) {
-			if (has(Phys::Worker)) {
+			if (has(PhysWorker)) {
 				return false;
 			}
 			if (exec) {
-				add(Phys::Worker);
+				add(PhysWorker);
 			}
 			return true;
 		}
 
 		bool leave(bool const& exec=1) {
-			if (!has(Phys::Worker)) {
+			if (!has(PhysWorker)) {
 				return false;
 			}
 			if (exec) {
-				sub(Phys::Worker);
+				sub(PhysWorker);
 			}
 			return true;
 		}
 
 		// Terr
-
 		Colony& get_colony() {
 			assert(colony != nullptr);
 			return *colony;
@@ -94,7 +106,6 @@ namespace col{
 			return colony != nullptr;
 		}
 
-
 		Terr& set_colony(Colony &c) {
 			colony = &c;
 			return *this;
@@ -104,29 +115,35 @@ namespace col{
 			return units.size();
 		}
 
-
-
-		bool has(Phys::type const& p) const {
+		bool has(Phys const& p) const {
 			return phys & p;
 		}
 
-		void add(Phys::type const& p) {
-			phys |= p;
+		void add(Phys const& p) {
+			phys = phys | p;
 		}
 
-		void sub(Phys::type const& p) {
-			phys &= !p;
+		void sub(Phys const& p) {
+			phys = phys & (!p);
 		}
+
+		Biome const& get_biome() const { return biome; }
+		Terr & set_biome(Biome const& biome) { this->biome = biome; return *this; }
+
+		Alt const& get_alt() const { return alt; }
+		Terr & set_alt(Alt const& alt) { this->alt = alt; return *this; }
 
 		Travel get_travel();
+		int8 get_movement_cost(Travel const& t);
 
-		Terr& set_biome(Biome::type const& b) { biome = b; return *this; }
+		bool is_water_tile() const {
+			return alt < 1;
+		}
 
-		int8 get_movement_cost(Travel const& movement_type);
 
 
+	// private
 		// max speed
-
 		int8 get_land_movement_cost();
 		int8 get_naval_movement_cost();
 

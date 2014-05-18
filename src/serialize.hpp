@@ -93,6 +93,7 @@ namespace col {
 					// terr value
 					ar << x.biome;
 					ar << x.phys;
+					ar << x.alt;
 
 				}
 			}
@@ -246,6 +247,7 @@ namespace col {
 					// terr value
 					ar >> x.biome;
 					ar >> x.phys;
+					ar >> x.alt;
 
 				}
 			}

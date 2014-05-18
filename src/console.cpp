@@ -76,6 +76,16 @@ namespace col {
 					modified();
 				}
 			}
+			
+			/*if (mode == Mode::AMERICA)
+			{
+				if (event.key.code == sf::Keyboard::Up) {
+				
+				sel[0] = 
+				sel[1] = 
+
+				modified();
+			}*/
 
 
 			if (event.key.code == sf::Keyboard::Tilde or event.key.code == sf::Keyboard::Unknown) {
@@ -221,6 +231,7 @@ namespace col {
 			put("delete-colony");
 			put("set-biome");
 			put("add-phys");
+			put("set-alt");
 			// orders
 			put("build-colony");
 			put("plow-fields");
@@ -255,8 +266,8 @@ namespace col {
 					break;
 				case 2:
 					if (envgame.in_bounds(sel)) {
-						Phys::type p = get_phys_by_name(es.at(1));
-						if (p != Phys::None) {
+						Phys p = get_phys_by_name(es.at(1));
+						if (p != PhysNone) {
 							envgame.ref_terr(sel).add(p);
 						}
 						else {
@@ -300,13 +311,25 @@ namespace col {
 					break;
 				case 2:
 					if (envgame.in_bounds(sel)) {
-						Biome::type b = get_biome_by_name(es.at(1));
-						if (b != Biome::None) {
+						Biome b = get_biome_by_name(es.at(1));
+						if (b != BiomeNone) {
 							envgame.ref_terr(sel).set_biome(b);
 						}
 						else {
 							put("invalid biome name");
 						}
+					}
+					break;
+			}
+		}
+		else if (cmd == "set-alt") {
+			switch (es.size()) {
+				default:
+					put("Usage: set-alt <0,1,2,3>");
+					break;
+				case 2:
+					if (envgame.in_bounds(sel)) {
+						envgame.ref_terr(sel).set_alt(stoi(es.at(1)));						
 					}
 					break;
 			}

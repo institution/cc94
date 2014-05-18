@@ -66,6 +66,10 @@ namespace col {
 		int width
 	);
 
+	inline
+	bool is_water(Terr const& t) {
+		return t.is_water_tile();
+	}
 
 	
 
@@ -152,7 +156,7 @@ namespace col {
 		throw Critical("invalid 'l'");
 	}
 
-	void preload_coast(Biome::type bio, int start) {
+	void preload_coast(Biome bio, int start) {
 		for (int k = 0; k < 8; ++k) {
 			for (int l = 0; l < 4; ++l) {
 				int ind = (k<<2) + l;
@@ -165,10 +169,14 @@ namespace col {
 		}
 	}
 
+	int const TextureOceanId = 11;
+	int const TextureSeaLaneId = 11;
+	
 	void preload_coast() {
 		// 109 - 140
-		preload_coast(Biome::Ocean, 0);
-		preload_coast(Biome::SeaLane, 50);
+		
+		preload_coast(TextureOceanId, 0);
+		preload_coast(TextureSeaLaneId, 50);
 	}
 
 	void preload_terrain() {
@@ -580,15 +588,27 @@ namespace col {
 					//auto& build_tex = res(BUILD, build.get_type_id());
 					//auto build_dim = get_dim(build_tex);
 					
+					auto const& build_pos = ly.city.pos + pixs.at(i);
 					auto const& build_end = ly.city.pos + pixs.at(i) + dims.at(i);
 					
 					unit_dim = get_dim(unit_tex);					
 					unit_pos = build_end - v2i(num_workers.at(i)*5+5, -1) - unit_dim;
 					
 					num_workers.at(i) += 1;
+					
+					
+					// render produced item					
+					auto const& item_tex = res(ICON, unit.workitem);
+					auto const& item_dim = get_dim(item_tex);
+					render_sprite(win,
+						build_pos,
+						item_dim + v2i(2,2),
+						item_tex						
+					);
+					
 				}
 				else  {
-					// unit on filed
+					// unit on field
 					assert(unit.workplace->place_type() == PlaceType::Terr);
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
@@ -596,6 +616,17 @@ namespace col {
 					unit_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
 					unit_dim = v2i(TILE_DIM,TILE_DIM);
 					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
+					
+					// render produced items
+					auto const& item_tex = res(ICON, unit.workitem);
+					auto const& item_dim = get_dim(item_tex);
+					render_sprite(win,
+						unit_pos,
+						item_dim + v2i(2,2),
+						item_tex						
+					);
+					
+					//t.get_yield(unit.workitem);
 
 				}
 				
@@ -747,7 +778,7 @@ namespace col {
 		return *loc[(dir)];
 	}
 
-	int get_wxad_index(LocalArea const& loc, Phys::type const& phys) {
+	int get_wxad_index(LocalArea const& loc, Phys const& phys) {
 		int idx = 0;
 		if ( get(loc, Dir::W).has(phys) ) idx |= 8;
 		if ( get(loc, Dir::X).has(phys) ) idx |= 4;
@@ -756,22 +787,31 @@ namespace col {
 		return idx;
 	}
 
+	int get_wxad_index_level(LocalArea const& loc, Alt const& lvl) {
+		int idx = 0;
+		if ( get(loc, Dir::W).get_alt() == lvl ) idx |= 8;
+		if ( get(loc, Dir::X).get_alt() == lvl ) idx |= 4;
+		if ( get(loc, Dir::A).get_alt() == lvl ) idx |= 2;
+		if ( get(loc, Dir::D).get_alt() == lvl ) idx |= 1;
+		return idx;
+	}
+
+	
 	array<Dir::t,8> CLOCKWISE_DIRS = {
 		Dir::W, Dir::E, Dir::D, Dir::C, Dir::X, Dir::Z, Dir::A, Dir::Q
 	};
 
-
-
+	
 	int get_coast_index(uint8 const& l, Terr const& t0, Terr const& t1, Terr const& t2) {
 		uint8 k =
-			(!is_water_biome(t2.biome) << 2) +
-			(!is_water_biome(t1.biome) << 1) +
-			(!is_water_biome(t0.biome) << 0);
+			(!is_water(t2) << 2) +
+			(!is_water(t1) << 1) +
+			(!is_water(t0) << 0);
 		return (k<<2) + l;
 	}
 
 	/*
-	Biome::type get_render_biome(LocalArea const& loc) {
+	Biome get_render_biome(LocalArea const& loc) {
 		auto b = get(loc, Dir::S).biome;
 
 		if (is_water_biome(b)) {
@@ -797,12 +837,15 @@ namespace col {
 		int offset
 	) {
 		auto b = get(loc, d).biome;
-		if (!is_water_biome(b)) {
-			render_sprite(win, pix, res(DIFFUSE, b + offset) );
-		}
+		
+		render_sprite(win, pix, res(DIFFUSE, b + offset) );
+		
 	}
 
 
+	
+	//int const TextureMountainId;
+	//int const TextureHillId;
 
 
 	void render_terr(sf::RenderWindow &win,
@@ -814,9 +857,10 @@ namespace col {
 	{
 
 		auto biome = terr.biome;
-		auto forest = terr.has(Phys::Forest);
-		auto hill = terr.has(Phys::Hill);
-		auto mountain = terr.has(Phys::Mountain);
+		auto forest = terr.has(PhysForest);
+		
+		auto hill = (terr.get_alt() == HILL_LEVEL);
+		auto mountain = (terr.get_alt() == MOUNTAIN_LEVEL);
 
 		int x = (pos[0] - delta[0]) * ly.TERR_W + map_pix[0];
 		int y = (pos[1] - delta[1]) * ly.TERR_H + map_pix[1];
@@ -826,7 +870,7 @@ namespace col {
 		auto loc = make_terr_ext(env, pos);
 
 		// render biome
-		render_sprite(win, pix, res(TERR, (biome)));
+		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
 
 		// render neighs pattern
 		render_diffuse_from(win, pix, loc, Dir::W, 0);
@@ -839,19 +883,16 @@ namespace col {
 		// 01
 	    // 32
 
-		if (is_water_biome(terr.biome)) {
+		if (is_water(terr)) {
 			int base;
-			switch (terr.biome) {
-				case Biome::Ocean:
-					base = 0;
-					break;
-				case Biome::SeaLane:
-					base = 50;
-					break;
-				default:
-					assert(0); // unknown water terr type
+			
+			if (terr.has(PhysSeaLane)) {
+				base = 50;
 			}
-
+			else {
+				base = 0;
+			}
+			
 			uint8 const h = TILE_DIM >> 1;
 
 			render_sprite(win, pix + v2i(0,0), res(COAST,
@@ -872,27 +913,28 @@ namespace col {
 
 		}
 
+		
+		// level
+		if (terr.get_alt() == MOUNTAIN_LEVEL) {
+			render_sprite(win, pix, res(PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
+		}
+
+		if (terr.get_alt() == HILL_LEVEL) {
+			render_sprite(win, pix, res(PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
+		}
 
 		// phys feats & improvments
-		if (terr.has(Phys::Mountain)) {
-			render_sprite(win, pix, res(PHYS, 33 + get_wxad_index(loc, Phys::Mountain)));
-		}
-
-		if (terr.has(Phys::Hill)) {
-			render_sprite(win, pix, res(PHYS, 49 + get_wxad_index(loc, Phys::Hill)));
-		}
-
-		if (terr.has(Phys::Plow)) {
+		if (terr.has(PhysPlow)) {
 			render_sprite(win, pix, res(PHYS, 150));
 		}
 
-		if (terr.has(Phys::Forest)) {
-			render_sprite(win, pix, res(PHYS, 65 + get_wxad_index(loc, Phys::Forest)));
+		if (terr.has(PhysForest)) {
+			render_sprite(win, pix, res(PHYS, 65 + get_wxad_index(loc, PhysForest)));
 		}
 
-		if (terr.has(Phys::MajorRiver)) {
-			if (!is_water_biome(terr.biome)) {
-				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
+		if (terr.has(PhysMajorRiver)) {
+			if (!is_water(terr)) {
+				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
 					render_sprite(win, pix, res(PHYS, 1 + ind));
 				}
@@ -902,16 +944,16 @@ namespace col {
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
-					if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::MajorRiver) ) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysMajorRiver) ) {
 						render_sprite(win, pix, res(PHYS, 141 + (i >> 1)));
 					}
 				}
 			}
 
 		}
-		else if (terr.has(Phys::MinorRiver)) {
-			if (!is_water_biome(terr.biome)) {
-				auto ind = get_wxad_index(loc, Phys::MajorRiver|Phys::MinorRiver);
+		else if (terr.has(PhysMinorRiver)) {
+			if (!is_water(terr)) {
+				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
 					render_sprite(win, pix, res(PHYS, 17 + ind));
 				}
@@ -921,17 +963,17 @@ namespace col {
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
-					if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::MinorRiver) ) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysMinorRiver) ) {
 						render_sprite(win, pix, res(PHYS, 145 + (i >> 1)));
 					}
 				}
 			}
 		}
 
-		if (terr.has(Phys::Road)) {
+		if (terr.has(PhysRoad)) {
 			bool r = false;
 			for (int i=0; i<8; ++i) {
-				if ( get(loc, CLOCKWISE_DIRS[i]).has(Phys::Road) ) {
+				if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysRoad) ) {
 					render_sprite(win, pix, res(PHYS, 82 + i));
 					r = true;
 				}

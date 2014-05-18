@@ -5,22 +5,22 @@ namespace col{
 	int8 Terr::get_land_movement_cost() {
 		int8 base;
 
-		if (has(Phys::Road) or has(Phys::MinorRiver) or has(Phys::MajorRiver)) {
+		if (has(PhysRoad) or has(PhysMinorRiver) or has(PhysMajorRiver)) {
 			base = SPACE_UNIT / 3;
 		}
 		else {
 			switch (biome) {
-				case Biome::Tundra:
-				case Biome::Prairie:
-				case Biome::Plains:
-				case Biome::Desert:
-				case Biome::Savannah:
-				case Biome::Grassland:
+				case BiomeTundra:
+				case BiomePrairie:
+				case BiomePlains:
+				case BiomeDesert:
+				case BiomeSavannah:
+				case BiomeGrassland:
 					base = SPACE_UNIT;
 					break;
-				case Biome::Marsh:
-				case Biome::Swamp:
-				case Biome::Arctic:
+				case BiomeMarsh:
+				case BiomeSwamp:
+				case BiomeArctic:
 					base = SPACE_UNIT * 3 / 2;
 					break;
 				default:
@@ -28,16 +28,16 @@ namespace col{
 					throw runtime_error("invalid land biome");
 			}
 
-			if (has(Phys::Forest)) {
+			if (has(PhysForest)) {
 				base *= 2;
 			}
 		}
 
-		if (has(Phys::Hill)) {
+		if (alt == HILL_LEVEL) {
 			base += SPACE_UNIT / 2;
 		}
 		else
-		if (has(Phys::Mountain)) {
+		if (alt == MOUNTAIN_LEVEL) {
 			base += SPACE_UNIT;
 		}
 
@@ -48,19 +48,13 @@ namespace col{
 		if (colony != nullptr) {
 			return SPACE_UNIT;
 		}
-		else
-		if (has(Phys::MajorRiver) and !has(Phys::Hill) and !has(Phys::Mountain)) {
+		else if (has(PhysMajorRiver) and alt == FLATLAND_LEVEL) {
 			return SPACE_UNIT * 2;
 		}
-		else {
-			switch (biome) {
-				case Biome::Ocean:
-				case Biome::SeaLane:
-					return SPACE_UNIT;
-				default:
-					throw runtime_error("invalid sea biome");
-			}
+		else if (alt == SEA_LEVEL) {
+			return SPACE_UNIT;				
 		}
+		throw runtime_error("incompatible travel type");
 
 	}
 
@@ -78,7 +72,7 @@ namespace col{
 	}
 
 	Travel Terr::get_travel() {
-		if (biome == Biome::Ocean or biome == Biome::SeaLane) {
+		if (alt == SEA_LEVEL) {
 			return SEA;
 		}
 		else {

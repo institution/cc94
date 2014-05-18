@@ -77,7 +77,7 @@ TEST_CASE( "env::get_coords", "" ) {
 	Env env;
 
 	env.resize({5,2});
-	// env.set_terr({4,1}, Terr(Biome::Plains));
+	// env.set_terr({4,1}, Terr(BiomePlains));
 
 	auto& b = env.terrs(Coords(0,0));
 
@@ -123,11 +123,11 @@ TEST_CASE( "get terr", "" ) {
 	Env env;
 
 	env.resize({1,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
 
 
 	auto& t = env.get<Terr>(Coords(0,0));
-	REQUIRE(t.biome == Biome::Plains);
+	REQUIRE(t.biome == BiomePlains);
 
 }
 
@@ -175,7 +175,7 @@ TEST_CASE( "colony", "" ) {
 	Env env;
 
 	env.resize({1,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -278,8 +278,8 @@ TEST_CASE( "scoring", "" ) {
 	EnvGame env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
-	env.set_terr({1,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
+	env.set_terr({1,0}, Terr(BiomePlains));
 
 	auto& p1 = env.create<Player>();
 	auto& p2 = env.create<Player>();
@@ -316,8 +316,8 @@ TEST_CASE( "serialize", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
-	env.set_terr({1,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
+	env.set_terr({1,0}, Terr(BiomePlains));
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -381,8 +381,8 @@ TEST_CASE( "env::move_unit", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
-	env.set_terr({1,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
+	env.set_terr({1,0}, Terr(BiomePlains));
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -410,8 +410,8 @@ TEST_CASE( "two units", "" ) {
 	Env env;
 
 	env.resize({2,1});
-	env.set_terr({0,0}, Terr(Biome::Plains));
-	env.set_terr({1,0}, Terr(Biome::Plains));
+	env.set_terr({0,0}, Terr(BiomePlains));
+	env.set_terr({1,0}, Terr(BiomePlains));
 
 	auto& t1 = env.ref_terr({0,0});
 	auto& t2 = env.ref_terr({1,0});
@@ -455,7 +455,7 @@ TEST_CASE( "compatible", "[env][misc]" ) {
 TEST_CASE( "improve square", "" ) {
 
 	Env env;
-	env.resize({1,1}).set_terr({0,0}, Terr(Biome::Plains));
+	env.resize({1,1}).set_terr({0,0}, Terr(BiomePlains));
 
 
 
@@ -470,7 +470,7 @@ TEST_CASE( "improve square", "" ) {
 		env.set_random_gen(replay({0}));
 
 		REQUIRE( env.build_road(u) == true );
-		REQUIRE( t.has(Phys::Road)       );
+		REQUIRE( t.has(PhysRoad)       );
 
 		REQUIRE_THROWS_AS(env.build_road(u), Error);				
 	}
@@ -479,7 +479,7 @@ TEST_CASE( "improve square", "" ) {
 		env.set_random_gen(replay({0}));
 
 		REQUIRE( env.plow_field(u) == true );
-		REQUIRE( t.has(Phys::Plow)       );
+		REQUIRE( t.has(PhysPlow)       );
 	}
 
 

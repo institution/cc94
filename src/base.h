@@ -4,7 +4,9 @@
 #include <array>
 #include "enum.hpp"
 #include "col.hpp"
+#include "phys.h"
 #include "item.h"
+#include "biome.h"
 
 namespace col {
 
@@ -84,46 +86,6 @@ namespace col {
 	//string get_name(Travel const& tr) {
 	//
 	//}
-
-	namespace Biome{
-		using type = uint8;
-		type const
-			None = 0,
-			Tundra = 1, //boreal forest
-			Prairie = 4, // broadleaf forest
-			Plains = 3, // mixed_forest
-			Desert = 2, //scrub forest
-			Savannah = 6, //tropical forest
-			Grassland = 5, //confier forest
-			Marsh = 7, //wetland forest
-			Swamp = 8, //rain forest
-			// 9 unused
-			Arctic = 10,
-			Ocean = 11,
-			SeaLane = 12;
-	}
-
-	inline
-	bool is_water_biome(Biome::type b) {
-		return b == Biome::Ocean or b == Biome::SeaLane;
-	}
-
-
-
-	namespace Phys{
-		using type = uint8;
-		type const
-			None = 0,
-			Hill = 1,
-			Mountain = 2,
-			Road = 4,
-			Forest = 8,
-			MinorRiver = 16,
-			MajorRiver = 32,
-			Plow = 64,
-			Worker = 128;
-	}
-
 
 
 

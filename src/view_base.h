@@ -19,13 +19,13 @@ namespace col {
 
 	v2i const tile_dim = v2i(TILE_DIM, TILE_DIM);
 
-	extern std::unordered_map<uint8,string> BIOME_NAMES;
-	Biome::type get_biome_by_name(string const& name);
+	extern std::unordered_map<Biome,string,Biome::hash> BIOME_NAMES;
+	Biome get_biome_by_name(string const& name);
 
-	extern std::unordered_map<uint8,string> PHYS_NAMES;
-	Phys::type get_phys_by_name(string const& name);
+	extern std::unordered_map<Phys,string,Phys::hash> PHYS_NAMES;
+	Phys get_phys_by_name(string const& name);
 
-	extern std::unordered_map<Item,string> ITEM_NAMES;
+	extern std::unordered_map<Item,string,Item::hash> ITEM_NAMES;
 	Item get_item_by_name(string const& name);
 
 
@@ -35,6 +35,25 @@ namespace col {
 		ItemRum,ItemCigars,ItemCloth,ItemCoats,
 		ItemTradeGoods,ItemTools,ItemMuskets
 	};
+
+
+
+	auto const biome_icons_ids = array<int,10>{0,1,2,3,4,5,6,7,8,10};
+
+	inline
+	int get_biome_icon_id(Biome const& b) {
+		return biome_icons_ids.at(b.get_serial_id());
+	}
+
+
+
+	auto const item_icons_ids = array<int,21>{0,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,55,57,58,63};
+
+	inline
+	int get_item_icon_id(Item const& b) {
+		return item_icons_ids.at(b.get_serial_id());
+	}
+
 
 }
 

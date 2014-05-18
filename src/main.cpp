@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 	}
 	else {
 		env.resize({15,12});
-		env.fill(Terr{Biome::Plains, Phys::None});
+		env.fill(Terr{BiomePlains, PhysNone});
 	}
 
 	Console con(env);

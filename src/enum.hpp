@@ -19,7 +19,9 @@ struct Enum{
 		return val;
 	}
 
-
+	T const& get_value() const {
+		return val;
+	}
 
 	template<class A>
 	void serialize(A & ar, unsigned int version) {
