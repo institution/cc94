@@ -60,20 +60,80 @@ namespace col {
 		auto type = event.type;
 
 
+		
 		if (type == sf::Event::KeyPressed) {
 			//cerr << "key released!" << event.key.code << endl;
-
-			if (event.key.code == sf::Keyboard::Up) {
-
-				if (chi == history.end()) {
-					chi = history.begin();
+			
+			auto code = event.key.code;
+			
+			
+			if (mode == Mode::AMERICA and !active) {
+				// global map keybinds	
+				string cmd;
+				switch (code) {
+					case sf::Keyboard::Q:
+						cmd = "move -1 -1";
+						break;					
+					case sf::Keyboard::W:
+						cmd = "move 0 -1";
+						break;
+					case sf::Keyboard::E:
+						cmd = "move 1 1";
+						break;
+					case sf::Keyboard::A:
+						cmd = "move -1 0";
+						break;
+					case sf::Keyboard::D:
+						cmd = "move 1 0";
+						break;
+					case sf::Keyboard::Z:
+						cmd = "move -1 1";
+						break;
+					case sf::Keyboard::X:
+						cmd = "move 0 1";
+						break;
+					case sf::Keyboard::C:
+						cmd = "move 1 1";
+						break;			
+					case sf::Keyboard::Return:
+						cmd = "enter";
+						break;
 				}
-
-				if (history.size()) {
-					buffer = *chi;
-					++chi;
-
+				if (cmd.size()) {
+					command(cmd);
 					modified();
+				}
+			}
+			else if (mode == Mode::COLONY and !active) {
+				// colony view keybinds
+				string cmd;
+				switch (code) {
+					case sf::Keyboard::PageUp:
+						cmd = "nextitem";
+						break;			
+					case sf::Keyboard::Return:
+						cmd = "exit";
+						break;
+				}
+				if (cmd.size()) {
+					command(cmd);
+					modified();
+				}
+			}
+			else if (active) {
+				// console keybinds
+				if (code == sf::Keyboard::Up) {
+
+					if (chi == history.end()) {
+						chi = history.begin();
+					}
+
+					if (history.size()) {
+						buffer = *chi;
+						++chi;
+
+						modified();
+					}
 				}
 			}
 			
@@ -94,7 +154,6 @@ namespace col {
 		}
 		else
 		if (type == sf::Event::TextEntered) {
-
 
 			if (event.text.unicode == u'`') {
 				active = !active;
@@ -209,7 +268,10 @@ namespace col {
 				it = 0;
 			}
 		}
-		return ItemNone;		
+		if (workplace.get_yield(it, 0) > 0) {
+			return it;
+		}
+		return ItemNone;
 	}
 	
 	

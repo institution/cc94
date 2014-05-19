@@ -579,6 +579,10 @@ namespace col {
 			v2i unit_pos;
 			v2i unit_dim;
 			
+			v2i sel_pos;
+			v2i sel_dim;
+			
+			
 			if (unit.workplace != nullptr) {
 				
 				// produced item
@@ -597,13 +601,18 @@ namespace col {
 					auto const& build_pos = ly.city.pos + pixs.at(i);
 					auto const& build_end = ly.city.pos + pixs.at(i) + dims.at(i);
 					
+					// unit
 					unit_dim = get_dim(unit_tex);					
 					unit_pos = build_end - v2i(num_workers.at(i)*5+5, -1) - unit_dim;
 					
 					num_workers.at(i) += 1;
-					
+										
+					// item
 					item_pos = build_pos;
 					
+					// selection
+					sel_pos = unit_pos;
+					sel_dim = unit_dim + v2i(2,2);
 					
 				}
 				else  {
@@ -612,11 +621,16 @@ namespace col {
 					auto const& t  = *static_cast<Terr *>(unit.workplace);
 					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
 
-					unit_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
-					unit_dim = v2i(TILE_DIM,TILE_DIM);
-					//render(unit, ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM);
+					// sel
+					sel_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
+					sel_dim = v2i(TILE_DIM, TILE_DIM);;
 										
-					item_pos = unit_pos;
+					// unit
+					unit_pos = sel_pos + v2i(TILE_DIM/2, 0);
+					unit_dim = v2i(TILE_DIM/2, TILE_DIM);
+					
+					// item		
+					item_pos = sel_pos;
 					
 				}
 				
@@ -651,9 +665,16 @@ namespace col {
 				// unit on fence
 				int i = 14;
 				auto& pix = pixs[i];				
+				
+				// unit
 				unit_pos = pix + v2i(num_workers.at(i)*5 + 10, 15);
 				unit_dim = get_dim(unit_tex);
 				num_workers.at(i) += 1;
+				
+				// sel
+				sel_pos = unit_pos;
+				sel_dim = unit_dim;
+						
 
 			}
 			
@@ -662,7 +683,7 @@ namespace col {
 			
 			// add click select unit or item switch
 			auto unit_id = unit.id;
-			con.onclick(unit_pos, unit_dim,
+			con.onclick(sel_pos, sel_dim,
 				[&con,unit_id]() { 
 					if (unit_id == con.sel_unit_id) {
 						con.command("worknext"); 
@@ -675,7 +696,7 @@ namespace col {
 			
 			// render unit frame if selected
 			if (unit.id == con.sel_unit_id) {
-				render_outline(win, unit_pos, unit_dim, {255,100,100,255});
+				render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 			}
 		
 		}
