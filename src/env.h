@@ -366,7 +366,22 @@ namespace col{
 					prod = yield;
 				}
 
-				c.add({u.workitem, prod});
+				switch (u.workitem) {
+					case ItemHammers: {
+
+						// add to unfinished building if any
+						auto h = prod;
+						for (auto& b: c.builds) {
+							h = b.add_hammers(h);
+						}
+					}
+					break;
+
+					default: {
+						c.add({u.workitem, prod});
+					}
+					break;
+				}
 
 				u.time_left = 0;
 			}
@@ -638,6 +653,10 @@ namespace col{
 
 		void record_action() {
 			action_count += 1;
+		}
+
+		bool order_board() {
+			return 0;
 		}
 
 		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {

@@ -13,11 +13,14 @@ IGNORE_SRC:=src/tree.cpp
 WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic
 # -Wall -Wextra 
 
+DEBUGOPTS:=-g -O0
+PROFILEOPTS:=-O3 -pg
+
 # compiler options
-CCOPTS:=-I./src -I./inc -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
+CCOPTS:=-I./src -I./inc -std=c++11 -fmax-errors=5 ${WARNOPTS} ${DEBUGOPTS}
 
 # linker options
-LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network ${DEBUGOPTS}
 
 
 # assert dirs

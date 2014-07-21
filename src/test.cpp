@@ -29,6 +29,7 @@ using roll::replay;
  *
  * construct building by working in lumber mill (col94 style)
  * load/unload cargo into ship
+ * board/leave shib by units
  * travel to europe by sea - exit_map(ship, dest) order
  * sell/buy in europe
  * working colonist consume food
@@ -113,6 +114,23 @@ TEST_CASE( "get terr", "" ) {
 
 }
 
+
+TEST_CASE( "board ship", "" ) {
+
+	Env env;
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
+
+	//auto& u = env.create<Unit>().set_pos({0,0});
+	//auto& s = env.create<Unit>().set_pos({1,0});
+	
+	
+	//env.order_board(u, {1,0});
+	
+	//REQUIRE(env.get_pos(u) == Coords(1,0));
+
+}
 
 TEST_CASE( "turn sequence", "" ) {
 
@@ -207,10 +225,10 @@ TEST_CASE( "colony", "" ) {
 		}
 
 		SECTION("work build") {
-
-			auto& b = c.builds.at(0);  //
-
-			u.set_work(b, ItemCoats);
+			
+			env.colony_construct(c, BuildFurTradersHouse, 0);
+			
+			u.set_work(c.builds.at(0), ItemCoats);
 
 			SECTION("just enough") {
 				c.add({ItemFurs, 3});

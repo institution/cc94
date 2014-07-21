@@ -14,6 +14,9 @@ namespace col{
 
 		Id id;
 		string name;
+		int cost_hammers;
+		int cost_tools;
+		int slots;
 
 
 		BuildType() {}
@@ -24,9 +27,13 @@ namespace col{
 		{}
 
 		BuildType(vector<string> const& xs) {
-			assert(xs.size() >= 2);
+			assert(xs.size() >= 8);
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
+
+			cost_hammers = stoi(xs[6]);
+			cost_tools = stoi(xs[7]);
+
 		}
 
 	};
@@ -67,9 +74,11 @@ namespace col{
 
 	int const BuildCapitolunused1{30};
 	int const BuildCapitolExpansion2{31};
+
 	int const BuildFurTradersHouse{32};
 	int const BuildFurTradingPost{33};
 	int const BuildFurFactory{34};
+
 	int const BuildCarpentersShop{35};
 	int const BuildLumberMill{36};
 	int const BuildChurch{37};
@@ -79,10 +88,10 @@ namespace col{
 	int const BuildIronWorks{41};
 	int const BuildTrees3{42};
 	int const BuildTrees2{43};
-	int const BuildTrees1{43};
-	int const BuildCoast{44};
-	int const BuildStable{45};
-	int const BuildStableWarehouse{46};
+	int const BuildTrees1{44};
+	int const BuildCoast{45};
+	int const BuildStable{46};
+	int const BuildStableWarehouse{47};
 
 
 
@@ -92,6 +101,7 @@ namespace col{
 
 		BuildType const* type;
 		int8 free_slots;
+		int hammers{0};
 
 		Build(BuildType const& type):
 			Workplace(),
@@ -115,6 +125,26 @@ namespace col{
 			return PlaceType::Build;
 		}
 
+		int const& get_hammers() const {
+			return this->hammers;
+		}
+
+		string const& get_name() const {
+			return this->type->name;
+		}
+
+
+		int const& get_cost_hammers() const {
+			return this->type->cost_hammers;
+		}
+
+		int add_hammers(int h) {
+			// add hammers return overflow
+			auto need_hammers = get_cost_hammers() - hammers;
+			auto add_h = std::min(need_hammers, h);
+			hammers += add_h;
+			return h - add_h;
+		}
 
 		uint16 get_yield(Item const& item, bool const& is_expert) const {
 			auto id = get_type_id();

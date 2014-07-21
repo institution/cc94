@@ -67,7 +67,7 @@ namespace col {
 			auto code = event.key.code;
 			
 			
-			if (mode == Mode::AMERICA and !active) {
+			if (mode == Mode::AMERICA and active != ActiveCmd) {
 				// global map keybinds	
 				string cmd;
 				switch (code) {
@@ -78,7 +78,7 @@ namespace col {
 						cmd = "move 0 -1";
 						break;
 					case sf::Keyboard::E:
-						cmd = "move 1 1";
+						cmd = "move 1 -1";
 						break;
 					case sf::Keyboard::A:
 						cmd = "move -1 0";
@@ -100,11 +100,16 @@ namespace col {
 						break;
 				}
 				if (cmd.size()) {
-					command(cmd);
+					try {
+						command(cmd);
+					}
+					catch (Error const& e) {
+						put(e.what());
+					}
 					modified();
 				}
 			}
-			else if (mode == Mode::COLONY and !active) {
+			else if (mode == Mode::COLONY and active != ActiveCmd) {
 				// colony view keybinds
 				string cmd;
 				switch (code) {
@@ -116,11 +121,16 @@ namespace col {
 						break;
 				}
 				if (cmd.size()) {
-					command(cmd);
+					try {
+						command(cmd);
+					}
+					catch (Error const& e) {
+						put(e.what());
+					}
 					modified();
 				}
 			}
-			else if (active) {
+			else if (active == ActiveCmd) {
 				// console keybinds
 				if (code == sf::Keyboard::Up) {
 
@@ -156,15 +166,31 @@ namespace col {
 		if (type == sf::Event::TextEntered) {
 
 			if (event.text.unicode == u'`') {
-				active = !active;
+				active = (active + 1) % 3;				
 				modified();
 			}
 			else {
-				if (active) {
+				if (active == ActiveCmd) {
 					handle_char(event.text.unicode);
 				}
 			}
 		}
+		else			
+		if (type == sf::Event::MouseMoved)			
+		{
+			
+			sf::Vector2f mp = app.mapPixelToCoords(
+				sf::Vector2i(
+					event.mouseMove.x,
+					event.mouseMove.y
+				)
+			);
+			
+			if (handle_event(v2i(mp.x, mp.y), HotSpot::Hover)) {				
+				modified();
+			}
+				
+		}		
 		else
 		if (type == sf::Event::MouseButtonPressed)
 		{
@@ -179,9 +205,9 @@ namespace col {
 					)
 				);
 
-				click(v2i(mp.x, mp.y));
-
-				modified();
+				if (handle_event(v2i(mp.x, mp.y), HotSpot::Click)) {
+					modified();
+				}
 				
 			}
 			
@@ -245,9 +271,10 @@ namespace col {
 		++mod;
 	}
 	
+	
 	Item Console::get_next_workitem(Workplace const& workplace, Item const& item) {
 		// return next item availbe for production in this workplace
-
+		
 		// ble :P
 		auto lst = unordered_set<Item>{ItemNone,ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
 			ItemLumber,ItemOre,ItemSilver,ItemHorses,ItemRum,ItemCigars,
@@ -327,6 +354,7 @@ namespace col {
 			put("attack");
 			put("assign");
 			put("work");
+			put("construct");
 			// game turn sequence
 			put("start");
 			put("ready");
@@ -654,6 +682,23 @@ namespace col {
 					break;
 			}
 		}
+		else if (cmd == "construct") {
+			
+			switch (es.size()) {
+				default:
+					put("Usage: construct <place-number> <building-id>");
+					break;
+				case 3: {
+					auto place_id = stoi(es.at(1));
+					auto buildtype_id = stoi(es.at(1));
+					
+					auto& c = envgame.get_terr(sel).get_colony();
+					envgame.colony_construct(c, buildtype_id, place_id);
+					
+					}
+					break;
+			}
+		}
 		else if (cmd == "assign") {
 			
 			
@@ -693,6 +738,27 @@ namespace col {
 					break;
 			}
 		}
+		
+		
+		else if (cmd == "sel-place") {
+			switch (es.size()) {
+				default:
+					put("Usage: sel-place <number>");
+					break;
+				case 2:
+					auto number = stoi(es.at(1));
+					
+					if (-1 <= number and number <= 16) {
+						sel_colony_slot_id = number;
+					}
+					else {
+						put("number must be in [-1,16] range");
+					}
+					break;
+			}
+		}
+		
+			
 		else if (cmd == "work") {
 			switch (es.size()) {
 				default:

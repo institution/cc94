@@ -18,11 +18,14 @@ namespace col {
 		string name;
 		Storage storage;
 
+
+
+
 		// vector<Unit*> units;
 
 		array<Build,15> builds;
 
-		Build& construct_building(BuildType const& type, int slot) {
+		Build& construct_building(BuildType const& type, int slot, int hammers=0) {
 			builds.at(slot) = Build(type);
 			return builds[slot];
 		}

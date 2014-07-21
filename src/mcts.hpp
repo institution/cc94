@@ -134,14 +134,14 @@ namespace tree {
 	}
 
 	template<typename T>
-	void dump(Node<T> *n, int maxdeep, int deep=0) {
-		for (int i=0; i<deep; ++i) cout << "  ";
+	void dump(Node<T> *n, int maxdeep, int deep=0, int deep0=0) {
+		for (int i=deep0; i<deep; ++i) cout << "  ";
 		cout << *n << endl;
 
 		if (deep < maxdeep) {
 			Node<T> *node = n->left_child;
 			while (node) {
-				dump(node, maxdeep, deep+1);
+				dump(node, maxdeep, deep+1, deep0);
 				node = node->right_neigh;
 			}
 		}

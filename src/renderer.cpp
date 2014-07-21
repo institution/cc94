@@ -190,6 +190,21 @@ namespace col {
 		preload_coast();
 	}
 
+	
+	v2i render_line(
+		sf::RenderWindow &win,
+
+		v2i const& pos,
+		v2i const& dim,
+		v2f const& align,
+
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,
+
+		string const& text
+	) ;
+	
 
 	sf::RectangleShape RectShape(
 			v2i const& pos,
@@ -459,17 +474,29 @@ namespace col {
 
 
 	
-	struct Style{
+	struct Ask {
 		v2i align_{0,0};
 		bool tile_{0};
-				
+	
+		struct Entry{
+			
+		};
+		
+		vector<pair<int, string>>
+		
 		v2i const& align() const { return align_; }
 		Style & align(v2i const& align) { align_ = align; return *this; }
 
 		bool const& tile() const { return tile_; }
 		Style & tile(bool const& tile) { tile_ = tile; return *this; }
 		
+		void render(sf::RenderWindow &win);
 	};
+	
+	void Ask::render(sf::RenderWindow &win) {
+		
+		
+	}
 
 	void render_city(sf::RenderWindow &win, Env const& env, Console & con) {
 		/*
@@ -517,6 +544,11 @@ namespace col {
 
 		// render buildings
 		{
+			
+			con.onhover(ly.scr.pos, ly.scr.dim,
+				[&con]() { con.sel_colony_slot_id = -1; }				
+			);
+			
 			// render in reverse order to make sure that docks clickarea will not obscure other builds
 			int i = col.builds.size();
 			while (i > 0) {
@@ -530,10 +562,65 @@ namespace col {
 				auto build_dim = get_dim(build_tex);
 				
 				render_sprite(win, build_pos, build_tex);
-								
+				
+
+					
+								// render build name
+				if (con.sel_colony_slot_id == i) {
+											
+					render_line(
+						win,
+		
+						build_pos,
+						build_dim,
+						{0.5, 0.5},
+		
+						res_pixfont("tiny.png"),
+						{255,255,255,255},
+						{0,0,0,255},
+							
+						b.get_name()
+					);
+						
+				}
+				else 
+				if (b.get_hammers() != b.get_cost_hammers()) 
+				{
+					// number of produced items
+					
+					
+					
+					//render_sprite(win, build_pos, res(ICON, get_item_icon_id(ItemHammers)));
+					
+					render_line(
+						win,
+		
+						build_pos,
+						build_dim,
+						{0.5,0.5},
+		
+						res_pixfont("tiny.png"),
+						{255,255,255,255},
+						{0,0,0,255},
+							
+						std::to_string(b.get_hammers()) + '/' + std::to_string(b.get_cost_hammers())						
+					);
+
+					
+				}
+				
+				
+				
+				
+				
 				con.onclick(build_pos, build_dim,
 					str(format("work %||") % workplace_id)
-				);			
+				);
+				
+				con.onhover(build_pos, build_dim,
+					//str(format("sel_place %||") % i)
+					[&con, i]() { con.sel_colony_slot_id = i; }
+				);
 			}
 		}
 
@@ -1210,6 +1297,9 @@ namespace col {
 			player_name = env.get_current_player().name;
 		}
 		
+		
+		
+		
 		// Turn 5, England 
 		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
 			
@@ -1243,6 +1333,12 @@ namespace col {
 
 			}
 		}
+		
+		//
+		// altitude
+		// biome
+		// feats
+			
 		
 		render_text(win,
 			pos,
@@ -1335,16 +1431,145 @@ namespace col {
 		}
 
 	}*/
+	
+	
+	/*
+	v2i render_line(
+		sf::RenderWindow &win,
+				
+		v2i const& pos,
+		v2i const& dim,
+		v2i const& align,
+		
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,
+		
+		bool const& wrap,
+		
+		string const& text
+	)*/
+	/*
+	void align_box(Box & box, Box const& area, v2f align) {
+
+		box.pos[i] = pos[i] + (area.dim[i] - box.dim[i]) * align[i];
+	}*/
+	
+	
+			
+	v2f vmul(v2f const& a, v2f const& b) {
+		return v2f(a[0]*b[0], a[1]*b[1]);
+	}
+	
+	//void align(v2i & pos, v2i const& dim) {
+	//	return (pos.cast<float>() + vmul((dim - r_dim).cast<float>(), align)).cast<int>();
+	//}
+
+	
+	v2i render_line(
+		sf::RenderWindow &win,
+
+		v2i const& pos,
+		v2i const& dim,
+		v2f const& align,
+
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,
+
+		string const& text
+	) {
+		// font prop
+		int const FONT_HEIGHT = 6;
+		
+		// horizontal and vertical separation in px
+		v2i sep = {1,1};
+				
+		// render dim
+		v2i r_dim = {0,FONT_HEIGHT};
+		
+		// current substring [i:j>
+		size_t i = 0;
+		size_t j = i;
+		
+		
+		
+		// calculate rendered text line dimension without margins		
+		while (j < text.size()) {
+			auto& g = font.glyphs.at(text.at(j));
+			r_dim[0] += g.rect.width;
+			j += 1;
+		}
+		r_dim[0] += sep[0] * (j-i);   // horizontal letter separation
+		
+		// add margins
+		r_dim += sep; // left, top
+		r_dim += sep; // right, bottom
+				
+		// calculate render position taking into account the alignment
+		v2i r_pos = (pos.cast<float>() + vmul((dim - r_dim).cast<float>(), align)).cast<int>();
+		
+		// render bg
+		if (bgcol.a != 0) {
+			render_rect(win, r_pos, r_dim, bgcol);
+		}
+		
+		// render letters
+		auto trg = sf::Image();
+		trg.create(r_dim[0], r_dim[1]);
+		
+		v2i dd = sep;
+		for (auto k = i; k < j; ++k) {
+						
+			auto xy = dd;			
+			
+			auto& g = font.glyphs.at(text.at(k));
+			
+			font.render_glyph(trg, xy[0], xy[1], g, fgcol, bgcol);
+			
+			dd[0] += g.rect.width;
+			dd[0] += 1;
+			
+			
+			
+		}
+		
+		
+		
+		sf::Texture tex;
+		tex.loadFromImage(trg);
+		
+		sf::Sprite s;
+		s.setPosition(r_pos[0], r_pos[1]);
+		s.setTexture(tex);
+		win.draw(s);
+		
+		
+		return {0,0};		
+	}
+	
 
 	v2i render_text(
-			sf::RenderWindow &win,
+			/*sf::RenderWindow &win,
+			
 			v2i const& pos,
+			v2i const& dim,
+			v2i const& align,
+			
+			PixFont const& font,
+			sf::Color const& fgcol,
+			sf::Color const& bgcol,
+			
+			string const& text*/
+			
+			sf::RenderWindow &win,
+			Vector2<int> const& pos,
 			PixFont const& font,
 			string const& text,
 			sf::Color const& bgcol,
 			int width
-			//v2i const& dim,
-			//bool align = 0
+	
+			//bool wrap = 0
 		) {
 
 		// line height 7px (with sep)
@@ -1363,8 +1588,13 @@ namespace col {
 		//auto line_height = font.GetCharacterSize();
 		//cout << "char hh:" << hh << endl;
 
+		char last_c;
+		
+		//auto width = dim[0];
+		
 		y += 1; // horizontal separation
 		for (auto c: text) {
+			last_c = c;
 			// newline
 			if (c == '\r' or c =='\n') {
 				// nice 1px ending
@@ -1402,7 +1632,14 @@ namespace col {
 
 			x += rr.width;
 		}
-
+		
+		// nice 1px ending
+		if (last_c != '\r' and last_c != '\n') {
+			if (bgcol.a != 0) {
+				render_rect(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
+			}
+		}
+		
 		return v2i(x,y-1);
 	}
 
@@ -1459,8 +1696,11 @@ namespace col {
 	*/
 
 	void render_cmd(sf::RenderWindow & app, col::Console const& con) {
-		if (!con.active) return;
-
+		if (con.active == ActiveNone) {
+			return;
+		}
+		
+		
 		auto ln = con.output.size();
 		v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
 
@@ -1475,15 +1715,16 @@ namespace col {
 			);
 		}
 
-
-		render_text(
-			app,
-			ly.scr.pos,
-			res_pixfont("tiny.png"),
-			con.buffer + "_",
-			{0,0,0,0},
-			0
-		);
+		if (con.active == ActiveCmd) {
+			render_text(
+				app,
+				ly.scr.pos,
+				res_pixfont("tiny.png"),
+				con.buffer + "_",
+				{0,0,0,0},
+				0
+			);
+		}
 
 	}
 

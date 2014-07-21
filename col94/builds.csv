@@ -1,48 +1,49 @@
-name,id,space
-Stockade,1,99
-Fort,2,99
-Fortress,3,99
-Armory,4,3
-Magazine,5,3
-Arsenal,6,3
-Docks,7,3
-Drydock,8,3
-Shipyard,9,3
-Town Hall,10,3
-Town Hall unused2,11,3
-Town Hall unused3,12,3
-Schoolhouse,13,3
-College,14,3
-University,15,3
-Warehouse,16,3
-Fence,17,3
-Custom House,19,3
-Printing Press,20,3
-Newspaper,21,3
-Weaver's House,22,3
-Weaver's Shop,23,3
-Textile Mill,24,3
-Tobacconist's House,25,3
-Tobacconist's Shop,26,3
-Cigar Factory,27,3
-Rum Distiller's House,28,3
-Rum Distillery,29,3
-Rum Factory,30,3
-Capitol unused1,31,3
-Capitol Expansion unused2,32,3
-Fur Trader's House,33,3
-Fur Trading Post,34,3
-Fur Factory,35,3
-Carpenter's Shop,36,3
-Lumber Mill,37,3
-Church,38,3
-Cathedral,39,3
-Blacksmith's House,40,3
-Blacksmith's Shop,41,3
-Iron Works,42,3
-Trees 3,43,0
-Trees 2,44,0
-Trees 1,45,0
-Coast,46,0
-Stable,47,0
-Stable Warehouse,48,0
+name,id,slots,text-id,item-produced,item-consumed,cost-hammers,cost-tools,min-colony,place-on
+Stockade,1,99,stockade,0,0,64,0,3,fence
+Fort,2,99,fort,0,0,120,100,3,stockade
+Fortress,3,99,fortress,0,0,320,200,8,fort
+Armory,4,3,armory,0,0,52,0,1,tree-1
+Magazine,5,3,magazine,0,0,120,50,8,armory
+Arsenal,6,3,arsenal,0,0,240,100,8,magazine
+Docks,7,3,docks,0,0,52,0,1,coast
+Drydock,8,3,drydock,0,0,80,50,4,docks
+Shipyard,9,3,shipyard,0,0,240,100,8,drydock
+Town Hall,10,3,town-hall,0,0,64,500,1,tree-3
+Town Hall unused2,11,3,town-hall-2,0,0,64,50,4,
+Town Hall unused3,12,3,town-hall-3,0,0,120,100,8,
+Schoolhouse,13,3,schoolhouse,0,0,64,0,4,tree-2
+College,14,3,college,0,0,160,50,8,schoolhouse
+University,15,3,university,0,0,200,100,10,college
+Warehouse,16,3,warehouse,0,0,80,20,1,tree-2
+Fence,17,3,fence,0,0,80,0,1,
+Unused,18,0,unused,0,0,0,0,0,
+Custom House,19,3,Custom House,0,0,160,50,1,
+Printing Press,20,3,Printing Press,0,0,52,20,1,
+Newspaper,21,3,Newspaper,0,0,120,50,4,
+Weaver's House,22,3,weavers-house,0,0,64,0,1,
+Weaver's Shop,23,3,weavers-shop,0,0,64,20,1,
+Textile Mill,24,3,Textile Mill,0,0,160,100,8,
+Tobacconist's House,25,3,Tobacconist's House,0,0,64,0,1,
+Tobacconist's Shop,26,3,Tobacconist's Shop,0,0,64,20,1,
+Cigar Factory,27,3,Cigar Factory,0,0,160,100,8,
+Rum Distiller's House,28,3,Rum Distiller's House,0,0,64,0,1,
+Rum Distillery,29,3,Rum Distillery,0,0,64,20,1,
+Rum Factory,30,3,Rum Factory,0,0,160,100,8,
+Capitol unused1,31,3,Capitol unused1,0,0,400,100,16,
+Capitol Expansion unused2,32,3,Capitol Expansion unused2,0,0,400,100,16,
+Fur Trader's House,33,3,Fur Trader's House,0,0,56,0,1,
+Fur Trading Post,34,3,Fur Trading Post,0,0,56,20,1,
+Fur Factory,35,3,Fur Factory,0,0,160,100,6,
+Carpenter's Shop,36,3,Carpenter's Shop,0,0,39,0,1,
+Lumber Mill,37,3,Lumber Mill,0,0,52,0,3,
+Church,38,3,Church,0,0,64,0,3,
+Cathedral,39,3,Cathedral,0,0,176,100,8,
+Blacksmith's House,40,3,Blacksmith's House,0,0,64,0,1,
+Blacksmith's Shop,41,3,Blacksmith's Shop,0,0,64,20,1,
+Iron Works,42,3,Iron Works,0,0,240,100,8,
+Trees 3,43,0,Trees 3,0,0,0,0,0,
+Trees 2,44,0,Trees 2,0,0,0,0,0,
+Trees 1,45,0,Trees 1,0,0,0,0,0,
+Coast,46,0,Coast,0,0,0,0,0,
+Stable,47,0,Stable,0,0,64,0,1,
+Stable Warehouse,48,0,Stable Warehouse,0,0,64,0,1,

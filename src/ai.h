@@ -124,7 +124,7 @@ namespace col {
 			}
 
 			//if (verbose)
-				dump(root, 4);
+			dump(root, 3, 1,1);
 
 
 

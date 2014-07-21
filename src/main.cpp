@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 	using namespace col;
 
 
-	sf::RenderWindow app(sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32), "AI Col");
+	sf::RenderWindow app(sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32), "Combat Col");
 	sf::View view(sf::FloatRect(0, 0, SCREEN_W, SCREEN_H));
 	app.setView(view);
 

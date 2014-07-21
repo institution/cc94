@@ -36,6 +36,11 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`vabcdefghijklmnoprstuwxyz{|}@~\r\b";
 
 
+	int const ActiveNone = 0;
+	int const ActiveMsg = 1;
+	int const ActiveCmd = 2;
+
+
 	// mouse events: normal, drag&drop
 
 	/*
@@ -103,13 +108,25 @@ namespace col {
 			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
 		}
 
+		struct HotSpot{
+			static int const Click = 1;
+			static int const Hover = 2;
 
-		using HotSpots = std::vector<std::pair<Box, std::function<void()>>>;
+			int type{1}; // 1 - left click, 2 - hover
+
+			Box box;
+			std::function<void()> cl;
+
+			HotSpot() {}
+			HotSpot(Box const& box, std::function<void()> cl, int type): box(box), cl(cl), type(type) {}
+		};
+
+		using HotSpots = std::vector<HotSpot>;
 
 		HotSpots hts;
 
 		void onclick(v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box(pos, dim), cl});
+			hts.push_back({Box(pos, dim), cl, HotSpot::Click});
 		}
 
 		void onclick(v2i const& pos, v2i const& dim, string const& cmd) {
@@ -118,14 +135,27 @@ namespace col {
 			);
 		}
 
-		void click(v2i const& pos) {
+		void onhover(v2i const& pos, v2i const& dim, std::function<void()> cl) {
+			hts.push_back({Box(pos, dim), cl, HotSpot::Hover});
+		}
+
+
+		void onhover(v2i const& pos, v2i const& dim, string const& cmd) {
+			onhover(pos, dim,
+				[this,cmd](){ command(cmd); }
+			);
+		}
+
+
+		bool handle_event(v2i const& pos, int type) {
 			for (int i = hts.size(); 0 < i; --i) {
 				auto& p = hts[i-1];
-				if (overlap(p.first, pos)) {
-					p.second();
-					break;
+				if (p.type == type and overlap(p.box, pos)) {
+					p.cl();
+					return true;
 				}
 			}
+			return false;
 		}
 
 
@@ -133,13 +163,13 @@ namespace col {
 
 
 		// is console active - keyboard focus
-		bool active;
+		int active{ActiveMsg};
+
+		int sel_colony_slot_id{-1};
 
 		Mode mode;
 
 		Console(EnvGame &envgame_): envgame(envgame_) {
-			active = 0;
-
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
