@@ -57,7 +57,7 @@ namespace col {
 	}*/
 
 	inline
-	bool overlap(Box const& b, v2i const& pos) {
+	bool overlap(Box2 const& b, v2i const& pos) {
 		return
 			b.pos[0] <= pos[0] and
 			b.pos[1] <= pos[1] and
@@ -84,7 +84,7 @@ namespace col {
 
 		// selected square
 		Coords sel;
-		Unit::Id sel_unit_id;
+		Unit::Id sel_unit_id{0};
 		unordered_set<char16_t> charset;
 
 		// active screen
@@ -114,11 +114,11 @@ namespace col {
 
 			int type{1}; // 1 - left click, 2 - hover
 
-			Box box;
+			Box2 box;
 			std::function<void()> cl;
 
 			HotSpot() {}
-			HotSpot(Box const& box, std::function<void()> cl, int type): box(box), cl(cl), type(type) {}
+			HotSpot(Box2 const& box, std::function<void()> cl, int type): box(box), cl(cl), type(type) {}
 		};
 
 		using HotSpots = std::vector<HotSpot>;
@@ -126,7 +126,7 @@ namespace col {
 		HotSpots hts;
 
 		void onclick(v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box(pos, dim), cl, HotSpot::Click});
+			hts.push_back({Box2(pos, dim), cl, HotSpot::Click});
 		}
 
 		void onclick(v2i const& pos, v2i const& dim, string const& cmd) {
@@ -136,7 +136,7 @@ namespace col {
 		}
 
 		void onhover(v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box(pos, dim), cl, HotSpot::Hover});
+			hts.push_back({Box2(pos, dim), cl, HotSpot::Hover});
 		}
 
 
@@ -209,7 +209,7 @@ namespace col {
 		void clear() {
 			output.clear();
 			buffer = "";
-			sel_unit_id = -1;
+			sel_unit_id = 0;
 		}
 
 		void put(string const& s) {

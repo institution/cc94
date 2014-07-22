@@ -6,7 +6,8 @@
 
 namespace col {
 
-
+	using b2i = Box;
+	
 
 	Layout const ly(SCREEN_W, SCREEN_H);
 
@@ -105,7 +106,18 @@ namespace col {
 	}
 
 
+	
+	
+	sf::Color const ColorSelectedBG = sf::Color(0x3c,0x20,0x18,0xff);
+	sf::Color const ColorFont = sf::Color(0x55,0x96,0x34,0xff);
+	sf::Color const ColorNone = sf::Color(0,0,0,0);
+	sf::Color const ColorBlack = sf::Color(0,0,0,255);
+	
+	v2f vmul(v2f const& a, v2f const& b);
+	v2f vmul(v2i const& a, v2f const& b);
 
+	
+	v2i calc_align(Box const& par, v2f const& align, v2i const& dim);
 
 	void preload(string const& d, uint const& i, Res::mapped_type const& tex) {
 		auto key = Res::key_type(d,i);
@@ -191,7 +203,7 @@ namespace col {
 	}
 
 	
-	v2i render_line(
+	v2i render_text_line(
 		sf::RenderWindow &win,
 
 		v2i const& pos,
@@ -256,6 +268,26 @@ namespace col {
 		);
 	}
 
+	void render_rect(sf::RenderWindow &win,
+			v2i const& pos, v2i const& dim,
+			sf::Color const& col)
+	{
+		sf::RectangleShape r;
+		r.setSize(sf::Vector2f(dim[0], dim[1]));
+		r.setFillColor(col);
+		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
+		//rectangle.setOutlineThickness(1);
+		r.setPosition(pos[0], pos[1]);
+		win.draw(r);
+	}
+
+	void render_rect(
+			sf::RenderWindow &win,
+			b2i const& box,
+			sf::Color const& col
+	) {
+		render_rect(win, box.pos, box.dim, col);
+	}
 	
 	void render_outline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Color const& c) {
 		/* Draw 1px thick outline border of pos,dim box 
@@ -472,31 +504,48 @@ namespace col {
 
 	}
 
-
+	//sf::Color Black = {0,0,0,255};
+	//sf::Color Transparent = {0,0,0,0};
 	
-	struct Ask {
-		v2i align_{0,0};
-		bool tile_{0};
 	
-		struct Entry{
+	
+	
+	void render_select(sf::RenderWindow &win, Box const& par, v2f const& align, 
+		vector<string> labs,
+		int selected	
+	) {
+		
+		int const LINE_HEIGHT = 10;
 			
-		};
+		v2i const dim = vmul(par.dim, v2f(0.4, 0.9)).cast<int>();
+		v2i pos = calc_align(par, align, dim);
 		
-		vector<pair<int, string>>
-		
-		v2i const& align() const { return align_; }
-		Style & align(v2i const& align) { align_ = align; return *this; }
-
-		bool const& tile() const { return tile_; }
-		Style & tile(bool const& tile) { tile_ = tile; return *this; }
-		
-		void render(sf::RenderWindow &win);
-	};
-	
-	void Ask::render(sf::RenderWindow &win) {
-		
-		
+		// background
+		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);		
+				
+		// selected bg
+		render_rect(win, 
+			Box(pos + v2i(0, selected * LINE_HEIGHT), v2i(dim[0], LINE_HEIGHT)), 
+			ColorSelectedBG
+		);
+				
+		// entries
+		for (size_t i = 0; i < labs.size(); ++i) {
+			
+			render_text_line(
+				win,
+				pos + v2i(0, i * LINE_HEIGHT), v2i(dim[0], LINE_HEIGHT), v2f(0.5, 0.5),
+				res_pixfont("tiny.png"), ColorFont, ColorNone,
+				labs[i]
+			);
+		}
+			
 	}
+	
+	
+	
+	
+	
 
 	void render_city(sf::RenderWindow &win, Env const& env, Console & con) {
 		/*
@@ -568,7 +617,7 @@ namespace col {
 								// render build name
 				if (con.sel_colony_slot_id == i) {
 											
-					render_line(
+					render_text_line(
 						win,
 		
 						build_pos,
@@ -592,7 +641,7 @@ namespace col {
 					
 					//render_sprite(win, build_pos, res(ICON, get_item_icon_id(ItemHammers)));
 					
-					render_line(
+					render_text_line(
 						win,
 		
 						build_pos,
@@ -614,7 +663,11 @@ namespace col {
 				
 				
 				con.onclick(build_pos, build_dim,
-					str(format("work %||") % workplace_id)
+					[&con, workplace_id]() { 
+						if (con.sel_unit_id != 0) {
+							con.command(str(format("work %||") % workplace_id));
+						}
+					}	
 				);
 				
 				con.onhover(build_pos, build_dim,
@@ -849,6 +902,11 @@ namespace col {
 		// render fields
 		//render_fields(win, env, con, ly.city_fields.pos, );
 
+		
+		render_select(win, Box(ly.scr), {0.5, 0.5}, 
+			{"aaa", "bbb"},
+			0
+		);
 
 
 
@@ -1217,20 +1275,11 @@ namespace col {
 	}
 	 */
 
-	void render_rect(sf::RenderWindow &win,
-			v2i const& pos, v2i const& dim,
-			sf::Color const& col)
-	{
-		sf::RectangleShape r;
-		r.setSize(sf::Vector2f(dim[0], dim[1]));
-		r.setFillColor(col);
-		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
-		//rectangle.setOutlineThickness(1);
-		r.setPosition(pos[0], pos[1]);
-		win.draw(r);
-	}
+	
+	
+	
 
-
+	
 
 	void render_bar(sf::RenderWindow &win,
 			Env const& env,
@@ -1461,12 +1510,17 @@ namespace col {
 		return v2f(a[0]*b[0], a[1]*b[1]);
 	}
 	
-	//void align(v2i & pos, v2i const& dim) {
-	//	return (pos.cast<float>() + vmul((dim - r_dim).cast<float>(), align)).cast<int>();
-	//}
+	v2f vmul(v2i const& a, v2f const& b) {
+		return v2f(float(a[0])*b[0], float(a[1])*b[1]);
+	}
+	
+	
+	v2i calc_align(Box const& par, v2f const& align, v2i const& dim) {
+		return (par.pos.cast<float>() + vmul((par.dim - dim).cast<float>(), align)).cast<int>();
+	}
 
 	
-	v2i render_line(
+	v2i render_text_line(
 		sf::RenderWindow &win,
 
 		v2i const& pos,
@@ -1509,14 +1563,9 @@ namespace col {
 		// calculate render position taking into account the alignment
 		v2i r_pos = (pos.cast<float>() + vmul((dim - r_dim).cast<float>(), align)).cast<int>();
 		
-		// render bg
-		if (bgcol.a != 0) {
-			render_rect(win, r_pos, r_dim, bgcol);
-		}
-		
 		// render letters
 		auto trg = sf::Image();
-		trg.create(r_dim[0], r_dim[1]);
+		trg.create(r_dim[0], r_dim[1], bgcol);
 		
 		v2i dd = sep;
 		for (auto k = i; k < j; ++k) {
@@ -1525,7 +1574,7 @@ namespace col {
 			
 			auto& g = font.glyphs.at(text.at(k));
 			
-			font.render_glyph(trg, xy[0], xy[1], g, fgcol, bgcol);
+			font.render_glyph(trg, xy[0], xy[1], g, fgcol);
 			
 			dd[0] += g.rect.width;
 			dd[0] += 1;

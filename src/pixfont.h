@@ -22,8 +22,8 @@ namespace col {
 			int const& t_x,
 			int const& t_y,
 			PixGlyph const& g,
-			sf::Color const& fgcol,
-			sf::Color const& bgcol
+			sf::Color const& fgcol
+			//sf::Color const& bgcol
 		) const {
 
 			int g_x = g.rect.left;
@@ -37,7 +37,7 @@ namespace col {
 						trg.setPixel(t_x + i, t_y + j, fgcol);
 					}
 					else {
-						trg.setPixel(t_x + i, t_y + j, bgcol);
+						//trg.setPixel(t_x + i, t_y + j, bgcol);
 					}
 
 				}

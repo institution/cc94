@@ -2,6 +2,7 @@
 #define SERIALIZE32_H
 
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/version.hpp>
 #include "env.h"
 
 
@@ -9,6 +10,8 @@
 //namespace boost {namespace serialization {
 
 namespace col {
+
+	uint const current_version = 1;
 
 	template<typename T, typename Archive>
 	void save_cont(Archive & ar, Env const& env) {
@@ -56,10 +59,16 @@ namespace col {
 
 
 	template<class Archive>
-    void Env::save(Archive & ar, uint const& ver) const
+    void Env::save(Archive & ar, uint const& ver_) const
 	{
+		auto ver = current_version;
+
 		auto& env = *this;
 		auto verbose = 0;
+
+
+		// save version
+		ar << ver;
 
 		// players
 		if (verbose) cerr << "save players" << endl;
@@ -121,6 +130,8 @@ namespace col {
 					// build
 					ar << b.type->id;
 					ar << b.free_slots;
+					if (ver > 0) ar << b.hammers;
+
 				}
 
 				// location
@@ -199,10 +210,14 @@ namespace col {
 	}
 
     template<class Archive>
-    void Env::load(Archive & ar, uint const& ver)
+    void Env::load(Archive & ar, uint const& ver_)
 	{
 		auto& env = *this;
 		auto verbose = env.verbose;
+		auto ver = current_version;
+
+		// version
+		ar >> ver;
 
 		// players
 		if (verbose) {
@@ -283,6 +298,7 @@ namespace col {
 
 					b.type = & env.get<BuildType>( build_type_id );
 					ar >> b.free_slots;
+					if (ver > 0) ar >> b.hammers;
 				}
 
 
@@ -365,6 +381,7 @@ namespace col {
 		//l += write(f, env.current_player_id);
 
 	}
+
 
 
 

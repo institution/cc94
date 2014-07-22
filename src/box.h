@@ -5,26 +5,45 @@
 
 namespace col{
 
-	struct Box {
+
+
+	struct Box2 {
 
 		v2i pos, dim, end;
 
-		Box() = default;
+		Box2() = default;
 
-		Box(v2i const& pos, v2i const& dim):
+		Box2(v2i const& pos, v2i const& dim):
 			pos(pos), dim(dim), end(pos+dim)
 		{}
 
-		Box(int x, int y, int w, int h):
+		Box2(int x, int y, int w, int h):
 			pos(x,y), dim(w,h), end(x+w,y+h)
 		{}
 
 
 	};
 
+	struct Box {
+
+		v2i pos, dim;
+
+		Box() = default;
+
+		Box(v2i const& pos, v2i const& dim):
+			pos(pos), dim(dim)
+		{}
+
+		Box(int x, int y, int w, int h):
+			pos(x,y), dim(w,h)
+		{}
+
+		Box(Box2 const& box):
+			pos(box.pos), dim(box.dim)
+		{}
 
 
-
+	};
 }
 
 
