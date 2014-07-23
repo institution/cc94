@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
 #include "view_base.h"
@@ -510,34 +511,56 @@ namespace col {
 	
 	
 	
-	void render_select(sf::RenderWindow &win, Box const& par, v2f const& align, 
-		vector<string> labs,
-		int selected	
+	template<typename K>
+	void render_select(sf::RenderWindow & win, Console & con,
+		std::function<v2i(v2i const&)> cpos,
+		//Box const& par, v2f const& align, 
+		vector<pair<K, string>> const& kvs,
+		K & selected,
+		std::function<void()> onselect,
+		std::function<void()> oncancel
 	) {
 		
 		int const LINE_HEIGHT = 10;
 			
-		v2i const dim = vmul(par.dim, v2f(0.4, 0.9)).cast<int>();
-		v2i pos = calc_align(par, align, dim);
+		v2i const dim = vmul(ly.scr.dim, v2f(0.4, 0.9)).cast<int>();
+		v2i pos = cpos(dim);
+		
+		// on cancel (click outside window))
+		con.onclick(ly.scr.pos, ly.scr.dim, oncancel);
 		
 		// background
 		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);		
-				
-		// selected bg
-		render_rect(win, 
-			Box(pos + v2i(0, selected * LINE_HEIGHT), v2i(dim[0], LINE_HEIGHT)), 
-			ColorSelectedBG
-		);
+		
+		// on dialog
+		con.onclick(pos, dim, [](){});
 				
 		// entries
-		for (size_t i = 0; i < labs.size(); ++i) {
+		for (size_t i = 0; i < kvs.size(); ++i) {
 			
+			auto p = pos + v2i(0, i * LINE_HEIGHT);
+			auto d = v2i(dim[0], LINE_HEIGHT);
+			
+			auto& key = kvs[i].first;
+			
+			// selected bg
+			if (key == selected) {
+				render_rect(win, 
+					p, d,
+					ColorSelectedBG
+				);
+			}
+
+			// label
 			render_text_line(
 				win,
-				pos + v2i(0, i * LINE_HEIGHT), v2i(dim[0], LINE_HEIGHT), v2f(0.5, 0.5),
+				p, d, v2f(0.5, 0.5),
 				res_pixfont("tiny.png"), ColorFont, ColorNone,
-				labs[i]
+				kvs[i].second
 			);
+			
+			// on select		
+			con.onclick(p, d, [&selected,key,onselect](){ selected = key; onselect(); });
 		}
 			
 	}
@@ -614,7 +637,7 @@ namespace col {
 				
 
 					
-								// render build name
+				// render build name
 				if (con.sel_colony_slot_id == i) {
 											
 					render_text_line(
@@ -659,13 +682,13 @@ namespace col {
 				}
 				
 				
-				
-				
-				
 				con.onclick(build_pos, build_dim,
 					[&con, workplace_id]() { 
 						if (con.sel_unit_id != 0) {
 							con.command(str(format("work %||") % workplace_id));
+						}
+						else {
+							con.select_build = 1;  // todo slot_id blablabla
 						}
 					}	
 				);
@@ -902,11 +925,27 @@ namespace col {
 		// render fields
 		//render_fields(win, env, con, ly.city_fields.pos, );
 
-		
-		render_select(win, Box(ly.scr), {0.5, 0.5}, 
-			{"aaa", "bbb"},
-			0
-		);
+		if (con.select_build > 0) {
+			
+			vector<pair<BuildType::Id, string>> kvs;
+			
+			for (auto& item: *env.bts) {
+				kvs.emplace_back(
+					item.first,
+					item.second.get_name()
+				);
+			}
+			
+			render_select<BuildType::Id>(win, con,
+				[](v2i const& dim) {
+					return calc_align(Box(ly.scr), {0.5, 0.5}, dim); 
+				},
+				kvs,
+				con.select_build,
+				[&con](){ cout << con.select_build << endl; /*con.select_build = 0;*/ },  // onselect
+				[&con](){ con.select_build = 0; }   // oncancel
+			);
+		}
 
 
 

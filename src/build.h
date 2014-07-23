@@ -36,6 +36,10 @@ namespace col{
 
 		}
 
+		string const& get_name() const { return name; }
+		//BuildType & set_name(string const& name) { this->name = name; return *this; }
+
+
 	};
 
 	// yep... csv... anyway we need to move this somehow out of binary - not as easy as it seems - depends on well defined game rules

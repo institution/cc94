@@ -468,12 +468,30 @@ namespace col {
 							create_ai(pid);
 						}
 
+						auto run_mode = stoi(es.at(2));  // 0 no, 1 step, 2 full turn
+						auto power = stoi(es.at(1));
+						
+						
 						auto& ai = ais.at(pid);
-						auto const& a = ai.calc(envgame, stoi(es.at(1)), 0);
-						put(string("action: ") + to_string(a));
-						if (stoi(es.at(2)) == 1) {
+						
+						if (run_mode == 1) {
+							auto const& a = ai.calc(envgame, power, 0);
+							put(string("action: ") + to_string(a));
 							exec(a);
 						}
+						else {
+							while (1) {
+								auto const& a = ai.calc(envgame, power, 0);
+								put(string("action: ") + to_string(a));
+								exec(a);
+								if (a == Ready(pid)) {
+									break;
+								}
+							}
+
+						}
+						
+						
 
 					}
 					else {

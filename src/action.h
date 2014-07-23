@@ -146,6 +146,59 @@ namespace col {
 
 	};
 
+
+
+
+	struct Assign: Action {
+		int slot_id;
+		Unit::Id uid;
+		Item item_id;
+
+		Assign(
+			Player::Id const& pid,
+			int const& slot_id,
+			Unit::Id const& uid,
+			Item const& item_id
+		):
+			Action(pid),
+			slot_id(slot_id),
+			uid(uid),
+			item_id(item_id)
+		{}
+
+		bool unsafe_eq(Action const& a) const {
+			auto b = static_cast<Assign const&>(a);
+			return pid == a.pid and slot_id == b.slot_id and uid == b.uid and item == b.item;
+		}
+
+		Action* copy() const {
+			return new Assign(*this);
+		}
+
+		void exec(Game &game, bool exec=1) const {
+			auto& c = game.get_cont<Unit>();
+			auto it = c.find(uid);
+			if (it == c.end()) {
+				throw Error("no unit with this id");
+			}
+
+			game.assign(
+				slot_id,
+				unit,
+				item_id,
+				exec
+			);
+
+		}
+
+		virtual ostream& dump(ostream& out) const {
+			out << "Assign("<<pid<<","<<slot_id<<","<<uid<<","<<item_id<<")";
+			return out;
+		}
+
+	};
+
+
 	struct Ready: Action {
 
 		Ready(Player::Id const& pid): Action(pid) {}

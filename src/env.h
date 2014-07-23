@@ -926,6 +926,11 @@ namespace col{
 			colony.construct_building(type, slot);
 		}
 
+		//vector<BuildType*> const& get_allowed_builds(Terr const& t, int slot_id) {
+		//	vector<BuildType*> abts;
+		//	for ()
+		//}
+
 
 		float get_defense_bonus(Terr const& terr, Travel const& trav) {
 			if (trav == LAND) {
@@ -1020,7 +1025,13 @@ namespace col{
 			}
 		}
 
-		bool assign(int num, Unit & unit, Item item, bool exec=1) {
+		bool assign(int num, Unit & unit, Item const& item, bool const& exec=1) {
+			// Assign unit to work on colony slot
+			// num -- slot number
+			//    [0-14] building
+			//    [16-24] field square
+			// item -- item to produce
+			// exec -- if 0 then only check arguments
 
 			auto & terr = get_terr(unit);
 

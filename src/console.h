@@ -121,9 +121,15 @@ namespace col {
 			HotSpot(Box2 const& box, std::function<void()> cl, int type): box(box), cl(cl), type(type) {}
 		};
 
+		BuildType::Id select_build{0};
+
 		using HotSpots = std::vector<HotSpot>;
 
 		HotSpots hts;
+
+		void trapall() {
+			hts.clear();
+		}
 
 		void onclick(v2i const& pos, v2i const& dim, std::function<void()> cl) {
 			hts.push_back({Box2(pos, dim), cl, HotSpot::Click});

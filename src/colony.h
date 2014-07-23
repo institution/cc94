@@ -35,7 +35,7 @@ namespace col {
 		}
 
 		Build& get_build(int i) {
-			return builds[i];
+			return builds.at(i);
 		}
 
 		void add(Cargo const& c) {
