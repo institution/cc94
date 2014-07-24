@@ -1005,6 +1005,11 @@ namespace col{
 			return 0;
 		}
 
+		Terr& get_colony_field(Terr const& ct, int num) {
+			return get_terr(vec4dir(num) + get_coords(ct));
+		}
+
+
 		Workplace const& get_workplace_by_index(Unit const& unit, int num) const {
 			auto const& terr = get_terr(unit);
 			if (num < 0) {
@@ -1051,6 +1056,8 @@ namespace col{
 			return false;
 
 		}
+
+
 
 		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {
 			units.at(icon_id).player = &players.at(player_id);

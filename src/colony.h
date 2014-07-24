@@ -18,9 +18,6 @@ namespace col {
 		string name;
 		Storage storage;
 
-
-
-
 		// vector<Unit*> units;
 
 		array<Build,15> builds;
@@ -37,6 +34,11 @@ namespace col {
 		Build& get_build(int i) {
 			return builds.at(i);
 		}
+
+		Build const& get_build(int i) const {
+			return builds.at(i);
+		}
+
 
 		void add(Cargo const& c) {
 			auto key = c.item;

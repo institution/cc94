@@ -76,6 +76,22 @@ namespace col{
 		// Workplace
 		uint16 get_yield(Item const& item, bool const& is_expert) const;
 
+		vector<Item> get_proditems() const {
+			array<Item,9> field_items = {
+				ItemFood,ItemSugar,ItemTobacco,
+				ItemCotton,ItemFurs,ItemLumber,
+				ItemOre,ItemSilver,ItemFish
+			};
+
+			vector<Item> xs;
+			for (auto const& item: field_items) {
+				if (get_yield(item, 0)) {
+					xs.push_back(item);
+				}
+			}
+			return xs;
+		}
+
 
 		bool assign(bool const& exec=1) {
 			if (has(PhysWorker)) {

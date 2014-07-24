@@ -522,8 +522,8 @@ namespace col {
 	) {
 		
 		int const LINE_HEIGHT = 10;
-			
-		v2i const dim = vmul(ly.scr.dim, v2f(0.4, 0.9)).cast<int>();
+		
+		v2i const dim = v2i(ly.scr.dim[0] * 0.3, (kvs.size()+1) * LINE_HEIGHT);
 		v2i pos = cpos(dim);
 		
 		// on cancel (click outside window))
@@ -689,6 +689,7 @@ namespace col {
 						}
 						else {
 							con.select_build = 1;  // todo slot_id blablabla
+							con.sel_slot_num = workplace_id;
 						}
 					}	
 				);
@@ -929,11 +930,16 @@ namespace col {
 			
 			vector<pair<BuildType::Id, string>> kvs;
 			
+			auto& cb = env.get_terr(con.sel).get_colony().get_build(con.sel_slot_num);
+			
 			for (auto& item: *env.bts) {
-				kvs.emplace_back(
-					item.first,
-					item.second.get_name()
-				);
+				auto const& b = item.second;
+				if (b.place_on_id == cb.get_type_id()) {				
+					kvs.emplace_back(
+						item.first,
+						b.get_name()
+					);
+				}
 			}
 			
 			render_select<BuildType::Id>(win, con,

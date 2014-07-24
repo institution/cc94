@@ -168,7 +168,7 @@ namespace col {
 
 		bool unsafe_eq(Action const& a) const {
 			auto b = static_cast<Assign const&>(a);
-			return pid == a.pid and slot_id == b.slot_id and uid == b.uid and item == b.item;
+			return pid == a.pid and slot_id == b.slot_id and uid == b.uid and item_id == b.item_id;
 		}
 
 		Action* copy() const {
@@ -184,7 +184,7 @@ namespace col {
 
 			game.assign(
 				slot_id,
-				unit,
+				(*it).second,
 				item_id,
 				exec
 			);

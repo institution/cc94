@@ -9,15 +9,22 @@ namespace col{
 	// frigate
 
 
+
 	struct BuildType{
 		using Id = uint32;
 
-		Id id;
 		string name;
+		Id id;
+		int slots;
+		Item itemprod{ItemNone};
+		Item itemcons{ItemNone};
 		int cost_hammers;
 		int cost_tools;
-		int slots;
-
+		int min_colony;
+		Id place_on_id;
+		int prod;
+		int cons;
+		int icon;
 
 		BuildType() {}
 
@@ -27,13 +34,20 @@ namespace col{
 		{}
 
 		BuildType(vector<string> const& xs) {
-			assert(xs.size() >= 8);
+			assert(xs.size() >= 11);
+
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
-
-			cost_hammers = stoi(xs[6]);
-			cost_tools = stoi(xs[7]);
-
+			slots = stoi0(xs[2]);
+			itemprod = stoi0(xs[3]);
+			itemcons = stoi0(xs[4]);
+			cost_hammers = stoi0(xs[5]);
+			cost_tools = stoi0(xs[6]);
+			min_colony = stoi0(xs[7]);
+			place_on_id = stoi0(xs[8]);
+			prod = stoi0(xs[9]);
+			cons = stoi0(xs[10]);
+			icon = stoi0(xs[11]);
 		}
 
 		string const& get_name() const { return name; }
@@ -107,6 +121,7 @@ namespace col{
 		int8 free_slots;
 		int hammers{0};
 
+
 		Build(BuildType const& type):
 			Workplace(),
 			type(&type),
@@ -137,6 +152,13 @@ namespace col{
 			return this->type->name;
 		}
 
+		auto get_slots() const -> decltype(type->slots) const& { return type->slots; };
+		auto get_consitem() const -> decltype(type->itemcons) const& { return type->itemcons; };
+		auto get_cost_tools() const -> decltype(type->cost_tools) const& { return type->cost_tools; };
+		auto get_min_colony() const -> decltype(type->min_colony) const& { return type->min_colony; };
+		auto get_place_on_type_id() const -> decltype(type->place_on_id) const& { return type->place_on_id; };
+		auto get_prod() const -> decltype(type->prod) const& { return type->prod; };
+		auto get_cons() const -> decltype(type->cons) const& { return type->cons; };
 
 		int const& get_cost_hammers() const {
 			return this->type->cost_hammers;
@@ -150,60 +172,15 @@ namespace col{
 			return h - add_h;
 		}
 
+		Item const& get_proditem() const {
+			return type->itemprod;
+		}
+
 		uint16 get_yield(Item const& item, bool const& is_expert) const {
-			auto id = get_type_id();
-			int r = 0;
-			switch(item) {
-				case ItemRum:
-					if (id == BuildRumDistillersHouse) {
-						r = 3;
-					}
-					break;
-				case ItemCigars:
-					if (id == BuildTobacconistsHouse) {
-						r = 3;
-					}
-					break;
-				case ItemCloth:
-					if (id == BuildWeaversHouse) {
-						r = 3;
-					}
-					break;
-				case ItemCoats:
-					if (id == BuildFurTradersHouse) {
-						r = 3;
-					}
-					break;
-				case ItemTools:
-					if (id == BuildBlacksmithsShop) {
-						r = 3;
-					}
-					break;
-				case ItemMuskets:
-					if (id == BuildArmory) {
-						r = 3;
-					}
-					break;
-				case ItemHammers:
-					if (id == BuildCarpentersShop) {
-						r = 3;
-					}
-					if (id == BuildLumberMill) {
-						r = 6;
-					}
-					break;
-				case ItemCross:
-					if (id == BuildChurch) {
-						r = 3;
-					}
-					break;
-				case ItemBell:
-					if (id == BuildTownHall) {
-						r = 3;
-					}
-					break;
+			if (get_proditem() == item) {
+				return get_prod();
 			}
-			return r;
+			return 0;
 		}
 
 		bool assign(bool const& exec=1) {
@@ -225,6 +202,8 @@ namespace col{
 			}
 			return true;
 		}
+
+
 
 	};
 

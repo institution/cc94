@@ -54,57 +54,56 @@ namespace col{
 		}
 
 
-		bool check(int L, int M) {
+		bool check(int L, int M) const {
 			return (roll::roll2(0,M) < L);
 		}
 
-		bool assign(int num, Unit & unit, Item const& item, bool const& exec=1) {
-			// Assign unit to work on colony slot
-			// num -- slot number
-			//    [0-14] building
-			//    [16-24] field square
-			// item -- item to produce
-			// exec -- if 0 then only check arguments
+		bool get_assign_action(Assign & a, Player::Id const& pid, Unit const& unit) {
+			// [0-14] building
+			// [16-24] field square
 
-		// [0-14] building
-		// [16-24] field square
+			auto & t = get_terr(unit);
+			auto & c = t.get_colony();
 
-			t = env.get_terr(unit);
-			t.get_colony()
+			// try 4 times
+			for (int i=0; i<4; ++i) {
 
-			if (check(1,2)) {
-				// work build
-				slot_id = roll::roll2(0,16);
+				// factory or field
+				if (check(1,2)) {
 
-				b = c.get_build(slot_id);
+					// which manufacture
+					auto const& slot_id = roll::roll2(0,16);
 
-				if (b.assign(false)) {
-					// can assign
+					auto & b = c.get_build(slot_id);
+
+					if (b.assign(false)) {
+						a = Assign(pid, slot_id, unit.id, b.get_proditem());
+						return true;
+					}
+
 
 				}
 				else {
-					// build full
+					// which field
+					auto field_id = roll::roll2(0,9);
+
+					auto& f = get_colony_field(t, field_id);
+
+					if (f.assign(false)) {
+						// random workitem
+						auto const& xs = f.get_proditems();
+
+						a = Assign(pid, 16+field_id, unit.id,
+							xs.at(roll::roll2(0, xs.size()))
+						);
+						return true;
+					}
 				}
-
-
-			}
-			else {
-				// work field
-
 			}
 
-			nchoices = 15+9;
+			return false;
+		}
 
-			rand_i = roll::roll2(0,nchoices+1)
-
-			i = 0;
-			nchoices = 0;
-
-			for (int n=0; n<15; ++n) {
-
-
-
-			}
 
 
 
@@ -114,18 +113,14 @@ namespace col{
 		unique_ptr<Action> create_random_action() {
 			// OrderMove or Ready
 
-
-			if (!in_progress()) {
-				return unique_ptr<Action>(nullptr);
-			}
-			else {
+			if (in_progress()) {
 				auto pid = get_current_player().id;
 
 				for (auto& it: units) {
 					auto& u = it.second;
 
 
-					if (u.order != Order::Space and u.get_player().id == pid)
+					if (u.order != Order::Space and u.get_player().id == pid) {
 
 						if (u.assigned() and roll::roll2(0, 16) >= 2) {
 							u.order = Order::Space;
@@ -133,31 +128,43 @@ namespace col{
 						}
 
 						// assign or move
-						t = env.get_terr(unit);
-						t.has_colony()
-						get_random_work
 
-
-						auto dir = roll::roll2(0, 9);
-
-						{
-							auto r = unique_ptr<Action>(new OrderAttack(pid, u.id, dir));
-							if ((*r).is_allowed(*this)) return r;
+						auto const& t = get_terr(u);
+						if (t.has_colony() and check(4,5)) {
+							// assign work
+							Assign tmp(pid,0,0,0);
+							if (get_assign_action(tmp, pid, u)) {
+								auto r = unique_ptr<Action>(new Assign(tmp));
+								if ((*r).is_allowed(*this)) return r;
+							}
 						}
+						else {
+							// move
+							auto dir = roll::roll2(0, 9);
 
-						{
-							auto r = unique_ptr<Action>(new OrderMove(pid, u.id, dir));
-							if ((*r).is_allowed(*this)) return r;
-						}
+							{
+								auto r = unique_ptr<Action>(new OrderAttack(pid, u.id, dir));
+								if ((*r).is_allowed(*this)) return r;
+							}
 
-					}
+							{
+								auto r = unique_ptr<Action>(new OrderMove(pid, u.id, dir));
+								if ((*r).is_allowed(*this)) return r;
+							}
+						} // if
 
+					} // if
 
-				}
+				} // for
+
 				return unique_ptr<Action>(new Ready(pid));
-			}
 
-		}
+			}
+			else {
+				return unique_ptr<Action>(nullptr);
+			} // if
+
+		} // func
 
 	};
 

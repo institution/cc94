@@ -122,6 +122,7 @@ namespace col {
 		};
 
 		BuildType::Id select_build{0};
+		int sel_slot_num{-1};
 
 		using HotSpots = std::vector<HotSpot>;
 
