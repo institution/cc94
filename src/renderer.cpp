@@ -30,7 +30,7 @@ namespace col {
 		}
 		else {
 			auto &font = g_fonts[name];
-			auto path = FONT_PATH + name;
+			auto path = string(FONT_PATH + name);
 			if (!font.loadFromFile(path)) {
 
 				throw std::runtime_error("cannot load font");
@@ -94,9 +94,9 @@ namespace col {
 		else {
 			auto &img = g_res[key];
 			auto path = str(format("./%||/%|03|.png") % d % i);
-			if (!img.loadFromFile(path)) {
+			if (!img.loadFromFile(string(path))) {
 				// try default
-				if (!img.loadFromFile("./" + ICON + "/065.png")) {
+				if (!img.loadFromFile(string("./" + ICON + "/065.png"))) {
 					throw std::runtime_error("can't load default image file while loading: " + path);
 				}
 				// throw std::runtime_error("cant't load image file: " + path);
@@ -734,8 +734,29 @@ namespace col {
 
 		// render units
 		array<uint8,16> num_workers;
+		array<int,16> prod;
 		num_workers.fill(0);
+		prod.fill(0);
 
+		/*
+		for (auto& p: terr.units) {
+			auto& unit = *p;
+			if (unit.workplace != nullptr) {
+				if (unit.workplace->place_type() == PlaceType::Build) {
+					
+				}
+			}
+		}*/
+		
+		
+		// right click - unselect unit
+		con.on(Console::HotSpot::RightClick, ly.scr.pos, ly.scr.dim,
+			[&con]() { 
+				con.sel_unit_id = 0;
+			}
+		);
+
+		
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 			
@@ -754,6 +775,8 @@ namespace col {
 				auto const& item_dim = get_dim(item_tex);
 				v2i item_pos;
 				
+				
+				
 				if (unit.workplace->place_type() == PlaceType::Build) {
 					// unit on building
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
@@ -767,15 +790,16 @@ namespace col {
 					
 					// unit
 					unit_dim = get_dim(unit_tex);					
-					unit_pos = build_end - v2i(num_workers.at(i)*5+5, -1) - unit_dim;
+					unit_pos = build_end - v2i(num_workers.at(i)*7 + 5, -1) - unit_dim;
+					
+					// item
+					item_pos = build_pos + v2i(num_workers.at(i) * 7, -1);
 					
 					num_workers.at(i) += 1;
 										
-					// item
-					item_pos = build_pos;
 					
 					// selection
-					sel_pos = unit_pos;
+					sel_pos = unit_pos - v2i(1,1);;
 					sel_dim = unit_dim + v2i(2,2);
 					
 				}
@@ -798,31 +822,34 @@ namespace col {
 					
 				}
 				
-				auto num = unit.workplace->get_yield(unit.workitem, 0);
-				
-				// render produced item
-				render_sprite(win,
-						item_pos,
-						item_dim + v2i(2,2),
-						item_tex					
-				);
-				/*for (int i=0; i < num; ++i) {
+				if (unit.workitem) {
+					auto num = unit.workplace->get_yield(unit.workitem, 0);
+
+					// render produced item
 					render_sprite(win,
-						item_pos + v2i(i*3,0),
-						item_dim + v2i(2,2),
-						item_tex					
+							item_pos,
+							item_dim + v2i(2,2),
+							item_tex					
 					);
-				}*/
-				
-				// number of produced items
-				render_text(
-					win,
-					item_pos,
-					res_pixfont("tiny.png"),
-					std::to_string(num),
-					{0,0,0,255},
-					0
-				);
+					/*for (int i=0; i < num; ++i) {
+						render_sprite(win,
+							item_pos + v2i(i*3,0),
+							item_dim + v2i(2,2),
+							item_tex					
+						);
+					}*/
+
+					// number of produced items
+					render_text(
+						win,
+						item_pos,
+						res_pixfont("tiny.png"),
+						std::to_string(num),
+						{0,0,0,255},
+						0
+					);
+
+				}
 				
 			}
 			else {
@@ -948,7 +975,11 @@ namespace col {
 				},
 				kvs,
 				con.select_build,
-				[&con](){ cout << con.select_build << endl; /*con.select_build = 0;*/ },  // onselect
+				[&con](){ 
+					con.command(str(format("construct %|| %||") % con.sel_slot_num % con.select_build));
+					con.select_build = 0;
+					con.sel_slot_num = -1;
+				},  // onselect
 				[&con](){ con.select_build = 0; }   // oncancel
 			);
 		}
@@ -1281,7 +1312,21 @@ namespace col {
 			for (int i = 0; i < w; ++i) {
 				render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos,
 					delta 
-				); 
+				);
+				
+				/*
+				auto dim = v2i(w * ly.TERR_W, h * ly.TERR_H);
+		
+				//(mp.x - ly.map.pos[0])
+
+				con.on(HotSpot::RightClick, pos, dim, [&con](){
+
+						con.sel[0] = rel[0] / ly.TERR_W;
+						con.sel[1] = rel[1] / ly.TERR_H;
+					}
+				};*/
+
+				
 			}
 		}
 		
@@ -1301,6 +1346,10 @@ namespace col {
 			tile_dim, 
 			{255,255,255,255}
 		);
+		
+		
+
+		
 	}
 
 

@@ -107,6 +107,12 @@ namespace col {
 
 	struct Place {
 		virtual PlaceType::type place_type() = 0;
+
+		//virtual bool can_put(Placeable const& x) const = 0;
+		//virtual void put(Placeable & x) = 0;
+
+		//virtual bool can_take(Placeable const& x) const = 0;
+		//virtual void take(Placeable & x) = 0;
 	};
 
 	struct Workplace{
@@ -117,11 +123,9 @@ namespace col {
 	};
 
 	struct Placeable {
-		Place *place;
+		Place *place{nullptr};
 
-		Placeable(): place(nullptr) {
-
-		}
+		//virtual int get_size() const = 0;
 	};
 
 

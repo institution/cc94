@@ -161,7 +161,7 @@ namespace col {
 				ar << cr;
 
 
-
+				// workplace
 				if (x.workplace != nullptr) {
 					write(ar, x.workplace->place_type());
 

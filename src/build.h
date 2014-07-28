@@ -125,7 +125,7 @@ namespace col{
 		Build(BuildType const& type):
 			Workplace(),
 			type(&type),
-			free_slots(3)
+			free_slots(type.slots)
 		{}
 
 		Build() = default;
@@ -194,7 +194,7 @@ namespace col{
 		}
 
 		bool leave(bool const& exec=1) {
-			if (free_slots >= 3) {
+			if (free_slots >= get_slots()) {
 				return false;
 			}
 			if (exec) {

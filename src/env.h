@@ -19,6 +19,164 @@
 
 
 namespace col{
+
+
+
+
+	/*
+	-- turn calc
+
+	work building unit
+
+
+
+	-- orders
+
+	 construct_improvment(unit,improvment)
+		plow,road,colony,chop_forest
+
+	 declare_building
+	 declare_unit(terr,unit_type)
+
+	 promote_building building building_type
+
+	 promote_unit
+
+
+ 	 recruit unit (europe) := move_unit europe academy unit
+
+	 // teach colonist
+	 train_unit
+
+	 unit
+		speciality(2-value): [normal|expert] [carpenter|farmer ect...]
+			production bonus
+				level normal: multiplier +1 (no bonus mult=1)
+				level expert: multiplier +2 (expert production mult=2)
+
+		loyalty(2-value): level [rebel england|royal england|rebel spainr| royal spain itp...]
+			ex. +79 royal_england
+			+79 other_faction is visible as -79 my_faction
+			production/battle bonus
+				-100    -2
+				-99:-50 -1
+				-49:+49  0
+				+50:+99 +1
+				+100    +2
+			loyalty decay over time towards 0 (only when working? how about battle units?)
+
+	 food calculations:
+		each unit: on turn
+			if working consume food from local_storage
+			if no food left do not produce and move self to local terrain (abandon workplace)
+		non working units (units on terrain) do not consume food - (they consume supply instead?)
+
+		how about wagon trains -- should consume something (supply?) -- transport should cost
+
+
+	 building
+		get_proditem -- item to produce
+		set_proditem -- set item to produce
+		get_nonzero_proditems -- items with nonzero yield here
+
+		get_yield(item,expert) -- get number of produced items
+
+
+
+	 designate_production(building,item)
+	 designate_target_storage (or construction)
+
+
+	 move_cargo unit.equip storage cargo       // equip_unit, promote_unit
+		if unit,cargo match promotion_pattern
+			transform to new type
+			return 1
+		return 0
+
+	 move_cargo storage unit.equip cargo       // unequip_unit
+	 move_cargo building.equip storage cargo   // finalize construction with tools
+
+	 move_cargo building.equip none cargo      // add hammers to construction
+
+
+
+
+
+
+
+	 //equip slot (internal)
+	 //cargo slot (cargo)
+	 //board slot (unit's)
+
+	 move_unit(to,unit,from)
+		terrain
+		building
+		field
+		transport platform
+		atlantic/pacific transit
+		european port
+
+	 move_unit terrain terrain unit      // move on map
+
+	 move_unit building location unit    // assign to work
+	 move_unit field location unit       // assign to work on field
+	 move_unit location building unit    // leave workplace
+	 move_unit location field unit       // leave field
+
+	 move_unit transport location unit   // board transport
+	 move_unit terrain transport unit    // make landing, unembark
+
+	 move_unit transit terrain unit      // sail to europe
+	 move_unit transit europe unit       // return to new world
+	 move_unit europe transit unit       // arrive to europe
+	 move_unit terrain transit unit      // arrive to new world
+
+	 move_cargo(to,from,cargo)
+		default slot: cargo
+		colony storage (local storage)
+		transport storage
+		european storage (buy/sell)
+		terrain (dump)
+		local_storage = colony|dump
+
+	 move_cargo europe transport cargo   // sell
+	 move_cargo transport europe cargo   // buy
+
+	 move_cargo transport colony         // load cargo
+	 move_cargo transport transport      // transfer cargo
+	 move_cargo colony transport         // unload cargo
+
+	 move_cargo terrain storage cargo    // dump cargo
+
+
+
+	 ready (end turn)
+
+
+
+	 */
+
+
+
+
+
+
+/*
+	bool change_place(Unit & u, Place & dest) {
+			orig = u.get_place()
+			dest
+
+
+			// distance
+			dist = distance(orig, dest)
+
+
+		}
+*/
+
+
+
+
 	using Id = uint32;
 
 	using TerrTypes = unordered_map<TerrType::Id, TerrType>;
@@ -655,8 +813,17 @@ namespace col{
 			action_count += 1;
 		}
 
-		bool order_board() {
-			return 0;
+
+
+		bool has_transport(Terr const& dest, Unit const& u) const {
+			int space = 0;
+			for (auto& p: dest.units) {
+				space += p->get_space_left();
+				if (p->transported) {
+					space -= p->get_size();
+				}
+			}
+			return space >= u.get_size();
 		}
 
 		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {
@@ -677,8 +844,16 @@ namespace col{
 
 			auto & dest = ref_terr(dest_coords);
 
+			bool transported = 0;
+
 			if (!compatible(u.get_travel(), dest.get_travel())) {
-				throw Error("cannot travel through this terrain");
+				if (has_transport(dest, u)) {
+					transported = 1;
+				}
+				else {
+					throw Error("cannot travel through this terrain");
+				}
+
 			}
 
 			// dynamic check
@@ -698,6 +873,18 @@ namespace col{
 				if (run_map_task(u, time_cost)) {
 					move_out(orig, u);
 					move_in(dest, u);
+					u.transported = transported;
+
+					auto space = u.get_space_left();
+					for (auto& p: orig.units) {
+						if (!space) break;
+						if (p->transported) {
+							move_out(orig, *p);
+							move_in(dest, *p);
+							space -= 1;
+						}
+					}
+
 					record_action();
 					return 1; // success
 				}

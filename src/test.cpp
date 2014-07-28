@@ -11,7 +11,6 @@
 #include "envgame.h"
 #include "serialize.hpp"
 #include "action.h"
-#include "tree2.hpp"
 
 
 using namespace col;
@@ -40,7 +39,7 @@ using roll::replay;
 
 
 
-
+/*
 TEST_CASE( "tree2", "" ) {
 	using NodeType = tree2::Node<int>;
 	
@@ -72,7 +71,7 @@ TEST_CASE( "tree2", "" ) {
 	REQUIRE(true);
 	
 }
-
+*/
 
 
 

@@ -98,6 +98,8 @@ namespace col {
 					case sf::Keyboard::Return:
 						cmd = "enter";
 						break;
+					default:
+						break;
 				}
 				if (cmd.size()) {
 					try {
@@ -118,6 +120,8 @@ namespace col {
 						break;			
 					case sf::Keyboard::Return:
 						cmd = "exit";
+						break;
+					default:
 						break;
 				}
 				if (cmd.size()) {
@@ -195,32 +199,31 @@ namespace col {
 		if (type == sf::Event::MouseButtonPressed)
 		{
 			
+			sf::Vector2f mp = app.mapPixelToCoords(
+				sf::Vector2i(
+					event.mouseButton.x,
+					event.mouseButton.y
+				)
+			);
+			
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-
-				sf::Vector2f mp = app.mapPixelToCoords(
-					sf::Vector2i(
-						event.mouseButton.x,
-						event.mouseButton.y
-					)
-				);
-
 				if (handle_event(v2i(mp.x, mp.y), HotSpot::Click)) {
 					modified();
 				}
-				
 			}
 			
+			if (event.mouseButton.button == sf::Mouse::Right)
+			{
+				if (handle_event(v2i(mp.x, mp.y), HotSpot::RightClick)) {
+					modified();
+				}				
+			}
 			
 			
 			if (mode == Mode::AMERICA and event.mouseButton.button == sf::Mouse::Right)
 			{
-				sf::Vector2f mp = app.mapPixelToCoords(
-					sf::Vector2i(
-						event.mouseButton.x,
-						event.mouseButton.y
-					)
-				);
+				
 				sel[0] = (mp.x - ly.map.pos[0]) / ly.TERR_W;
 				sel[1] = (mp.y - ly.map.pos[1]) / ly.TERR_H;
 
@@ -708,7 +711,7 @@ namespace col {
 					break;
 				case 3: {
 					auto place_id = stoi(es.at(1));
-					auto buildtype_id = stoi(es.at(1));
+					auto buildtype_id = stoi(es.at(2));
 					
 					auto& c = envgame.get_terr(sel).get_colony();
 					envgame.colony_construct(c, buildtype_id, place_id);

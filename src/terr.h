@@ -66,7 +66,14 @@ namespace col{
 			biome(biome), phys(phys), alt(alt), colony(nullptr)
 		{}
 
+		/*
+		move_unit(Unit &u, Place &from) {
 
+		}
+
+		move_cargo(Cargo &c, Place &from) {
+
+		}*/
 
 		// Place
 		PlaceType::type place_type() {

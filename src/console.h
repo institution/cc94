@@ -111,6 +111,7 @@ namespace col {
 		struct HotSpot{
 			static int const Click = 1;
 			static int const Hover = 2;
+			static int const RightClick = 4;
 
 			int type{1}; // 1 - left click, 2 - hover
 
@@ -153,11 +154,14 @@ namespace col {
 			);
 		}
 
+		void on(int flag, v2i const& pos, v2i const& dim, std::function<void()> cl) {
+			hts.push_back({Box2(pos, dim), cl, flag});
+		}
 
 		bool handle_event(v2i const& pos, int type) {
 			for (int i = hts.size(); 0 < i; --i) {
 				auto& p = hts[i-1];
-				if (p.type == type and overlap(p.box, pos)) {
+				if (p.type & type and overlap(p.box, pos)) {
 					p.cl();
 					return true;
 				}
