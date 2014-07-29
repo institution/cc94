@@ -99,6 +99,17 @@ namespace col{
 			return xs;
 		}
 
+		int get_space_left() {
+			return 999;
+		}
+
+		void add(Unit & u) {
+			units.push_back(&u);
+		}
+
+		void sub(Unit & u) {
+			units.erase(find(units.begin(), units.end(), &u));
+		}
 
 		bool assign(bool const& exec=1) {
 			if (has(PhysWorker)) {

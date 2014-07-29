@@ -116,25 +116,27 @@ namespace col {
 		//virtual void put(Placeable & x) = 0;
 
 		//virtual bool can_take(Placeable const& x) const = 0;
-		//virtual void take(Placeable & x) = 0;
 
-		void add(Placeable & o) {}
-		void sub(Placeable & o) {}
+		virtual int get_space_left() { return 0; }
+		virtual void add(Placeable & o) {}
+		virtual void sub(Placeable & o) {}
 
 	};
 
 
 
-	struct PlaceNoneType: Place {
+	struct : Place {
 		PlaceType::type place_type() { return PlaceType::None; };
-	};
+	} PlaceNone;
 
-	static PlaceNoneType PlaceNone;
+
 
 
 
 	struct Placeable {
 		Place *place{&PlaceNone};
+
+		virtual int get_size() { return 0; }
 
 		//Placeable(Place &p): place(&p) {}
 

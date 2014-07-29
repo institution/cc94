@@ -511,7 +511,7 @@ namespace col{
 
 			if (u.place->place_type() == PlaceType::Field) {
 				Workplace const& wp = *static_cast<Workplace*>(u.place);
-				auto& terr = ref_terr(u);
+				auto& terr = get_terr(u);
 				auto& c = terr.get_colony();
 
 
@@ -694,16 +694,6 @@ namespace col{
 		}
 
 
-		Terr & ref_terr(Coords const& z) {
-			return terrs(z);
-		}
-
-		Terr & ref_terr(Placeable const& x) {
-			if (x.place->place_type() != PlaceType::Terr) {
-				throw Error("unit not in field");
-			}
-			return *static_cast<Terr*>(x.place);
-		}
 
 		Terr const& get_terr(Coords const& z) const {
 			return terrs(z);
@@ -747,7 +737,7 @@ namespace col{
 
 			for (Coord j = 0; j < h; ++j) {
 				for (Coord i = 0; i < w; ++i) {
-					auto& x = ref_terr(Coords(i,j));
+					auto& x = get_terr(Coords(i,j));
 					x.biome = t.biome;
 					x.phys = t.phys;
 				}
@@ -870,14 +860,14 @@ namespace col{
 				throw Error("already here");
 			}
 
-			auto & orig = ref_terr(u);
+			auto & orig = get_terr(u);
 			auto dest_coords = get_coords(orig) + vec4dir(dir);
 
 			if (!in_bounds(dest_coords)) {
 				throw Error("destination outside of map");
 			}
 
-			auto & dest = ref_terr(dest_coords);
+			auto & dest = get_terr(dest_coords);
 
 			bool transported = 0;
 
@@ -906,16 +896,15 @@ namespace col{
 				auto time_cost = TIME_UNIT;
 
 				if (run_map_task(u, time_cost)) {
-					move_out(orig, u);
-					move_in(dest, u);
+					t_move(dest, u);
 					u.transported = transported;
 
 					auto space = u.get_space_left();
 					for (auto& p: orig.units) {
 						if (!space) break;
 						if (p->transported) {
-							move_out(orig, *p);
-							move_in(dest, *p);
+
+							t_move(dest, *p);
 							space -= 1;
 						}
 					}
@@ -978,12 +967,12 @@ namespace col{
 			}
 
 			// get terr
-			auto& orig = ref_terr(attacker);
+			auto& orig = get_terr(attacker);
 			auto dest_coords = get_coords(orig) + vec4dir(dir);
 			if (!in_bounds(dest_coords)) {
 				throw Error("target outside of map");
 			}
-			auto & dest = ref_terr(dest_coords);
+			auto & dest = get_terr(dest_coords);
 
 			if (!compatible(attacker.get_travel(), dest.get_travel())) {
 				throw Error("this unit cannot attack accross that terrain");
@@ -1048,7 +1037,7 @@ namespace col{
 				throw Error("need land based unit to perform this action");
 			}
 
-			auto& t = ref_terr(u);
+			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
@@ -1094,7 +1083,7 @@ namespace col{
 
 		bool colonize(Unit &u, string const& name, bool exec=1) {
 
-			auto& t = ref_terr(u);
+			auto& t = get_terr(u);
 
 			if (t.has_colony()) {
 				throw Error("already colonized");
@@ -1256,18 +1245,19 @@ namespace col{
 
 
 
-		void movep(Place & p, Placeable & o) {
+
+
+		void t_move(Place & p, Placeable & o) {
 			o.place->sub(o);
 			p.add(o);
 			o.place = &p;
 		}
 
-
 		void work_field(int field_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_field(terr, field_id, u.get_player());
 			if (f.get_space_left() > u.get_size()) {
-				movep(f, u);
+				t_move(f, u);
 			}
 			else {
 				throw Error("no space left");
@@ -1293,7 +1283,7 @@ namespace col{
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_player());
 			if (f.get_space_left() > u.get_size()) {
-				movep(f, u);
+				t_move(f, u);
 			}
 			else {
 				throw Error("no space left");
@@ -1406,7 +1396,7 @@ namespace col{
 
 	template <> inline
 	Terr & Env::get<Terr>(Terr::Id const& id) {
-		return ref_terr(id);
+		return get_terr(id);
 	}
 
 	template <> inline

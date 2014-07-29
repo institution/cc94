@@ -294,7 +294,7 @@ namespace col {
 			for(Coord j = 0; j < env.h; ++j) {
 				for(Coord i = 0; i < env.w; ++i) {
 
-					auto& x = env.ref_terr(Coords(i,j));
+					auto& x = env.get_terr(Coords(i,j));
 
 					//cerr << Coords(i,j) << endl;
 
@@ -353,7 +353,7 @@ namespace col {
 
 
 				// location
-				env.move_in(env.ref_terr(read<Coords>(ar)), (*p).second);
+				env.move_in(env.get_terr(read<Coords>(ar)), (*p).second);
 
 			}
 		}
@@ -388,7 +388,7 @@ namespace col {
 				ar >> pt;
 				switch (pt) {
 					case PlaceType::Terr: {
-						env.move_in( env.ref_terr( read<Coords>(ar) ), unit);
+						env.move_in( env.get_terr( read<Coords>(ar) ), unit);
 						break;
 					}
 					case PlaceType::Build: {

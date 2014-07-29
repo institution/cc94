@@ -121,7 +121,6 @@ TEST_CASE( "board ship", "" ) {
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
 	env.set_terr({2,0}, Terr(AltSea, BiomePlains));
-
 		
 	auto& p = env.create<Player>();
 	
@@ -129,13 +128,13 @@ TEST_CASE( "board ship", "" ) {
 		env.create<UnitType>().set_travel(LAND).set_speed(1),
 		p
 	);
-	env.move_in(env.get_terr({0,0}), u);
+	env.t_move(env.get_terr({0,0}), u);
 	
 	auto& s = env.create<Unit>(
 		env.create<UnitType>().set_travel(SEA).set_slots(2),
 		p
 	);
-	env.move_in(env.get_terr({1,0}), s);
+	env.t_move(env.get_terr({1,0}), s);
 		
 	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
@@ -208,7 +207,7 @@ TEST_CASE( "colony", "" ) {
 	);
 
 	auto& t = env.get_terr({0,0});	
-	env.move_in(t, u);
+	env.t_move(t, u);
 
 	env.loads<BuildType>(CSV_PATH + "builds.csv");
 
@@ -250,7 +249,7 @@ TEST_CASE( "colony", "" ) {
 			
 			env.colony_construct(c, BuildFurTradersHouse, 0);
 			
-			env.work_build(0, u);
+			env.t_move(env.get_terr(u).get_colony().builds.at(0), u);
 
 			SECTION("just enough") {
 				c.add({ItemFurs, 3});
@@ -343,7 +342,7 @@ TEST_CASE( "serialize", "" ) {
 		env.create<Player>()
 	);
 
-	env.move_in(env.ref_terr({0,0}), u);
+	env.move_in(env.get_terr({0,0}), u);
 
 	SECTION("save/load unstarted game") {
 
@@ -408,7 +407,7 @@ TEST_CASE( "env::move_unit", "" ) {
 		env.create<Player>()
 	);
 
-	env.move_in(env.ref_terr({0,0}), u);
+	env.move_in(env.get_terr({0,0}), u);
 
 	REQUIRE(env.get_coords(u) == Coords(0,0));
 
@@ -432,8 +431,8 @@ TEST_CASE( "two units", "" ) {
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
-	auto& t1 = env.ref_terr({0,0});
-	auto& t2 = env.ref_terr({1,0});
+	auto& t1 = env.get_terr({0,0});
+	auto& t2 = env.get_terr({1,0});
 
 	auto& ut = env.create<UnitType>().set_travel(LAND);
 	ut.set_attack(2).set_combat(1);
@@ -478,7 +477,7 @@ TEST_CASE( "improve square", "" ) {
 
 
 
-	auto& t = env.ref_terr({0,0});
+	auto& t = env.get_terr({0,0});
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
 		env.create<Player>()
@@ -511,7 +510,7 @@ TEST_CASE( "io::write<Env>", "[env]" ) {
 
 	env.resize({1,1}).set_terr({0,0}, Terr(BIOME_PLAINS));
 
-	auto t = env.ref_terr({0,0});
+	auto t = env.get_terr({0,0});
 
 	auto u = env.create<Unit>(
 		1,

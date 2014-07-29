@@ -17,8 +17,8 @@ namespace col{
 		int get_slots() const { return 1; }
 		int get_space_left() const { return get_slots() - units.size(); }
 
-		void add_unit(Unit & u) { units.push_back(&u); }
-		void sub_unit(Unit & u) { units.erase(find(units.begin(), units.end(), &u)); }
+		void add(Unit & u) { units.push_back(&u); }
+		void sub(Unit & u) { units.erase(find(units.begin(), units.end(), &u)); }
 
 		auto get_units() -> decltype(units)& { return units; }
 

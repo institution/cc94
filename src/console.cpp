@@ -385,7 +385,7 @@ namespace col {
 					if (envgame.in_bounds(sel)) {
 						Phys p = get_phys_by_name(es.at(1));
 						if (p != PhysNone) {
-							envgame.ref_terr(sel).add(p);
+							envgame.get_terr(sel).add(p);
 						}
 						else {
 							put("invalid phys name");
@@ -430,7 +430,7 @@ namespace col {
 					if (envgame.in_bounds(sel)) {
 						Biome b = get_biome_by_name(es.at(1));
 						if (b != BiomeNone) {
-							envgame.ref_terr(sel).set_biome(b);
+							envgame.get_terr(sel).set_biome(b);
 						}
 						else {
 							put("invalid biome name");
@@ -446,7 +446,7 @@ namespace col {
 					break;
 				case 2:
 					if (envgame.in_bounds(sel)) {
-						envgame.ref_terr(sel).set_alt(stoi(es.at(1)));						
+						envgame.get_terr(sel).set_alt(stoi(es.at(1)));						
 					}
 					break;
 			}
@@ -557,9 +557,9 @@ namespace col {
 				case 3: {
 					auto& c = envgame.get<UnitType>(std::stoi(es.at(1))); // type_id
 					auto& p = envgame.get<Player>(std::stoi(es.at(2)));  // player_id
-					auto& t = envgame.ref_terr(Coords(sel[0], sel[1]));  // coords
+					auto& t = envgame.get_terr(Coords(sel[0], sel[1]));  // coords
 					auto& u = envgame.create<Unit>(c, p);
-					envgame.move_in(t, u);
+					envgame.t_move(t, u);
 					break;
 				}
 			}
