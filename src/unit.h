@@ -82,7 +82,7 @@ namespace col{
 
 		Id id{0};
 		UnitType const* type{nullptr};
-		Player* player{nullptr};
+		Player * player{nullptr};
 		uint8 time_left{0};
 		bool transported{0};
 
@@ -109,7 +109,7 @@ namespace col{
 			type(&type),
 			player(&player),
 			time_left(6),
-			space_left(type.slots*100)
+			space_left(type.slots)
 		{}
 
 		Unit() = default;
@@ -132,6 +132,16 @@ namespace col{
 		Order::type const& get_order() const { return order; }
 		Workplace const& get_workplace() const { return *workplace; }
 		Item const& get_workitem() const { return workitem; }
+
+/*
+		Unit& set_speed(uint8 const& s) { type->speed = s; return *this; }
+		Unit& set_attack(uint8 const& a) { type->attack = a; return *this; }
+		Unit& set_combat(uint8 const& c) { type->combat = c; return *this; }
+		Unit& set_slots(uint8 const& c) { type->slots = c; return *this; }
+		Unit& set_size(uint8 const& c) { type->size = c; return *this; }
+		Unit& set_icon(uint8 const& c) { type->icon = c; return *this; }
+		Unit& set_travel(uint8 const& t) { type->travel = t; return *this; }
+*/
 
 
 		bool assigned() {

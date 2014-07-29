@@ -117,13 +117,39 @@ TEST_CASE( "get terr", "" ) {
 TEST_CASE( "board ship", "" ) {
 
 	Env env;
-	env.resize({2,1});
+	env.resize({3,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
+	env.set_terr({2,0}, Terr(AltSea, BiomePlains));
 
-	//auto& u = env.create<Unit>().set_pos({0,0});
-	//auto& s = env.create<Unit>().set_pos({1,0});
+		
+	auto& p = env.create<Player>();
 	
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_travel(LAND).set_speed(1),
+		p
+	);
+	env.move_in(env.get_terr({0,0}), u);
+	
+	auto& s = env.create<Unit>(
+		env.create<UnitType>().set_travel(SEA).set_slots(2),
+		p
+	);
+	env.move_in(env.get_terr({1,0}), s);
+		
+	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
+	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
+	
+	env.order_move(u, Dir::D);
+
+	REQUIRE(env.get_coords(u) == Coords(1,0));
+	REQUIRE(u.transported == true);
+	
+	env.order_move(s, Dir::D);
+	
+	REQUIRE(env.get_coords(s) == Coords(2,0));
+	REQUIRE(env.get_coords(u) == Coords(2,0));
+	REQUIRE(u.transported == true);
 	
 	//env.order_board(u, {1,0});
 	

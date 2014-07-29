@@ -5,10 +5,13 @@
 #include "unit.h"
 #include "build.h"
 #include "error.h"
+#include "field.h"
 
 namespace col {
 
 	using Storage = map<uint8, uint16>;
+
+
 
 	struct Colony: Place, Placeable {
 
@@ -18,7 +21,11 @@ namespace col {
 		string name;
 		Storage storage;
 
-		// vector<Unit*> units;
+		vector<Field> fields;
+
+		Colony & add_field(Field const& f) { fields.push_back(f); return *this; }
+		void sub_field(Field const& f) { fields.erase(find(fields.begin(), fields.end(), f)); }
+
 
 		array<Build,15> builds;
 

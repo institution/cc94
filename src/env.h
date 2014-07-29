@@ -814,16 +814,22 @@ namespace col{
 		}
 
 
-
-		bool has_transport(Terr const& dest, Unit const& u) const {
+		int get_transport_space(Terr const& dest, Player const& player) const {
 			int space = 0;
 			for (auto& p: dest.units) {
-				space += p->get_space_left();
-				if (p->transported) {
-					space -= p->get_size();
+				if (p->get_player() == player) {
+					space += p->get_space_left();
+					if (p->transported) {
+						space -= p->get_size();
+					}
 				}
 			}
-			return space >= u.get_size();
+			return space;
+		}
+
+
+		bool has_transport(Terr const& dest, Unit const& u) const {
+			return get_transport_space(dest, u.get_player()) >= u.get_size();
 		}
 
 		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {
@@ -1099,8 +1105,13 @@ namespace col{
 					colony_construct(c, COAST, 13);
 					colony_construct(c, FENCE, 14);
 
-					// move unit into colony?
-					// TODO
+					for (auto dir: ALL_DIRS) {
+						c.add_field(Field(get_terr(get_coords(t) + vec4dir(dir))));
+					}
+
+
+
+
 					return 1;  // ok
 				}
 				return 0;  // try next turn

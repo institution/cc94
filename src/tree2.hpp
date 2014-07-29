@@ -21,6 +21,13 @@ namespace tree2 {
 
 		~Node();
 
+		T & operator*() {
+			return payload;
+		}
+
+		T const& operator*() const {
+			return payload;
+		}
 
 		template<typename N>
 		struct base_iterator {

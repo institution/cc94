@@ -43,7 +43,12 @@ namespace col{
 		uint8 const& get_flag_id() const { return flag_id; }
 		Color const& get_color() const { return color; }
 
+
 	};
+
+	inline bool operator==(Player const& self, Player const& other) {
+		return self.id == other.id;
+	}
 
 	ostream& operator<<(ostream &out, const Player &obj);
 

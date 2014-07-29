@@ -213,6 +213,9 @@ namespace col{
 	ostream& operator<<(ostream &out, Build const& obj);
 
 
+
+
+
 }
 
 #endif

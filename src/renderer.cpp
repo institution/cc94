@@ -704,10 +704,29 @@ namespace col {
 		// render fields
 		{
 			auto pix = ly.city_fields.pos;
-			auto pos = env.get_coords(terr);
 
+			auto pos = env.get_coords(terr);
 			auto base_coords = Coords(pos[0]-1, pos[1]-1);
 			
+			int field_id = 16;
+			for(auto& field: col.fields) {
+				auto& terr = field.get_terr();
+				auto delta_coords = env.get_coords(terr) - base_coords;
+				
+				render_terr(win, env.get_coords(terr), env, terr, pix,
+						base_coords
+				);
+															
+				string cmd = str(format("work %||") % field_id);					
+				con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, tile_dim,
+					[&con,cmd](){ con.command(cmd); }
+				);
+
+				field_id += 1;
+			}
+			
+			
+			/*
 			int field_id = 16;
 			for (int j = pos[1]-1; j <= pos[1]+1; ++j) {
 				for (int i = pos[0]-1; i <= pos[0]+1; ++i) {
@@ -728,6 +747,7 @@ namespace col {
 					field_id += 1;
 				}
 			}
+			 */
 		}
 
 		
