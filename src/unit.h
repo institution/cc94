@@ -87,14 +87,7 @@ namespace col{
 		bool transported{0};
 
 
-
-
-
-
 		Order::type order{Order::Unknown};
-
-		Workplace * workplace{nullptr};
-		Item workitem{ItemNone};
 
 		uint16 space_left{0}; // [t]
 		uint8 extend{0}; // num of boarded units
@@ -130,8 +123,6 @@ namespace col{
 		float get_extend() const { return extend; }
 		uint8 const& get_time_left() const { return time_left; }
 		Order::type const& get_order() const { return order; }
-		Workplace const& get_workplace() const { return *workplace; }
-		Item const& get_workitem() const { return workitem; }
 
 /*
 		Unit& set_speed(uint8 const& s) { type->speed = s; return *this; }
@@ -144,41 +135,9 @@ namespace col{
 */
 
 
-		bool assigned() {
-			return workplace != nullptr;
-		}
 		// uint8 spec_id;
 		// int8 spec_lvl;
 
-		Unit & set_workitem(Item const& workitem) { this->workitem = workitem; return *this; }
-
-		Unit& set_work(Workplace & place, Item const& item) {
-			if (assigned()) {
-				if (!workplace->leave()) {
-					throw Critical("should leave");
-				}
-			}
-
-			if (!place.assign()) {
-				throw Critical("should assign");
-			}
-
-			workplace = &place;
-			workitem = item;
-			return *this;
-		}
-
-		Unit& set_work() {
-			if (assigned()) {
-				if (!workplace->leave()) {
-					throw Critical("should leave");
-				}
-			}
-			// clear work
-			workplace = nullptr;
-			workitem = ItemNone;
-			return *this;
-		}
 	};
 
 	ostream& operator<<(ostream &out, Unit const& obj);

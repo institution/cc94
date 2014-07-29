@@ -48,7 +48,7 @@ namespace col{
 
 
 
-	struct Terr: Place, Workplace {
+	struct Terr: Place {
 		using Id = Coords;
 
 		Biome biome;

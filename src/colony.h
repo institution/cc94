@@ -34,9 +34,17 @@ namespace col {
 			return builds[slot];
 		}
 
-		int index_of(Build const& b) const {
+		int get_build_index(Build const& b) const {
 			return &b - &builds[0];
 		}
+
+		int get_field_index(Field const& f) const {
+			for (size_t i = 0; i < fields.size(); ++i) {
+				if (fields.at(i) == f) return i;
+			}
+			throw Error("no such field");
+		}
+
 
 		Build& get_build(int i) {
 			return builds.at(i);
@@ -76,16 +84,6 @@ namespace col {
 				return 0;
 			}
 		}
-
-		bool leave(int num, Unit & unit) {
-			auto& b = builds.at(num);
-			if (b.leave()) {
-				unit.set_work();
-				return true;
-			}
-			return false;
-		}
-
 
 
 		PlaceType::type place_type() {

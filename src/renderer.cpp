@@ -1,6 +1,6 @@
 #include "renderer.h"
 
-#include <functional>
+//#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
 #include "view_base.h"
@@ -787,8 +787,8 @@ namespace col {
 			v2i sel_pos;
 			v2i sel_dim;
 			
-			
-			if (unit.workplace != nullptr) {
+			/*
+			if (unit.place->place_type() != PlaceType::Terr) {
 				
 				// produced item
 				auto const& item_tex = res(ICON, get_item_icon_id(unit.workitem));
@@ -798,6 +798,8 @@ namespace col {
 				
 				
 				if (unit.workplace->place_type() == PlaceType::Build) {
+					
+					
 					// unit on building
 					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
 
@@ -821,6 +823,7 @@ namespace col {
 					// selection
 					sel_pos = unit_pos - v2i(1,1);;
 					sel_dim = unit_dim + v2i(2,2);
+					
 					
 				}
 				else  {
@@ -851,13 +854,13 @@ namespace col {
 							item_dim + v2i(2,2),
 							item_tex					
 					);
-					/*for (int i=0; i < num; ++i) {
+					for (int i=0; i < num; ++i) {
 						render_sprite(win,
 							item_pos + v2i(i*3,0),
 							item_dim + v2i(2,2),
 							item_tex					
 						);
-					}*/
+					}
 
 					// number of produced items
 					render_text(
@@ -888,6 +891,7 @@ namespace col {
 						
 
 			}
+			*/
 			
 			// render unit tex
 			render_sprite(win, unit_pos, unit_dim, unit_tex);

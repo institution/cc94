@@ -122,6 +122,7 @@ namespace col{
 
 					if (u.order != Order::Space and u.get_player().id == pid) {
 
+						/*
 						if (u.assigned() and roll::roll2(0, 16) >= 2) {
 							u.order = Order::Space;
 							continue;
@@ -152,6 +153,8 @@ namespace col{
 								if ((*r).is_allowed(*this)) return r;
 							}
 						} // if
+
+						 */
 
 					} // if
 

@@ -6,7 +6,9 @@
 
 template<typename T>
 struct Enum{
-	T val;
+	T val{0};
+
+	Enum() {}
 
 	constexpr
 	Enum(int x): val(x) {

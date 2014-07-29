@@ -238,10 +238,7 @@ TEST_CASE( "colony", "" ) {
 		
 		SECTION("work field") {
 
-			u.set_work(t, ItemFood);
-
-			REQUIRE(u.workplace == &t);
-			REQUIRE(u.workitem == ItemFood);
+			env.work_field(0, u);
 
 			env.turn();
 
@@ -253,7 +250,7 @@ TEST_CASE( "colony", "" ) {
 			
 			env.colony_construct(c, BuildFurTradersHouse, 0);
 			
-			u.set_work(c.builds.at(0), ItemCoats);
+			env.work_build(0, u);
 
 			SECTION("just enough") {
 				c.add({ItemFurs, 3});

@@ -748,9 +748,9 @@ namespace col {
 							auto &unit = envgame.get<Unit>(unit_id);
 
 							auto const& wp = envgame.get_workplace_by_index(unit, number);
-							auto const& it = get_next_workitem(wp, unit.get_workitem());
+							//auto const& it = get_next_workitem(wp, unit.get_workitem());
 
-							envgame.assign(number, unit, it);
+							//envgame.assign(number, unit, it);
 						}
 						else {
 							put("number must be in [0,25] range");
@@ -781,61 +781,10 @@ namespace col {
 		
 			
 		else if (cmd == "work") {
-			switch (es.size()) {
-				default:
-					put("Usage: work <number>");
-					break;
-				case 2:
-					auto number = stoi(es.at(1));
-					if (0 <= number and number <= 16+9) {						
-						try {
-							auto &unit = envgame.get<Unit>(sel_unit_id);
-							
-							Item const& curr_item = unit.get_workitem();
-							if (curr_item != PhysNone) {
-								envgame.assign(number, unit, curr_item);
-							}
-							else {
-								auto const& wp = envgame.get_workplace_by_index(unit, number);
-								auto const& item = get_next_workitem(wp, curr_item);
-							
-								// TODO: ACTION: run by exec
-								envgame.assign(number, unit, item);
-							}
-						}
-						catch (Error const& e) {
-							put(string("ERROR: ") + e.what());
-						}
-						
-					}
-					else {
-						put("number must be in [0,25] range");
-					}
-					break;
-			}
+			
 		}
 		else if (cmd == "worknext") {
-			switch (es.size()) {
-				default:
-					put("Usage: worknext");
-					break;
-				case 1:
-					try {
-						auto & unit = envgame.get<Unit>(sel_unit_id);
-						
-						assert(unit.workplace);
-						
-						auto const& wp = *unit.workplace;
-						auto const& item = get_next_workitem(wp, unit.get_workitem());
-
-						// TODO: ACTION: THIS MUST BE WRAPPED IN ACTION
-						unit.set_workitem(item);	
-					}
-					catch (Error const& e) {
-						put(string("ERROR: ") + e.what());
-					}
-					break;
-			}
+			
 		}
 		
 		else if (cmd == "build-colony") {

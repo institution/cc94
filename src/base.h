@@ -12,7 +12,10 @@ namespace col {
 
 
 	using Coord = int16;
+
 	using Coords = Vector2<Coord>;
+
+
 
 	/* Dir::t code is yx in mod 3-1 (2 -> -1)
 	00 0  -1,-1
@@ -100,33 +103,45 @@ namespace col {
 			Colony = 2,
 			Unit = 3,
 			Build = 4,
-			Europe = 5;
+			Europe = 5,
+			Field = 6;
 	}
 
 	struct Placeable;
 
 	struct Place {
-		virtual PlaceType::type place_type() = 0;
+		PlaceType::type place_type() { return PlaceType::None; }
 
 		//virtual bool can_put(Placeable const& x) const = 0;
 		//virtual void put(Placeable & x) = 0;
 
 		//virtual bool can_take(Placeable const& x) const = 0;
 		//virtual void take(Placeable & x) = 0;
+
+		void add(Placeable & o) {}
+		void sub(Placeable & o) {}
+
 	};
 
-	struct Workplace{
-		virtual bool assign(bool const& exec=1) = 0;
-		virtual bool leave(bool const& exec=1) = 0;
-		virtual uint16 get_yield(Item const& item, bool const& is_expert) const = 0;
-		virtual PlaceType::type place_type() = 0;
+
+
+	struct PlaceNoneType: Place {
+		PlaceType::type place_type() { return PlaceType::None; };
 	};
+
+	static PlaceNoneType PlaceNone;
+
+
 
 	struct Placeable {
-		Place *place{nullptr};
+		Place *place{&PlaceNone};
+
+		//Placeable(Place &p): place(&p) {}
 
 		//virtual int get_size() const = 0;
 	};
+
+
 
 
 	struct Cargo {

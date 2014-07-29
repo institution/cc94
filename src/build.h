@@ -2,6 +2,7 @@
 #define BUILD2_H
 
 #include "objs.h"
+#include "workplace.h"
 
 namespace col{
 

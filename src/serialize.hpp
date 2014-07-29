@@ -2,16 +2,40 @@
 #define SERIALIZE32_H
 
 #include <boost/serialization/map.hpp>
-#include <boost/serialization/version.hpp>
 #include "env.h"
 
 
 
 //namespace boost {namespace serialization {
 
+
+
+namespace boost {
+	namespace serialization {
+
+		template<class A>
+		void serialize(A & ar, ::col::Coords & c, uint const version)
+		{
+			ar & c[0];
+			ar & c[1];
+		}
+
+	} // namespace serialization
+} // namespace boost
+
+
+
 namespace col {
 
 	uint const current_version = 1;
+
+
+
+
+
+
+
+
 
 	template<typename T, typename Archive>
 	void save_cont(Archive & ar, Env const& env) {
@@ -56,6 +80,7 @@ namespace col {
 	void write(A & ar, T const& t) {
 		ar << t;
 	}
+
 
 
 	template<class Archive>
@@ -134,6 +159,15 @@ namespace col {
 
 				}
 
+				// fields
+				write(ar, uint(x.fields.size()));
+				for (auto& f: x.fields) {
+					// field
+					write(ar, env.get_coords(f.get_terr()));
+					write(ar, f.get_proditem());
+
+				}
+
 				// location
 				auto cr = env.get_coords(env.get_terr(x));
 				ar << cr;
@@ -156,35 +190,40 @@ namespace col {
 				ar << x.player->id;
 				ar << x.time_left;
 
-				// location
-				auto cr = env.get_coords(env.get_terr(x));
-				ar << cr;
+				// place
 
+				auto pt = x.place->place_type();
+				ar << pt;
 
-				// workplace
-				if (x.workplace != nullptr) {
-					write(ar, x.workplace->place_type());
+				switch (pt) {
+					case PlaceType::Terr: {
+						auto cr = env.get_coords(env.get_terr(x));
+						ar << cr;
+						break;
+					}
 
-					if (x.workplace->place_type() == PlaceType::Terr) {
-						auto crr = env.get_coords(
-							*static_cast<Terr*>(x.workplace)
+					case PlaceType::Field: {
+						uint8 id = env.get_terr(x).get_colony().get_field_index(
+							*static_cast<Field*>(x.place)
 						);
-						write(ar, crr);
-					}
-					else {
-						assert(x.workplace->place_type() == PlaceType::Build);
-
-						write(ar, env.get_terr(x).get_colony().index_of(
-							*static_cast<Build*>(x.workplace)
-						));
+						ar << id;
+						break;
 					}
 
-				}
-				else {
-					ar << PlaceType::None;
+					case PlaceType::Build: {
+						uint8 id = env.get_terr(x).get_colony().get_build_index(
+							*static_cast<Build*>(x.place)
+						);
+						ar << id;
+						break;
+					}
+
+					default:
+						throw Error("unknown place");
+						break;
 				}
 
-				ar << x.workitem;
+
 			}
 		}
 
@@ -301,6 +340,17 @@ namespace col {
 					if (ver > 0) ar >> b.hammers;
 				}
 
+				// fields
+				auto nfields = read<size_t>(ar);
+				for (size_t i = 0; i < nfields; ++i) {
+					// field
+					col.add_field(
+						Field(env.get_terr(read<Coords>(ar))));
+
+					col.fields[i].set_proditem(read<Item>(ar));
+
+				}
+
 
 				// location
 				env.move_in(env.ref_terr(read<Coords>(ar)), (*p).second);
@@ -333,26 +383,30 @@ namespace col {
 
 				auto& unit = (*p).second;
 
-				env.move_in( env.ref_terr( read<Coords>(ar) ), unit);
-
-
 
 				PlaceType::type pt;
 				ar >> pt;
 				switch (pt) {
-					case PlaceType::Terr:
-						unit.workplace = &env.ref_terr( read<Coords>(ar) );
+					case PlaceType::Terr: {
+						env.move_in( env.ref_terr( read<Coords>(ar) ), unit);
 						break;
-					case PlaceType::Build:
-						unit.workplace = &env.get_terr(unit).get_colony().get_build(
-							read<uint8>(ar)
-						);
+					}
+					case PlaceType::Build: {
+						env.work_field(read<uint8>(ar), x);
 						break;
-					case PlaceType::None: break;
+					}
+					case PlaceType::Field: {
+						env.work_field(read<uint8>(ar), x);
+						break;
+					}
+
+					default: {
+						throw Error("huh??");
+						break;
+					}
 				}
 				//ar >> x.workplace;
 
-				ar >> x.workitem;
 
 
 			}

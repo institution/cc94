@@ -1,29 +1,17 @@
 #ifndef FIELD_H
 #define FIELD_H
 
-#include "item.h"
-#include "unit.h"
+#include "workplace.h"
 
 namespace col{
 
 	struct Terr;
 
-	struct Workplace2 {
-		Item proditem{ItemNone};
-		vector<Unit*> workers;
 
-		Item const& get_proditem() const { return proditem; }
 
-		int get_slots() const { return 1; }
-		int get_space_left() const { return get_slots() - workers.size(); }
+	struct Field: Workplace{
+		PlaceType::type place_type() { return PlaceType::Field; }
 
-		void add_worker(Unit & u) { workers.push_back(&u); }
-		void sub_worker(Unit & u) { workers.erase(find(workers.begin(), workers.end(), &u)); }
-
-		Workplace2 & set_proditem(Item const& item) { proditem = item; return *this; }
-	};
-
-	struct Field: Workplace2{
 		Terr *terr{nullptr};
 
 		Terr const& get_terr() const { return *terr; }
@@ -32,6 +20,10 @@ namespace col{
 
 		Field() {}
 		Field(Terr & t): terr(&t) {}
+
+		uint16 get_yield(bool const& is_expert) const;
+
+
 	};
 
 	inline bool operator==(Field const& self, Field const& other) {

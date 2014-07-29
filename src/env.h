@@ -14,6 +14,7 @@
 #include "unit.h"
 #include "roll.h"
 #include "error.h"
+#include "field.h"
 
 
 
@@ -508,12 +509,14 @@ namespace col{
 				u.order = Order::Unknown;
 			}
 
-			if (u.workplace != nullptr) {
+			if (u.place->place_type() == PlaceType::Field) {
+				Workplace const& wp = *static_cast<Workplace*>(u.place);
 				auto& terr = ref_terr(u);
 				auto& c = terr.get_colony();
 
-				auto yield = u.workplace->get_yield(u.workitem, false);
-				auto const& needitem = get_material(u.workitem);
+
+				auto yield = wp.get_yield(wp.get_proditem(), false);
+				auto const& needitem = get_material(wp.get_proditem());
 
 				uint16 prod;
 				if (needitem != ItemNone) {
@@ -524,7 +527,7 @@ namespace col{
 					prod = yield;
 				}
 
-				switch (u.workitem) {
+				switch (wp.get_proditem()) {
 					case ItemHammers: {
 
 						// add to unfinished building if any
@@ -536,7 +539,7 @@ namespace col{
 					break;
 
 					default: {
-						c.add({u.workitem, prod});
+						c.add({wp.get_proditem(), prod});
 					}
 					break;
 				}
@@ -573,6 +576,29 @@ namespace col{
 			++mod;
 		}*/
 
+
+
+		// build - unit
+		void move_in(Build &loc, Unit &obj) {
+			loc.units.push_back(&obj);
+			obj.place = &loc;
+		}
+		void move_out(Build &loc, Unit &obj) {
+			auto& us = loc.units;
+			us.erase(remove(us.begin(), us.end(), &obj), us.end());
+			obj.place = nullptr;
+		}
+
+		// field - unit
+		void move_in(Field &loc, Unit &obj) {
+			loc.units.push_back(&obj);
+			obj.place = &loc;
+		}
+		void move_out(Field &loc, Unit &obj) {
+			auto& us = loc.units;
+			us.erase(remove(us.begin(), us.end(), &obj), us.end());
+			obj.place = nullptr;
+		}
 
 
 		// terr - unit
@@ -688,7 +714,10 @@ namespace col{
 		}
 
 		Terr const& get_terr(Placeable const& u) const {
+			//Placeable const* c = &u;
+
 			if (u.place->place_type() != PlaceType::Terr) {
+				//c = c->place;
 				throw Error("unit not in field");
 			}
 			return *static_cast<Terr const*>(u.place);
@@ -1106,7 +1135,10 @@ namespace col{
 					colony_construct(c, FENCE, 14);
 
 					for (auto dir: ALL_DIRS) {
-						c.add_field(Field(get_terr(get_coords(t) + vec4dir(dir))));
+						auto dest = get_coords(t) + vec4dir(dir);
+						if (in_bounds(dest)) {
+							c.add_field(Field(get_terr(dest)));
+						}
 					}
 
 
@@ -1168,40 +1200,106 @@ namespace col{
 			return dir4vec(get_coords(to) - get_coords(from));
 		}
 
-		bool assign_to_building(Terr & terr, int num, Unit & unit, Item item, bool exec=1) {
-			// assign to building
-			if (!terr.has_colony()) {
-				throw Error("no colony");
+		Player const* get_control(Terr const& terr) const {
+			if (terr.units.size()) {
+				return &terr.units.at(0)->get_player();
 			}
-			auto & col = terr.get_colony();
-			auto& b = col.builds.at(num);
-
-			if (!b.assign(0)) {
-				throw Error("building full");
-			}
-
-			if (exec) {
-				unit.set_work(b, item);
-				return 1;
-			}
-			return 0;
+			return nullptr;
 		}
 
-		bool assign_to_field(Terr & terr, int num, Unit & unit, Item item, bool exec=1) {
-			// assign to filed
-			auto& field = get_terr(vec4dir(num-16) + get_coords(terr));
-
-			if (!field.assign(0)) {
-				throw Error("field occupied");
-			}
-
-			if (exec) {
-				unit.set_work(field, item);
-				return 1;
-			}
-
-			return 0;
+		bool has_control(Terr const& terr, Player const& p) const {
+			Player const* c = get_control(terr);
+			return c and *c == p;
 		}
+
+		// order
+		void set_field_proditem(Player const& p, Terr & terr, int field_id, Item const& item) {
+			get_field(terr, field_id, p).set_proditem(item);
+		}
+
+
+		Field const& get_field(Terr const& terr, int field_id) const {
+			if (terr.has_colony()) {
+				return terr.get_colony().fields.at(field_id);
+			}
+			else {
+				throw Error("no colony here");
+			}
+		}
+
+		Field & get_field(Terr & terr, int field_id) {
+			if (terr.has_colony()) {
+				return terr.get_colony().fields.at(field_id);
+			}
+			else {
+				throw Error("no colony here");
+			}
+		}
+
+		Field const& get_field(Terr const& terr, int const& field_id, Player const& p) const {
+			if (has_control(terr, p)) {
+				return get_field(terr, field_id);
+			}
+			else {
+				throw Error("this player has no control here");
+			}
+		}
+
+		Field & get_field(Terr & terr, int const& field_id, Player const& p) {
+			if (has_control(terr, p)) {
+				return get_field(terr, field_id);
+			}
+			else {
+				throw Error("this player has no control here");
+			}
+		}
+
+
+
+		void movep(Place & p, Placeable & o) {
+			o.place->sub(o);
+			p.add(o);
+			o.place = &p;
+		}
+
+
+		void work_field(int field_id, Unit & u) {
+			Terr & terr = get_terr(u);
+			auto& f = get_field(terr, field_id, u.get_player());
+			if (f.get_space_left() > u.get_size()) {
+				movep(f, u);
+			}
+			else {
+				throw Error("no space left");
+			}
+		}
+
+
+		Build & get_build(Terr & terr, int build_id, Player const& p) {
+			if (has_control(terr, p)) {
+				if (terr.has_colony()) {
+					return terr.get_colony().builds.at(build_id);
+				}
+				else {
+					throw Error("no colony here");
+				}
+			}
+			else {
+				throw Error("this player has no control here");
+			}
+		}
+
+		void work_build(int build_id, Unit & u) {
+			Terr & terr = get_terr(u);
+			auto& f = get_build(terr, build_id, u.get_player());
+			if (f.get_space_left() > u.get_size()) {
+				movep(f, u);
+			}
+			else {
+				throw Error("no space left");
+			}
+		}
+
 
 		Terr& get_colony_field(Terr const& ct, int num) {
 			return get_terr(vec4dir(num) + get_coords(ct));
@@ -1221,7 +1319,7 @@ namespace col{
 				return col.builds.at(num);
 			}
 			else if (num < 25) {
-				return get_terr(vec4dir(num-16) + get_coords(terr));
+				return get_field(terr, num - 16);
 			}
 			else {
 				throw Critical("invalid place index");
@@ -1242,10 +1340,12 @@ namespace col{
 				throw Error("invalid place index");
 			}
 			else if (num < 16) {
-				return assign_to_building(terr, num, unit, item, exec);
+				work_build(num - 0, unit);
+				return true;
 			}
 			else if (num < 25) {
-				return assign_to_field(terr, num, unit, item, exec);
+				work_field(num - 16, unit);
+				return true;
 			}
 			else {
 				throw Error("invalid place index");
