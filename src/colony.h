@@ -13,13 +13,15 @@ namespace col {
 
 
 
-	struct Colony: Place, Placeable {
+	struct Colony {
 
 		using Id = uint32;
 
 		Id id;
 		string name;
 		Storage storage;
+
+		Terr *terr{nullptr};
 
 		vector<Field> fields;
 
@@ -97,8 +99,6 @@ namespace col {
 
 
 		Colony(Id const& id, string const& name=""):
-			Place(),
-			Placeable(),
 			id(id),
 			name(name),
 			builds()

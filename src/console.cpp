@@ -304,8 +304,17 @@ namespace col {
 		return ItemNone;
 	}
 	
-	
 	void Console::command(string const& line) {
+		try {
+			do_command(line);
+		}
+		catch (Error const& e) {
+			put(string(e.what()));
+		}
+		
+	}
+	
+	void Console::do_command(string const& line) {
 		
 		vector<string> es;
 		split(es, line, is_any_of(" "));
@@ -314,6 +323,8 @@ namespace col {
 
 		put(line);
 
+		auto& env = envgame;
+		
 		if (cmd == "list-players") {
 			for (auto &item: envgame.players) {
 				put(str(format("%||") % item.second));
@@ -355,8 +366,8 @@ namespace col {
 			put("build-road");
 			put("move");
 			put("attack");
-			put("assign");
-			put("work");
+			put("work-build");
+			put("work-field");
 			put("construct");
 			// game turn sequence
 			put("start");
@@ -559,7 +570,7 @@ namespace col {
 					auto& p = envgame.get<Player>(std::stoi(es.at(2)));  // player_id
 					auto& t = envgame.get_terr(Coords(sel[0], sel[1]));  // coords
 					auto& u = envgame.create<Unit>(c, p);
-					envgame.t_move(t, u);
+					envgame.init(u, t);
 					break;
 				}
 			}
@@ -720,46 +731,39 @@ namespace col {
 					break;
 			}
 		}
-		else if (cmd == "assign") {
-			
-			
+		else if (cmd == "work-build") {
 			
 			switch (es.size()) {
 				default:
-					put("Usage: assign <number> <unit-id> [item-name]");
+					put("Usage: work-build <build-num>");
 					break;
-				case 4: {
-						auto number = stoi(es.at(1));
-						if (0 <= number and number <= 16+9) {
-							auto unit_id = stoi(es.at(2));
-							auto item = get_item_by_name(es.at(3));
-							auto &unit = envgame.get<Unit>(unit_id);
-							envgame.assign(number, unit, item);
-						}
-						else {
-							put("number must be in [0,25] range");
-						}
-					}
-					break;
-				case 3: {
+				case 2: {
 					auto number = stoi(es.at(1));
-						if (0 <= number and number <= 16+9) {
-							auto unit_id = stoi(es.at(2));
-							auto &unit = envgame.get<Unit>(unit_id);
-
-							auto const& wp = envgame.get_workplace_by_index(unit, number);
-							//auto const& it = get_next_workitem(wp, unit.get_workitem());
-
-							//envgame.assign(number, unit, it);
-						}
-						else {
-							put("number must be in [0,25] range");
-						}
-					}
+					auto unit_id = sel_unit_id;
+					auto& unit = envgame.get<Unit>(unit_id);
+					env.work_build(number, unit);
+					
 					break;
+				}
+				
 			}
 		}
-		
+		else if (cmd == "work-field") {			
+			switch (es.size()) {
+				default:
+					put("Usage: work-field <field-num>");
+					break;
+				case 2: {
+					auto number = stoi(es.at(1));
+					auto unit_id = sel_unit_id;
+					auto& unit = envgame.get<Unit>(unit_id);
+					env.work_field(number, unit);
+					
+					break;
+				}
+				
+			}
+		}
 		
 		else if (cmd == "sel-place") {
 			switch (es.size()) {

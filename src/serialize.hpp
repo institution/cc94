@@ -77,9 +77,77 @@ namespace col {
 	}
 
 	template<typename T, typename A>
+	void read(A & ar, T & t) {
+		ar >> t;
+	}
+
+	template<typename T, typename A>
 	void write(A & ar, T const& t) {
 		ar << t;
 	}
+
+	template<typename A>
+	void write(A & ar, Env const& env, Unit const& x) {
+		// unit
+		write(ar, x.id);
+		write(ar, x.type->id);
+		write(ar, x.player->id);
+		write(ar, x.time_left);
+
+		// unit terr
+		write(ar, env.get_coords(*x.terr));
+
+		// unit build
+		if (x.terr and x.build) {
+			write<int>(ar, x.terr->get_colony().get_build_index(*x.build) + 1);
+		}
+		else {
+			write<int>(ar, 0);
+		}
+
+		// unit field
+		if (x.terr and x.field) {
+			write<int>(ar, x.terr->get_colony().get_field_index(*x.field) + 1);
+		}
+		else {
+			write<int>(ar, 0);
+		}
+	}
+
+
+	template<typename A>
+	void read_unit(A & ar, Env & env) {
+		auto& ps = env.get_cont<Unit>();
+
+
+		Unit x;
+		read(ar, x.id);
+		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
+		x.player = & env.get<Player> ( read<Player::Id> (ar) );
+		read(ar, x.time_left);
+
+		auto key = x.id;
+		auto p = ps.emplace(key, std::move(x)).first;
+
+
+		auto& unit = (*p).second;
+
+		// terr
+		env.init(unit, env.get_terr(read<Coords>(ar)));
+
+		auto build_id = read<int>(ar);
+		auto field_id = read<int>(ar);
+
+		if (build_id) {
+			env.work_build(build_id - 1, unit);
+		}
+
+		if (field_id) {
+			env.work_build(field_id - 1, unit);
+		}
+	}
+
+
 
 
 
@@ -184,45 +252,7 @@ namespace col {
 			for (auto& p: ps) {
 				auto& x = p.second;
 
-				// unit
-				ar << x.id;
-				ar << x.type->id;
-				ar << x.player->id;
-				ar << x.time_left;
-
-				// place
-
-				auto pt = x.place->place_type();
-				ar << pt;
-
-				switch (pt) {
-					case PlaceType::Terr: {
-						auto cr = env.get_coords(env.get_terr(x));
-						ar << cr;
-						break;
-					}
-
-					case PlaceType::Field: {
-						uint8 id = env.get_terr(x).get_colony().get_field_index(
-							*static_cast<Field*>(x.place)
-						);
-						ar << id;
-						break;
-					}
-
-					case PlaceType::Build: {
-						uint8 id = env.get_terr(x).get_colony().get_build_index(
-							*static_cast<Build*>(x.place)
-						);
-						ar << id;
-						break;
-					}
-
-					default:
-						throw Error("unknown place");
-						break;
-				}
-
+				write(ar, env, x);
 
 			}
 		}
@@ -353,7 +383,7 @@ namespace col {
 
 
 				// location
-				env.move_in(env.get_terr(read<Coords>(ar)), (*p).second);
+				env.init((*p).second, env.get_terr(read<Coords>(ar)));
 
 			}
 		}
@@ -365,49 +395,15 @@ namespace col {
 		}
 
 		{
-			auto& ps = env.get_cont<Unit>();
+
 			size_t tmp;
 			ar >> tmp;
 			for (size_t i=0; i<tmp; ++i) {
 
 
-				Unit x;
-
-				ar >> x.id;
-				x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
-				x.player = & env.get<Player> ( read<Player::Id> (ar) );
-				ar >> x.time_left;
-
-				auto key = x.id;
-				auto p = ps.emplace(key, std::move(x)).first;
-
-				auto& unit = (*p).second;
 
 
-				PlaceType::type pt;
-				ar >> pt;
-				switch (pt) {
-					case PlaceType::Terr: {
-						env.move_in( env.get_terr( read<Coords>(ar) ), unit);
-						break;
-					}
-					case PlaceType::Build: {
-						env.work_field(read<uint8>(ar), x);
-						break;
-					}
-					case PlaceType::Field: {
-						env.work_field(read<uint8>(ar), x);
-						break;
-					}
-
-					default: {
-						throw Error("huh??");
-						break;
-					}
-				}
-				//ar >> x.workplace;
-
-
+				read_unit(ar, env);
 
 			}
 		}

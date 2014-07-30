@@ -7,14 +7,14 @@
 
 namespace col{
 
-	struct Workplace: Place{
+	struct Workplace{
 
 		Item proditem{ItemNone};
 		vector<Unit*> units;
 
 		Item const& get_proditem() const { return proditem; }
 
-		int get_slots() const { return 1; }
+		virtual int get_slots() const { return 1; }
 		int get_space_left() const { return get_slots() - units.size(); }
 
 		void add(Unit & u) { units.push_back(&u); }

@@ -114,6 +114,33 @@ TEST_CASE( "get terr", "" ) {
 }
 
 
+
+TEST_CASE( "env::move_unit", "" ) {
+
+	Env env;
+
+	env.resize({2,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
+
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_travel(LAND).set_speed(1),
+		env.create<Player>()
+	);
+
+	env.init(u, env.get_terr({0,0}));
+
+	REQUIRE(env.get_coords(u) == Coords(0,0));
+
+	env.set_random_gen(replay({0}));
+	env.order_move(u, Dir::D);
+
+	REQUIRE(env.get_coords(u) == Coords(1,0));
+
+
+}
+
+
 TEST_CASE( "board ship", "" ) {
 
 	Env env;
@@ -128,13 +155,13 @@ TEST_CASE( "board ship", "" ) {
 		env.create<UnitType>().set_travel(LAND).set_speed(1),
 		p
 	);
-	env.t_move(env.get_terr({0,0}), u);
+	env.init(u, env.get_terr({0,0}));
 	
 	auto& s = env.create<Unit>(
 		env.create<UnitType>().set_travel(SEA).set_slots(2),
 		p
 	);
-	env.t_move(env.get_terr({1,0}), s);
+	env.init(s, env.get_terr({1,0}));
 		
 	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
@@ -193,8 +220,6 @@ TEST_CASE( "turn sequence", "" ) {
 
 
 TEST_CASE( "colony", "" ) {
-
-	string const CSV_PATH = "../col94/";
 	
 	Env env;
 
@@ -207,9 +232,7 @@ TEST_CASE( "colony", "" ) {
 	);
 
 	auto& t = env.get_terr({0,0});	
-	env.t_move(t, u);
-
-	env.loads<BuildType>(CSV_PATH + "builds.csv");
+	env.init(u, t);
 
 
 	SECTION("build") {
@@ -249,7 +272,7 @@ TEST_CASE( "colony", "" ) {
 			
 			env.colony_construct(c, BuildFurTradersHouse, 0);
 			
-			env.t_move(env.get_terr(u).get_colony().builds.at(0), u);
+			env.work_build(0, u);
 
 			SECTION("just enough") {
 				c.add({ItemFurs, 3});
@@ -342,7 +365,7 @@ TEST_CASE( "serialize", "" ) {
 		env.create<Player>()
 	);
 
-	env.move_in(env.get_terr({0,0}), u);
+	env.init(u, env.get_terr({0,0}));
 
 	SECTION("save/load unstarted game") {
 
@@ -394,31 +417,6 @@ TEST_CASE( "serialize", "" ) {
 
 }
 
-TEST_CASE( "env::move_unit", "" ) {
-
-	Env env;
-
-	env.resize({2,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
-	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
-
-	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
-		env.create<Player>()
-	);
-
-	env.move_in(env.get_terr({0,0}), u);
-
-	REQUIRE(env.get_coords(u) == Coords(0,0));
-
-	env.set_random_gen(replay({0}));
-	env.order_move(u, Dir::D);
-
-	REQUIRE(env.get_coords(u) == Coords(1,0));
-
-
-}
-
 
 
 
@@ -440,10 +438,10 @@ TEST_CASE( "two units", "" ) {
 	auto& p = env.create<Player>();
 
 	auto& u1 = env.create<Unit>(ut, p);
-	env.move_in(t1, u1);
+	env.init(u1, t1);
 
 	auto& u2 = env.create<Unit>(ut, p);
-	env.move_in(t2, u2);
+	env.init(u2, t2);
 
 	SECTION("have diffrent id") {
 		REQUIRE(u1.id != u2.id);  // regress
@@ -482,7 +480,7 @@ TEST_CASE( "improve square", "" ) {
 		env.create<UnitType>().set_travel(LAND),
 		env.create<Player>()
 	);
-	env.move_in(t, u);
+	env.init(u, t);
 
 	SECTION("build road") {
 		env.set_random_gen(replay({0}));

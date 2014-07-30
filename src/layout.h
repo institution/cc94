@@ -15,9 +15,12 @@ namespace col{
 		static int const TERR_W = TILE_DIM;
 		static int const TERR_H = TILE_DIM;
 
-		Box2 scr, bar, pan, map, city, city_res, city_fields, city_exit;
+		Box2 scr, bar, pan, map, city, city_res, city_fields, city_exit, city_units;
+		v2i terr_dim;
 
 		Layout(int const& w, int const& h) {
+
+			terr_dim = v2i(TILE_DIM, TILE_DIM);
 
 			scr = Box2(0, 0, w, h);
 
@@ -57,6 +60,11 @@ namespace col{
 			city_exit = Box2(
 				scr.end[0] - b_width, scr.end[1] - res_height,
 				b_width, res_height
+			);
+
+			city_units = Box2(
+				map.pos[0], city.end[1] + 1,
+				city.dim[0], 16
 			);
 
 		}

@@ -73,7 +73,17 @@ namespace col {
 		return t.is_water_tile();
 	}
 
+	v2f vmul(v2f const& a, v2f const& b) {
+		return v2f(a[0]*b[0], a[1]*b[1]);
+	}
 	
+	v2f vmul(v2i const& a, v2f const& b) {
+		return v2f(float(a[0])*b[0], float(a[1])*b[1]);
+	}
+	
+	v2i vmul(v2i const& a, v2i const& b) {
+		return v2i(a[0]*b[0], a[1]*b[1]);
+	}
 
 	string const
 		TERR = RES_PATH + "TERRAIN_SS",
@@ -635,8 +645,6 @@ namespace col {
 				
 				render_sprite(win, build_pos, build_tex);
 				
-
-					
 				// render build name
 				if (con.sel_colony_slot_id == i) {
 											
@@ -685,7 +693,7 @@ namespace col {
 				con.onclick(build_pos, build_dim,
 					[&con, workplace_id]() { 
 						if (con.sel_unit_id != 0) {
-							con.command(str(format("work %||") % workplace_id));
+							con.command(str(format("work-build %||") % workplace_id));
 						}
 						else {
 							con.select_build = 1;  // todo slot_id blablabla
@@ -698,6 +706,49 @@ namespace col {
 					//str(format("sel_place %||") % i)
 					[&con, i]() { con.sel_colony_slot_id = i; }
 				);
+				
+				v2i units_frame = {25, 16};
+				
+				int n = b.units.size();
+				int i = 0;
+				for (auto& unit_ptr: b.units) {
+					auto& unit = *unit_ptr;
+					auto& unit_tex = res(ICON, unit.get_type_id());
+
+					v2i unit_pos = calc_align(
+						Box(
+							build_pos + build_dim - units_frame + v2i(1,2), units_frame
+						), 
+						v2f(float(i+1)/float(n+1), 1), 
+						get_dim(unit_tex)
+					);
+					
+					v2i unit_dim = get_dim(unit_tex);
+
+					v2i sel_pos = unit_pos;
+					v2i sel_dim = unit_dim;
+					
+					render_sprite(win, unit_pos, unit_tex);
+
+					auto unit_id = unit.id;
+
+					if (unit_id == con.sel_unit_id) {
+						// render selection frame
+						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+					}
+					else {
+						// or add zone for click select
+						con.onclick(sel_pos, sel_dim,
+							[&con,unit_id]() { 
+								con.command("sel " + to_string(unit_id)); 					
+							}
+						);
+					}
+					
+					++i;
+				}
+				
+				
 			}
 		}
 
@@ -705,24 +756,65 @@ namespace col {
 		{
 			auto pix = ly.city_fields.pos;
 
-			auto pos = env.get_coords(terr);
-			auto base_coords = Coords(pos[0]-1, pos[1]-1);
+			auto city_terr_pos = ly.city_fields.pos + ly.terr_dim;
+			auto& city_terr = terr;
 			
-			int field_id = 16;
-			for(auto& field: col.fields) {
-				auto& terr = field.get_terr();
-				auto delta_coords = env.get_coords(terr) - base_coords;
+			auto pos = env.get_coords(terr);
+			auto city_coords = Coords(pos[0]-1, pos[1]-1);
+			
+			
+			for(size_t field_id = 0; field_id < col.fields.size(); ++field_id) {
+				auto& field = col.fields.at(field_id);
 				
-				render_terr(win, env.get_coords(terr), env, terr, pix,
-						base_coords
+				auto& field_terr = field.get_terr();
+				
+				v2i relc = (env.get_coords(*field.terr) - env.get_coords(city_terr)).cast<int>();
+				auto field_pos = city_terr_pos + vmul(relc, ly.terr_dim);
+				auto field_dim = ly.terr_dim;
+				
+				
+				render_terr(win, env.get_coords(field_terr), env, field_terr, pix,
+					city_coords
 				);
 															
-				string cmd = str(format("work %||") % field_id);					
-				con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, tile_dim,
+				string cmd = str(format("work-field %||") % field_id);
+				con.onclick(field_pos, field_dim,
 					[&con,cmd](){ con.command(cmd); }
 				);
 
-				field_id += 1;
+				
+				for (auto& unit_p: field.units) {
+					auto& unit = *unit_p;
+					
+					v2i unit_pos = field_pos;
+					v2i unit_dim = field_dim;
+
+					v2i sel_pos = unit_pos;
+					v2i sel_dim = unit_dim;
+					
+					auto& unit_tex = res(ICON, unit.get_type_id());
+					render_sprite(win, 
+						calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+						unit_tex
+					);
+
+					auto unit_id = unit.id;
+
+					if (unit_id == con.sel_unit_id) {
+						// render selection frame
+						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+					}
+					else {
+						// or add zone for click select
+						con.onclick(sel_pos, sel_dim,
+							[&con,unit_id]() { 
+								con.command("sel " + to_string(unit_id)); 					
+							}
+						);
+					}
+				}
+				
+				
 			}
 			
 			
@@ -776,16 +868,42 @@ namespace col {
 			}
 		);
 
-		
+		int i = 0;
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 			
 			auto& unit_tex = res(ICON, unit.get_type_id());
-			v2i unit_pos;
-			v2i unit_dim;
+			v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
+			v2i unit_dim = ly.terr_dim;
 			
-			v2i sel_pos;
-			v2i sel_dim;
+			v2i sel_pos = unit_pos;
+			v2i sel_dim = unit_dim;
+			
+			// render
+			render_sprite(win, 
+				calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+				unit_tex
+			);
+			
+			auto unit_id = unit.id;
+						
+			if (unit_id == con.sel_unit_id) {
+				// render selection frame
+				render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+			}
+			else {
+				// or add zone for click select
+				con.onclick(sel_pos, sel_dim,
+					[&con,unit_id]() { 
+						con.command("sel " + to_string(unit_id)); 					
+					}
+				);
+			}
+			
+			++i;
+		}
+		
+		
 			
 			/*
 			if (unit.place->place_type() != PlaceType::Terr) {
@@ -893,28 +1011,7 @@ namespace col {
 			}
 			*/
 			
-			// render unit tex
-			render_sprite(win, unit_pos, unit_dim, unit_tex);
-			
-			// add click select unit or item switch
-			auto unit_id = unit.id;
-			con.onclick(sel_pos, sel_dim,
-				[&con,unit_id]() { 
-					if (unit_id == con.sel_unit_id) {
-						con.command("worknext"); 
-					}
-					else {
-						con.command("sel " + to_string(unit_id)); 
-					}
-				}
-			);
-			
-			// render unit frame if selected
-			if (unit.id == con.sel_unit_id) {
-				render_inline(win, sel_pos, sel_dim, {255,100,100,255});
-			}
 		
-		}
 		
 		
 		
@@ -1316,10 +1413,15 @@ namespace col {
 			}
 			else {
 
+				auto tile_dim = v2i(TILE_DIM, TILE_DIM);
+				auto icon = res(ICON, unit.get_icon());
 				//cerr << "rend unit at " << pix << endl;
 				// render unit in field
 				render_shield(win, pix[0], pix[1], player.get_color());
-				render_sprite(win, pix[0], pix[1], res(ICON, unit.get_type_id()));
+				render_sprite(win, 
+					calc_align(Box(pix, tile_dim), v2f(0.5, 0.5), get_dim(icon)), 
+					icon
+				);
 			}
 		}
 	}
@@ -1624,13 +1726,7 @@ namespace col {
 	
 	
 			
-	v2f vmul(v2f const& a, v2f const& b) {
-		return v2f(a[0]*b[0], a[1]*b[1]);
-	}
 	
-	v2f vmul(v2i const& a, v2f const& b) {
-		return v2f(float(a[0])*b[0], float(a[1])*b[1]);
-	}
 	
 	
 	v2i calc_align(Box const& par, v2f const& align, v2i const& dim) {

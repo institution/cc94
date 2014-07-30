@@ -153,7 +153,7 @@ namespace col{
 			return this->type->name;
 		}
 
-		auto get_slots() const -> decltype(type->slots) const& { return type->slots; };
+		int get_slots() const { return type->slots; };
 		auto get_consitem() const -> decltype(type->itemcons) const& { return type->itemcons; };
 		auto get_cost_tools() const -> decltype(type->cost_tools) const& { return type->cost_tools; };
 		auto get_min_colony() const -> decltype(type->min_colony) const& { return type->min_colony; };

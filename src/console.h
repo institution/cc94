@@ -236,6 +236,7 @@ namespace col {
 		void handle(sf::RenderWindow const&, sf::Event const&);
 
 		void command(string const& line);
+		void do_command(string const& line);
 
 
 	};

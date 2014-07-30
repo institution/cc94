@@ -207,6 +207,8 @@ namespace col{
 
 	using ErrorMsg = char const*;
 
+
+
 	struct Env{
 
 		// const
@@ -509,13 +511,13 @@ namespace col{
 				u.order = Order::Unknown;
 			}
 
-			if (u.place->place_type() == PlaceType::Field) {
-				Workplace const& wp = *static_cast<Workplace*>(u.place);
+			if (u.field) {
+				Field & wp = *u.field;
 				auto& terr = get_terr(u);
 				auto& c = terr.get_colony();
 
 
-				auto yield = wp.get_yield(wp.get_proditem(), false);
+				auto yield = get_terr(wp).get_yield(wp.get_proditem(), false);
 				auto const& needitem = get_material(wp.get_proditem());
 
 				uint16 prod;
@@ -578,51 +580,9 @@ namespace col{
 
 
 
-		// build - unit
-		void move_in(Build &loc, Unit &obj) {
-			loc.units.push_back(&obj);
-			obj.place = &loc;
-		}
-		void move_out(Build &loc, Unit &obj) {
-			auto& us = loc.units;
-			us.erase(remove(us.begin(), us.end(), &obj), us.end());
-			obj.place = nullptr;
-		}
-
-		// field - unit
-		void move_in(Field &loc, Unit &obj) {
-			loc.units.push_back(&obj);
-			obj.place = &loc;
-		}
-		void move_out(Field &loc, Unit &obj) {
-			auto& us = loc.units;
-			us.erase(remove(us.begin(), us.end(), &obj), us.end());
-			obj.place = nullptr;
-		}
 
 
-		// terr - unit
-		void move_in(Terr &loc, Unit &obj) {
-			loc.units.push_back(&obj);
-			obj.place = &loc;
-		}
-		void move_out(Terr &loc, Unit &obj) {
-			auto& us = loc.units;
-			us.erase(remove(us.begin(), us.end(), &obj), us.end());
-			obj.place = nullptr;
-		}
 
-		// terr - colony
-		void move_in(Terr &loc, Colony &obj) {
-			assert(loc.colony == nullptr);
-			loc.set_colony(obj);
-			obj.place = &loc;
-		}
-		void move_out(Terr &loc, Colony &obj) {
-			assert(loc.colony == &obj);
-			loc.colony = nullptr;
-			obj.place = nullptr;
-		}
 
 		/*
 		void move_in(Terr const& loc, Build const& obj) {
@@ -681,6 +641,7 @@ namespace col{
 		bool on_bound(Coords const& p) const;
 
 
+
 		Coords get_coords(Terr const& t) const {
 
 			// offset = x*w + y
@@ -689,36 +650,46 @@ namespace col{
 			return Coords(offset % w, offset / w);
 		}
 
+
+		Coords get_coords(Terr const& t, Terr const& base) const {
+			return get_coords(t) - get_coords(t);
+		}
+
 		Coords get_coords(Unit const& u) const {
 			return get_coords(get_terr(u));
 		}
-
-
 
 		Terr const& get_terr(Coords const& z) const {
 			return terrs(z);
 		}
 
 		Terr & get_terr(Coords const& z) {
-			return terrs(z);
+				return terrs(z);
 		}
 
-		Terr const& get_terr(Placeable const& u) const {
-			//Placeable const* c = &u;
 
-			if (u.place->place_type() != PlaceType::Terr) {
-				//c = c->place;
-				throw Error("unit not in field");
+		template <typename T>
+		Terr const& get_terr(T const& u) const {
+			if (u.terr) {
+				return *u.terr;
 			}
-			return *static_cast<Terr const*>(u.place);
+			else {
+				throw Error("not in field");
+			}
 		}
 
-		Terr & get_terr(Placeable const& u) {
-			if (u.place->place_type() != PlaceType::Terr) {
-				throw Error("unit not in field");
+
+		template <typename T> inline
+		Terr & get_terr(T const& u) {
+			if (u.terr) {
+				return *u.terr;
 			}
-			return *static_cast<Terr*>(u.place);
+			else {
+				throw Error("not in field");
+			}
 		}
+
+
 
 
 		Env & set_terr(Coords const& z, Terr const& t) {
@@ -800,14 +771,12 @@ namespace col{
 			 */
 
 			// unit checks
-			if (u.place->place_type() != PlaceType::Terr) {
-				throw Error("unit not on terrain");
-			}
 			if (!compatible(u.get_travel(), LAND)) {
 				throw Error("must be land based unit");
 			}
 
-			Terr& t = *static_cast<Terr*>(u.place);
+			Terr& t = get_terr(u);
+
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
 				throw Error("can build on land only");
@@ -958,6 +927,11 @@ namespace col{
 		//}
 
 
+		void kill(Unit & u) {
+			u.terr->sub(u);
+			u.terr = nullptr;
+		}
+
 		bool order_attack(Unit & attacker, Dir::t const& dir, bool exec=1) {
 			/* Order attack
 			 */
@@ -1008,11 +982,11 @@ namespace col{
 					}
 
 					if (check(attack*10, (attack + combat)*10)) {
-						move_out(dest, defender);
+						kill(defender);
 						destroy<Unit>(defender.id);
 					}
 					else {
-						move_out(orig, attacker);
+						kill(attacker);
 						destroy<Unit>(attacker.id);
 					}
 
@@ -1072,14 +1046,21 @@ namespace col{
 			return 0;
 		}
 
+		void kill(Colony & c) {
+			c.terr->colony = nullptr;
+			c.terr = nullptr;
+		}
+
 		void burn_colony(Terr & t) {
 			assert(t.has_colony());
 
 			auto& col = t.get_colony();
-			move_out(t, col);
+			kill(col);
 			auto id = col.id;
 			destroy<Colony>(id);
 		}
+
+
 
 		bool colonize(Unit &u, string const& name, bool exec=1) {
 
@@ -1094,7 +1075,7 @@ namespace col{
 				if (run_map_task(u, time_cost)) {
 					// create colony
 					auto& c = create<Colony>(name);
-					move_in(t, c);
+					init(c, t);
 
 					BuildType::Id const TREE_1 = 45;
 					BuildType::Id const TREE_2 = 44;
@@ -1244,25 +1225,72 @@ namespace col{
 		}
 
 
+		// build - unit
+		void t_move(Build & b, Unit & u) {
+			if (u.build) {
+				u.build->sub(u);
+				u.build = nullptr;
+			}
+			else if (u.field) {
+				u.field->sub(u);
+				u.field = nullptr;
+			}
 
-
-
-		void t_move(Place & p, Placeable & o) {
-			o.place->sub(o);
-			p.add(o);
-			o.place = &p;
+			b.add(u);
+			u.build = &b;
 		}
+
+		// field - unit
+		void t_move(Field & b, Unit & u) {
+			if (u.build) {
+				u.build->sub(u);
+				u.build = nullptr;
+			}
+			else if (u.field) {
+				u.field->sub(u);
+				u.field = nullptr;
+			}
+
+			b.add(u);
+			u.field = &b;
+		}
+
+
+		void init(Colony & c, Terr & t) {
+			assert(t.colony == nullptr);
+			assert(c.terr == nullptr);
+			t.set_colony(c);
+			c.terr = &t;
+		}
+
+
+
+		// Terr <-
+		template <typename X>
+		void t_move(Terr & t, X & x) {
+			x.terr->sub(x);
+			t.add(x);
+			x.terr = &t;
+		}
+
+
+		void init(Unit & u, Terr & t) {
+			t.add(u);
+			u.terr = &t;
+		}
+
 
 		void work_field(int field_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_field(terr, field_id, u.get_player());
-			if (f.get_space_left() > u.get_size()) {
+			if (f.get_space_left() >= u.get_size()) {
 				t_move(f, u);
 			}
 			else {
 				throw Error("no space left");
 			}
 		}
+
 
 
 		Build & get_build(Terr & terr, int build_id, Player const& p) {
@@ -1282,7 +1310,7 @@ namespace col{
 		void work_build(int build_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_player());
-			if (f.get_space_left() > u.get_size()) {
+			if (f.get_space_left() >= u.get_size()) {
 				t_move(f, u);
 			}
 			else {
@@ -1386,6 +1414,9 @@ namespace col{
 
 
 	};
+
+
+
 
 
 

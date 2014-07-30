@@ -117,9 +117,7 @@ namespace col {
 
 		//virtual bool can_take(Placeable const& x) const = 0;
 
-		virtual int get_space_left() { return 0; }
-		virtual void add(Placeable & o) {}
-		virtual void sub(Placeable & o) {}
+
 
 	};
 

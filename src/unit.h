@@ -75,9 +75,11 @@ namespace col{
 	*/
 
 
+	struct Terr;
+	struct Build;
+	struct Field;
 
-
-	struct Unit: Placeable {
+	struct Unit {
 		using Id = uint32;
 
 		Id id{0};
@@ -85,6 +87,13 @@ namespace col{
 		Player * player{nullptr};
 		uint8 time_left{0};
 		bool transported{0};
+
+		// where am I
+		Terr *terr{nullptr};
+		Build *build{nullptr};
+		Field *field{nullptr};
+
+
 
 
 		Order::type order{Order::Unknown};
@@ -97,7 +106,6 @@ namespace col{
 			UnitType const& type,
 			Player & player
 		):
-			Placeable(),
 			id(id),
 			type(&type),
 			player(&player),
@@ -123,6 +131,10 @@ namespace col{
 		float get_extend() const { return extend; }
 		uint8 const& get_time_left() const { return time_left; }
 		Order::type const& get_order() const { return order; }
+		int get_icon() const { return type->icon; }
+
+		Unit& set_terr(Terr & t) { terr = &t; return *this; }
+
 
 /*
 		Unit& set_speed(uint8 const& s) { type->speed = s; return *this; }

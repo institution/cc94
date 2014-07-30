@@ -23,6 +23,7 @@ namespace col{
 
 		uint16 get_yield(bool const& is_expert) const;
 
+		int get_slots() const { return 1; }
 
 	};
 
