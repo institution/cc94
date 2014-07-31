@@ -219,9 +219,10 @@ TEST_CASE( "turn sequence", "" ) {
 
 
 
-TEST_CASE( "colony", "" ) {
+TEST_CASE( "colony workplace/production", "" ) {
 	
 	Env env;
+	BuildType::Id const BuildFurTradersHouse = 33;
 
 	env.resize({1,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
@@ -234,71 +235,66 @@ TEST_CASE( "colony", "" ) {
 	auto& t = env.get_terr({0,0});	
 	env.init(u, t);
 
-
+	
+	env.loads<BuildType>("../col94/builds.csv");
+	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
+	
 	SECTION("build") {
 		env.set_random_gen(replay({0}));
-		env.colonize(u, "aaa");
-
+		
+		REQUIRE_NOTHROW(env.colonize(u, "aaa"));
 		REQUIRE(t.colony != nullptr);
 
 		auto& c = t.get_colony();
-
 		
-		SECTION("multiple assign to same building") {
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
-			REQUIRE(env.assign(3, u, ItemFood) == true);
+		SECTION("multiple assign to same workplace") {
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW(env.work_build(0, u));			
 		}
 		
 		SECTION("work field") {
-
-			env.work_field(0, u);
-
-			env.turn();
-
+			REQUIRE_NOTHROW(c.add(ItemFood, 2));
+			REQUIRE_NOTHROW(env.work_field(0, u));
+			REQUIRE_NOTHROW(env.get_field(t, 0).set_proditem(ItemFood));
+			REQUIRE_NOTHROW(env.turn());
 			REQUIRE(c.get(ItemFood) > 0);
 			REQUIRE(u.time_left == 0);
 		}
 
 		SECTION("work build") {
 			
-			env.colony_construct(c, BuildFurTradersHouse, 0);
-			
-			env.work_build(0, u);
+			REQUIRE_NOTHROW(env.put_build(t, 0, BuildFurTradersHouse));
+			REQUIRE(env.get_build(t, 0).get_proditem() == ItemCoats);
+			REQUIRE_NOTHROW(env.work_build(0, u));
 
 			SECTION("just enough") {
-				c.add({ItemFurs, 3});
-
-				env.turn();
-
+				REQUIRE_NOTHROW(c.add(ItemFood, 2));
+				REQUIRE_NOTHROW(c.add(ItemFurs, 3));
+				REQUIRE_NOTHROW(env.turn());
 				REQUIRE(c.get(ItemCoats) == 3);
 				REQUIRE(c.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
 			}
 
 			SECTION("not enough") {
-				c.add({ItemFurs, 1});
-
-				env.turn();
-
+				REQUIRE_NOTHROW(c.add(ItemFood, 2));
+				REQUIRE_NOTHROW(c.add(ItemFurs, 1));
+				REQUIRE_NOTHROW(env.turn());				
 				REQUIRE(c.get(ItemCoats) == 1);
 				REQUIRE(c.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
 			}
 
 			SECTION("more than enough") {
-				c.add({ItemFurs, 5});
-
-				env.turn();
-
+				REQUIRE_NOTHROW(c.add(ItemFood, 2));
+				REQUIRE_NOTHROW(c.add(ItemFurs, 5));
+				REQUIRE_NOTHROW(env.turn());				
 				REQUIRE(c.get(ItemCoats) == 3);
 				REQUIRE(c.get(ItemFurs) == 2);
 				REQUIRE(u.time_left == 0);

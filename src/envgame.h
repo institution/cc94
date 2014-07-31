@@ -58,6 +58,7 @@ namespace col{
 			return (roll::roll2(0,M) < L);
 		}
 
+		/*
 		bool get_assign_action(Assign & a, Player::Id const& pid, Unit const& unit) {
 			// [0-14] building
 			// [16-24] field square
@@ -103,6 +104,7 @@ namespace col{
 
 			return false;
 		}
+		*/
 
 
 

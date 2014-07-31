@@ -136,6 +136,9 @@ namespace col{
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
 
 
+		template <typename T>
+		T& get_workplace();
+
 /*
 		Unit& set_speed(uint8 const& s) { type->speed = s; return *this; }
 		Unit& set_attack(uint8 const& a) { type->attack = a; return *this; }
@@ -152,9 +155,21 @@ namespace col{
 
 	};
 
+	template <> inline
+	Build& Unit::get_workplace<Build>() {
+		return *(this->build);
+	}
+
+	template <> inline
+	Field& Unit::get_workplace<Field>() {
+		return *(this->field);
+	}
+
 	ostream& operator<<(ostream &out, Unit const& obj);
 
 
 }
+
+
 
 #endif

@@ -25,6 +25,8 @@ namespace col{
 
 		int get_slots() const { return 1; }
 
+
+
 	};
 
 	inline bool operator==(Field const& self, Field const& other) {

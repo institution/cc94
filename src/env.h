@@ -450,6 +450,40 @@ namespace col{
 
 		}
 
+		void turn(Colony & c) {
+			auto& t = get_terr(c);
+			auto p = get_control(t);
+
+			// new colonists creation
+			if (p and c.get(ItemFood) >= 100) {
+
+				c.sub(ItemFood, 100);
+				c.add(ItemFood, 20);
+				auto& u = create<Unit>(get<UnitType>(101), *p);
+				init(u,t);
+			}
+
+			// construction
+			for (auto& b: c.builds) {
+				construction_consume(t, b);
+			}
+
+			// clear non-staragable resources
+			c.set(ItemHammers, 0);
+			c.set(ItemBell, 0);
+			c.set(ItemCross, 0);
+
+			// clear resources above max storage
+			for (auto& p: c.storage) {
+				auto& item = p.first;
+				auto& value = p.second;
+				if (value > c.get_max_storage()) {
+					value = c.get_max_storage();
+				}
+
+			}
+
+		}
 
 		void turn() {
 			// time progress
@@ -461,6 +495,11 @@ namespace col{
 				turn(item.second);
 			}
 
+			// all colonies
+			for (auto& p: colonies) {
+				turn(p.second);
+			}
+
 			if (turn_limit > 0 and turn_no >= turn_limit) {
 				state = 2;
 			}
@@ -468,40 +507,31 @@ namespace col{
 			++mod;
 		}
 
-		Item get_material(Item const& item) {
-			switch (item) {
-				case ItemRum: return ItemSugar;
-				case ItemCigars: return ItemTobacco;
-				case ItemCloth: return ItemCotton;
-				case ItemCoats: return ItemFurs;
-				case ItemHammers: return ItemLumber;
-				case ItemTools: return ItemOre;
-				case ItemMuskets: return ItemTools;
-			}
-			return ItemNone;
+
+		int get_yield(Unit const& u, Item const& item) {
+			return 3;
+		}
+
+		void add_prod(Colony & c, Item const& item, int num) {
+			c.add(item, num);
+		}
+
+		int get_prodnum(Field const& f) const {
+			return get_terr(f).get_yield(f.get_proditem(), false);
 		}
 
 
-		/*Workplace& get_workplace(WorkplaceIndex wpi, Unit & u) {
-			auto& terr = get_terr(u);
-
-			auto wpi = u.workplace;
-			if (wpi.is_field()) {
-				return static_cast<Workplace&>(
-					get_terr(
-						get_coords(terr) + vec4dir(u.workplace.get_field())
-					)
-				);
+		bool consume_food(Unit & u) {
+			// return -- true if food consumed, false when no more food available
+			Terr & t = get_terr(u);
+			if (t.get_colony().get(ItemFood) >= 2) {
+				t.get_colony().sub(ItemFood, 2);
+				return 1;
 			}
 			else {
-				return static_cast<Workplace&>(
-					c.get_build(u.workplace.get_build())
-				);
+				return 0;
 			}
-		}*/
-
-
-
+		}
 
 		void turn(Unit &u) {
 
@@ -511,42 +541,60 @@ namespace col{
 				u.order = Order::Unknown;
 			}
 
-			if (u.field) {
-				Field & wp = *u.field;
-				auto& terr = get_terr(u);
-				auto& c = terr.get_colony();
+			if (u.build) {
 
+				auto & t = get_terr(u);
+				auto & c = t.get_colony();
 
-				auto yield = get_terr(wp).get_yield(wp.get_proditem(), false);
-				auto const& needitem = get_material(wp.get_proditem());
+				if (consume_food(u)) {
 
-				uint16 prod;
-				if (needitem != ItemNone) {
-					prod = std::min(yield, c.get(needitem));
-					c.sub({needitem, prod});
+					auto const& wp = u.get_workplace<Build>();
+
+					auto const& proditem = wp.get_proditem();
+					auto const& consitem = wp.get_consitem();
+
+					int base = get_yield(u, proditem);
+					int prodnum = wp.get_prod() * base;
+					int consnum = wp.get_cons() * base;
+
+					int real_cons = std::min(consnum, int(c.get(consitem)));
+					int real_prod = float(float(prodnum) * float(real_cons) / float(consnum));
+
+					c.sub(consitem, real_cons);
+					add_prod(c, proditem, real_prod);
+
+					u.time_left = 0;
 				}
 				else {
-					prod = yield;
+					work_none(u);
 				}
+			}
+			else if (u.field) {
+				auto & t = get_terr(u);
+				auto & c = t.get_colony();
 
-				switch (wp.get_proditem()) {
-					case ItemHammers: {
+				if (consume_food(u)) {
+					auto const& wp = u.get_workplace<Field>();
 
-						// add to unfinished building if any
-						auto h = prod;
-						for (auto& b: c.builds) {
-							h = b.add_hammers(h);
-						}
+					auto const& proditem = wp.get_proditem();
+
+					auto prodnum = get_terr(wp).get_yield(proditem, false);
+
+					switch (proditem) {
+						case ItemFish:
+							c.add(ItemFood, prodnum);
+							break;
+						default:
+							c.add(proditem, prodnum);
+							break;
 					}
-					break;
 
-					default: {
-						c.add({wp.get_proditem(), prod});
-					}
-					break;
+
+					u.time_left = 0;
 				}
-
-				u.time_left = 0;
+				else {
+					work_none(u);
+				}
 			}
 
 			/*if (supply != -1) {
@@ -1112,7 +1160,7 @@ namespace col{
 					}
 
 
-
+					c.add(ItemFood, 10);
 
 					return 1;  // ok
 				}
@@ -1125,6 +1173,15 @@ namespace col{
 			auto& type = get<BuildType>(type_id);
 			colony.construct_building(type, slot);
 		}
+
+		void put_build(Terr & t, int slot, BuildType & btype) {
+			t.get_colony().builds.at(slot) = Build(btype);
+		}
+
+		void put_build(Terr & t, int slot, BuildType::Id const& btype_id) {
+			put_build(t, slot, get<BuildType>(btype_id));
+		}
+
 
 		//vector<BuildType*> const& get_allowed_builds(Terr const& t, int slot_id) {
 		//	vector<BuildType*> abts;
@@ -1177,14 +1234,64 @@ namespace col{
 			return nullptr;
 		}
 
+		Player * get_control(Terr const& terr) {
+			if (terr.units.size()) {
+				return &terr.units.at(0)->get_player();
+			}
+			return nullptr;
+		}
+
+
+		int consume_part(Terr & t, Item const& item, int const& num) {
+			int real = std::min(int(t.get_colony().get(item)), num);
+			t.get_colony().sub(item, real);
+			return real;
+		}
+
+		bool consume_all(Terr & t, Item const& item, int const& num) {
+			if (int(t.get_colony().get(item)) >= num) {
+				t.get_colony().sub(item, num);
+				return true;
+			}
+			return false;
+		}
+
+
+		void construction_consume(Terr & t, Build & b) {
+			if (b.under_construction()) {
+				// add hammers return overflow
+				auto& c = t.get_colony();
+
+				b.hammers += consume_part(t, ItemHammers, b.get_cost_hammers() - b.hammers);
+
+				if (consume_all(t, ItemTools, b.get_cost_tools())) {
+					b.morph();
+
+					// warehouse constructed
+					if (b.get_type().id == 16) {
+						c.max_storage += 100;
+					}
+				}
+			}
+
+
+		}
+
+
 		bool has_control(Terr const& terr, Player const& p) const {
 			Player const* c = get_control(terr);
 			return c and *c == p;
 		}
 
+
 		// order
-		void set_field_proditem(Player const& p, Terr & terr, int field_id, Item const& item) {
+		void set_proditem_field(Player const& p, Terr & terr, int field_id, Item const& item) {
 			get_field(terr, field_id, p).set_proditem(item);
+		}
+
+
+		void set_proditem_field(Terr & terr, int field_id, Item const& item) {
+			get_field(terr, field_id).set_proditem(item);
 		}
 
 
@@ -1224,9 +1331,7 @@ namespace col{
 			}
 		}
 
-
-		// build - unit
-		void t_move(Build & b, Unit & u) {
+		void work_none(Unit & u) {
 			if (u.build) {
 				u.build->sub(u);
 				u.build = nullptr;
@@ -1235,6 +1340,11 @@ namespace col{
 				u.field->sub(u);
 				u.field = nullptr;
 			}
+		}
+
+		// build - unit
+		void t_move(Build & b, Unit & u) {
+			work_none(u);
 
 			b.add(u);
 			u.build = &b;
@@ -1242,14 +1352,7 @@ namespace col{
 
 		// field - unit
 		void t_move(Field & b, Unit & u) {
-			if (u.build) {
-				u.build->sub(u);
-				u.build = nullptr;
-			}
-			else if (u.field) {
-				u.field->sub(u);
-				u.field = nullptr;
-			}
+			work_none(u);
 
 			b.add(u);
 			u.field = &b;
@@ -1280,38 +1383,45 @@ namespace col{
 		}
 
 
-		void work_field(int field_id, Unit & u) {
-			Terr & terr = get_terr(u);
-			auto& f = get_field(terr, field_id, u.get_player());
-			if (f.get_space_left() >= u.get_size()) {
-				t_move(f, u);
+		Build & get_build(Terr & terr, int build_id) {
+			if (terr.has_colony()) {
+				return terr.get_colony().builds.at(build_id);
 			}
 			else {
-				throw Error("no space left");
+				throw Error("no colony here");
 			}
 		}
 
-
-
 		Build & get_build(Terr & terr, int build_id, Player const& p) {
 			if (has_control(terr, p)) {
-				if (terr.has_colony()) {
-					return terr.get_colony().builds.at(build_id);
-				}
-				else {
-					throw Error("no colony here");
-				}
+				return get_build(terr, build_id);
 			}
 			else {
 				throw Error("this player has no control here");
 			}
 		}
 
+
+
+		void work_field(int field_id, Unit & u) {
+			Terr & terr = get_terr(u);
+			auto& f = get_field(terr, field_id, u.get_player());
+			work_workplace(f, u);
+		}
+
 		void work_build(int build_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_player());
-			if (f.get_space_left() >= u.get_size()) {
-				t_move(f, u);
+			work_workplace(f, u);
+		}
+
+		template<typename T>
+		void work_workplace(T & wp, Unit & u) {
+			if (&u.get_workplace<T>() == &wp) {
+
+			}
+			if (wp.get_space_left() >= u.get_size()) {
+				t_move(wp, u);
 			}
 			else {
 				throw Error("no space left");
@@ -1344,34 +1454,6 @@ namespace col{
 			}
 		}
 
-		bool assign(int num, Unit & unit, Item const& item, bool const& exec=1) {
-			// Assign unit to work on colony slot
-			// num -- slot number
-			//    [0-14] building
-			//    [16-24] field square
-			// item -- item to produce
-			// exec -- if 0 then only check arguments
-
-			auto & terr = get_terr(unit);
-
-			if (num < 0) {
-				throw Error("invalid place index");
-			}
-			else if (num < 16) {
-				work_build(num - 0, unit);
-				return true;
-			}
-			else if (num < 25) {
-				work_field(num - 16, unit);
-				return true;
-			}
-			else {
-				throw Error("invalid place index");
-			}
-
-			return false;
-
-		}
 
 
 

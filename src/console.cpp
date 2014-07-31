@@ -274,35 +274,41 @@ namespace col {
 		++mod;
 	}
 	
-	
-	Item Console::get_next_workitem(Workplace const& workplace, Item const& item) {
+	Item Console::get_next_workitem_field(Env const& env, Field const& f) const {
 		// return next item availbe for production in this workplace
 		
 		// ble :P
-		auto lst = unordered_set<Item>{ItemNone,ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
-			ItemLumber,ItemOre,ItemSilver,ItemHorses,ItemRum,ItemCigars,
-			ItemCloth,ItemCoats,ItemTradeGoods,ItemTools,ItemMuskets,
-			ItemHammers,ItemCross,ItemFish,ItemBell
+		auto lst = vector<Item>{ItemNone,
+			ItemFood,ItemFish,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
+			ItemLumber,ItemOre,ItemSilver,ItemHorses,
+			ItemRum,ItemCigars,ItemCloth,ItemCoats,
+			ItemTradeGoods,
+			ItemTools,ItemMuskets,
+			ItemHammers,ItemCross,
+			ItemBell
 		};
 		
-		// hmm, works!
-		auto it = item + 1;
-		while (it != item) {
-			if (lst.count(it)) {
-				if (workplace.get_yield(it, 0) > 0) {
-					return it;
-				}
-				it = it + 1;
+		size_t curr_pos = find(lst.begin(), lst.end(), f.get_proditem()) - lst.begin();
+		
+		size_t i = curr_pos + 1;
+		while (i < lst.size()) {
+			if (f.get_terr().get_yield(lst.at(i), false)) {
+				return lst.at(i);
 			}
-			else {
-				it = 0;
+			++i;
+		}
+		
+		i = 0;
+		while (i < curr_pos) {
+			if (f.get_terr().get_yield(lst.at(i), false)) {
+				return lst.at(i);
 			}
+			++i;
 		}
-		if (workplace.get_yield(it, 0) > 0) {
-			return it;
-		}
+		
 		return ItemNone;
 	}
+	
 	
 	void Console::command(string const& line) {
 		try {
@@ -368,6 +374,8 @@ namespace col {
 			put("attack");
 			put("work-build");
 			put("work-field");
+			put("prod-build");
+			put("prod-field");			
 			put("construct");
 			// game turn sequence
 			put("start");
@@ -710,7 +718,7 @@ namespace col {
 					auto item = get_item_by_name(es.at(1));
 
 					auto &terr = envgame.get_terr(sel);
-					terr.get_colony().add(Cargo(item, number));
+					terr.get_colony().add(item, number);
 					break;
 			}
 		}
@@ -755,10 +763,26 @@ namespace col {
 					break;
 				case 2: {
 					auto number = stoi(es.at(1));
-					auto unit_id = sel_unit_id;
+					auto unit_id = sel_unit_id;					
 					auto& unit = envgame.get<Unit>(unit_id);
 					env.work_field(number, unit);
-					
+					break;
+				}
+				
+			}
+		}
+		else if (cmd == "prodnext-field") {			
+			switch (es.size()) {
+				default:
+					put("Usage: prodnext-field <field-num>");
+					break;
+				case 2: {
+					auto number = stoi(es.at(1));
+					auto const& item = get_next_workitem_field(
+						env, 
+						env.get_field(env.get_terr(sel), number)
+					);
+					env.set_proditem_field(env.get_terr(sel), number, item);
 					break;
 				}
 				

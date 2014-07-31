@@ -149,30 +149,27 @@ namespace col {
 
 
 
-	struct Assign: Action {
+	struct WorkBuild: Action {
 		int slot_id;
 		Unit::Id uid;
-		Item item_id;
 
-		Assign(
+		WorkBuild(
 			Player::Id const& pid,
 			int const& slot_id,
-			Unit::Id const& uid,
-			Item const& item_id
+			Unit::Id const& uid
 		):
 			Action(pid),
 			slot_id(slot_id),
-			uid(uid),
-			item_id(item_id)
+			uid(uid)
 		{}
 
 		bool unsafe_eq(Action const& a) const {
-			auto b = static_cast<Assign const&>(a);
-			return pid == a.pid and slot_id == b.slot_id and uid == b.uid and item_id == b.item_id;
+			auto b = static_cast<WorkBuild const&>(a);
+			return pid == a.pid and slot_id == b.slot_id and uid == b.uid;
 		}
 
 		Action* copy() const {
-			return new Assign(*this);
+			return new WorkBuild(*this);
 		}
 
 		void exec(Game &game, bool exec=1) const {
@@ -182,17 +179,15 @@ namespace col {
 				throw Error("no unit with this id");
 			}
 
-			game.assign(
+			game.work_build(
 				slot_id,
-				(*it).second,
-				item_id,
-				exec
+				(*it).second
 			);
 
 		}
 
 		virtual ostream& dump(ostream& out) const {
-			out << "Assign("<<pid<<","<<slot_id<<","<<uid<<","<<item_id<<")";
+			out << "Work("<<pid<<","<<slot_id<<","<<uid<<")";
 			return out;
 		}
 

@@ -20,6 +20,9 @@ namespace col {
 		Id id;
 		string name;
 		Storage storage;
+		int max_storage{100};
+
+		int get_max_storage() { return max_storage; }
 
 		Terr *terr{nullptr};
 
@@ -31,9 +34,9 @@ namespace col {
 
 		array<Build,15> builds;
 
-		Build& construct_building(BuildType const& type, int slot, int hammers=0) {
-			builds.at(slot) = Build(type);
-			return builds[slot];
+		Build& construct_building(BuildType const& type, int slot) {
+			builds.at(slot).ctype = &type;
+			return builds.at(slot);
 		}
 
 		int get_build_index(Build const& b) const {
@@ -57,27 +60,37 @@ namespace col {
 		}
 
 
-		void add(Cargo const& c) {
-			auto key = c.item;
+		void add(Item const& item, int num) {
+			auto key = item;
 			if (storage.count(key)) {
-				storage[key] += c.amount;
+				storage[key] += num;
 			}
 			else {
-				storage.insert({key, c.amount});
+				storage.insert({key, num});
 			}
 		}
 
-		void sub(Cargo const& c) {
-			auto key = c.item;
-			if (c.amount <= get(c.item)) {
-				storage[key] -= c.amount;
+		void sub(Item const& item, int num) {
+			auto key = item;
+			if (num <= get(item)) {
+				storage[key] -= num;
 			}
 			else {
 				throw Error("out of item");
 			}
 		}
 
-		uint16 get(Item const& item) {
+		void set(Item const& item, int num) {
+			if (num == 0) {
+				storage.erase(item);
+			}
+			else {
+				storage[item] = num;
+			}
+		}
+
+
+		uint16 get(Item const& item) const {
 			auto key = item;
 			if (storage.count(key)) {
 				return storage.at(key);

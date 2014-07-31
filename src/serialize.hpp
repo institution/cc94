@@ -143,7 +143,7 @@ namespace col {
 		}
 
 		if (field_id) {
-			env.work_build(field_id - 1, unit);
+			env.work_field(field_id - 1, unit);
 		}
 	}
 
@@ -399,9 +399,6 @@ namespace col {
 			size_t tmp;
 			ar >> tmp;
 			for (size_t i=0; i<tmp; ++i) {
-
-
-
 
 				read_unit(ar, env);
 

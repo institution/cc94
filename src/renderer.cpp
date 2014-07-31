@@ -123,6 +123,7 @@ namespace col {
 	sf::Color const ColorFont = sf::Color(0x55,0x96,0x34,0xff);
 	sf::Color const ColorNone = sf::Color(0,0,0,0);
 	sf::Color const ColorBlack = sf::Color(0,0,0,255);
+	sf::Color const ColorWhite = sf::Color(255,255,255,255);
 	
 	v2f vmul(v2f const& a, v2f const& b);
 	v2f vmul(v2i const& a, v2f const& b);
@@ -664,7 +665,7 @@ namespace col {
 						
 				}
 				else 
-				if (b.get_hammers() != b.get_cost_hammers()) 
+				if (b.under_construction()) 
 				{
 					// number of produced items
 					
@@ -709,6 +710,7 @@ namespace col {
 				
 				v2i units_frame = {25, 16};
 				
+				// units on build
 				int n = b.units.size();
 				int i = 0;
 				for (auto& unit_ptr: b.units) {
@@ -728,6 +730,7 @@ namespace col {
 					v2i sel_pos = unit_pos;
 					v2i sel_dim = unit_dim;
 					
+					// render unit on build
 					render_sprite(win, unit_pos, unit_tex);
 
 					auto unit_id = unit.id;
@@ -782,17 +785,37 @@ namespace col {
 					[&con,cmd](){ con.command(cmd); }
 				);
 
-				
+				// units on field
 				for (auto& unit_p: field.units) {
 					auto& unit = *unit_p;
 					
-					v2i unit_pos = field_pos;
-					v2i unit_dim = field_dim;
+					v2i unit_dim = v2i(field_dim[0]/2, field_dim[1]);
+					v2i unit_pos = field_pos + v2i(field_dim[0]/2, 0);
+					
+					v2i item_dim = v2i(field_dim[0]/2, field_dim[1]);
+					v2i item_pos = field_pos;					
 
-					v2i sel_pos = unit_pos;
-					v2i sel_dim = unit_dim;
+					v2i sel_pos = field_pos;
+					v2i sel_dim = field_dim;
 					
 					auto& unit_tex = res(ICON, unit.get_type_id());
+					
+					// render produced item
+					auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
+					render_sprite(win, 
+						calc_align(Box(item_pos, item_dim), v2f(0.5, 0.5), get_dim(item_tex)),
+						item_tex
+					);
+
+					// render produced item amount
+					render_text_line(
+						win,
+						item_pos, item_dim, v2f(1, 0),
+						res_pixfont("tiny.png"), ColorWhite, ColorBlack,
+						to_string(env.get_prodnum(field))
+					);
+					
+					// render unit on field
 					render_sprite(win, 
 						calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
 						unit_tex
@@ -803,6 +826,13 @@ namespace col {
 					if (unit_id == con.sel_unit_id) {
 						// render selection frame
 						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+												
+						// add zone for switch workitem
+						con.onclick(sel_pos, sel_dim,
+							[&con,field_id]() { 
+								con.command("prodnext-field " + to_string(field_id));
+							}
+						);
 					}
 					else {
 						// or add zone for click select

@@ -108,6 +108,8 @@ namespace col {
 			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
 		}
 
+		Item get_next_workitem_field(Env const& env, Field const& f) const;
+
 		struct HotSpot{
 			static int const Click = 1;
 			static int const Hover = 2;
@@ -215,7 +217,7 @@ namespace col {
 
 		}
 
-		Item get_next_workitem(Workplace const& workplace, Item const& item = ItemNone);
+
 
 		void clear() {
 			output.clear();

@@ -146,10 +146,9 @@ namespace col {
 
 	struct Cargo {
 		Item item;
-		uint16 amount;
-
-		Cargo(Item const& item, uint16 const& amount):
-			item(item), amount(amount)
+		uint16 num;
+		Cargo(Item const& item, uint16 const& num):
+			item(item), num(num)
 		{}
 
 	};

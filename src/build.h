@@ -17,7 +17,7 @@ namespace col{
 		string name;
 		Id id;
 		int slots;
-		Item itemprod{ItemNone};
+		Item proditem{ItemNone};
 		Item itemcons{ItemNone};
 		int cost_hammers;
 		int cost_tools;
@@ -40,7 +40,7 @@ namespace col{
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
 			slots = stoi0(xs[2]);
-			itemprod = stoi0(xs[3]);
+			proditem = stoi0(xs[3]);
 			itemcons = stoi0(xs[4]);
 			cost_hammers = stoi0(xs[5]);
 			cost_tools = stoi0(xs[6]);
@@ -52,6 +52,7 @@ namespace col{
 		}
 
 		string const& get_name() const { return name; }
+		Item const& get_proditem() const { return proditem; }
 		//BuildType & set_name(string const& name) { this->name = name; return *this; }
 
 
@@ -121,13 +122,16 @@ namespace col{
 		BuildType const* type;
 		int8 free_slots;
 		int hammers{0};
+		BuildType const* ctype{nullptr};
 
+		BuildType const& get_type() { return *type; }
 
 		Build(BuildType const& type):
 			Workplace(),
-			type(&type),
 			free_slots(type.slots)
-		{}
+		{
+			set_type(type);
+		}
 
 		Build() = default;
 		Build(Build &&) = default;
@@ -137,6 +141,16 @@ namespace col{
 
 		BuildType::Id get_type_id() const {
 			return type->id;
+		}
+
+		bool under_construction() const {
+			return ctype != nullptr;
+		}
+
+		void morph() {
+			type = ctype;
+			ctype = nullptr;
+			hammers = 0;
 		}
 
 		// Workplace
@@ -155,26 +169,30 @@ namespace col{
 
 		int get_slots() const { return type->slots; };
 		auto get_consitem() const -> decltype(type->itemcons) const& { return type->itemcons; };
-		auto get_cost_tools() const -> decltype(type->cost_tools) const& { return type->cost_tools; };
 		auto get_min_colony() const -> decltype(type->min_colony) const& { return type->min_colony; };
 		auto get_place_on_type_id() const -> decltype(type->place_on_id) const& { return type->place_on_id; };
 		auto get_prod() const -> decltype(type->prod) const& { return type->prod; };
 		auto get_cons() const -> decltype(type->cons) const& { return type->cons; };
 
-		int const& get_cost_hammers() const {
-			return this->type->cost_hammers;
+
+		Build & set_type(BuildType const& type) {
+			this->type = &type;
+			set_proditem(type.proditem);
+			return *this;
 		}
 
-		int add_hammers(int h) {
-			// add hammers return overflow
-			auto need_hammers = get_cost_hammers() - hammers;
-			auto add_h = std::min(need_hammers, h);
-			hammers += add_h;
-			return h - add_h;
+
+		int get_cost_hammers() const {
+			return this->ctype->cost_hammers;
 		}
+
+		int get_cost_tools() const {
+			return this->ctype->cost_tools;
+		}
+
 
 		Item const& get_proditem() const {
-			return type->itemprod;
+			return type->proditem;
 		}
 
 		uint16 get_yield(Item const& item, bool const& is_expert) const {
