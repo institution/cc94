@@ -24,6 +24,12 @@ namespace col{
 		uint8 size{0};
 		uint8 icon{0};
 		uint8 travel{0}; // travel flags LAND | SEA
+		int base{0};
+		Item item1{ItemNone};
+		int num1{0};
+		Item item2{ItemNone};
+		int num2{0};
+
 
 		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
 		UnitType& set_attack(uint8 const& a) { attack = a; return *this; }
@@ -32,6 +38,10 @@ namespace col{
 		UnitType& set_size(uint8 const& c) { size = c; return *this; }
 		UnitType& set_icon(uint8 const& c) { icon = c; return *this; }
 		UnitType& set_travel(uint8 const& t) { travel = t; return *this; }
+		UnitType& set_base(int const& t) { base = t; return *this; }
+		UnitType& set_equip1(Item const& it, int num) { item1 = it; num1 = num; return *this; }
+		UnitType& set_equip2(Item const& it, int num) { item2 = it; num2 = num; return *this; }
+
 
 		string const& get_name() const { return name; }
 		uint8 const& get_speed() const { return speed; }
@@ -41,6 +51,11 @@ namespace col{
 		uint8 const& get_size() const { return size; }
 		uint8 const& get_icon() const { return icon; }
 		uint8 const& get_travel() const { return travel; }
+		int const& get_base() const { return base; }
+		Item const& get_item2() const { return item2; }
+		int const& get_num1() const { return num1; }
+		Item const& get_item1() const { return item1; }
+		int const& get_num2() const { return num2; }
 
 		UnitType() {}
 
@@ -58,9 +73,19 @@ namespace col{
 			size = stoi0(xs[6]);
 			icon = stoi0(xs[7]);
 			travel = stoi0(xs[8]);
+			base = stoi0(xs[9]);
+			item1 = stoi0(xs[10]);
+			num1 = stoi0(xs[11]);
+			item2 = stoi0(xs[12]);
+			num2 = stoi0(xs[13]);
 		}
 
 	};
+
+	inline
+	bool operator==(UnitType const& t1, UnitType const& t2) {
+		return t1.id == t2.id;
+	}
 
 
 	/*
@@ -133,8 +158,18 @@ namespace col{
 		Order::type const& get_order() const { return order; }
 		int get_icon() const { return type->icon; }
 
-		Unit& set_terr(Terr & t) { terr = &t; return *this; }
+		int const& get_base() const { return type->base; }
+		Item const& get_item2() const { return type->item2; }
+		int const& get_num1() const { return type->num1; }
+		Item const& get_item1() const { return type->item1; }
+		int const& get_num2() const { return type->num2; }
 
+		Unit& set_terr(Terr & t) { terr = &t; return *this; }
+		Unit& set_type(UnitType const& t) { type = &t; return *this; }
+
+		bool is_working() {
+			return field or build;
+		}
 
 		template <typename T>
 		T& get_workplace();

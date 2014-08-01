@@ -12,7 +12,7 @@
 #include "layout.h"
 #include "action.h"
 #include "ai.h"
-
+#include "ai-env-helpers.h"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -39,6 +39,7 @@ namespace col {
 	int const ActiveNone = 0;
 	int const ActiveMsg = 1;
 	int const ActiveCmd = 2;
+
 
 
 	// mouse events: normal, drag&drop
@@ -82,9 +83,28 @@ namespace col {
 		Ais ais;
 
 
+		int equip_to_unit_id{0};
+		int equip_to_unit_type_id{0};
+
+		int select_unit_popup{0};
+
+
+
+		void select_terr(int x, int y) {
+			sel = Coords(x,y);
+		}
+
+		void unselect_terr(int x, int y) {
+			// ???
+		}
+
+
 		// selected square
 		Coords sel;
+
 		Unit::Id sel_unit_id{0};
+
+
 		unordered_set<char16_t> charset;
 
 		// active screen
@@ -108,21 +128,106 @@ namespace col {
 			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
 		}
 
+
+
+
+
+
+
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
 
+
+		// EVENTS --------------
+
+		enum struct Event {
+			Press, Release, Hover
+		};
+
+		enum struct Button{
+			None, Left, Right
+		};
+
 		struct HotSpot{
-			static int const Click = 1;
-			static int const Hover = 2;
-			static int const RightClick = 4;
-
-			int type{1}; // 1 - left click, 2 - hover
-
-			Box2 box;
-			std::function<void()> cl;
+			Event t{Event::Press};
+			Button b{Button::None};
+			Box2 box{0,0,0,0};
+			bool anywhere{0};
+			std::function<void()> callback;
 
 			HotSpot() {}
-			HotSpot(Box2 const& box, std::function<void()> cl, int type): box(box), cl(cl), type(type) {}
+
+			HotSpot(
+				Box2 const& box,
+				std::function<void()> callback,
+				Event t,
+				Button b,
+				bool anywhere
+			):
+				box(box), callback(callback),
+				t(t), b(b), anywhere(anywhere) {}
+
 		};
+
+		// ----------- callback
+
+		// mouse button over area
+		void on(Event t, Button b, v2i const& pos, v2i const& dim, std::function<void()> cl) {
+			hts.push_back({Box2(pos, dim), cl, t, b, false});
+		}
+
+		// mouse button anywhere
+		void on(Event t, Button b, std::function<void()> cl) {
+			hts.push_back({Box2(0,0,0,0), cl, t, b, true});
+		}
+
+		// mouse hover over area
+		void on(Event t, v2i const& pos, v2i const& dim, std::function<void()> cl) {
+			hts.push_back({Box2(pos, dim), cl, t, Button::None, false});
+		}
+
+		// mouse hover anywhere
+		void on(Event t, std::function<void()> cl) {
+			hts.push_back({Box2(0,0,0,0), cl, t, Button::None, true});
+		}
+
+
+
+		// ----------- autocommand
+
+		// mouse button over area - string command
+		void on(Event t, Button b, v2i const& pos, v2i const& dim, string const& cmd) {
+			on(t, b, pos, dim, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse button anywhere - string command
+		void on(Event t, Button b, string const& cmd) {
+			on(t, b, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse hover over area - string command
+		void on(Event t, v2i const& pos, v2i const& dim, string const& cmd) {
+			on(t, pos, dim, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse hover anywhere - string command
+		void on(Event t, string const& cmd) {
+			on(t, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+
+
+
+
+
+
 
 		BuildType::Id select_build{0};
 		int sel_slot_num{-1};
@@ -135,36 +240,16 @@ namespace col {
 			hts.clear();
 		}
 
-		void onclick(v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box2(pos, dim), cl, HotSpot::Click});
-		}
-
-		void onclick(v2i const& pos, v2i const& dim, string const& cmd) {
-			onclick(pos, dim,
-				[this,cmd](){ command(cmd); }
-			);
-		}
-
-		void onhover(v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box2(pos, dim), cl, HotSpot::Hover});
-		}
 
 
-		void onhover(v2i const& pos, v2i const& dim, string const& cmd) {
-			onhover(pos, dim,
-				[this,cmd](){ command(cmd); }
-			);
-		}
-
-		void on(int flag, v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box2(pos, dim), cl, flag});
-		}
-
-		bool handle_event(v2i const& pos, int type) {
+		bool handle_event(v2i const& pos, Event type, Button button) {
 			for (int i = hts.size(); 0 < i; --i) {
 				auto& p = hts[i-1];
-				if (p.type & type and overlap(p.box, pos)) {
-					p.cl();
+				if (p.t == type
+					and (p.anywhere or overlap(p.box, pos))
+					and (p.b == Button::None or p.b == button)
+				) {
+					p.callback();
 					return true;
 				}
 			}

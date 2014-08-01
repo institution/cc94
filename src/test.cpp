@@ -25,13 +25,14 @@ using roll::replay;
  * work at colony field (end turn) *
  * plow fields *
  * work at colony manufacture (end turn) *
- *
- * construct building by working in lumber mill (col94 style)
- * load/unload cargo into ship
- * board/leave shib by units
+ * construct building by working in lumber mill *
+ * board/leave shib by units *
+ * working colonist consume food *
+ * equip/unequip units
+ * map tasks consume tools
+ * load/unload cargo into ship 
  * travel to europe by sea - exit_map(ship, dest) order
- * sell/buy in europe
- * working colonist consume food
+ * sell/buy in europe 
  * clear forest (add lumber to colony)
  *
  */
@@ -139,6 +140,36 @@ TEST_CASE( "env::move_unit", "" ) {
 
 
 }
+
+
+
+TEST_CASE( "equip unit", "" ) {
+
+	Env env;
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	auto& t = env.get_terr({0,0});
+	
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50),
+		env.create<Player>()
+	);
+	env.init(u, t);
+	
+	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
+	
+	auto& c = env.create<Colony>();
+	env.init(c, t);
+	
+	REQUIRE_NOTHROW(c.add(ItemMuskets, 50));	
+	REQUIRE_NOTHROW(env.equip(u, ut));	
+	REQUIRE(u.get_type() == ut);
+	REQUIRE(c.get(ItemMuskets) == 0);
+	REQUIRE(c.get(ItemHorses) == 0);
+	
+
+}
+
 
 
 TEST_CASE( "board ship", "" ) {

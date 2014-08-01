@@ -3,11 +3,15 @@
 //#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
+#include "ai-env-helpers.h"
 #include "view_base.h"
 
 namespace col {
 
 	using b2i = Box;
+	
+	using Event = Console::Event;
+	using Button = Console::Button;
 	
 
 	Layout const ly(SCREEN_W, SCREEN_H);
@@ -59,6 +63,10 @@ namespace col {
 	}
 
 
+	int get_icon_id(Unit const& u) {
+		return u.get_icon();
+	}
+	
 	v2i render_text(
 		sf::RenderWindow &win,
 		Vector2<int> const& pos,
@@ -90,6 +98,7 @@ namespace col {
 		ICON = RES_PATH + "ICONS_SS",
 		PHYS = RES_PATH + "PHYS0_SS",
 		ARCH = RES_PATH + "PARCH_SS",
+		COLONY = RES_PATH + "COLONY_PIK",
 		BUILD = RES_PATH + "BUILDING_SS",
 		DIFFUSE = "DIFFUSE*",
 		COAST = "*COAST*";
@@ -123,6 +132,12 @@ namespace col {
 	sf::Color const ColorFont = sf::Color(0x55,0x96,0x34,0xff);
 	sf::Color const ColorNone = sf::Color(0,0,0,0);
 	sf::Color const ColorBlack = sf::Color(0,0,0,255);
+	sf::Color const ColorGreen = sf::Color(0,255,0,255);
+	sf::Color const ColorBlue = sf::Color(0,0,255,255);
+	sf::Color const ColorRed = sf::Color(255,0,0,255);
+	sf::Color const ColorDarkGreen = sf::Color(0,127,0,255);
+	sf::Color const ColorDarkBlue = sf::Color(0,0,127,255);
+	sf::Color const ColorDarkRed = sf::Color(127,0,0,255);
 	sf::Color const ColorWhite = sf::Color(255,255,255,255);
 	
 	v2f vmul(v2f const& a, v2f const& b);
@@ -301,7 +316,7 @@ namespace col {
 		render_rect(win, box.pos, box.dim, col);
 	}
 	
-	void render_outline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Color const& c) {
+	void render_outline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, sf::Color const& c) {
 		/* Draw 1px thick outline border of pos,dim box 
 		*/
 		win.draw(
@@ -315,7 +330,7 @@ namespace col {
 		);
 	}
 
-	void render_inline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Color const& c) {
+	void render_inline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, sf::Color const& c) {
 		/* Draw 1px thick inside border of pos,dim box 
 		*/
 		render_outline(win, pos + v2i(1,1),	dim - v2i(2,2), c);		
@@ -537,14 +552,14 @@ namespace col {
 		v2i const dim = v2i(ly.scr.dim[0] * 0.3, (kvs.size()+1) * LINE_HEIGHT);
 		v2i pos = cpos(dim);
 		
-		// on cancel (click outside window))
-		con.onclick(ly.scr.pos, ly.scr.dim, oncancel);
+		// click anywhere -- cancel
+		con.on(Event::Press, oncancel);
 		
 		// background
 		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);		
 		
-		// on dialog
-		con.onclick(pos, dim, [](){});
+		// click on dialog -- do nothing 
+		con.on(Event::Press, pos, dim, [](){});
 				
 		// entries
 		for (size_t i = 0; i < kvs.size(); ++i) {
@@ -570,8 +585,10 @@ namespace col {
 				kvs[i].second
 			);
 			
-			// on select		
-			con.onclick(p, d, [&selected,key,onselect](){ selected = key; onselect(); });
+			// left click on entry -- select
+			con.on(Event::Press, Button::Left, p, d, 
+				[&selected,key,onselect](){ selected = key; onselect(); }
+			);
 		}
 			
 	}
@@ -627,8 +644,8 @@ namespace col {
 
 		// render buildings
 		{
-			
-			con.onhover(ly.scr.pos, ly.scr.dim,
+			// hover anywhere -- clear label on building
+			con.on(Event::Hover,
 				[&con]() { con.sel_colony_slot_id = -1; }				
 			);
 			
@@ -690,8 +707,8 @@ namespace col {
 					
 				}
 				
-				
-				con.onclick(build_pos, build_dim,
+				// left click on building -- assign worker or show construction popup
+				con.on(Event::Press, Button::Left, build_pos, build_dim,
 					[&con, workplace_id]() { 
 						if (con.sel_unit_id != 0) {
 							con.command(str(format("work-build %||") % workplace_id));
@@ -703,7 +720,8 @@ namespace col {
 					}	
 				);
 				
-				con.onhover(build_pos, build_dim,
+				// hover on building -- show label with building name (select buildplace)
+				con.on(Event::Hover, build_pos, build_dim,
 					//str(format("sel_place %||") % i)
 					[&con, i]() { con.sel_colony_slot_id = i; }
 				);
@@ -740,8 +758,8 @@ namespace col {
 						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 					}
 					else {
-						// or add zone for click select
-						con.onclick(sel_pos, sel_dim,
+						// left click on unit -- select this unit
+						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
 							[&con,unit_id]() { 
 								con.command("sel " + to_string(unit_id)); 					
 							}
@@ -780,10 +798,14 @@ namespace col {
 					city_coords
 				);
 															
-				string cmd = str(format("work-field %||") % field_id);
-				con.onclick(field_pos, field_dim,
-					[&con,cmd](){ con.command(cmd); }
-				);
+				
+				if (field.units.size() == 0) {
+					// left click on field -- assign unit to work there
+					string cmd = str(format("work-field %||") % field_id);
+					con.on(Event::Press, Button::Left, field_pos, field_dim,
+						[&con,cmd](){ con.command(cmd); }
+					);
+				}
 
 				// units on field
 				for (auto& unit_p: field.units) {
@@ -827,16 +849,16 @@ namespace col {
 						// render selection frame
 						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 												
-						// add zone for switch workitem
-						con.onclick(sel_pos, sel_dim,
+						// left click on field with selected worker -- switch to next proditem
+						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
 							[&con,field_id]() { 
 								con.command("prodnext-field " + to_string(field_id));
 							}
 						);
 					}
 					else {
-						// or add zone for click select
-						con.onclick(sel_pos, sel_dim,
+						// left click on field with worker -- select this worker
+						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
 							[&con,unit_id]() { 
 								con.command("sel " + to_string(unit_id)); 					
 							}
@@ -848,28 +870,6 @@ namespace col {
 			}
 			
 			
-			/*
-			int field_id = 16;
-			for (int j = pos[1]-1; j <= pos[1]+1; ++j) {
-				for (int i = pos[0]-1; i <= pos[0]+1; ++i) {
-					
-					auto& terr = env.get_terr(Coords(i,j));
-					
-					auto delta_coords = Coords(i,j) - base_coords;
-					
-					render_terr(win, Coords(i, j), env, terr, pix,
-						base_coords
-					);
-															
-					string cmd = str(format("work %||") % field_id);					
-					con.onclick(pix + v2i(delta_coords[0], delta_coords[1]) * TILE_DIM, tile_dim,
-						[&con,cmd](){ con.command(cmd); }
-					);
-					
-					field_id += 1;
-				}
-			}
-			 */
 		}
 
 		
@@ -891,46 +891,78 @@ namespace col {
 		}*/
 		
 		
-		// right click - unselect unit
-		con.on(Console::HotSpot::RightClick, ly.scr.pos, ly.scr.dim,
-			[&con]() { 
-				con.sel_unit_id = 0;
-			}
-		);
+		// right click anywhere - unselect selected unit
+		if (con.sel_unit_id) {			
+			con.on(Event::Press, Button::Right,
+				[&con]() { 
+					con.sel_unit_id = 0;
+				}
+			);
+		}
 
+		// background
+		render_sprite(win, 
+			ly.city_units.pos + v2i(0,-1),
+			res(COLONY, 1)
+		);
+		
+		render_inline(win,
+			ly.city_units.pos, ly.city_units.dim,
+			ColorDarkGreen
+		);
+		
+		// left click on city terrain area with selected unit -- unwork that unit
+		if (con.sel_unit_id != 0) {
+			con.on(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
+				"work-none"
+			);
+		}
 		int i = 0;
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 			
-			auto& unit_tex = res(ICON, unit.get_type_id());
-			v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
-			v2i unit_dim = ly.terr_dim;
-			
-			v2i sel_pos = unit_pos;
-			v2i sel_dim = unit_dim;
-			
-			// render
-			render_sprite(win, 
-				calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
-				unit_tex
-			);
-			
-			auto unit_id = unit.id;
-						
-			if (unit_id == con.sel_unit_id) {
-				// render selection frame
-				render_inline(win, sel_pos, sel_dim, {255,100,100,255});
-			}
-			else {
-				// or add zone for click select
-				con.onclick(sel_pos, sel_dim,
-					[&con,unit_id]() { 
-						con.command("sel " + to_string(unit_id)); 					
-					}
+			if (!unit.is_working()) {
+
+				auto& unit_tex = res(ICON, get_icon_id(unit));
+				v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
+				v2i unit_dim = ly.terr_dim;
+
+				v2i sel_pos = unit_pos;
+				v2i sel_dim = unit_dim;
+
+				// render unit
+				render_sprite(win, 
+					calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+					unit_tex
 				);
+
+				auto unit_id = unit.id;
+
+				if (unit_id == con.sel_unit_id) {
+					// render selection frame
+					render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+					
+					// left click on selected unit (on terr) -- show equip select
+					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+						[&con,unit_id]() { 
+							con.equip_to_unit_id = unit_id;
+						}
+					);
+					
+				}
+				else {
+					// left click on unselected unit -- select unit
+					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+						[&con,unit_id]() { 
+							con.command("sel " + to_string(unit_id)); 					
+						}
+					);
+				}
+				
+				++i;
 			}
 			
-			++i;
+			
 		}
 		
 		
@@ -1042,10 +1074,6 @@ namespace col {
 			*/
 			
 		
-		
-		
-		
-
 
 		// render storage
 
@@ -1097,7 +1125,8 @@ namespace col {
 			0
 		);
 
-		con.onclick(ly.city_exit.pos, ly.city_exit.dim,
+		// left click on exit button -- exit city screen
+		con.on(Event::Press, Button::Left, ly.city_exit.pos, ly.city_exit.dim,
 			[&con, &terr](){ con.command("exit"); }
 		);
 
@@ -1136,6 +1165,38 @@ namespace col {
 		}
 
 
+		
+		// pop-ups
+		if (con.equip_to_unit_id) {
+			vector<pair<int, string>> entries;
+			for (auto& t: misc::equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
+				entries.push_back(pair<int, string>{
+					t->id, 
+					str(format("%|| (%||) (%||)") % t->get_name() % t->get_num1() % t->get_num2())
+				});
+			}
+
+			// onclick -> equip/orders menu
+			render_select<int>(win, con,
+				[](v2i const& dim) {
+					return calc_align(Box(ly.scr), {0.5, 0.5}, dim); 
+				},
+				entries,
+				con.equip_to_unit_type_id,
+				[&con](){ 
+					con.command(string("equip ") + to_string(con.equip_to_unit_type_id));
+					con.equip_to_unit_id = 0;
+					con.equip_to_unit_type_id = 0;
+				},  // onselect
+				[&con](){ 
+					con.equip_to_unit_id = 0;
+					con.equip_to_unit_type_id = 0;
+				}   // oncancel
+			);
+		}
+		
+		
+		
 
 
 	}
@@ -1263,14 +1324,22 @@ namespace col {
 	//int const TextureMountainId;
 	//int const TextureHillId;
 
+	
+	
+	
 
+	
 	void render_terr(sf::RenderWindow &win,
-			Coords const& pos,
+			v2i const& pos,
 			Env const& env,
-			Terr const& terr,
-			Vector2<int> const& map_pix,
-			Coords const& delta)
+			Terr const& terr)			
 	{
+		
+		auto& pix = pos;
+		
+		auto coords = env.get_coords(terr);
+
+		auto loc = make_terr_ext(env, coords);
 
 		auto biome = terr.biome;
 		auto forest = terr.has(PhysForest);
@@ -1278,13 +1347,7 @@ namespace col {
 		auto hill = (terr.get_alt() == HILL_LEVEL);
 		auto mountain = (terr.get_alt() == MOUNTAIN_LEVEL);
 
-		int x = (pos[0] - delta[0]) * ly.TERR_W + map_pix[0];
-		int y = (pos[1] - delta[1]) * ly.TERR_H + map_pix[1];
-		auto pix = v2i(x,y);
-
-
-		auto loc = make_terr_ext(env, pos);
-
+		
 		// render biome
 		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
 
@@ -1400,6 +1463,23 @@ namespace col {
 		}
 
 	}
+	
+	
+	
+	void render_terr(sf::RenderWindow &win,
+			Coords const& pos,
+			Env const& env,
+			Terr const& terr,
+			Vector2<int> const& map_pix,
+			Coords const& delta)
+	{
+
+		int x = (pos[0] - delta[0]) * ly.TERR_W + map_pix[0];
+		int y = (pos[1] - delta[1]) * ly.TERR_H + map_pix[1];
+		
+		render_terr(win, v2i(x,y), env, terr);
+		
+	}
 
 	using sf::RenderWindow;
 
@@ -1421,7 +1501,8 @@ namespace col {
 			// render colony
 			render_sprite(win, pix[0], pix[1], res(ICON, 4));
 			
-			con.onclick(pix, v2i(TILE_DIM, TILE_DIM),
+			// left click on colony (on map) -- enter colony screen
+			con.on(Event::Press, Button::Left, pix, v2i(TILE_DIM, TILE_DIM),
 				[&con, pos](){ 
 					con.command(str(format("sel %|| %||") % pos[0] % pos[1]));
 					con.command("enter"); 
@@ -1461,27 +1542,41 @@ namespace col {
 	void render_map(sf::RenderWindow &win, Env const& env, Console & con, v2i const& pos,
 			Coords const& delta)
 	{
-		auto w = env.w;
-		auto h = env.h;
+		
+		auto w = 15;
+		auto h = 12;
 
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos,
-					delta 
-				);
+				//render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos,
+				//	delta 
+				//);
 				
-				/*
-				auto dim = v2i(w * ly.TERR_W, h * ly.TERR_H);
-		
-				//(mp.x - ly.map.pos[0])
+				auto coords = Coords(i,j);
+				
+				if (env.in_bounds(coords)) {
 
-				con.on(HotSpot::RightClick, pos, dim, [&con](){
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2i(i,j));
 
-						con.sel[0] = rel[0] / ly.TERR_W;
-						con.sel[1] = rel[1] / ly.TERR_H;
-					}
-				};*/
+					auto& terr = env.get_terr(coords);
+					render_terr(win, pos, env, terr);
 
+					// right click on terr -- select terr
+					con.on(Event::Press, Button::Right, pos, ly.terr_dim, 
+						[&con,coords](){
+							con.sel = coords;
+						}
+					);
+					
+					// left click on unit -- select unit
+					con.on(Event::Press, Button::Left, pos, ly.terr_dim, 
+						[&con,coords](){
+							//con.sel = coords;  TODO
+						}
+					);
+					
+				}
+				
 				
 			}
 		}
@@ -1677,7 +1772,8 @@ namespace col {
 				0
 			);
 
-			con.onclick(ly.city_exit.pos, ly.city_exit.dim,
+			// left click on Start/Ready button -- start game or ready turn
+			con.on(Event::Press, Button::Left, ly.city_exit.pos, ly.city_exit.dim,
 				[&con,cmd](){ con.command(cmd); }
 			);
 		}

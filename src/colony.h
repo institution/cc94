@@ -59,6 +59,9 @@ namespace col {
 			return builds.at(i);
 		}
 
+		Colony & set_build(int const& i, Build const& build) { builds.at(i) = build; return *this; }
+
+
 
 		void add(Item const& item, int num) {
 			auto key = item;
@@ -100,6 +103,9 @@ namespace col {
 			}
 		}
 
+		bool has(Item const& item, int num) const {
+			return get(item) >= num;
+		}
 
 		PlaceType::type place_type() {
 			return PlaceType::Colony;

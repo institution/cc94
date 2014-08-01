@@ -190,7 +190,7 @@ namespace col {
 				)
 			);
 			
-			if (handle_event(v2i(mp.x, mp.y), HotSpot::Hover)) {				
+			if (handle_event(v2i(mp.x, mp.y), Event::Hover, Button::None)) {
 				modified();
 			}
 				
@@ -208,27 +208,27 @@ namespace col {
 			
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-				if (handle_event(v2i(mp.x, mp.y), HotSpot::Click)) {
+				if (handle_event(v2i(mp.x, mp.y), Event::Press, Button::Left)) {
 					modified();
 				}
 			}
 			
 			if (event.mouseButton.button == sf::Mouse::Right)
 			{
-				if (handle_event(v2i(mp.x, mp.y), HotSpot::RightClick)) {
+				if (handle_event(v2i(mp.x, mp.y), Event::Press, Button::Right)) {
 					modified();
 				}				
 			}
 			
 			
-			if (mode == Mode::AMERICA and event.mouseButton.button == sf::Mouse::Right)
+			/*if (mode == Mode::AMERICA and event.mouseButton.button == sf::Mouse::Right)
 			{
 				
 				sel[0] = (mp.x - ly.map.pos[0]) / ly.TERR_W;
 				sel[1] = (mp.y - ly.map.pos[1]) / ly.TERR_H;
 
 				modified();
-			}
+			}*/
 		}
 	}
 
@@ -374,6 +374,7 @@ namespace col {
 			put("attack");
 			put("work-build");
 			put("work-field");
+			put("work-none");
 			put("prod-build");
 			put("prod-field");			
 			put("construct");
@@ -756,16 +757,49 @@ namespace col {
 				
 			}
 		}
-		else if (cmd == "work-field") {			
+		else if (cmd == "equip") {
+			
+			switch (es.size()) {
+				default:
+					put("Usage: equip <unit-type-id>");
+					break;
+				case 2: {
+					auto id = stoi(es.at(1));
+					env.equip(
+						env.get<Unit>(sel_unit_id), 
+						env.get<UnitType>(id)
+					);
+					break;
+				}
+				
+			}
+		}
+		else if (cmd == "work-field") {
+			
 			switch (es.size()) {
 				default:
 					put("Usage: work-field <field-num>");
 					break;
 				case 2: {
 					auto number = stoi(es.at(1));
-					auto unit_id = sel_unit_id;					
+					auto unit_id = sel_unit_id;
 					auto& unit = envgame.get<Unit>(unit_id);
 					env.work_field(number, unit);
+					
+					break;
+				}
+				
+			}
+		}
+		else if (cmd == "work-none") {
+			switch (es.size()) {
+				default:
+					put("Usage: work-none");
+					break;
+				case 1: {
+					auto unit_id = sel_unit_id;					
+					auto& unit = envgame.get<Unit>(unit_id);
+					env.work_none(unit);
 					break;
 				}
 				

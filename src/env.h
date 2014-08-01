@@ -520,6 +520,37 @@ namespace col{
 			return get_terr(f).get_yield(f.get_proditem(), false);
 		}
 
+		void equip(Unit & u, UnitType & ut) {
+			Terr & t = get_terr(u);
+			Colony & c = t.get_colony();
+
+			if (u.get_base() != ut.get_base()) {
+				throw Error("incompatible types");
+			}
+
+			// recover
+			c.add(u.get_item1(), u.get_num1());
+			c.add(u.get_item2(), u.get_num2());
+
+			if (c.has(ut.get_item1(), ut.get_num1())
+				and c.has(ut.get_item2(), ut.get_num2()))
+			{
+				// consume
+				c.sub(ut.get_item1(), ut.get_num1());
+				c.sub(ut.get_item2(), ut.get_num2());
+
+				// change type
+				u.set_type(ut);
+			}
+			else {
+				// rollback
+				c.sub(u.get_item1(), u.get_num1());
+				c.sub(u.get_item2(), u.get_num2());
+
+				throw Error("not enough equipment");
+			}
+		}
+
 
 		bool consume_food(Unit & u) {
 			// return -- true if food consumed, false when no more food available
@@ -1108,6 +1139,9 @@ namespace col{
 			destroy<Colony>(id);
 		}
 
+		void set_build(Colony & c, int i, BuildType::Id const& id) {
+			c.set_build(i, Build(get<BuildType>(id)));
+		}
 
 
 		bool colonize(Unit &u, string const& name, bool exec=1) {
@@ -1134,23 +1168,23 @@ namespace col{
 					BuildType::Id const CHURCH = 38;
 					BuildType::Id const TOWN_HALL = 10;
 
-					colony_construct(c, CARPENTERS_SHOP, 0);
-					colony_construct(c, TREE_1, 1);
-					colony_construct(c, TREE_3, 2);
-					colony_construct(c, TREE_1, 3);
-					colony_construct(c, TREE_1, 4);
+					set_build(c, 0, CARPENTERS_SHOP);
+					set_build(c, 1, TREE_1);
+					set_build(c, 2, TREE_3);
+					set_build(c, 3, TREE_1);
+					set_build(c, 4, TREE_1);
 
-					colony_construct(c, TREE_1, 5);
-					colony_construct(c, TREE_1, 6);
-					colony_construct(c, TREE_1, 7);
-					colony_construct(c, TREE_1, 8);
-					colony_construct(c, TREE_2, 9);
+					set_build(c, 5, TREE_1);
+					set_build(c, 6, TREE_1);
+					set_build(c, 7, TREE_1);
+					set_build(c, 8, TREE_1);
+					set_build(c, 9, TREE_2);
 
-					colony_construct(c, TREE_2, 10);
-					colony_construct(c, TREE_2, 11);
-					colony_construct(c, TOWN_HALL, 12);
-					colony_construct(c, COAST, 13);
-					colony_construct(c, FENCE, 14);
+					set_build(c, 10, TREE_2);
+					set_build(c, 11, TREE_2);
+					set_build(c, 12, TOWN_HALL);
+					set_build(c, 13, COAST);
+					set_build(c, 14, FENCE);
 
 					for (auto dir: ALL_DIRS) {
 						auto dest = get_coords(t) + vec4dir(dir);
