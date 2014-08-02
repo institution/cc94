@@ -873,11 +873,11 @@ namespace col {
 				default:
 					put("Usage: move <dx> <dy>");
 					break;
-				case 3:
-					if (envgame.has_defender(sel)) {
+				case 3:					
+					if (auto u = misc::get_unassigned_unit(env, env.get_terr(sel))) {
 						exec(OrderMove(							
-							envgame.get_current_player().id,
-							envgame.get_defender(envgame.get_terr(sel)).id,
+							env.get_current_player().id,
+							u->id,
 							dir4vec(
 								Coords(
 									stoi(es.at(1)), // dx

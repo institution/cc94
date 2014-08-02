@@ -41,6 +41,24 @@ namespace col{
 			}
 			return rs;
 		}
+		
+		int get_yield(Env const& env, Build const& b) {
+			int num = 0;
+			for (auto& u: b.units) {				
+				int base = env.get_yield(*u, b.get_proditem());
+				int prodnum = b.get_prod() * base;
+				num += prodnum;
+			}
+			return num;			
+		}
+		
+		Unit const* get_unassigned_unit(Env const& env, Terr const& terr) {			
+			for (auto& u: terr.units) {
+				if (!u->is_working()) return u;
+			}
+			return nullptr;
+		}
+		
 
 	}
 	

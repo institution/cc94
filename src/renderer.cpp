@@ -684,7 +684,7 @@ namespace col {
 				else 
 				if (b.under_construction()) 
 				{
-					// number of produced items
+					
 					
 					
 					
@@ -719,6 +719,33 @@ namespace col {
 						}
 					}	
 				);
+				
+				// number of produced items
+				if (int y = misc::get_yield(env, b)) {
+					auto& item_tex = res(ICON, get_item_icon_id(b.get_proditem()));
+					auto item_dim = get_dim(item_tex);
+					
+					// item icon
+					render_sprite(win, build_pos, item_tex);
+								
+					// number
+					render_text_line(
+						win,
+		
+						build_pos + v2i(item_dim[0], 0),
+						v2i(0, item_dim[1]),
+						{0, 0.5},
+		
+						res_pixfont("tiny.png"),
+						{255,255,255,255},
+						{0,0,0,255},
+							
+						std::to_string(y)
+					);
+				}
+				
+				
+				
 				
 				// hover on building -- show label with building name (select buildplace)
 				con.on(Event::Hover, build_pos, build_dim,
@@ -1548,10 +1575,7 @@ namespace col {
 
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				//render_terr(win, Coords(i, j), env, env.get_terr(Coords(i,j)), pos,
-				//	delta 
-				//);
-				
+		
 				auto coords = Coords(i,j);
 				
 				if (env.in_bounds(coords)) {
@@ -1715,14 +1739,10 @@ namespace col {
 					BIOME_NAMES.at((t.biome)) % phys_info
 			);
 
-
-
-			if (t.units.size()) {
-				Unit const& u = env.get_defender(t);
-
+			if (Unit const* u = misc::get_unassigned_unit(env, t)) {
 				info += boost::str(
 					format("\n%||\nTime left: %||/%||") %
-						u.get_name() % int(u.time_left) % int(TIME_UNIT)
+						u->get_name() % int(u->time_left) % int(TIME_UNIT)
 				);
 
 			}

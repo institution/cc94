@@ -33,7 +33,7 @@
 
 namespace col {
 
-	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPRSTUWXYZ[\\]^_`vabcdefghijklmnoprstuwxyz{|}@~\r\b";
+	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 
 	int const ActiveNone = 0;
@@ -100,8 +100,9 @@ namespace col {
 
 
 		// selected square
-		Coords sel;
+		Terr::Id sel;
 
+		// selected unit
 		Unit::Id sel_unit_id{0};
 
 

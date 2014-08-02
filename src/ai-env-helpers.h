@@ -15,6 +15,12 @@ namespace col{
 		Items const& get_all_items(Env const& env);
 		Items get_proditems(Env const& env, Field const& f);
 
+		Unit const* get_unassigned_unit(Env const& env, Terr const& terr);
+
+		int get_yield(Env const& env, Build const& b);
+
+
+
 	}
 
 }

@@ -159,23 +159,21 @@ namespace col{
 
 
 
+	// game event like: "Colony Abc builds Warehouse"
+	struct Msg{
+		Player const* player{nullptr};
+		Terr const* terr{nullptr};
+		string msg{""};
+
+		Msg(Player const& p, Terr const& t, string const& msg):
+			player(&p), terr(&t), msg(msg)
+		{}
 
 
 
-/*
-	bool change_place(Unit & u, Place & dest) {
-			orig = u.get_place()
-			dest
+	};
 
-
-			// distance
-			dist = distance(orig, dest)
-
-
-		}
-*/
-
-
+	using Msgs = vector<Msg>;
 
 
 	using Id = uint32;
@@ -210,6 +208,12 @@ namespace col{
 
 
 	struct Env{
+
+		Msgs msgs;
+
+		void add_message(Player const& p, Terr const& t, string const& m) {
+			msgs.push_back(Msg(p,t,m));
+		}
 
 		// const
 		shared_ptr<TerrTypes> tts;
@@ -461,7 +465,10 @@ namespace col{
 				c.add(ItemFood, 20);
 				auto& u = create<Unit>(get<UnitType>(101), *p);
 				init(u,t);
+				add_message(*p, t, "population growth");
 			}
+
+
 
 			// construction
 			for (auto& b: c.builds) {
@@ -508,7 +515,7 @@ namespace col{
 		}
 
 
-		int get_yield(Unit const& u, Item const& item) {
+		int get_yield(Unit const& u, Item const& item) const {
 			return 3;
 		}
 
@@ -1305,6 +1312,8 @@ namespace col{
 					if (b.get_type().id == 16) {
 						c.max_storage += 100;
 					}
+
+					add_message(*get_control(t), t, "building constructed");
 				}
 			}
 
