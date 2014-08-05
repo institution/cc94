@@ -19,7 +19,9 @@ namespace col{
 
 		int get_yield(Env const& env, Build const& b);
 
+		bool can_move(Env const& env, Player const& p, Unit const& u);
 
+		Unit const* get_next_to_move(Env const& env, Player const& p);
 
 	}
 

@@ -58,10 +58,20 @@ namespace col{
 			}
 			return nullptr;
 		}
-		/*
-		Unit * get_next_to_move() {
-			
-		}*/
+		
+		bool can_move(Env const& env, Player const& p, Unit const& u) {
+			return u.get_player() == p and u.get_time_left() and !u.is_working();
+		}
+		
+		Unit const* get_next_to_move(Env const& env, Player const& pl) {
+			for (auto& p: env.get_cont<Unit>()) {
+				Unit const& u = p.second;
+				if (can_move(env, pl, u)) {
+					return &u;
+				}				
+			}
+			return nullptr;
+		}
 		
 
 	}

@@ -167,7 +167,7 @@ namespace col{
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
 		Unit& set_type(UnitType const& t) { type = &t; return *this; }
 
-		bool is_working() {
+		bool is_working() const {
 			return field or build;
 		}
 

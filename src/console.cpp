@@ -788,6 +788,14 @@ namespace col {
 							)
 						)
 					));
+					
+					if (auto u = misc::get_next_to_move(env, env.get_current_player())) {
+						sel_unit_id = u->id;
+					}
+					else {
+						sel_unit_id = 0;
+					}
+					
 					break;
 			}
 		}
