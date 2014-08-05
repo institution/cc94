@@ -199,12 +199,17 @@ int main(int argc, char* argv[])
 	auto last_env = env.mod - 1;
 	auto last_con = con.mod - 1;
 
+	sf::Clock clock;
+	auto last_t = clock.getElapsedTime().asSeconds();
 	while (app.isOpen())
 	{
-
-		if ((env.mod != last_env) || (con.mod != last_con)) {
+		
+		
+		if ((env.mod != last_env) || (con.mod != last_con) || (last_t + 0.1 > clock.getElapsedTime().asSeconds())) {
 			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
-
+			con.time = clock.getElapsedTime().asSeconds();
+			last_t = con.time;
+			
 			render(app, env, con);
 
 			last_env = env.mod;
@@ -214,6 +219,9 @@ int main(int argc, char* argv[])
 		handle_events(app, con);
 
 	}
+	
+	
+	
 
 	/*{
 		ofstream fo(fname, std::ios::binary);

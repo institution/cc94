@@ -36,9 +36,6 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 
-	int const ActiveNone = 0;
-	int const ActiveMsg = 1;
-	int const ActiveCmd = 2;
 
 
 
@@ -77,6 +74,8 @@ namespace col {
 
 		uint32 mod;
 
+		float time{0.0f};
+
 		// ai
 		using Ais = unordered_map<Player::Id, Ai>;
 
@@ -92,6 +91,14 @@ namespace col {
 
 		void select_terr(int x, int y) {
 			sel = Coords(x,y);
+		}
+
+		Terr* get_sel_terr() {
+			auto& env = envgame;
+			if (sel_unit_id) {
+				return &env.get_terr(env.get<Unit>(sel_unit_id));
+			}
+			return nullptr;
 		}
 
 		void unselect_terr(int x, int y) {
@@ -140,20 +147,35 @@ namespace col {
 
 		// EVENTS --------------
 
+		enum struct Dev {
+			None, Mouse, Keyboard
+		};
+
+		enum struct Mod {
+			None, Alt, Ctrl, Shift
+		};
+
 		enum struct Event {
-			Press, Release, Hover
+			Press, Release, Hover, Char
 		};
 
 		enum struct Button{
-			None, Left, Right
+			None, Left, Right,
 		};
 
+		using Key = sf::Keyboard::Key;
+
+
+
 		struct HotSpot{
+			Dev d{Dev::Mouse};
 			Event t{Event::Press};
 			Button b{Button::None};
+			Key k{Key::Unknown};
 			Box2 box{0,0,0,0};
 			bool anywhere{0};
 			std::function<void()> callback;
+			uint32 u{0};
 
 			HotSpot() {}
 
@@ -167,7 +189,37 @@ namespace col {
 				box(box), callback(callback),
 				t(t), b(b), anywhere(anywhere) {}
 
+			HotSpot(
+				std::function<void()> callback,
+				Event t,
+				Key k
+			):
+				callback(callback),
+				d(Dev::Keyboard), t(t), k(k), anywhere(1) {}
+
+			HotSpot(
+				std::function<void()> callback,
+				Event t
+			):
+				callback(callback),
+				d(Dev::Keyboard), t(t), anywhere(1) {}
+
+			HotSpot& set_unicode(uint32 uni) { u = uni; return *this; }
+
 		};
+
+
+
+		void on(Event t, uint32 uni, std::function<void()> cl) {
+			hts.push_back(HotSpot(cl, t).set_unicode(uni));
+		}
+
+
+		//
+		void on(Event t, Key k, std::function<void()> cl) {
+			hts.push_back({cl, t, k});
+		}
+
 
 		// ----------- callback
 
@@ -243,12 +295,14 @@ namespace col {
 
 
 
-		bool handle_event(v2i const& pos, Event type, Button button) {
+		bool handle_event(Dev dev, v2i const& pos, Event type, Button button, Key key, uint32 uni=0) {
 			for (int i = hts.size(); 0 < i; --i) {
 				auto& p = hts[i-1];
-				if (p.t == type
+				if (p.d == dev and p.t == type
 					and (p.anywhere or overlap(p.box, pos))
 					and (p.b == Button::None or p.b == button)
+					and (p.k == Key::Unknown or p.k == key)
+					and (p.u == 0 or p.u == uni)
 				) {
 					p.callback();
 					return true;
@@ -260,9 +314,8 @@ namespace col {
 
 
 
-
 		// is console active - keyboard focus
-		int active{ActiveMsg};
+		int active{false};
 
 		int sel_colony_slot_id{-1};
 
@@ -326,6 +379,41 @@ namespace col {
 		void command(string const& line);
 		void do_command(string const& line);
 
+
+
+		void history_up() {
+			if (chi == history.end()) {
+				chi = history.begin();
+			}
+
+			if (history.size()) {
+				buffer = *chi;
+				++chi;
+
+				modified();
+			}
+		}
+
+		void history_down() {
+			if (chi == history.begin()) {
+				chi = history.end();
+			}
+
+			if (history.size()) {
+				--chi;
+				buffer = *chi;
+
+				modified();
+			}
+		}
+
+		void set_active(bool a) {
+			active = a;
+		}
+
+		bool is_active() const {
+			return active;
+		}
 
 	};
 

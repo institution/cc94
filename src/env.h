@@ -215,6 +215,10 @@ namespace col{
 			msgs.push_back(Msg(p,t,m));
 		}
 
+		void clear_messages() {
+			msgs.clear();
+		}
+
 		// const
 		shared_ptr<TerrTypes> tts;
 		shared_ptr<BuildTypes> bts;
@@ -402,29 +406,14 @@ namespace col{
 				static_cast<Env const*> (this) -> get<T>(id) );
 		}
 
-
-
-		//template <typename T>
-		//auto find(typename T::Id const& id) -> get_cont<T>()::iterator {
-		//	return get_cont<T>().find(id);
-		//}
-
-		//template <typename T>
-		//auto find(typename T::Id const& id) const -> decltype(get_cont<T>().find(id)) {
-		//	return get_cont<T>().find(id);
-		//}
-
 		template <typename T>
 		bool exist(typename T::Id const& id) {
 			return get_cont<T>().count(id);
 		}
 
-
-
 		bool in_progress() const {
 			return state == 1;
 		}
-
 
 		void ready(Player const& p, bool exec=1) {
 
@@ -493,6 +482,9 @@ namespace col{
 		}
 
 		void turn() {
+			// clear old messages
+			clear_messages();
+
 			// time progress
 			++turn_no;
 
@@ -635,88 +627,10 @@ namespace col{
 				}
 			}
 
-			/*if (supply != -1) {
-				if (supply) {
-					supply -= 1;
-				}
-				else {
-					hp -= 1;
-				}
-			}*/
-
-		}
-
-		/*void switch_next_player() {
-
-			if (curr_player == nullptr) {
-				throw runtime_error("curr_player is nullish: cannot end turn");
-			}
-
-			auto p = players.find(curr_player->id + 1);
-			if (p != players.end()) {
-				curr_player = &(*p).second;
-			}
-			else {
-				curr_player = &players.at(0);
-				turn();
-			}
-
-			++mod;
-		}*/
-
-
-
-
-
-
-
-		/*
-		void move_in(Terr const& loc, Build const& obj) {
-			 obj.place = &loc;
-		}
-		void move_in(Unit const& loc, Unit const& obj) {
-			 obj.place = &loc;
-		}
-		void move_in(Unit const& loc, Cargo const& obj)	{			 {
-			 obj.place = &loc;
-		}
-		void move_in(Build const& loc, Unit const& obj) {
-			//if (loc.get_free_space() >= obj.get_size()) {
-			//	loc.sub_free_space(obj.get_size());
-				obj.place = &loc;
-			//	return NOT_ENOUGH_SPACE;
-			//}
-			//else {
-			//	return OK;
-			//}
-		}
-		void move_in(Build const& loc, Cargo const& obj) {
-			 obj.place = &loc;
 		}
 
 
-		void move_out(Unit const& obj, Terr const& loc) {
-			obj.place = nullptr;
-		}
-		void move_out(Build const& obj, Terr const& loc) {
-			obj.place = nullptr;
-		}
 
-		void move_out(Unit const& obj, UNit const& loc) {
-
-			obj.place = nullptr;
-		}
-		void move_out(Cargo const& obj, Unit const& loc) {
-			obj.place = nullptr;
-		}
-
-		void move_out(Unit const& obj, Build const& loc) {
-			obj.place = nullptr;
-		}
-		void move_out(Cargo const& obj, Build const& loc) {
-			obj.place = nullptr;
-		}
-		*/
 
 		bool in_bounds(Coords const& p) const;
 
@@ -852,8 +766,23 @@ namespace col{
 			}
 		}
 
+
+		void order(){
+			//
+
+		}
+
+		/*
+		int get_improvment_cost(Improv const& im) {
+			// zero mean immposible to build
+			//im.get_base_cost()
+		}*/
+
 		bool build_road(Unit &u, bool exec=1) {
 			/* Build road on land terrain square (cost ~ 1.5 turns)
+
+
+
 			 */
 
 			// unit checks

@@ -37,8 +37,8 @@ namespace col {
 	};
 
 
-
-	auto const biome_icons_ids = array<int,10>({0,1,2,3,4,5,6,7,8,10});
+	// 
+	auto const biome_icons_ids = array<int,10>({0,1,4,3,2,6,5,7,8,10});
 
 	inline
 	int get_biome_icon_id(Biome const& b) {

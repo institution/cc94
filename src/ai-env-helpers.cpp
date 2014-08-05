@@ -58,6 +58,10 @@ namespace col{
 			}
 			return nullptr;
 		}
+		/*
+		Unit * get_next_to_move() {
+			
+		}*/
 		
 
 	}

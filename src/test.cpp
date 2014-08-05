@@ -35,6 +35,12 @@ using roll::replay;
  * sell/buy in europe 
  * clear forest (add lumber to colony)
  *
+ 
+ 
+ ~ on/off console
+ 
+ 
+ 
  */
 
 

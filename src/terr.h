@@ -160,6 +160,7 @@ namespace col{
 			return units.size();
 		}
 
+		// features
 		bool has(Phys const& p) const {
 			return phys & p;
 		}

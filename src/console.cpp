@@ -56,6 +56,8 @@ namespace col {
 	}
 
 
+
+	
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
 		auto type = event.type;
 
@@ -66,102 +68,10 @@ namespace col {
 			
 			auto code = event.key.code;
 			
-			
-			if (mode == Mode::AMERICA and active != ActiveCmd) {
-				// global map keybinds	
-				string cmd;
-				switch (code) {
-					case sf::Keyboard::Q:
-						cmd = "move -1 -1";
-						break;					
-					case sf::Keyboard::W:
-						cmd = "move 0 -1";
-						break;
-					case sf::Keyboard::E:
-						cmd = "move 1 -1";
-						break;
-					case sf::Keyboard::A:
-						cmd = "move -1 0";
-						break;
-					case sf::Keyboard::D:
-						cmd = "move 1 0";
-						break;
-					case sf::Keyboard::Z:
-						cmd = "move -1 1";
-						break;
-					case sf::Keyboard::X:
-						cmd = "move 0 1";
-						break;
-					case sf::Keyboard::C:
-						cmd = "move 1 1";
-						break;			
-					case sf::Keyboard::Return:
-						cmd = "enter";
-						break;
-					default:
-						break;
-				}
-				if (cmd.size()) {
-					try {
-						command(cmd);
-					}
-					catch (Error const& e) {
-						put(e.what());
-					}
-					modified();
-				}
-			}
-			else if (mode == Mode::COLONY and active != ActiveCmd) {
-				// colony view keybinds
-				string cmd;
-				switch (code) {
-					case sf::Keyboard::PageUp:
-						cmd = "nextitem";
-						break;			
-					case sf::Keyboard::Return:
-						cmd = "exit";
-						break;
-					default:
-						break;
-				}
-				if (cmd.size()) {
-					try {
-						command(cmd);
-					}
-					catch (Error const& e) {
-						put(e.what());
-					}
-					modified();
-				}
-			}
-			else if (active == ActiveCmd) {
-				// console keybinds
-				if (code == sf::Keyboard::Up) {
-
-					if (chi == history.end()) {
-						chi = history.begin();
-					}
-
-					if (history.size()) {
-						buffer = *chi;
-						++chi;
-
-						modified();
-					}
-				}
-			}
-			
-			/*if (mode == Mode::AMERICA)
-			{
-				if (event.key.code == sf::Keyboard::Up) {
-				
-				sel[0] = 
-				sel[1] = 
-
+			if (handle_event(Dev::Keyboard, v2i(0,0), Event::Press, Button::None, code)) {
 				modified();
-			}*/
-
-
+			}
+			
 			if (event.key.code == sf::Keyboard::Tilde or event.key.code == sf::Keyboard::Unknown) {
 
 			}
@@ -169,20 +79,19 @@ namespace col {
 		else
 		if (type == sf::Event::TextEntered) {
 
-			if (event.text.unicode == u'`') {
-				active = (active + 1) % 3;				
+			if (handle_event(Dev::Keyboard, v2i(0,0), Event::Char, Button::None, Key::Unknown, event.text.unicode)) {
 				modified();
 			}
-			else {
-				if (active == ActiveCmd) {
+			else {			
+				if (is_active()) {
 					handle_char(event.text.unicode);
 				}
 			}
+			
 		}
 		else			
 		if (type == sf::Event::MouseMoved)			
-		{
-			
+		{			
 			sf::Vector2f mp = app.mapPixelToCoords(
 				sf::Vector2i(
 					event.mouseMove.x,
@@ -190,15 +99,13 @@ namespace col {
 				)
 			);
 			
-			if (handle_event(v2i(mp.x, mp.y), Event::Hover, Button::None)) {
+			if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Hover, Button::None, Key::Unknown)) {
 				modified();
 			}
 				
 		}		
-		else
-		if (type == sf::Event::MouseButtonPressed)
-		{
-			
+		else if (type == sf::Event::MouseButtonPressed)
+		{			
 			sf::Vector2f mp = app.mapPixelToCoords(
 				sf::Vector2i(
 					event.mouseButton.x,
@@ -208,27 +115,18 @@ namespace col {
 			
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-				if (handle_event(v2i(mp.x, mp.y), Event::Press, Button::Left)) {
+				if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Press, Button::Left, Key::Unknown)) {
 					modified();
 				}
 			}
 			
 			if (event.mouseButton.button == sf::Mouse::Right)
 			{
-				if (handle_event(v2i(mp.x, mp.y), Event::Press, Button::Right)) {
+				if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Press, Button::Right, Key::Unknown)) {
 					modified();
 				}				
 			}
 			
-			
-			/*if (mode == Mode::AMERICA and event.mouseButton.button == sf::Mouse::Right)
-			{
-				
-				sel[0] = (mp.x - ly.map.pos[0]) / ly.TERR_W;
-				sel[1] = (mp.y - ly.map.pos[1]) / ly.TERR_H;
-
-				modified();
-			}*/
 		}
 	}
 
@@ -328,7 +226,7 @@ namespace col {
 		auto& cmd = es[0];
 
 		put(line);
-
+		auto& con = *this;
 		auto& env = envgame;
 		
 		if (cmd == "list-players") {
@@ -575,11 +473,16 @@ namespace col {
 					break;
 				}
 				case 3: {
-					auto& c = envgame.get<UnitType>(std::stoi(es.at(1))); // type_id
-					auto& p = envgame.get<Player>(std::stoi(es.at(2)));  // player_id
-					auto& t = envgame.get_terr(Coords(sel[0], sel[1]));  // coords
-					auto& u = envgame.create<Unit>(c, p);
-					envgame.init(u, t);
+					auto& c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
+					auto& p = env.get<Player>(std::stoi(es.at(2)));  // player_id
+					auto& t = env.get_terr(Coords(sel[0], sel[1]));  // coords
+					auto& u = env.create<Unit>(c, p);
+					env.init(u, t);
+					if (compatible(u.get_travel(), LAND) and
+						!compatible(u.get_travel(), t.get_travel())) 
+					{
+						u.transported = true;
+					}
 					break;
 				}
 			}
@@ -696,9 +599,9 @@ namespace col {
 					put("Usage: build-road");
 					break;
 				case 1:
-					if (envgame.has_defender(sel)) {
+					if (sel_unit_id) {
 						auto ret = envgame.build_road(
-							envgame.get_defender(envgame.get_terr(sel))
+							env.get<Unit>(con.sel_unit_id)
 						);
 						put(str(format("ret = %||") % ret));
 					}
@@ -873,22 +776,18 @@ namespace col {
 				default:
 					put("Usage: move <dx> <dy>");
 					break;
-				case 3:					
-					if (auto u = misc::get_unassigned_unit(env, env.get_terr(sel))) {
-						exec(OrderMove(							
-							env.get_current_player().id,
-							u->id,
-							dir4vec(
-								Coords(
-									stoi(es.at(1)), // dx
-									stoi(es.at(2))  // dy
-								)
+				case 3:
+					auto& u = env.get<Unit>(sel_unit_id);
+					exec(OrderMove(							
+						env.get_current_player().id,
+						u.id,
+						dir4vec(
+							Coords(
+								stoi(es.at(1)), // dx
+								stoi(es.at(2))  // dy
 							)
-						));
-					}
-					else {
-						put("no unit selected");
-					}
+						)
+					));
 					break;
 			}
 		}

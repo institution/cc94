@@ -12,6 +12,7 @@ namespace col {
 	
 	using Event = Console::Event;
 	using Button = Console::Button;
+	using Key = Console::Key;
 	
 
 	Layout const ly(SCREEN_W, SCREEN_H);
@@ -993,114 +994,6 @@ namespace col {
 		}
 		
 		
-			
-			/*
-			if (unit.place->place_type() != PlaceType::Terr) {
-				
-				// produced item
-				auto const& item_tex = res(ICON, get_item_icon_id(unit.workitem));
-				auto const& item_dim = get_dim(item_tex);
-				v2i item_pos;
-				
-				
-				
-				if (unit.workplace->place_type() == PlaceType::Build) {
-					
-					
-					// unit on building
-					int i = col.index_of(*static_cast<Build const*>(unit.workplace));
-
-					//auto& build = col.builds.at(i);
-					//auto& build_tex = res(BUILD, build.get_type_id());
-					//auto build_dim = get_dim(build_tex);
-					
-					auto const& build_pos = ly.city.pos + pixs.at(i);
-					auto const& build_end = ly.city.pos + pixs.at(i) + dims.at(i);
-					
-					// unit
-					unit_dim = get_dim(unit_tex);					
-					unit_pos = build_end - v2i(num_workers.at(i)*7 + 5, -1) - unit_dim;
-					
-					// item
-					item_pos = build_pos + v2i(num_workers.at(i) * 7, -1);
-					
-					num_workers.at(i) += 1;
-										
-					
-					// selection
-					sel_pos = unit_pos - v2i(1,1);;
-					sel_dim = unit_dim + v2i(2,2);
-					
-					
-				}
-				else  {
-					// unit on field
-					assert(unit.workplace->place_type() == PlaceType::Terr);
-					auto const& t  = *static_cast<Terr *>(unit.workplace);
-					auto const& cen = env.get_coords(t) - env.get_coords(terr) + Coords(1,1);
-
-					// sel
-					sel_pos = ly.city_fields.pos + v2i(cen[0], cen[1]) * TILE_DIM;
-					sel_dim = v2i(TILE_DIM, TILE_DIM);;
-										
-					// unit
-					unit_pos = sel_pos + v2i(TILE_DIM/2, 0);
-					unit_dim = v2i(TILE_DIM/2, TILE_DIM);
-					
-					// item		
-					item_pos = sel_pos;
-					
-				}
-				
-				if (unit.workitem) {
-					auto num = unit.workplace->get_yield(unit.workitem, 0);
-
-					// render produced item
-					render_sprite(win,
-							item_pos,
-							item_dim + v2i(2,2),
-							item_tex					
-					);
-					for (int i=0; i < num; ++i) {
-						render_sprite(win,
-							item_pos + v2i(i*3,0),
-							item_dim + v2i(2,2),
-							item_tex					
-						);
-					}
-
-					// number of produced items
-					render_text(
-						win,
-						item_pos,
-						res_pixfont("tiny.png"),
-						std::to_string(num),
-						{0,0,0,255},
-						0
-					);
-
-				}
-				
-			}
-			else {
-				// unit on fence
-				int i = 14;
-				auto& pix = pixs[i];				
-				
-				// unit
-				unit_pos = pix + v2i(num_workers.at(i)*5 + 10, 15);
-				unit_dim = get_dim(unit_tex);
-				num_workers.at(i) += 1;
-				
-				// sel
-				sel_pos = unit_pos;
-				sel_dim = unit_dim;
-						
-
-			}
-			*/
-			
-		
 
 		// render storage
 
@@ -1227,6 +1120,44 @@ namespace col {
 
 
 	}
+	
+	
+	void render_units(sf::RenderWindow &win,
+		Vector2<int> const& pos, 
+		Vector2<int> const& dim, 
+		Env const& env, 
+		Terr const& terr) 
+	{
+		int i = 0;
+		int j = 0;
+		v2i unit_dim = ly.terr_dim;
+		
+		for (auto& p: terr.units) {
+			auto& unit = *p;			
+			if (!unit.is_working()) {
+
+				auto& unit_tex = res(ICON, get_icon_id(unit));
+				v2i unit_pos = pos + vmul(unit_dim, v2i(i,j));
+				
+				v2i sel_pos = unit_pos;
+				v2i sel_dim = unit_dim;
+
+				// render unit
+				render_sprite(win, 
+					calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+					unit_tex
+				);
+				
+				if ((i-1) * unit_dim[0] >= dim[0]) {
+					i = 0;
+					++j;
+				}
+				else {
+					++i;
+				}
+			}
+		}
+	}
 
 	Terr const& get_terr_ext(Env const& env, Coords const& p) {
 		Coords q;
@@ -1342,7 +1273,7 @@ namespace col {
 	) {
 		auto b = get(loc, d).biome;
 		
-		render_sprite(win, pix, res(DIFFUSE, b + offset) );
+		render_sprite(win, pix, res(DIFFUSE, get_biome_icon_id(b) + offset) );
 		
 	}
 
@@ -1375,6 +1306,10 @@ namespace col {
 		auto mountain = (terr.get_alt() == MOUNTAIN_LEVEL);
 
 		
+		if (terr.biome == BiomeArctic) {
+			auto x = 2 + 2;			
+		}
+		
 		// render biome
 		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
 
@@ -1384,6 +1319,8 @@ namespace col {
 		render_diffuse_from(win, pix, loc, Dir::X, 100);
 		render_diffuse_from(win, pix, loc, Dir::A, 150);
 
+		
+		
 
 		// coast
 		// 01
@@ -1511,57 +1448,128 @@ namespace col {
 	using sf::RenderWindow;
 
 
-	void render_unit(sf::RenderWindow &win,
+	
+	
+	void render_stack(sf::RenderWindow &win,
 			Console & con,
-			Coords const& pos,
+			v2i const& pos,
 			Env const& env,
-			Terr const& terr,
-			Vector2<int> const& map_pix,
-			Coords const& delta)
+			Terr const& terr)
 	{
-		int x = (pos[0] - delta[0]) * ly.TERR_W + map_pix[0];
-		int y = (pos[1] - delta[1]) * ly.TERR_H + map_pix[1];
-		auto pix = v2i(x,y);
-
-		// colony icon
+		auto coords = env.get_coords(terr);
+		
+		bool sel_unit_here = 0;
+		for (auto u: terr.units) {
+			if (u->id == con.sel_unit_id) {	
+				sel_unit_here = 1;
+			}
+		}
+		
+		// first render colony icon
 		if (terr.has_colony()) {
 			// render colony
-			render_sprite(win, pix[0], pix[1], res(ICON, 4));
-			
+			render_sprite(win, pos[0], pos[1], res(ICON, 4));
+						
 			// left click on colony (on map) -- enter colony screen
-			con.on(Event::Press, Button::Left, pix, v2i(TILE_DIM, TILE_DIM),
-				[&con, pos](){ 
-					con.command(str(format("sel %|| %||") % pos[0] % pos[1]));
+			con.on(Event::Press, Button::Left, pos, v2i(TILE_DIM, TILE_DIM),
+				[&con, coords](){ 
+					con.command(str(format("sel %|| %||") % coords[0] % coords[1]));
 					con.command("enter"); 
 				}
 			);
+			
+			// colony flag
+			if (auto p = env.get_control(terr)) {
+				// render owner flag over colony (unit in garrison)
+				render_sprite(win, pos[0] + 5, pos[1], res(ICON, p->get_flag_id()));
+			}
+			
 		}
-
-		// unit or colony flag
-		if (terr.has_units()) {
+		else if (terr.has_units() and !sel_unit_here) {
+			// unit
 			auto& unit = env.get_defender(terr);
 
-			// tile owner
-			auto& player = unit.get_player();
+			auto icon = res(ICON, unit.get_icon());
+			// render unit in field
+			render_shield(win, pos[0], pos[1], unit.get_player().get_color());
+			render_sprite(win, 
+				calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
+				icon
+			);
+			
+			// left click on unit -- select unit
+			auto unit_id = unit.id;
+			con.on(Event::Press, Button::Left, pos, ly.terr_dim, 				
+				[&con,unit_id](){
+					con.sel_unit_id = unit_id;  
+				}
+			);
+			
+		}
+		
+		
+		// now render selected unit
+		
+		for (auto u: terr.units) {
+			if (u->id == con.sel_unit_id) {	
 
-			if (terr.has_colony()) {
-				// render owner flag over colony (unit in garrison)
-				render_sprite(win, pix[0] + 5, pix[1], res(ICON, player.get_flag_id()));
-				
-			}
-			else {
+				auto icon = res(ICON, u->get_icon());
 
-				auto tile_dim = v2i(TILE_DIM, TILE_DIM);
-				auto icon = res(ICON, unit.get_icon());
-				//cerr << "rend unit at " << pix << endl;
 				// render unit in field
-				render_shield(win, pix[0], pix[1], player.get_color());
+				if (int(con.time * 10.0) % 10 >= 5) {
+				
+					render_shield(win, pos[0], pos[1], u->get_player().get_color());
+				}
+				
+				
 				render_sprite(win, 
-					calc_align(Box(pix, tile_dim), v2f(0.5, 0.5), get_dim(icon)), 
+					calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
 					icon
 				);
+				
+				con.on(Event::Press, Key::Numpad2,
+					[&con](){ con.command("move 0 1"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad8,
+					[&con](){ con.command("move 0 -1"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad5,
+					[&con](){ con.command("move 1 0"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad4,
+					[&con](){ con.command("move -1 0"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad3,
+					[&con](){ con.command("move 1 1"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad7,
+					[&con](){ con.command("move -1 -1"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad1,
+					[&con](){ con.command("move -1 1"); }
+				);
+				
+				con.on(Event::Press, Key::Numpad9,
+					[&con](){ con.command("move 1 -1"); }
+				);
+				
 			}
+
+		
 		}
+		
+		
+		
+		
+			
+		
+		
 	}
 
 
@@ -1592,12 +1600,7 @@ namespace col {
 						}
 					);
 					
-					// left click on unit -- select unit
-					con.on(Event::Press, Button::Left, pos, ly.terr_dim, 
-						[&con,coords](){
-							//con.sel = coords;  TODO
-						}
-					);
+					
 					
 				}
 				
@@ -1607,7 +1610,16 @@ namespace col {
 		
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				render_unit(win, con, Coords(i, j), env, env.get_terr(Coords(i,j)), pos, delta);
+				auto coords = Coords(i,j);
+				if (env.in_bounds(coords)) {
+
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2i(i,j));
+
+					auto& terr = env.get_terr(coords);
+
+					render_stack(win, con, pos, env, terr);
+
+				}
 			}
 		}
 
@@ -1739,13 +1751,15 @@ namespace col {
 					BIOME_NAMES.at((t.biome)) % phys_info
 			);
 
-			if (Unit const* u = misc::get_unassigned_unit(env, t)) {
-				info += boost::str(
-					format("\n%||\nTime left: %||/%||") %
-						u->get_name() % int(u->time_left) % int(TIME_UNIT)
-				);
+		}
+		
+		if (con.sel_unit_id) {
+			Unit const* u = &env.get<Unit>(con.sel_unit_id);
+			info += boost::str(
+				format("\n%||\nTime left: %||/%||") %
+					u->get_name() % int(u->time_left) % int(TIME_UNIT)
+			);
 
-			}
 		}
 		
 		//
@@ -1797,6 +1811,17 @@ namespace col {
 				[&con,cmd](){ con.command(cmd); }
 			);
 		}
+		
+		if (auto t = con.get_sel_terr()) {
+			render_units(win,
+				ly.pan.pos + v2i(0,100), 
+				ly.pan.dim, 
+				env, 
+				*t
+			); 
+		}
+		
+		
 	}
 
 	/*
@@ -2104,27 +2129,24 @@ namespace col {
 	}
 	*/
 
-	void render_cmd(sf::RenderWindow & app, col::Console const& con) {
-		if (con.active == ActiveNone) {
-			return;
-		}
-		
-		
-		auto ln = con.output.size();
-		v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
+	void render_cmd(sf::RenderWindow & app, col::Console & con) {
+		if (con.is_active()) {
 
-		for (auto& line: boost::adaptors::reverse(con.output)) {
-			pos = render_text(
-				app,
-				pos,
-				res_pixfont("tiny.png"),
-				line + '\r',
-				{0,0,0,128},
-				0
-			);
-		}
+			auto ln = con.output.size();
+			v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
 
-		if (con.active == ActiveCmd) {
+			for (auto& line: boost::adaptors::reverse(con.output)) {
+				pos = render_text(
+					app,
+					pos,
+					res_pixfont("tiny.png"),
+					line + '\r',
+					{0,0,0,128},
+					0
+				);
+			}
+
+		
 			render_text(
 				app,
 				ly.scr.pos,
@@ -2133,6 +2155,29 @@ namespace col {
 				{0,0,0,0},
 				0
 			);
+				
+			// deactivate
+			con.on(Event::Char, u'`', [&con](){
+				con.set_active(false);
+			});
+				
+			// history up
+			con.on(Event::Press, Key::Up, [&con](){
+				con.history_up();
+			});
+			
+			// history down
+			con.on(Event::Press, Key::Down, [&con](){
+				con.history_down();
+			});
+			
+			
+		}
+		else {
+			// activate
+			con.on(Event::Char, u'`', [&con](){
+				con.set_active(true);
+			});
 		}
 
 	}
