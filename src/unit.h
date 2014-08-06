@@ -134,7 +134,7 @@ namespace col{
 			id(id),
 			type(&type),
 			player(&player),
-			time_left(6),
+			time_left(TIME_UNIT),
 			space_left(type.slots)
 		{}
 
@@ -154,6 +154,7 @@ namespace col{
 		float get_attack() const { return type->get_attack(); }
 		float get_combat() const { return type->get_combat(); }
 		float get_extend() const { return extend; }
+		bool get_transported() const { return transported; }
 		uint8 const& get_time_left() const { return time_left; }
 		Order::type const& get_order() const { return order; }
 		int get_icon() const { return type->icon; }

@@ -63,17 +63,37 @@ namespace col{
 			return u.get_player() == p and u.get_time_left() and !u.is_working();
 		}
 		
-		Unit const* get_next_to_move(Env const& env, Player const& pl) {
+		Unit const* get_next_to_move(Env const& env, Player const& pl, Unit const* cur) {
+			if (cur and can_move(env, pl, *cur)) {
+				return cur;
+			}
+			
 			for (auto& p: env.get_cont<Unit>()) {
 				Unit const& u = p.second;
 				if (can_move(env, pl, u)) {
 					return &u;
 				}				
 			}
+			
 			return nullptr;
 		}
 		
-
+		
+		Unit::Id get_next_to_move_id(Env const& env, Player const& pl, Unit::Id cur_id) {
+			if (cur_id and can_move(env, pl, env.get<Unit>(cur_id))) {
+				return cur_id;
+			}
+			
+			for (auto& p: env.get_cont<Unit>()) {
+				Unit const& u = p.second;
+				if (can_move(env, pl, u)) {
+					return u.id;
+				}				
+			}
+			
+			return 0;
+		}
+		
 	}
 	
 }

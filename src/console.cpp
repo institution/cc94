@@ -431,6 +431,7 @@ namespace col {
 				case 1: {
 					envgame.start();
 					put("Game started!");
+					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
 					break;
 				}
 			}
@@ -443,10 +444,12 @@ namespace col {
 				}
 				case 2: {
 					exec(Ready(std::stoi(es.at(1))));
+					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
 					break;
 				}
 				case 1: {
 					exec(Ready(envgame.get_current_player().id));
+					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
 					break;
 				}
 			}
@@ -789,13 +792,8 @@ namespace col {
 						)
 					));
 					
-					if (auto u = misc::get_next_to_move(env, env.get_current_player())) {
-						sel_unit_id = u->id;
-					}
-					else {
-						sel_unit_id = 0;
-					}
-					
+					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player(), sel_unit_id);
+						 
 					break;
 			}
 		}

@@ -10,29 +10,6 @@
 namespace col{
 
 
-	struct TerrType{
-		using Id = uint8;
-
-		string name;
-		Id id;
-		uint8 movement_cost;
-		uint8 movement_type;
-		uint8 defensive;
-
-
-		TerrType() {}
-
-		TerrType(vector<string> const& xs) {
-			assert(xs.size() >= 16);
-
-			name = trim_copy(xs[0]);
-			id = stoi(xs[1]);
-			movement_cost = stoi(xs[2]) * SPACE_UNIT;
-			defensive = stoi(xs[3]);
-			movement_type = stoi(xs[15]);
-		}
-
-	};
 
 	using Alt = uint8;
 
@@ -179,19 +156,20 @@ namespace col{
 		Alt const& get_alt() const { return alt; }
 		Terr & set_alt(Alt const& alt) { this->alt = alt; return *this; }
 
-		Travel get_travel();
-		int8 get_movement_cost(Travel const& t);
+		Travel get_travel() const;
+		int8 get_movement_cost(Travel const& t) const;
+		int get_movement_cost() const;
 
 		bool is_water_tile() const {
 			return alt < 1;
 		}
 
-
+		int get_roughness() const;
 
 	// private
 		// max speed
-		int8 get_land_movement_cost();
-		int8 get_naval_movement_cost();
+		int8 get_land_movement_cost() const;
+		int8 get_naval_movement_cost() const;
 
 	};
 

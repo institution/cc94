@@ -63,18 +63,19 @@ namespace col {
 		}
 	}
 
+	v2i get_text_dim(PixFont const& font, string const& text);
+
 
 	int get_icon_id(Unit const& u) {
 		return u.get_icon();
 	}
 	
+	struct Text;
+	
 	v2i render_text(
 		sf::RenderWindow &win,
-		Vector2<int> const& pos,
-		PixFont const& font,
-		string const& text,
-		sf::Color const& bgcol,
-		int width
+		v2i const& pos,
+		Text const& text		
 	);
 
 	inline
@@ -92,6 +93,10 @@ namespace col {
 	
 	v2i vmul(v2i const& a, v2i const& b) {
 		return v2i(a[0]*b[0], a[1]*b[1]);
+	}
+	
+	v2i vmul(Coords const& a, v2i const& b) {
+		return v2i(int(a[0])*b[0], int(a[1])*b[1]);
 	}
 
 	string const
@@ -146,7 +151,9 @@ namespace col {
 
 	
 	v2i calc_align(Box const& par, v2f const& align, v2i const& dim);
+	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim);
 
+		
 	void preload(string const& d, uint const& i, Res::mapped_type const& tex) {
 		auto key = Res::key_type(d,i);
 		g_res[key] = tex;
@@ -295,6 +302,30 @@ namespace col {
 			)
 		);
 	}
+	
+	struct Text{
+		string text{""};
+		string font{"tiny.png"};
+		sf::Color fg{ColorWhite}, bg{ColorNone};
+		
+		string const& get_font() const { return font; }
+		Text & set_font(string const& font) { this->font = font; return *this; }
+		
+		sf::Color const& get_fg() const { return fg; }
+		Text & set_fg(sf::Color const& fg) { this->fg = fg; return *this; }
+		
+		sf::Color const& get_bg() const { return bg; }
+		Text & set_bg(sf::Color const& bg) { this->bg = bg; return *this; }
+
+		string const& get_text() const { return text; }
+		Text & set_text(string const& text) { this->text = text; return *this; }
+		
+		v2i get_dim() const { 
+			return get_text_dim(res_pixfont(font), text);		
+		}
+		
+		Text(string const& text): text(text) {}
+	};
 
 	void render_rect(sf::RenderWindow &win,
 			v2i const& pos, v2i const& dim,
@@ -443,7 +474,26 @@ namespace col {
 		);
 	}
 		
-	
+	v2i render_text2(
+		/*sf::RenderWindow &win,
+
+		v2i const& pos,
+		v2i const& dim,
+		v2i const& align,
+
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,
+
+		string const& text*/
+
+		sf::RenderWindow &win,
+		Vector2<int> const& pos,
+		PixFont const& font,
+		string const& text,
+		sf::Color const& bgcol,
+		int width	
+	);
 
 	
 	void render_area(
@@ -1019,30 +1069,24 @@ namespace col {
 			);
 
 			// render number
+			auto txt = Text(std::to_string(num)).set_font("tiny.png");
 			render_text(
 				win,
-				pix + v2i(0,1+12),
-				res_pixfont("tiny.png"),
-				std::to_string(num),
-				{0,0,0,0},
-				0
+				calc_align(v2i(pix[0], pix[1]+13), v2i(width,0), v2f(0.5, 0), txt.get_dim()),				
+				txt				
 			);
-
-
-
+			
 			pix[0] += width;
 		}
 		
 		// render EXIT button
 		render.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
 		
+		auto txt = Text("Ret").set_font("tiny.png");
 		render_text(
 			win,
 			ly.city_exit.pos + v2i(1,1),
-			res_pixfont("tiny.png"),
-			"Ret",
-			{0,0,0,0},
-			0
+			txt			
 		);
 
 		// left click on exit button -- exit city screen
@@ -1122,7 +1166,7 @@ namespace col {
 	}
 	
 	
-	void render_units(sf::RenderWindow &win,
+	void render_units(sf::RenderWindow &win, Console & con,
 		Vector2<int> const& pos, 
 		Vector2<int> const& dim, 
 		Env const& env, 
@@ -1147,6 +1191,24 @@ namespace col {
 					calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
 					unit_tex
 				);
+				
+				// select
+				auto unit_id = unit.id;
+
+				if (unit_id == con.sel_unit_id) {
+					// render selection frame
+					render_inline(win, sel_pos, sel_dim, {255,100,100,255});					
+				}
+				else {
+					// left click on unselected unit -- select unit
+					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+						[&con,unit_id]() { 
+							con.command("sel " + to_string(unit_id)); 					
+						}
+					);
+				}
+				
+				
 				
 				if ((i-1) * unit_dim[0] >= dim[0]) {
 					i = 0;
@@ -1448,7 +1510,13 @@ namespace col {
 	using sf::RenderWindow;
 
 
-	
+	Color get_unit_color(Unit const& u) {
+		auto c = u.get_player().get_color();
+		if (u.get_time_left() == 0) {
+			return Color(c.r/2, c.g/2, c.b/2, c.a/2);
+		}
+		return Color(c.r, c.g, c.b, c.a);
+	}
 	
 	void render_stack(sf::RenderWindow &win,
 			Console & con,
@@ -1491,7 +1559,7 @@ namespace col {
 
 			auto icon = res(ICON, unit.get_icon());
 			// render unit in field
-			render_shield(win, pos[0], pos[1], unit.get_player().get_color());
+			render_shield(win, pos[0], pos[1], get_unit_color(unit));
 			render_sprite(win, 
 				calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
 				icon
@@ -1518,7 +1586,7 @@ namespace col {
 				// render unit in field
 				if (int(con.time * 10.0) % 10 >= 5) {
 				
-					render_shield(win, pos[0], pos[1], u->get_player().get_color());
+					render_shield(win, pos[0], pos[1], get_unit_color(*u));
 				}
 				
 				
@@ -1535,7 +1603,7 @@ namespace col {
 					[&con](){ con.command("move 0 -1"); }
 				);
 				
-				con.on(Event::Press, Key::Numpad5,
+				con.on(Event::Press, Key::Numpad6,
 					[&con](){ con.command("move 1 0"); }
 				);
 				
@@ -1628,37 +1696,25 @@ namespace col {
 		//}
 
 		// cursor
-		render_inline(win, 
-			v2i(con.sel[0] * TILE_DIM + pos[0], con.sel[1] * TILE_DIM + pos[1]),
-			tile_dim, 
-			{255,255,255,255}
-		);
+		if (!con.get_sel_unit()) {
+			if (auto tp = con.get_sel_terr()) {
+				auto sel = env.get_coords(*tp);
+				// blink
+				if (int(con.time * 10.0) % 10 >= 5) {					
+					render_inline(win, 
+						vmul(sel, ly.terr_dim) + pos,
+						tile_dim, 
+						{255,255,255,255}
+					);
+				}
+			}
+		}
 		
 		
 
 		
 	}
 
-
-
-	/*
-	void render_rect(sf::RenderWindow &win,
-			sf::IntRect const& rr,
-			sf::Color const& col)
-	{
-		sf::RectangleShape r;
-		r.setSize(sf::Vector2f(rr.width, rr.height));
-		r.setFillColor(col);
-		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
-		//rectangle.setOutlineThickness(1);
-		r.setPosition(rr.left, rr.top);
-		win.draw(r);
-	}
-	 */
-
-	
-	
-	
 
 	
 
@@ -1672,26 +1728,6 @@ namespace col {
 		// dim - size
 
 		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);
-
-		/*
-		if (env.in_bounds(con.sel)) {
-			auto& t = env.get_terr(con.sel);
-			if (t.units.size()) {
-				Unit const* u = env.get_defender_if_any(t);
-
-				auto moves = u->time_left;
-
-				auto s = boost::str(format("%||\nmoves: %||") % u->get_name() % moves);
-
-				render_text(win,
-					pos,
-					res_pixfont("tiny.png"),
-					s,
-					dim[0]
-				);
-			}
-		}
-		*/
 
 	}
 
@@ -1733,11 +1769,8 @@ namespace col {
 		// Turn 5, England 
 		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
 			
-		if (env.in_bounds(con.sel)) {
-
-			auto& t = env.get_terr(con.sel);
-
-
+		if (auto tp = con.get_sel_terr()) {
+			auto& t = *tp;
 			string phys_info;
 			for (auto const& item: PHYS_NAMES) {
 				auto const& phys = item.first;
@@ -1750,14 +1783,28 @@ namespace col {
 				format("\n%||\n[%||]\n") %
 					BIOME_NAMES.at((t.biome)) % phys_info
 			);
+			
+			info += boost::str(
+				format("\nmove: %||\nimprov: %||\n") %
+					t.get_movement_cost() % t.get_roughness()
+			);
+			
 
 		}
 		
-		if (con.sel_unit_id) {
-			Unit const* u = &env.get<Unit>(con.sel_unit_id);
+		if (auto u = con.get_sel_unit()) {
+			
 			info += boost::str(
 				format("\n%||\nTime left: %||/%||") %
 					u->get_name() % int(u->time_left) % int(TIME_UNIT)
+			);
+			info += boost::str(
+				format("\ntransported: %||") %
+					u->get_transported()
+			);
+			info += boost::str(
+				format("\ntspace left: %||") %
+					u->get_space_left()
 			);
 
 		}
@@ -1768,7 +1815,7 @@ namespace col {
 		// feats
 			
 		
-		render_text(win,
+		render_text2(win,
 			pos,
 			res_pixfont("tiny.png"),
 			info,
@@ -1797,13 +1844,11 @@ namespace col {
 
 			ren.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
 
+			auto txt = Text(lab).set_font("tiny.png");
 			render_text(
 				win,
 				ly.city_exit.pos + v2i(1,1),
-				res_pixfont("tiny.png"),
-				lab,
-				{0,0,0,0},
-				0
+				txt				
 			);
 
 			// left click on Start/Ready button -- start game or ready turn
@@ -1813,13 +1858,38 @@ namespace col {
 		}
 		
 		if (auto t = con.get_sel_terr()) {
-			render_units(win,
+			render_units(win, con,
 				ly.pan.pos + v2i(0,100), 
 				ly.pan.dim, 
 				env, 
 				*t
 			); 
 		}
+		
+		
+		// nothing to move -> enter to ready turn
+		if (auto pp = env.get_current_player_p()) {
+			if (!misc::get_next_to_move_id(env, *pp)) {
+				
+				auto text = Text("End of turn (enter)").set_font("tiny.png");
+				// label
+				v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
+				render_text(
+					win,
+					text_pos,
+					text.set_fg(ColorWhite)
+				);
+				// Enter -> end turn
+				con.on(Event::Press, Key::Return,
+					[&con](){ con.command("ready"); }
+				);				
+				
+				con.on(Event::Press, Button::Left, text_pos, text.get_dim(),
+					[&con](){ con.command("ready"); }
+				);
+			}
+		}
+
 		
 		
 	}
@@ -1904,20 +1974,12 @@ namespace col {
 		return (par.pos.cast<float>() + vmul((par.dim - dim).cast<float>(), align)).cast<int>();
 	}
 
+	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim) {
+		return (p_pos.cast<float>() + vmul((p_dim - dim).cast<float>(), align)).cast<int>();
+	}
+
 	
-	v2i render_text_line(
-		sf::RenderWindow &win,
-
-		v2i const& pos,
-		v2i const& dim,
-		v2f const& align,
-
-		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,
-
-		string const& text
-	) {
+	v2i get_text_dim(PixFont const& font, string const& text) {
 		// font prop
 		int const FONT_HEIGHT = 6;
 		
@@ -1931,8 +1993,6 @@ namespace col {
 		size_t i = 0;
 		size_t j = i;
 		
-		
-		
 		// calculate rendered text line dimension without margins		
 		while (j < text.size()) {
 			auto& g = font.glyphs.at(text.at(j));
@@ -1944,13 +2004,31 @@ namespace col {
 		// add margins
 		r_dim += sep; // left, top
 		r_dim += sep; // right, bottom
+		
+		return r_dim;
+	}
+	
+
+	v2i render_text_line_min(
+		sf::RenderWindow &win,
+		v2i const& pos,		
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,		
+		string const& text
+	) {
+		v2i sep = {1,1};
+		v2i r_dim = get_text_dim(font, text);
 				
 		// calculate render position taking into account the alignment
-		v2i r_pos = (pos.cast<float>() + vmul((dim - r_dim).cast<float>(), align)).cast<int>();
+		v2i r_pos = pos;
 		
 		// render letters
 		auto trg = sf::Image();
 		trg.create(r_dim[0], r_dim[1], bgcol);
+		
+		size_t i = 0;
+		size_t j = text.size();
 		
 		v2i dd = sep;
 		for (auto k = i; k < j; ++k) {
@@ -1968,8 +2046,6 @@ namespace col {
 			
 		}
 		
-		
-		
 		sf::Texture tex;
 		tex.loadFromImage(trg);
 		
@@ -1978,12 +2054,49 @@ namespace col {
 		s.setTexture(tex);
 		win.draw(s);
 		
-		
 		return {0,0};		
 	}
 	
+	
+	v2i render_text_line(
+		sf::RenderWindow &win,
 
+		v2i const& pos,
+		v2i const& dim,
+		v2f const& align,
+
+		PixFont const& font,
+		sf::Color const& fgcol,
+		sf::Color const& bgcol,
+
+		string const& text
+	) {
+		return render_text_line_min(win,
+			calc_align(pos, dim, align, get_text_dim(font, text)),
+			font,
+			fgcol,
+			bgcol,
+			text
+		);		
+	}
+	
 	v2i render_text(
+		sf::RenderWindow &win,
+		v2i const& pos,
+		Text const& text		
+	) {
+		return render_text_line_min(win,
+			pos,
+			res_pixfont(text.get_font()),
+			text.get_fg(),
+			text.get_bg(),
+			text.get_text()
+		);		
+	}
+	
+	
+
+	v2i render_text2(
 			/*sf::RenderWindow &win,
 			
 			v2i const& pos,
@@ -2136,13 +2249,11 @@ namespace col {
 			v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
 
 			for (auto& line: boost::adaptors::reverse(con.output)) {
+				
 				pos = render_text(
 					app,
 					pos,
-					res_pixfont("tiny.png"),
-					line + '\r',
-					{0,0,0,128},
-					0
+					Text(line + '\r').set_font("tiny.png").set_bg({0,0,0,128})
 				);
 			}
 
@@ -2150,10 +2261,7 @@ namespace col {
 			render_text(
 				app,
 				ly.scr.pos,
-				res_pixfont("tiny.png"),
-				con.buffer + "_",
-				{0,0,0,0},
-				0
+				Text(con.buffer + "_").set_font("tiny.png")				
 			);
 				
 			// deactivate

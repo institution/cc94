@@ -67,8 +67,8 @@ namespace col {
 
 
 
-	uint8 const TIME_UNIT = 6;
-	uint8 const SPACE_UNIT = 6;
+	uint8 const TIME_UNIT = 24;
+	uint8 const SPACE_UNIT = 24;
 	// uint8 const COLONIZE_TP_COST = 6;
 
 

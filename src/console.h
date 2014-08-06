@@ -93,18 +93,28 @@ namespace col {
 			sel = Coords(x,y);
 		}
 
+		void unselect_terr(int x, int y) {
+			// ???
+		}
+
+		Unit* get_sel_unit() {
+			auto& env = envgame;
+			if (sel_unit_id) {
+				return &env.get<Unit>(sel_unit_id);
+			}
+			return nullptr;
+		}
+
 		Terr* get_sel_terr() {
 			auto& env = envgame;
 			if (sel_unit_id) {
 				return &env.get_terr(env.get<Unit>(sel_unit_id));
 			}
+			if (env.in_bounds(sel)) {
+				return &env.get_terr(sel);
+			}
 			return nullptr;
 		}
-
-		void unselect_terr(int x, int y) {
-			// ???
-		}
-
 
 		// selected square
 		Terr::Id sel;

@@ -1,80 +1,65 @@
 #include "terr.h"
-
 #include "item.h"
-
 
 namespace col{
 
-	int8 Terr::get_land_movement_cost() {
-		int8 base;
-
-		if (has(PhysRoad) or has(PhysMinorRiver) or has(PhysMajorRiver)) {
-			base = SPACE_UNIT / 3;
+	int Terr::get_roughness() const {
+		
+		int has_river = has(PhysMinorRiver) or has(PhysMajorRiver);
+		int has_forest = has(PhysForest);
+		int has_road = has(PhysRoad);
+		
+		int base = TIME_UNIT;
+		switch (biome) {					
+			case BiomePrairie:
+			case BiomePlains:
+			case BiomeSavannah:
+			case BiomeGrassland:				
+			case BiomeTundra:
+			case BiomeDesert:
+				base = TIME_UNIT;
+				break;
+			case BiomeMarsh:
+			case BiomeSwamp:
+			case BiomeArctic:
+				base = TIME_UNIT * 2;
+				break;				
+			default:
+				cout << "invalid land biome: " << uint16(biome) << endl;
+				throw runtime_error("invalid land biome");
 		}
-		else {
-			switch (biome) {
-				case BiomeTundra:
-				case BiomePrairie:
-				case BiomePlains:
-				case BiomeDesert:
-				case BiomeSavannah:
-				case BiomeGrassland:
-					base = SPACE_UNIT;
-					break;
-				case BiomeMarsh:
-				case BiomeSwamp:
-				case BiomeArctic:
-					base = SPACE_UNIT * 3 / 2;
-					break;
-				default:
-					cout << "invalid land biome: " << uint16(biome) << endl;
-					throw runtime_error("invalid land biome");
-			}
-
-			if (has(PhysForest)) {
-				base *= 2;
-			}
+		
+		if (has_forest) {
+			base += TIME_UNIT;
 		}
-
+		
+		if (has_river) {
+			base += TIME_UNIT;
+		}		
+				
 		if (alt == HILL_LEVEL) {
-			base += SPACE_UNIT / 2;
+			base += TIME_UNIT;
 		}
-		else
-		if (alt == MOUNTAIN_LEVEL) {
-			base += SPACE_UNIT;
-		}
-
-		return base;
-	}
-
-	int8 Terr::get_naval_movement_cost() {
-		if (colony != nullptr) {
-			return SPACE_UNIT;
-		}
-		else if (has(PhysMajorRiver) and alt == FLATLAND_LEVEL) {
-			return SPACE_UNIT * 2;
+		else if (alt == MOUNTAIN_LEVEL) {
+			base += TIME_UNIT*2;
 		}
 		else if (alt == SEA_LEVEL) {
-			return SPACE_UNIT;				
+			base = TIME_UNIT;
 		}
-		throw runtime_error("incompatible travel type");
-
+		
+		return base;
 	}
-
-	int8 Terr::get_movement_cost(Travel const& movement_type) {
-		if (movement_type == LAND) {
-			return get_land_movement_cost();
-		}
-		else
-		if (movement_type == SEA) {
-			return get_naval_movement_cost();
+	
+	int Terr::get_movement_cost() const {
+		if (has(PhysRoad) or has(PhysMinorRiver) or has(PhysMajorRiver)) {
+			return TIME_UNIT / 3;
 		}
 		else {
-			throw runtime_error("aaa");
-		}
+			return int(0.67 * std::sqrt(float(get_roughness())/float(TIME_UNIT))*float(TIME_UNIT));
+		}		
 	}
-
-	Travel Terr::get_travel() {
+	
+	Travel Terr::get_travel() const {
 		if (alt == AltSea) {
 			return SEA;
 		}
@@ -87,8 +72,6 @@ namespace col{
 			}
 		}
 	}
-	
-	
 	
 	uint16 Terr::get_yield(Item const& item, bool const& is_expert) const {
 		/* 		 

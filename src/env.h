@@ -23,142 +23,6 @@ namespace col{
 
 
 
-
-	/*
-	-- turn calc
-
-	work building unit
-
-
-
-	-- orders
-
-	 construct_improvment(unit,improvment)
-		plow,road,colony,chop_forest
-
-	 declare_building
-	 declare_unit(terr,unit_type)
-
-	 promote_building building building_type
-
-	 promote_unit
-
-
- 	 recruit unit (europe) := move_unit europe academy unit
-
-	 // teach colonist
-	 train_unit
-
-	 unit
-		speciality(2-value): [normal|expert] [carpenter|farmer ect...]
-			production bonus
-				level normal: multiplier +1 (no bonus mult=1)
-				level expert: multiplier +2 (expert production mult=2)
-
-		loyalty(2-value): level [rebel england|royal england|rebel spainr| royal spain itp...]
-			ex. +79 royal_england
-			+79 other_faction is visible as -79 my_faction
-			production/battle bonus
-				-100    -2
-				-99:-50 -1
-				-49:+49  0
-				+50:+99 +1
-				+100    +2
-			loyalty decay over time towards 0 (only when working? how about battle units?)
-
-	 food calculations:
-		each unit: on turn
-			if working consume food from local_storage
-			if no food left do not produce and move self to local terrain (abandon workplace)
-		non working units (units on terrain) do not consume food - (they consume supply instead?)
-
-		how about wagon trains -- should consume something (supply?) -- transport should cost
-
-
-	 building
-		get_proditem -- item to produce
-		set_proditem -- set item to produce
-		get_nonzero_proditems -- items with nonzero yield here
-
-		get_yield(item,expert) -- get number of produced items
-
-
-
-	 designate_production(building,item)
-	 designate_target_storage (or construction)
-
-
-	 move_cargo unit.equip storage cargo       // equip_unit, promote_unit
-		if unit,cargo match promotion_pattern
-			transform to new type
-			return 1
-		return 0
-
-	 move_cargo storage unit.equip cargo       // unequip_unit
-	 move_cargo building.equip storage cargo   // finalize construction with tools
-
-	 move_cargo building.equip none cargo      // add hammers to construction
-
-
-
-
-
-
-
-	 //equip slot (internal)
-	 //cargo slot (cargo)
-	 //board slot (unit's)
-
-	 move_unit(to,unit,from)
-		terrain
-		building
-		field
-		transport platform
-		atlantic/pacific transit
-		european port
-
-	 move_unit terrain terrain unit      // move on map
-
-	 move_unit building location unit    // assign to work
-	 move_unit field location unit       // assign to work on field
-	 move_unit location building unit    // leave workplace
-	 move_unit location field unit       // leave field
-
-	 move_unit transport location unit   // board transport
-	 move_unit terrain transport unit    // make landing, unembark
-
-	 move_unit transit terrain unit      // sail to europe
-	 move_unit transit europe unit       // return to new world
-	 move_unit europe transit unit       // arrive to europe
-	 move_unit terrain transit unit      // arrive to new world
-
-	 move_cargo(to,from,cargo)
-		default slot: cargo
-		colony storage (local storage)
-		transport storage
-		european storage (buy/sell)
-		terrain (dump)
-		local_storage = colony|dump
-
-	 move_cargo europe transport cargo   // sell
-	 move_cargo transport europe cargo   // buy
-
-	 move_cargo transport colony         // load cargo
-	 move_cargo transport transport      // transfer cargo
-	 move_cargo colony transport         // unload cargo
-
-	 move_cargo terrain storage cargo    // dump cargo
-
-
-
-	 ready (end turn)
-
-
-
-	 */
-
-
-
 	// game event like: "Colony Abc builds Warehouse"
 	struct Msg{
 		Player const* player{nullptr};
@@ -178,7 +42,6 @@ namespace col{
 
 	using Id = uint32;
 
-	using TerrTypes = unordered_map<TerrType::Id, TerrType>;
 	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
 	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
 
@@ -220,7 +83,6 @@ namespace col{
 		}
 
 		// const
-		shared_ptr<TerrTypes> tts;
 		shared_ptr<BuildTypes> bts;
 		shared_ptr<UnitTypes> uts;
 
@@ -271,6 +133,13 @@ namespace col{
 		}
 
 
+		Player const* get_current_player_p() const {
+			if (!in_progress()) {
+				return nullptr;
+			}
+			return &players.at(cpid);
+		}
+
 		Player const& get_current_player() const {
 			if (!in_progress()) {
 				throw Error("no current player: game in regress");
@@ -314,7 +183,6 @@ namespace col{
 
 			this->verbose = verbose;
 
-			tts = make_shared<TerrTypes>();
 			bts = make_shared<BuildTypes>();
 			uts = make_shared<UnitTypes>();
 
@@ -565,7 +433,7 @@ namespace col{
 
 		void turn(Unit &u) {
 
-			u.time_left = 6;
+			u.time_left = TIME_UNIT;
 
 			if (u.order == Order::Space) {
 				u.order = Order::Unknown;
@@ -780,9 +648,6 @@ namespace col{
 
 		bool build_road(Unit &u, bool exec=1) {
 			/* Build road on land terrain square (cost ~ 1.5 turns)
-
-
-
 			 */
 
 			// unit checks
@@ -802,7 +667,7 @@ namespace col{
 
 			// execute
 			if (exec)  {
-				if (run_map_task(u, TIME_UNIT * 2)) {
+				if (run_map_task(u, t.get_roughness())) {
 					t.add(PhysRoad);
 					return 1;
 				}
@@ -877,7 +742,8 @@ namespace col{
 			if (exec) {
 
 				// cost to move = 1t
-				auto time_cost = TIME_UNIT;
+
+				auto time_cost = dest.get_movement_cost() / u.get_speed();
 
 				if (run_map_task(u, time_cost)) {
 					t_move(dest, u);
@@ -1039,7 +905,7 @@ namespace col{
 
 			// execute
 			if (exec) {
-				if (run_map_task(u, TIME_UNIT * 2)) {
+				if (run_map_task(u, t.get_roughness())) {
 					t.add(PhysPlow);
 					return 1;
 				}
@@ -1505,10 +1371,6 @@ namespace col{
 		return *uts;
 	}
 
-	template <>	inline TerrTypes& Env::get_cont<TerrType>() {
-		return *tts;
-	}
-
 	template <>	inline BuildTypes& Env::get_cont<BuildType>() {
 		return *bts;
 	}
@@ -1527,10 +1389,6 @@ namespace col{
 
 	template <>	inline UnitTypes const& Env::get_cont<UnitType>() const {
 		return *uts;
-	}
-
-	template <>	inline TerrTypes const& Env::get_cont<TerrType>() const {
-		return *tts;
 	}
 
 	template <>	inline BuildTypes const& Env::get_cont<BuildType>() const {

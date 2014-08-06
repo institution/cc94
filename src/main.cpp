@@ -176,7 +176,6 @@ int main(int argc, char* argv[])
 
 	EnvGame env(1);
 
-	env.loads<TerrType>(CSV_PATH + "terrs.csv");
 	env.loads<BuildType>(CSV_PATH + "builds.csv");
 	env.loads<UnitType>(CSV_PATH + "units.csv");
 

@@ -31,12 +31,6 @@ namespace col {
 
 
 
-
-
-
-
-
-
 	template<typename T, typename Archive>
 	void save_cont(Archive & ar, Env const& env) {
 		auto& xs = env.get_cont<T>();
@@ -92,7 +86,9 @@ namespace col {
 		write(ar, x.id);
 		write(ar, x.type->id);
 		write(ar, x.player->id);
+		write(ar, x.space_left);
 		write(ar, x.time_left);
+		write(ar, x.transported);
 
 		// unit terr
 		write(ar, env.get_coords(*x.terr));
@@ -124,7 +120,9 @@ namespace col {
 		read(ar, x.id);
 		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
 		x.player = & env.get<Player> ( read<Player::Id> (ar) );
+		read(ar, x.space_left);
 		read(ar, x.time_left);
+		read(ar, x.transported);
 
 		auto key = x.id;
 		auto p = ps.emplace(key, std::move(x)).first;

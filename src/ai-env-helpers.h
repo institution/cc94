@@ -21,8 +21,8 @@ namespace col{
 
 		bool can_move(Env const& env, Player const& p, Unit const& u);
 
-		Unit const* get_next_to_move(Env const& env, Player const& p);
-
+		Unit const* get_next_to_move(Env const& env, Player const& p, Unit const* cur=nullptr);
+		Unit::Id get_next_to_move_id(Env const& env, Player const& pl, Unit::Id cur_id=0);
 	}
 
 }

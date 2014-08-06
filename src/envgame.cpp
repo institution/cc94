@@ -16,7 +16,6 @@ namespace col {
 		trg.clear();
 
 		trg.uts = src.uts;
-		trg.tts = src.tts;
 		trg.bts = src.bts;
 
 		std::stringstream f;
