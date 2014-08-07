@@ -1040,10 +1040,10 @@ namespace col{
 		float get_land_defense_bonus(Terr const& terr) {
 			auto const& alt = terr.get_alt();
 
-			if (alt == MOUNTAIN_LEVEL) {
+			if (alt == AltMountain) {
 				return 1.00;
 			}
-			else if (alt == HILL_LEVEL) {
+			else if (alt == AltHill) {
 				return 0.50;
 			}
 			else if (terr.has(PhysForest)) {

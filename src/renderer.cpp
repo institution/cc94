@@ -1364,8 +1364,8 @@ namespace col {
 		auto biome = terr.biome;
 		auto forest = terr.has(PhysForest);
 		
-		auto hill = (terr.get_alt() == HILL_LEVEL);
-		auto mountain = (terr.get_alt() == MOUNTAIN_LEVEL);
+		auto hill = (terr.get_alt() == AltHill);
+		auto mountain = (terr.get_alt() == AltMountain);
 
 		
 		if (terr.biome == BiomeArctic) {
@@ -1420,11 +1420,11 @@ namespace col {
 
 		
 		// level
-		if (terr.get_alt() == MOUNTAIN_LEVEL) {
+		if (terr.get_alt() == AltMountain) {
 			render_sprite(win, pix, res(PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
 		}
 
-		if (terr.get_alt() == HILL_LEVEL) {
+		if (terr.get_alt() == AltHill) {
 			render_sprite(win, pix, res(PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
 		}
 

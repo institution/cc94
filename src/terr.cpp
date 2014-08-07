@@ -37,13 +37,13 @@ namespace col{
 			base += TIME_UNIT;
 		}		
 				
-		if (alt == HILL_LEVEL) {
+		if (alt == AltHill) {
 			base += TIME_UNIT;
 		}
-		else if (alt == MOUNTAIN_LEVEL) {
+		else if (alt == AltMountain) {
 			base += TIME_UNIT*2;
 		}
-		else if (alt == SEA_LEVEL) {
+		else if (alt == AltSea) {
 			base = TIME_UNIT;
 		}
 		
@@ -83,12 +83,12 @@ namespace col{
 		int forest = has(PhysForest);
 		switch(item) {
 			case ItemFish:
-				if (alt == SEA_LEVEL) {
+				if (alt == AltSea) {
 					ret = 4;
 				}
 				break;
 			case ItemLumber:
-				if (alt == FLATLAND_LEVEL) {
+				if (alt == AltFlat) {
 					if (forest) {
 						switch (biome) {
 							case BiomePlains:
@@ -110,10 +110,10 @@ namespace col{
 					break;
 				}
 			case ItemOre:
-				if (alt > FLATLAND_LEVEL) {
+				if (alt > AltFlat) {
 					ret = 4;
 				}
-				else if (alt == FLATLAND_LEVEL) {
+				else if (alt == AltFlat) {
 					switch (biome) {
 						case BiomeTundra:
 						case BiomeSwamp:
@@ -125,7 +125,7 @@ namespace col{
 				}
 				break;
 			case ItemFurs:
-				if (alt == FLATLAND_LEVEL) {
+				if (alt == AltFlat) {
 					if (forest) {
 						switch (biome) {
 							case BiomeTundra:
@@ -148,10 +148,10 @@ namespace col{
 				}
 				break;
 			case ItemFood:
-				if (alt == SEA_LEVEL) {
+				if (alt == AltSea) {
 					ret = 4;
 				}
-				else if (alt == FLATLAND_LEVEL) {
+				else if (alt == AltFlat) {
 					switch (biome) {
 						case BiomePlains:
 							ret = 5 - forest;
@@ -171,12 +171,12 @@ namespace col{
 							break;
 					}
 				}
-				else if (alt == HILL_LEVEL) {
+				else if (alt == AltHill) {
 					ret = 2;
 				}
 				break;
 			case ItemCotton:
-				if (alt == FLATLAND_LEVEL) {
+				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomePrairie:
 							ret = 3 - forest;
@@ -191,7 +191,7 @@ namespace col{
 				}
 				break;
 			case ItemTobacco:
-				if (alt == FLATLAND_LEVEL) {
+				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomeGrassland:
 							ret = 3 - forest;
@@ -203,7 +203,7 @@ namespace col{
 				}
 				break;
 			case ItemSugar:
-				if (alt == FLATLAND_LEVEL) {
+				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomeSavannah:
 							ret = 3 - forest;
@@ -215,7 +215,7 @@ namespace col{
 				}
 				break;
 			case ItemSilver:
-				if (alt == MOUNTAIN_LEVEL) {
+				if (alt == AltMountain) {
 					ret = 1;
 				}
 				break;

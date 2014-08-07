@@ -64,6 +64,7 @@ namespace col {
 	}
 
 
+
 	struct Console{
 		vector<string> output;
 		string buffer;

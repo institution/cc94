@@ -146,6 +146,19 @@ namespace col {
 	}
 
 
+	template<typename A>
+	void write_terr(A & ar, Env const& env, Terr const& x) {
+		ar << x.biome;
+		ar << x.phys;
+		ar << x.alt;
+	}
+
+	template<typename A>
+	void read_terr(A & ar, Env const& env, Terr const& x) {
+		ar >> x.biome;
+		ar >> x.phys;
+		ar >> x.alt;
+	}
 
 
 

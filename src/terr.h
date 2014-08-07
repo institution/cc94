@@ -13,34 +13,30 @@ namespace col{
 
 	using Alt = uint8;
 
-	Alt const SEA_LEVEL = 0;
-	Alt const FLATLAND_LEVEL = 1;
-	Alt const HILL_LEVEL = 2;
-	Alt const MOUNTAIN_LEVEL = 3;
-
-	Alt const AltSea = 0;
-	Alt const AltFlat = 1;
-	Alt const AltHill = 2;
-	Alt const AltMountain = 3;
+	Alt const AltNone = 0;
+	Alt const AltSea = 1;
+	Alt const AltFlat = 2;
+	Alt const AltHill = 3;
+	Alt const AltMountain = 4;
 
 
 
 	struct Terr {
 		using Id = Coords;
 
-		Biome biome;
-		Phys phys;
-		Alt alt;
+		Biome biome{BiomeNone};
+		Phys phys{PhysNone};
+		Alt alt{AltNone};
 
 		vector<Unit*> units;
-		Colony* colony;
+		Colony* colony{nullptr};
 
 
 		// Constructors
 		//Terr(): biome(BiomePlains), phys(PhysNone), alt(SEA_LEVEL), colony(nullptr) {}
 
-		explicit Terr(Alt const& alt = AltSea, Biome const& biome = BiomePlains, Phys const& phys = PhysNone):
-			biome(biome), phys(phys), alt(alt), colony(nullptr)
+		explicit Terr(Alt const& alt = AltNone, Biome const& biome = BiomeNone, Phys const& phys = PhysNone):
+			biome(biome), phys(phys), alt(alt)
 		{}
 
 		/*

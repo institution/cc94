@@ -23,6 +23,31 @@ namespace col{
 
 		Unit const* get_next_to_move(Env const& env, Player const& p, Unit const* cur=nullptr);
 		Unit::Id get_next_to_move_id(Env const& env, Player const& pl, Unit::Id cur_id=0);
+
+
+
+		struct Memory{
+		// automatyka wspomagajaca human playera
+
+			struct Order{
+				char code;
+			};
+
+			using Unit2Order = map<Unit::Id, Order>;
+			Unit2Order uos;
+
+			Order* get_order(Unit::Id id) {
+				/*auto p = uos.find(id);
+				if (p != uos.end()) {
+					return &p.second;
+				}*/
+				return nullptr;
+			}
+
+
+		};
+
+
 	}
 
 }
