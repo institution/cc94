@@ -2250,11 +2250,14 @@ namespace col {
 
 			for (auto& line: boost::adaptors::reverse(con.output)) {
 				
-				pos = render_text(
+				auto t = Text(line + '\r').set_font("tiny.png").set_bg({0,0,0,128});
+				render_text(
 					app,
 					pos,
-					Text(line + '\r').set_font("tiny.png").set_bg({0,0,0,128})
+					t
 				);
+					
+				pos[1] += t.get_dim()[1];
 			}
 
 		

@@ -327,6 +327,16 @@ namespace col {
 					);
 					break;
 			}
+		}		
+		else if (cmd == "connect") {
+			switch (es.size()) {
+				default:
+					put("Usage: connect <player-id>");
+					break;
+				case 2:
+					env.connect(stoi(es.at(1)), *user);					
+					break;
+			}
 		}
 		else if (cmd == "score") {
 			switch (es.size()) {

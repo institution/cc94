@@ -127,6 +127,10 @@ namespace col{
 			mod++;
 		}
 
+		void connect(Player::Id pid, User & u) {
+			// connect player(game nation) with AI or Human
+			get<Player>(pid).set_user(&u);
+		}
 
 		int get_turn_no() const {
 			return turn_no;
@@ -307,6 +311,10 @@ namespace col{
 				}
 
 				record_action();
+
+				if (auto u = get_current_player().get_user()) {
+					u->activate();
+				}
 			}
 
 		}

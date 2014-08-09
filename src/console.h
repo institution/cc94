@@ -12,6 +12,7 @@
 #include "layout.h"
 #include "action.h"
 #include "ai.h"
+#include "user.h"
 #include "ai-env-helpers.h"
 
 /*
@@ -65,7 +66,7 @@ namespace col {
 
 
 
-	struct Console{
+	struct Console: User{
 		vector<string> output;
 		string buffer;
 		std::deque<string> history;
@@ -149,7 +150,9 @@ namespace col {
 
 
 
-
+		void activate() {
+			put("Activate!");
+		}
 
 
 
@@ -331,12 +334,14 @@ namespace col {
 		int sel_colony_slot_id{-1};
 
 		Mode mode;
+		vector<std::thread> &ths;
 
-		Console(EnvGame &envgame_): envgame(envgame_) {
+		Console(EnvGame &envgame_, vector<std::thread> & ths): envgame(envgame_), ths(ths) {
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
 
+			this->user = &user;
 			chi = history.begin();
 			sel = Coords(-1,-1);
 			mod = 0;
@@ -345,6 +350,8 @@ namespace col {
 
 
 		}
+
+
 
 		Console() = delete;
 		Console(Console const&) = delete;

@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "objs.h"
+#include "user.h"
 
 namespace col{
 
@@ -14,6 +15,8 @@ namespace col{
 		string name;
 		Color color;
 		uint8 flag_id;
+
+		User *user{nullptr};
 
 		Player(Id const& id, string const& name="", Color const& color={0,0,0}, uint32 const& flag_id=0):
 			id(id),
@@ -42,6 +45,10 @@ namespace col{
 
 		uint8 const& get_flag_id() const { return flag_id; }
 		Color const& get_color() const { return color; }
+
+		User * get_user() const { return user; }
+		Player & set_user(User * user) { this->user = user; return *this; }
+
 
 
 	};
