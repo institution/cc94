@@ -178,7 +178,9 @@ namespace col{
 		}
 
 
-
+		Unit::Id get_id(Unit const& u) const {
+			return u.id;
+		}
 
 
 

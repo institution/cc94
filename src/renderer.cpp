@@ -145,6 +145,7 @@ namespace col {
 	sf::Color const ColorDarkBlue = sf::Color(0,0,127,255);
 	sf::Color const ColorDarkRed = sf::Color(127,0,0,255);
 	sf::Color const ColorWhite = sf::Color(255,255,255,255);
+	sf::Color const ColorGray = sf::Color(128,128,128,128);
 	
 	v2f vmul(v2f const& a, v2f const& b);
 	v2f vmul(v2i const& a, v2f const& b);
@@ -269,39 +270,6 @@ namespace col {
 		return rectangle;
 	}
 
-
-	void render_shield(sf::RenderWindow &win, int16 x, int16 y, const Color &col) {
-		win.draw(
-			RectShape(
-				v2i(x,y) + v2i(1,1),
-				{6, 8},
-				{col.r,col.g,col.b, 255},
-				1,
-				{0,0,0, 255}
-			)
-		);
-	}
-
-	void render_unit(sf::RenderWindow &win,
-			Console & con,
-			Coords const& pos,
-			Env const& env,
-			Terr const& terr,
-			Vector2<int> const& map_pix,
-			Coords const& delta);
-
-
-	void render_pixel(sf::RenderWindow &win, v2i pix, const Color &col) {
-		win.draw(
-			RectShape(
-				pix,
-				v2i(1, 1),
-				sf::Color(col.r,col.g,col.b, 255),
-				0,
-				sf::Color(0,0,0, 0)
-			)
-		);
-	}
 	
 	struct Text{
 		string text{""};
@@ -326,6 +294,49 @@ namespace col {
 		
 		Text(string const& text): text(text) {}
 	};
+
+	void render_shield(sf::RenderWindow &win, int16 x, int16 y, Color const& col, char letter) {
+		
+		auto t = Text(string() + letter).set_font("tiny.png").set_fg(ColorBlack);
+
+		win.draw(
+			RectShape(
+				v2i(x,y) + v2i(1,1),
+				{5, 7},
+				{col.r,col.g,col.b, 255},
+				1,
+				{0,0,0, 255}
+			)
+		);
+		
+		render_text(
+			win,
+			v2i(x,y) + v2i(1,1),
+			t
+		);
+	}
+
+	void render_unit(sf::RenderWindow &win,
+			Console & con,
+			Coords const& pos,
+			Env const& env,
+			Terr const& terr,
+			Vector2<int> const& map_pix,
+			Coords const& delta);
+
+
+	void render_pixel(sf::RenderWindow &win, v2i pix, const Color &col) {
+		win.draw(
+			RectShape(
+				pix,
+				v2i(1, 1),
+				sf::Color(col.r,col.g,col.b, 255),
+				0,
+				sf::Color(0,0,0, 0)
+			)
+		);
+	}
+	
 
 	
 	void render_fill(sf::RenderWindow & win,
@@ -1501,6 +1512,8 @@ namespace col {
 
 	}
 	
+	void render_selected_unit(sf::RenderWindow & win, Console & con, v2i const& pos, Unit & unit);
+
 	
 	
 	void render_terr(sf::RenderWindow &win,
@@ -1537,10 +1550,10 @@ namespace col {
 	{
 		auto coords = env.get_coords(terr);
 		
-		bool sel_unit_here = 0;
-		for (auto u: terr.units) {
-			if (u->id == con.get_sel_unit_id()) {	
-				sel_unit_here = 1;
+		bool sel_unit_here = false;
+		if (auto up = con.get_sel_unit()) {
+			if (env.get_coords(*up) == coords) {
+				sel_unit_here = true;
 			}
 		}
 		
@@ -1570,7 +1583,7 @@ namespace col {
 
 			auto icon = res(ICON, unit.get_icon());
 			// render unit in field
-			render_shield(win, pos[0], pos[1], get_unit_color(unit));
+			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
 			render_sprite(win, 
 				calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
 				icon
@@ -1588,70 +1601,73 @@ namespace col {
 		
 		
 		// now render selected unit
-		
-		for (auto u: terr.units) {
-			if (u->id == con.get_sel_unit_id()) {	
+		if (sel_unit_here) {	
 
-				auto icon = res(ICON, u->get_icon());
+			render_selected_unit(win, con, pos, *con.get_sel_unit());
 
-				// render unit in field
-				if (int(con.time * 10.0) % 10 >= 5) {
-				
-					render_shield(win, pos[0], pos[1], get_unit_color(*u));
-				}
-				
-				
-				render_sprite(win, 
-					calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
-					icon
-				);
-				
-				con.on(Event::Press, Key::Numpad2,
-					[&con](){ con.command("move 0 1"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad8,
-					[&con](){ con.command("move 0 -1"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad6,
-					[&con](){ con.command("move 1 0"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad4,
-					[&con](){ con.command("move -1 0"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad3,
-					[&con](){ con.command("move 1 1"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad7,
-					[&con](){ con.command("move -1 -1"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad1,
-					[&con](){ con.command("move -1 1"); }
-				);
-				
-				con.on(Event::Press, Key::Numpad9,
-					[&con](){ con.command("move 1 -1"); }
-				);
-				
-			}
-
-		
 		}
-		
-		
-		
-		
-			
-		
 		
 	}
 
 
+	void render_selected_unit(RenderWindow & win, Console & con, v2i const& pos, Unit & unit) {
+		auto icon = res(ICON, unit.get_icon());
+
+		// render blinking shield
+		if (int(con.time * 10.0) % 10 >= 5) {
+			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
+		}
+
+		// render unit in field
+		render_sprite(win, 
+			calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
+			icon
+		);
+
+		// selected unit keyboard shortcuts (numpad -> move)
+		con.on(Event::Press, Key::Numpad2,
+			[&con](){ con.command("move 0 1"); }
+		);
+		con.on(Event::Press, Key::Numpad8,
+			[&con](){ con.command("move 0 -1"); }
+		);
+		con.on(Event::Press, Key::Numpad6,
+			[&con](){ con.command("move 1 0"); }
+		);
+		con.on(Event::Press, Key::Numpad4,
+			[&con](){ con.command("move -1 0"); }
+		);
+		con.on(Event::Press, Key::Numpad3,
+			[&con](){ con.command("move 1 1"); }
+		);
+		con.on(Event::Press, Key::Numpad7,
+			[&con](){ con.command("move -1 -1"); }
+		);
+		con.on(Event::Press, Key::Numpad1,
+			[&con](){ con.command("move -1 1"); }
+		);
+		con.on(Event::Press, Key::Numpad9,
+			[&con](){ con.command("move 1 -1"); }
+		);
+		
+		// build colony
+		con.on(Event::Press, Key::B,
+			[&con](){ con.command("build-colony Unnamed"); }
+		);
+		// build road
+		con.on(Event::Press, Key::R,
+			[&con](){ con.command("build-road"); }
+		);
+		// plow fields
+		con.on(Event::Press, Key::P,
+			[&con](){ con.command("plow-field"); }
+		);
+		// space - skip unit
+		con.on(Event::Press, Key::Space,
+			[&con](){ con.skip_unit(); }
+		);
+		
+	}
 
 	void render_map(sf::RenderWindow &win, Env const& env, Console & con, v2i const& pos,
 			Coords const& delta)
@@ -1687,6 +1703,7 @@ namespace col {
 			}
 		}
 		
+		// stacks on map
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
 				auto coords = Coords(i,j);
@@ -1748,7 +1765,7 @@ namespace col {
 
 
 
-	void render_panel(sf::RenderWindow &win,
+	void render_panel(RenderWindow & win,
 			Env const& env,
 			Console & con,
 			v2i const& pos,
@@ -1763,8 +1780,6 @@ namespace col {
 		/*
 		 * Biome: Plains
 		 * road
-		 *
-		 *
 		 */
 
 		string info;
@@ -1773,9 +1788,6 @@ namespace col {
 		if (env.in_progress()) {
 			player_name = env.get_current_player().name;
 		}
-		
-		
-		
 		
 		// Turn 5, England 
 		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
@@ -1815,9 +1827,15 @@ namespace col {
 					u->get_transported()
 			);
 			info += boost::str(
-				format("\ntspace left: %||") %
+				format("\nspace left: %||") %
 					u->get_space_left()
 			);
+			if (u->get_item1() == ItemTools) {
+				info += boost::str(
+					format("\ntools: %||") %
+						u->get_num1()
+				);
+			}
 
 		}
 		
@@ -1886,25 +1904,34 @@ namespace col {
 		
 		// nothing to move -> enter to ready turn
 		if (auto pp = env.get_current_player_p()) {
-			if (!misc::get_next_to_move_id(env, *pp)) {
-				
-				auto text = Text("End of turn (enter)").set_font("tiny.png");
-				// label
-				v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
-				render_text(
-					win,
-					text_pos,
-					text.set_fg(ColorWhite)
-				);
+			
+			auto text = Text("End of turn").set_font("tiny.png");
+			v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
+			
+			if (!con.mem.has_next_unit(env, *pp)) {				
+				text.set_fg(ColorWhite);
+
 				// Enter -> end turn
 				con.on(Event::Press, Key::Return,
 					[&con](){ con.command("ready"); }
 				);				
-				
-				con.on(Event::Press, Button::Left, text_pos, text.get_dim(),
-					[&con](){ con.command("ready"); }
-				);
 			}
+			else {
+				text.set_fg(ColorGray);
+			}
+								
+			// label			
+			render_text(
+				win,
+				text_pos,
+				text
+			);
+			
+			// left click -> end turn
+			con.on(Event::Press, Button::Left, text_pos, text.get_dim(),
+				[&con](){ con.command("ready"); }
+			);
+			
 		}
 
 		

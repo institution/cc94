@@ -59,18 +59,35 @@ namespace col{
 			return nullptr;
 		}
 		
-		bool can_move(Env const& env, Player const& p, Unit const& u) {
-			return u.get_player() == p and u.get_time_left() and !u.is_working();
-		}
+		
 		
 		Unit const* get_next_to_move(Env const& env, Player const& pl, Unit const* cur) {
-			if (cur and can_move(env, pl, *cur)) {
+			if (cur and owned(*cur, pl) and to_move(*cur)) {
 				return cur;
 			}
 			
 			for (auto& p: env.get_cont<Unit>()) {
 				Unit const& u = p.second;
-				if (can_move(env, pl, u)) {
+				if (owned(*cur, pl) and to_move(*cur)) {
+					return &u;
+				}				
+			}
+			
+			return nullptr;
+		}
+
+		
+
+		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func) {
+		
+			if (cur and func(*cur)) {
+				return cur;
+			}
+			
+			for (auto& p: env.get_cont<Unit>()) {
+				Unit & u = p.second;
+				
+				if (func(u)) {
 					return &u;
 				}				
 			}
@@ -78,21 +95,20 @@ namespace col{
 			return nullptr;
 		}
 		
-		
-		Unit::Id get_next_to_move_id(Env const& env, Player const& pl, Unit::Id cur_id) {
-			if (cur_id and can_move(env, pl, env.get<Unit>(cur_id))) {
-				return cur_id;
-			}
-			
-			for (auto& p: env.get_cont<Unit>()) {
-				Unit const& u = p.second;
-				if (can_move(env, pl, u)) {
-					return u.id;
-				}				
-			}
-			
-			return 0;
+		Unit * Memory::get_next_unit(Env & env, Player const& p, Unit * cur) const {
+			return find_unit(env, cur, [this,&p](Unit const& u) -> bool{
+				return owned(u, p) and to_move(u) and get_order(u.id).code != ' ';
+			});
 		}
+
+		bool Memory::has_next_unit(Env const& env, Player const& p) const {
+			return find_unit(const_cast<Env&>(env), nullptr, [this,&p](Unit const& u) -> bool{
+				return owned(u, p) and to_move(u) and get_order(u.id).code != ' ';
+			});
+		}
+
+
+
 		
 	}
 	

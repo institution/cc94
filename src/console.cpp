@@ -462,7 +462,7 @@ namespace col {
 				case 1: {
 					env.start();
 					put("Game started!");
-					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
+					select_next_unit();
 					break;
 				}
 			}
@@ -475,12 +475,12 @@ namespace col {
 				}
 				case 2: {
 					exec(Ready(std::stoi(es.at(1))));
-					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
+					select_next_unit();
 					break;
 				}
 				case 1: {
 					exec(Ready(env.get_current_player().id));
-					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
+					select_next_unit();
 					break;
 				}
 			}
@@ -821,7 +821,7 @@ namespace col {
 						)
 					));
 					
-					select_unit(misc::get_next_to_move_id(env, env.get_current_player(), sel_unit_id));
+					select_next_unit();
 						 
 					break;
 			}

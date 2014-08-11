@@ -38,7 +38,7 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 
-	//Memory mem;
+
 
 
 	// mouse events: normal, drag&drop
@@ -73,6 +73,8 @@ namespace col {
 		std::deque<string> history;
 		std::deque<string>::iterator chi;
 
+		misc::Memory mem;
+
 		EnvGame & env;
 
 		uint32 mod;
@@ -91,27 +93,41 @@ namespace col {
 		Unit* sel_unit{nullptr};
 
 
+		void select_next_unit() {
+			select_unit(
+				mem.get_next_unit(
+					env,
+					env.get_current_player(),
+					get_sel_unit()
+				)
+			);
+		}
+
+
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
+			if (unit) {
+				mem.set_order(unit->id, '-');
+			}
 		}
 
 		void select_unit(Unit &unit) {
-			sel_unit = &unit;
+			select_unit(&unit);
 		}
 
 		void select_unit(Unit::Id id) {
 			if (id) {
-				sel_unit = &env.get<Unit>(id);
+				select_unit(&env.get<Unit>(id));
 			}
 			else {
-				sel_unit = nullptr;
+				unselect_unit();
 			}
 		}
 
 		void unselect_unit() {
 			select_unit(nullptr);
 		}
-		
+
 
 		void select_terr(Terr * terr) {
 			sel_terr = terr;
@@ -139,7 +155,9 @@ namespace col {
 		}
 
 
-
+		char get_letter(Unit const& u) {
+			return mem.get_order(env.get_id(u)).code;
+		}
 
 		Unit* get_sel_unit() const {
 			return sel_unit;
@@ -169,6 +187,11 @@ namespace col {
 
 
 		unordered_set<char16_t> charset;
+
+		void skip_unit() {
+			mem.set_order(get_sel_unit()->id, ' ');
+			select_next_unit();
+		}
 
 		// active screen
 		enum class Mode{
