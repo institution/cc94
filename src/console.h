@@ -6,6 +6,7 @@
 #include <SFML/Graphics.hpp>
 #include <deque>
 #include <functional>
+#include <thread>
 
 #include "col.hpp"
 #include "envgame.h"
@@ -37,7 +38,7 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 
-
+	//Memory mem;
 
 
 	// mouse events: normal, drag&drop
@@ -72,57 +73,99 @@ namespace col {
 		std::deque<string> history;
 		std::deque<string>::iterator chi;
 
-		EnvGame &envgame;
+		EnvGame & env;
 
 		uint32 mod;
 
 		float time{0.0f};
-
-		// ai
-		using Ais = unordered_map<Player::Id, Ai>;
-
-		Ais ais;
-
 
 		int equip_to_unit_id{0};
 		int equip_to_unit_type_id{0};
 
 		int select_unit_popup{0};
 
-
-
-		void select_terr(int x, int y) {
-			sel = Coords(x,y);
-		}
-
-		void unselect_terr(int x, int y) {
-			// ???
-		}
-
-		Unit* get_sel_unit() {
-			auto& env = envgame;
-			if (sel_unit_id) {
-				return &env.get<Unit>(sel_unit_id);
-			}
-			return nullptr;
-		}
-
-		Terr* get_sel_terr() {
-			auto& env = envgame;
-			if (sel_unit_id) {
-				return &env.get_terr(env.get<Unit>(sel_unit_id));
-			}
-			if (env.in_bounds(sel)) {
-				return &env.get_terr(sel);
-			}
-			return nullptr;
-		}
-
 		// selected square
-		Terr::Id sel;
+		Terr * sel_terr{nullptr};
 
 		// selected unit
-		Unit::Id sel_unit_id{0};
+		Unit* sel_unit{nullptr};
+
+
+		void select_unit(Unit *unit) {
+			sel_unit = unit;
+		}
+
+		void select_unit(Unit &unit) {
+			sel_unit = &unit;
+		}
+
+		void select_unit(Unit::Id id) {
+			if (id) {
+				sel_unit = &env.get<Unit>(id);
+			}
+			else {
+				sel_unit = nullptr;
+			}
+		}
+
+		void unselect_unit() {
+			select_unit(nullptr);
+		}
+		
+
+		void select_terr(Terr * terr) {
+			sel_terr = terr;
+			sel_unit = nullptr;
+		}
+
+		void select_terr(Terr & terr) {
+			sel_terr = &terr;
+			sel_unit = nullptr;
+		}
+
+		void select_terr(Terr::Id const& c) {
+			if (env.in_bounds(c)) {
+				sel_terr = &env.get_terr(c);
+			}
+			else {
+				sel_terr = nullptr;
+			}
+			sel_unit = nullptr;
+		}
+
+		void unselect_terr() {
+			sel_terr = nullptr;
+			sel_unit = nullptr;
+		}
+
+
+
+
+		Unit* get_sel_unit() const {
+			return sel_unit;
+		}
+
+		Terr* get_sel_terr() const {
+			if (sel_unit) {
+				return &env.get_terr(*sel_unit);
+			}
+			return sel_terr;
+		}
+
+		Unit::Id get_sel_unit_id() const {
+			if (sel_unit) {
+				return sel_unit->id;
+			}
+			return 0;
+		}
+
+		Terr::Id get_sel_terr_id() const {
+			if (auto tp = get_sel_terr()) {
+				return env.get_coords(*tp);
+			}
+			return Terr::Id(-1,-1);
+		}
+
 
 
 		unordered_set<char16_t> charset;
@@ -137,15 +180,15 @@ namespace col {
 		}
 
 		void click_colony_field(Terr const& terr) {
-			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
+			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
 
 		//void click_colony_build(Colony const& col) {
-		//	cout << "click_colony_build: " << envgame.get_coords(terr) << endl;
+		//	cout << "click_colony_build: " << env.get_coords(terr) << endl;
 		//}
 
 		void click_map_tile(Terr const& terr) {
-			cout << "click_colony_field: " << envgame.get_coords(terr) << endl;
+			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
 
 
@@ -334,16 +377,15 @@ namespace col {
 		int sel_colony_slot_id{-1};
 
 		Mode mode;
-		vector<std::thread> &ths;
+		vector<std::thread> & ths;
+		bool &running;
 
-		Console(EnvGame &envgame_, vector<std::thread> & ths): envgame(envgame_), ths(ths) {
+		Console(EnvGame & env, vector<std::thread> & ths, bool & running): env(env), ths(ths), running(running) {
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
 
-			this->user = &user;
 			chi = history.begin();
-			sel = Coords(-1,-1);
 			mod = 0;
 			mode = Mode::AMERICA;
 			clear();
@@ -358,20 +400,28 @@ namespace col {
 		Console const& operator=(Console const&) = delete;
 
 
-		void create_ai(Player::Id const& pid) {
-			ais.emplace(pid, pid);
-			auto it = ais.find(pid);
-			(*it).second.action_count = envgame.action_count;
+		void handle_events(sf::RenderWindow &app) {
+			Console &con = *this;
+			sf::Event ev;
+			while (app.pollEvent(ev)) {
+				if (ev.type == sf::Event::KeyPressed) {
+					if (ev.key.code == sf::Keyboard::Escape) {
+						app.close();
+					}
+				}
+				else
+				if (ev.type == sf::Event::Closed) {
+					app.close();
+				}
+
+				con.handle(app, ev);
+			}
 		}
 
+
+
 		void exec(Action const& action) {
-			envgame.exec(action);
-
-			for (auto &p: ais) {
-				auto& ai = p.second;
-				ai.apply(action);
-			}
-
+			env.exec(action);
 		}
 
 
@@ -379,7 +429,8 @@ namespace col {
 		void clear() {
 			output.clear();
 			buffer = "";
-			sel_unit_id = 0;
+			unselect_unit();
+			unselect_terr();
 		}
 
 		void put(string const& s) {
@@ -436,6 +487,7 @@ namespace col {
 	};
 
 
+	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running);
 
 }
 #endif

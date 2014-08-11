@@ -1,8 +1,11 @@
 #ifndef AI3_H
 #define AI3_H
 
+#include <chrono>
+#include <thread>
 #include "mcts.hpp"
 #include "envgame.h"
+#include "user.h"
 
 namespace col {
 
@@ -10,7 +13,7 @@ namespace col {
 	using PlayerIdType = Player::Id;
 
 	// template G(ameType) P(layerIdType)
-	struct Ai {
+	struct Ai: User {
 		// mcts tree node type
 		using NodeType = tree::Node<Action>;
 		// for playing random games
@@ -18,6 +21,13 @@ namespace col {
 		PlayerIdType pid;
 		NodeType *root {nullptr};
 		int action_count{0};
+
+		bool active{false};
+
+		void activate() {
+			active = true;
+		}
+
 
 
 		void create(PlayerIdType const& pid) {
@@ -47,6 +57,19 @@ namespace col {
 		Ai(Ai &&) { throw Critical("disabled"); };
 		Ai const& operator=(Ai const&) { throw Critical("disabled"); };
 
+		static void run(Player::Id pid, EnvGame *env) {
+			Ai ai(pid);
+			ai.action_count = env->action_count;
+			env->connect(pid, ai);
+			while (1) {
+				if (ai.active) {
+					ai.active = false;
+					cout << "AI active" << endl;
+					// TODO ... send some commands
+				}
+				std::this_thread::sleep_for (std::chrono::seconds(2));
+			}
+		}
 
 		void reset(PlayerIdType const& pid) {
 			// clear tree

@@ -78,9 +78,16 @@ TEST_CASE( "tree2", "" ) {
 	REQUIRE(true);
 	
 }
-*/
 
-
+ */
+TEST_CASE( "env", "" ) {
+	Env env;
+	REQUIRE_NOTHROW(env.resize({1,1}));
+	REQUIRE_NOTHROW(env.fill(Terr{AltSea, BiomeTundra}));
+	REQUIRE(env.get_terr({0,0}).get_alt() == AltSea);
+	REQUIRE(env.get_terr({0,0}).get_biome() == BiomeTundra);
+	
+}
 
 TEST_CASE( "terr", "" ) {
 	Terr t(AltFlat, BiomePlains, PhysForest);

@@ -17,9 +17,9 @@
 
 
 #include "col.hpp"
-#include "env.h"
+#include "envgame.h"
 #include "csv.h"
-#include "user-gui.h"
+#include "console.h"
 
 
 
@@ -85,6 +85,7 @@ namespace col{
 
 using Threads = vector<std::thread>;
 
+bool running{true};
 
 int main(int argc, char* argv[])
 {
@@ -143,7 +144,6 @@ int main(int argc, char* argv[])
 	//tts = load_terr_types();
 	//cout << " " << tts.size() << " loaded." << endl;
 
-	preload_terrain();
 
 	EnvGame env(1);
 	env.loads<BuildType>(CSV_PATH + "builds.csv");
@@ -160,14 +160,20 @@ int main(int argc, char* argv[])
 		env.fill(Terr{AltSea, BiomePlains});
 	}
 	
+	
+	
 	Threads ths;
-
-	UserGui gui(ths);
-	ths.emplace_back([&gui,&env](){gui.run(env);});
 	
+	run_console(&env, &ths, &running);
+	//std::thread(run_console, &env, &ths, &running);
 	
-	t1.join();
+	env.activate_all();
+	
+	for (auto& t: ths) {
+		t.join();
+	}
 
+	
 	/*{
 		ofstream fo(fname, std::ios::binary);
 		io::write<Env>(fo, env);

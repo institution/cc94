@@ -157,7 +157,7 @@ namespace col{
 		int get_movement_cost() const;
 
 		bool is_water_tile() const {
-			return alt < 1;
+			return alt == AltSea;
 		}
 
 		int get_roughness() const;

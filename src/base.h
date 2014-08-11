@@ -85,6 +85,11 @@ namespace col {
 	//using Travel = uint8;
 	Travel const LAND = 1;
 	Travel const SEA = 2;
+	
+	Travel const TravelNone = 0;
+	Travel const TravelLand = 1;
+	Travel const TravelSea = 2;
+
 
 	//string get_name(Travel const& tr) {
 	//

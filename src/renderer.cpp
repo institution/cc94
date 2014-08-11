@@ -327,6 +327,21 @@ namespace col {
 		Text(string const& text): text(text) {}
 	};
 
+	
+	void render_fill(sf::RenderWindow & win,
+			v2i const& pos, 
+			v2i const& dim,
+			sf::Color const& col
+	) {
+		sf::RectangleShape r;
+		r.setSize(sf::Vector2f(dim[0], dim[1]));
+		r.setFillColor(col);
+		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
+		//rectangle.setOutlineThickness(1);
+		r.setPosition(pos[0], pos[1]);
+		win.draw(r);
+	}
+	
 	void render_rect(sf::RenderWindow &win,
 			v2i const& pos, v2i const& dim,
 			sf::Color const& col)
@@ -690,7 +705,7 @@ namespace col {
 		});
 
 
-		auto& terr = env.get_terr(con.sel);
+		auto& terr = *con.get_sel_terr();
 		auto& col = terr.get_colony();
 
 		// render buildings
@@ -761,7 +776,7 @@ namespace col {
 				// left click on building -- assign worker or show construction popup
 				con.on(Event::Press, Button::Left, build_pos, build_dim,
 					[&con, workplace_id]() { 
-						if (con.sel_unit_id != 0) {
+						if (con.get_sel_unit()) {
 							con.command(str(format("work-build %||") % workplace_id));
 						}
 						else {
@@ -831,7 +846,7 @@ namespace col {
 
 					auto unit_id = unit.id;
 
-					if (unit_id == con.sel_unit_id) {
+					if (unit_id == con.get_sel_unit_id()) {
 						// render selection frame
 						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 					}
@@ -923,7 +938,7 @@ namespace col {
 
 					auto unit_id = unit.id;
 
-					if (unit_id == con.sel_unit_id) {
+					if (unit_id == con.get_sel_unit_id()) {
 						// render selection frame
 						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 												
@@ -970,10 +985,10 @@ namespace col {
 		
 		
 		// right click anywhere - unselect selected unit
-		if (con.sel_unit_id) {			
+		if (con.get_sel_unit()) {			
 			con.on(Event::Press, Button::Right,
 				[&con]() { 
-					con.sel_unit_id = 0;
+					con.unselect_unit();
 				}
 			);
 		}
@@ -990,7 +1005,7 @@ namespace col {
 		);
 		
 		// left click on city terrain area with selected unit -- unwork that unit
-		if (con.sel_unit_id != 0) {
+		if (con.get_sel_unit()) {
 			con.on(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
 				"work-none"
 			);
@@ -1016,7 +1031,7 @@ namespace col {
 
 				auto unit_id = unit.id;
 
-				if (unit_id == con.sel_unit_id) {
+				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
 					render_inline(win, sel_pos, sel_dim, {255,100,100,255});
 					
@@ -1031,8 +1046,8 @@ namespace col {
 				else {
 					// left click on unselected unit -- select unit
 					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
-						[&con,unit_id]() { 
-							con.command("sel " + to_string(unit_id)); 					
+						[&con,&env,unit_id]() { 
+							con.select_unit(unit_id);							
 						}
 					);
 				}
@@ -1101,7 +1116,7 @@ namespace col {
 			
 			vector<pair<BuildType::Id, string>> kvs;
 			
-			auto& cb = env.get_terr(con.sel).get_colony().get_build(con.sel_slot_num);
+			auto& cb = con.get_sel_terr()->get_colony().get_build(con.sel_slot_num);
 			
 			for (auto& item: *env.bts) {
 				auto const& b = item.second;
@@ -1195,7 +1210,7 @@ namespace col {
 				// select
 				auto unit_id = unit.id;
 
-				if (unit_id == con.sel_unit_id) {
+				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
 					render_inline(win, sel_pos, sel_dim, {255,100,100,255});					
 				}
@@ -1368,10 +1383,6 @@ namespace col {
 		auto mountain = (terr.get_alt() == AltMountain);
 
 		
-		if (terr.biome == BiomeArctic) {
-			auto x = 2 + 2;			
-		}
-		
 		// render biome
 		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
 
@@ -1528,7 +1539,7 @@ namespace col {
 		
 		bool sel_unit_here = 0;
 		for (auto u: terr.units) {
-			if (u->id == con.sel_unit_id) {	
+			if (u->id == con.get_sel_unit_id()) {	
 				sel_unit_here = 1;
 			}
 		}
@@ -1541,7 +1552,7 @@ namespace col {
 			// left click on colony (on map) -- enter colony screen
 			con.on(Event::Press, Button::Left, pos, v2i(TILE_DIM, TILE_DIM),
 				[&con, coords](){ 
-					con.command(str(format("sel %|| %||") % coords[0] % coords[1]));
+					con.select_terr(coords);
 					con.command("enter"); 
 				}
 			);
@@ -1569,7 +1580,7 @@ namespace col {
 			auto unit_id = unit.id;
 			con.on(Event::Press, Button::Left, pos, ly.terr_dim, 				
 				[&con,unit_id](){
-					con.sel_unit_id = unit_id;  
+					con.select_unit(unit_id);
 				}
 			);
 			
@@ -1579,7 +1590,7 @@ namespace col {
 		// now render selected unit
 		
 		for (auto u: terr.units) {
-			if (u->id == con.sel_unit_id) {	
+			if (u->id == con.get_sel_unit_id()) {	
 
 				auto icon = res(ICON, u->get_icon());
 
@@ -1664,7 +1675,7 @@ namespace col {
 					// right click on terr -- select terr
 					con.on(Event::Press, Button::Right, pos, ly.terr_dim, 
 						[&con,coords](){
-							con.sel = coords;
+							con.select_terr(coords);
 						}
 					);
 					
@@ -1695,23 +1706,23 @@ namespace col {
 		//	render_icon(win, env, p.second);
 		//}
 
-		// cursor
+		// render cursor on selected tile
 		if (!con.get_sel_unit()) {
-			if (auto tp = con.get_sel_terr()) {
-				auto sel = env.get_coords(*tp);
+			if (Terr* tp = con.get_sel_terr()) {
+				auto coords = env.get_coords(*tp);
+
 				// blink
-				if (int(con.time * 10.0) % 10 >= 5) {					
+				if (int(con.time * 10.0) % 10 >= 5) {
+					// rect frame on tile
 					render_inline(win, 
-						vmul(sel, ly.terr_dim) + pos,
-						tile_dim, 
+						vmul(coords, ly.terr_dim) + pos,
+						ly.terr_dim, 
 						{255,255,255,255}
 					);
 				}
 			}
 		}
 		
-		
-
 		
 	}
 
@@ -1769,7 +1780,8 @@ namespace col {
 		// Turn 5, England 
 		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
 			
-		if (auto tp = con.get_sel_terr()) {
+		
+		if (Terr const* tp = con.get_sel_terr()) {
 			auto& t = *tp;
 			string phys_info;
 			for (auto const& item: PHYS_NAMES) {
@@ -1858,9 +1870,14 @@ namespace col {
 		}
 		
 		if (auto t = con.get_sel_terr()) {
-			render_units(win, con,
-				ly.pan.pos + v2i(0,100), 
-				ly.pan.dim, 
+			v2i pos = ly.pan.pos + v2i(0,100);
+			v2i dim = v2i(ly.pan.dim[0], ly.terr_dim[1]*3);
+			
+			render_fill(win, pos, dim, 
+				sf::Color(0,0,0,64)
+			);
+			
+			render_units(win, con, pos, dim, 
 				env, 
 				*t
 			); 

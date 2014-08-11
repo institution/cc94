@@ -319,6 +319,14 @@ namespace col{
 
 		}
 
+		void activate_all() {
+			for (auto& p: players) {
+				if (auto u = p.second.get_user()) {
+					u->activate();
+				}
+			}
+		}
+
 		void turn(Colony & c) {
 			auto& t = get_terr(c);
 			auto p = get_control(t);
@@ -587,6 +595,7 @@ namespace col{
 					auto& x = get_terr(Coords(i,j));
 					x.biome = t.biome;
 					x.phys = t.phys;
+					x.alt = t.alt;
 				}
 			}
 

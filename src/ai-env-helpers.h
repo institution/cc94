@@ -37,11 +37,16 @@ namespace col{
 			Unit2Order uos;
 
 			Order* get_order(Unit::Id id) {
-				/*auto p = uos.find(id);
+				auto p = uos.find(id);
 				if (p != uos.end()) {
-					return &p.second;
-				}*/
+					return &(*p).second;
+				}
 				return nullptr;
+			}
+
+			Memory & set_order(Unit::Id id, Order const& o) {
+				uos[id] = o;
+				return *this;
 			}
 
 

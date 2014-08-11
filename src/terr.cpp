@@ -71,6 +71,7 @@ namespace col{
 				return LAND;
 			}
 		}
+		throw Error("Terr: Unknown travel type");
 	}
 	
 	uint16 Terr::get_yield(Item const& item, bool const& is_expert) const {

@@ -6,6 +6,8 @@
 
 #include "serialize.hpp"
 #include "view_base.h"
+#include "renderer.h"
+#include "expert_ai.h"
 
 namespace col {
 	using boost::str;
@@ -222,15 +224,17 @@ namespace col {
 		
 		vector<string> es;
 		split(es, line, is_any_of(" "));
-
+		
+		Unit::Id sel_unit_id = get_sel_unit_id();
+		Terr::Id sel = get_sel_terr_id();
+		
 		auto& cmd = es[0];
 
 		put(line);
 		auto& con = *this;
-		auto& env = envgame;
 		
 		if (cmd == "list-players") {
-			for (auto &item: envgame.players) {
+			for (auto &item: env.players) {
 				put(str(format("%||") % item.second));
 			}
 		}
@@ -300,10 +304,10 @@ namespace col {
 					put("Usage: add-phys <phys-name>");
 					break;
 				case 2:
-					if (envgame.in_bounds(sel)) {
+					if (get_sel_terr()) {
 						Phys p = get_phys_by_name(es.at(1));
 						if (p != PhysNone) {
-							envgame.get_terr(sel).add(p);
+							get_sel_terr()->add(p);
 						}
 						else {
 							put("invalid phys name");
@@ -321,9 +325,9 @@ namespace col {
 					put("Usage: info");
 					break;
 				case 1:
-					put("Turn: " + to_string(envgame.get_turn_no()) + "; " +
-						"Player: " + envgame.get_current_player().name  + "; " +
-						"State: " + to_string(envgame.state)
+					put("Turn: " + to_string(env.get_turn_no()) + "; " +
+						"Player: " + env.get_current_player().name  + "; " +
+						"State: " + to_string(env.state)
 					);
 					break;
 			}
@@ -334,7 +338,7 @@ namespace col {
 					put("Usage: connect <player-id>");
 					break;
 				case 2:
-					env.connect(stoi(es.at(1)), *user);					
+					env.connect(stoi(es.at(1)), *this);					
 					break;
 			}
 		}
@@ -344,7 +348,7 @@ namespace col {
 					put("Usage: score <player_id>");
 					break;
 				case 2:
-					auto f = envgame.get_result(stoi(es.at(1)));
+					auto f = env.get_result(stoi(es.at(1)));
 					put(to_string(f));
 					break;
 			}
@@ -355,10 +359,10 @@ namespace col {
 					put("Usage: set-biome <biome-name>");
 					break;
 				case 2:
-					if (envgame.in_bounds(sel)) {
+					if (auto tp = get_sel_terr()) {
 						Biome b = get_biome_by_name(es.at(1));
 						if (b != BiomeNone) {
-							envgame.get_terr(sel).set_biome(b);
+							tp->set_biome(b);
 						}
 						else {
 							put("invalid biome name");
@@ -373,15 +377,32 @@ namespace col {
 					put("Usage: set-alt <0,1,2,3>");
 					break;
 				case 2:
-					if (envgame.in_bounds(sel)) {
-						envgame.get_terr(sel).set_alt(stoi(es.at(1)));						
+					if (auto tp = get_sel_terr()) {
+						tp->set_alt(stoi(es.at(1)));						
 					}
 					break;
 			}
 		}
 		else if (cmd == "turn") {
-			envgame.turn();
-			put(str(format("Turn %||") % envgame.turn_no));
+			env.turn();
+			put(str(format("Turn %||") % env.turn_no));
+		}
+		else if (cmd == "expert") {
+			switch (es.size()) {
+				default: {
+					output.push_back("Usage: expert <pid>\n");
+					break;
+				}
+				case 2: {
+					auto pid = std::stoi(es.at(1));
+					auto & p = env.get<Player>(pid);
+					if (p.user == nullptr) {
+						ths.emplace_back(expert_ai::run, pid, &env, &running);
+						put("expert ai connected to player");
+					}
+					break;
+				}
+			}
 		}
 		else if (cmd == "ai") {				
 			// calculate and show preffered move for current player
@@ -391,28 +412,28 @@ namespace col {
 					break;
 				}
 				case 3: {
-					if (envgame.in_progress()) {
-						auto const& pid = envgame.get_current_player().id;
-						auto it = ais.find(pid);
-						if (it == ais.end()) {
+					if (env.in_progress()) {
+						auto & p = env.get_current_player();
+						if (p.user == nullptr) {
 							put("creating ai for this player");
-							create_ai(pid);
+							
+							ths.emplace_back(Ai::run, p.id, &env);
 						}
 
 						auto run_mode = stoi(es.at(2));  // 0 no, 1 step, 2 full turn
 						auto power = stoi(es.at(1));
 						
-						
+						/*
 						auto& ai = ais.at(pid);
 						
 						if (run_mode == 1) {
-							auto const& a = ai.calc(envgame, power, 0);
+							auto const& a = ai.calc(env, power, 0);
 							put(string("action: ") + to_string(a));
 							exec(a);
 						}
 						else {
 							while (1) {
-								auto const& a = ai.calc(envgame, power, 0);
+								auto const& a = ai.calc(env, power, 0);
 								put(string("action: ") + to_string(a));
 								exec(a);
 								if (a == Ready(pid)) {
@@ -421,7 +442,7 @@ namespace col {
 							}
 
 						}
-						
+						*/
 						
 
 					}
@@ -439,9 +460,9 @@ namespace col {
 					break;
 				}
 				case 1: {
-					envgame.start();
+					env.start();
 					put("Game started!");
-					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
+					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
 					break;
 				}
 			}
@@ -454,30 +475,30 @@ namespace col {
 				}
 				case 2: {
 					exec(Ready(std::stoi(es.at(1))));
-					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
+					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
 					break;
 				}
 				case 1: {
-					exec(Ready(envgame.get_current_player().id));
-					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player());
+					exec(Ready(env.get_current_player().id));
+					select_unit(misc::get_next_to_move_id(env, env.get_current_player()));
 					break;
 				}
 			}
 		}
 		else if (cmd == "list-units") {
-			for (auto &item: envgame.units) {
+			for (auto &item: env.units) {
 				put(str(format("%||") % item.second));
 			}
 		}
 		else if (cmd == "list-unit-types") {
-			for (auto &utp: *envgame.uts) {
+			for (auto &utp: *env.uts) {
 				auto &ut = utp.second;
 				put(str(format("%u: %s") % uint16(ut.id) % ut.name));
 			}
 		}
 		else
 		if (es[0] == "deli") {
-			envgame.destroy<Unit>(std::stoi(es[1]));
+			env.destroy<Unit>(std::stoi(es[1]));
 		}
 		else if (cmd == "create-unit") {
 			switch (es.size()) {
@@ -488,7 +509,7 @@ namespace col {
 				case 3: {
 					auto& c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
 					auto& p = env.get<Player>(std::stoi(es.at(2)));  // player_id
-					auto& t = env.get_terr(Coords(sel[0], sel[1]));  // coords
+					auto& t = *get_sel_terr(); 
 					auto& u = env.create<Unit>(c, p);
 					env.init(u, t);
 					if (compatible(u.get_travel(), LAND) and
@@ -507,7 +528,7 @@ namespace col {
 					break;
 				}
 				case 3: {
-					envgame.create<Player>(
+					env.create<Player>(
 						string(es[1]), // name
 						make_color_by_name(string(es[2])), // color
 						flag_id4color_name(string(es[2]))  // flag_id
@@ -522,9 +543,9 @@ namespace col {
 					put("Usage: delete-colony");
 					break;
 				case 1:
-					auto &t = envgame.get_terr(sel);
+					auto &t = *get_sel_terr();
 					if (t.has_colony()) {
-						envgame.burn_colony(t);
+						env.burn_colony(t);
 					}
 					else {
 						put("there is no colony at selected location");
@@ -540,14 +561,14 @@ namespace col {
 					break;
 				}
 				case 3: {
-					sel = Coords(std::stoi(es.at(1)), std::stoi(es.at(2)));
+					select_terr(Coords(std::stoi(es.at(1)), std::stoi(es.at(2))));
 					break;
 				}
 				case 2: {
 					auto unit_id = std::stoi(es.at(1));
 					try {
-						envgame.get<Unit>(unit_id);
-						sel_unit_id = unit_id;
+						env.get<Unit>(unit_id);
+						select_unit(unit_id);
 					}
 					catch (Error const& e) {
 						put(e.what());
@@ -564,14 +585,14 @@ namespace col {
 					break;
 				}
 				case 2: {
-					envgame.turn_no = stoi(es.at(1));
+					env.turn_no = stoi(es.at(1));
 					break;
 				}
 			}
 		}
 		else
 		if (es[0] == "delp") {
-			envgame.del_player(std::stoi(es[1]));
+			env.del_player(std::stoi(es[1]));
 		}
 		else if (cmd == "save") {
 			switch (es.size()) {
@@ -581,7 +602,7 @@ namespace col {
 				case 2: {
 						ofstream f(es.at(1), std::ios::binary);
 						boost::archive::text_oarchive oa(f);
-						oa << envgame;
+						oa << env;
 					}
 					break;
 			}
@@ -594,14 +615,14 @@ namespace col {
 				case 2: {
 						ifstream f(es.at(1), std::ios::binary);
 						boost::archive::text_iarchive oa(f);
-						oa >> envgame;
+						oa >> env;
 					}
 					break;
 			}
 		}
 		else
 		if (es[0] == "set_owner") {
-			envgame.set_owner(
+			env.set_owner(
 				stoi(es[1]),
 				stoi(es[2])
 			);
@@ -612,10 +633,8 @@ namespace col {
 					put("Usage: build-road");
 					break;
 				case 1:
-					if (sel_unit_id) {
-						auto ret = envgame.build_road(
-							env.get<Unit>(con.sel_unit_id)
-						);
+					if (auto up = get_sel_unit()) {
+						auto ret = env.build_road(*up);
 						put(str(format("ret = %||") % ret));
 					}
 					else {
@@ -634,7 +653,7 @@ namespace col {
 					auto number = stoi(es.at(2));
 					auto item = get_item_by_name(es.at(1));
 
-					auto &terr = envgame.get_terr(sel);
+					auto &terr = *get_sel_terr();
 					terr.get_colony().add(item, number);
 					break;
 			}
@@ -649,8 +668,8 @@ namespace col {
 					auto place_id = stoi(es.at(1));
 					auto buildtype_id = stoi(es.at(2));
 					
-					auto& c = envgame.get_terr(sel).get_colony();
-					envgame.colony_construct(c, buildtype_id, place_id);
+					auto& c = get_sel_terr()->get_colony();
+					env.colony_construct(c, buildtype_id, place_id);
 					
 					}
 					break;
@@ -664,8 +683,8 @@ namespace col {
 					break;
 				case 2: {
 					auto number = stoi(es.at(1));
-					auto unit_id = sel_unit_id;
-					auto& unit = envgame.get<Unit>(unit_id);
+					auto unit_id = get_sel_unit_id();
+					auto& unit = env.get<Unit>(unit_id);
 					env.work_build(number, unit);
 					
 					break;
@@ -682,7 +701,7 @@ namespace col {
 				case 2: {
 					auto id = stoi(es.at(1));
 					env.equip(
-						env.get<Unit>(sel_unit_id), 
+						*get_sel_unit(), 
 						env.get<UnitType>(id)
 					);
 					break;
@@ -698,8 +717,8 @@ namespace col {
 					break;
 				case 2: {
 					auto number = stoi(es.at(1));
-					auto unit_id = sel_unit_id;
-					auto& unit = envgame.get<Unit>(unit_id);
+					auto unit_id = get_sel_unit_id();
+					auto& unit = env.get<Unit>(unit_id);
 					env.work_field(number, unit);
 					
 					break;
@@ -713,8 +732,8 @@ namespace col {
 					put("Usage: work-none");
 					break;
 				case 1: {
-					auto unit_id = sel_unit_id;					
-					auto& unit = envgame.get<Unit>(unit_id);
+					auto unit_id = get_sel_unit_id();
+					auto& unit = env.get<Unit>(unit_id);
 					env.work_none(unit);
 					break;
 				}
@@ -771,9 +790,9 @@ namespace col {
 					put("Usage: build-colony <name>");
 					break;
 				case 2:
-					if (envgame.has_defender(sel)) {
-						envgame.colonize(
-							envgame.get_defender(envgame.get_terr(sel)),
+					if (env.has_defender(sel)) {
+						env.colonize(
+							env.get_defender(env.get_terr(sel)),
 							es.at(1)
 						);
 					}
@@ -802,7 +821,7 @@ namespace col {
 						)
 					));
 					
-					sel_unit_id = misc::get_next_to_move_id(env, env.get_current_player(), sel_unit_id);
+					select_unit(misc::get_next_to_move_id(env, env.get_current_player(), sel_unit_id));
 						 
 					break;
 			}
@@ -813,10 +832,10 @@ namespace col {
 					put("Usage: attack <dx> <dy>");
 					break;
 				case 3:
-					if (envgame.has_defender(sel)) {
+					if (env.has_defender(sel)) {
 						exec(OrderAttack(
-							envgame.get_current_player().id,
-							envgame.get_defender(envgame.get_terr(sel)).id,
+							env.get_current_player().id,
+							env.get_defender(env.get_terr(sel)).id,
 							dir4vec(
 								Coords(
 									stoi(es.at(1)), // dx
@@ -873,5 +892,50 @@ namespace col {
 
 
 	}
+	
+	
+
+	
+	
+	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running) {
+
+		Console con(*ee, *tt, *running);
+
+		preload_terrain();
+
+		sf::RenderWindow app(
+			sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32),
+			"cc14"
+		);
+
+		sf::View view(sf::FloatRect(0, 0, SCREEN_W, SCREEN_H));
+		app.setView(view);
+
+		auto last_env = con.env.mod - 1;
+		auto last_con = con.mod - 1;
+
+		sf::Clock clock;
+		auto last_t = clock.getElapsedTime().asSeconds();
+		while (app.isOpen())
+		{
+			if ((con.env.mod != last_env) || (con.mod != last_con) || (last_t + 0.1 > clock.getElapsedTime().asSeconds())) {
+				//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
+				con.time = clock.getElapsedTime().asSeconds();
+				last_t = con.time;
+
+				render(app, con.env, con);
+
+				last_env = con.env.mod;
+				last_con = con.mod;
+			}
+
+			con.handle_events(app);
+
+		}
+		(*running) = false;
+		std::cout << "run_console -- clean exit\n";
+	}
+
+
 	
 }
