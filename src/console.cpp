@@ -634,15 +634,21 @@ namespace col {
 					break;
 				case 1:
 					if (auto up = get_sel_unit()) {
-						auto ret = env.build_road(*up);
-						put(str(format("ret = %||") % ret));
+						auto ret = env.improve(*up, PhysRoad);
+						if (ret) {
+							mem.set_order(up->id, '-');							
+						}
+						else {
+							mem.set_order(up->id, 'R');							
+						}
+						select_next_unit();
 					}
 					else {
 						put("no unit selected");
 					}
 					break;
 			}
-
+			
 		}
 		else if (cmd == "add-item") {
 			switch (es.size()) {
@@ -795,6 +801,7 @@ namespace col {
 							env.get_defender(env.get_terr(sel)),
 							es.at(1)
 						);
+						//select_next_unit();
 					}
 					else {
 						put("no unit selected");

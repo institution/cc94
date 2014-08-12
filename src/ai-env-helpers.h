@@ -34,9 +34,14 @@ namespace col{
 
 		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func);
 
+		inline
+		float get_moves(Unit const& u) {
+			int unit_cost = TIME_UNIT/u.get_speed();
+			return u.get_time_left() / unit_cost;
+		}
 
 		struct Memory{
-			// automatyka wspomagajaca human playera
+			// remember unfinished orders
 
 			struct Order{
 				char code;

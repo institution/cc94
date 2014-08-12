@@ -3,61 +3,8 @@
 
 namespace col{
 
-	int Terr::get_roughness() const {
-		
-		int has_river = has(PhysMinorRiver) or has(PhysMajorRiver);
-		int has_forest = has(PhysForest);
-		int has_road = has(PhysRoad);
-		
-		int base = TIME_UNIT;
-		switch (biome) {					
-			case BiomePrairie:
-			case BiomePlains:
-			case BiomeSavannah:
-			case BiomeGrassland:				
-			case BiomeTundra:
-			case BiomeDesert:
-				base = TIME_UNIT;
-				break;
-			case BiomeMarsh:
-			case BiomeSwamp:
-			case BiomeArctic:
-				base = TIME_UNIT * 2;
-				break;				
-			default:
-				cout << "invalid land biome: " << uint16(biome) << endl;
-				throw runtime_error("invalid land biome");
-		}
-		
-		if (has_forest) {
-			base += TIME_UNIT;
-		}
-		
-		if (has_river) {
-			base += TIME_UNIT;
-		}		
-				
-		if (alt == AltHill) {
-			base += TIME_UNIT;
-		}
-		else if (alt == AltMountain) {
-			base += TIME_UNIT*2;
-		}
-		else if (alt == AltSea) {
-			base = TIME_UNIT;
-		}
-		
-		return base;
-	}
+
 	
-	int Terr::get_movement_cost() const {
-		if (has(PhysRoad) or has(PhysMinorRiver) or has(PhysMajorRiver)) {
-			return TIME_UNIT / 3;
-		}
-		else {
-			return int(0.67 * std::sqrt(float(get_roughness())/float(TIME_UNIT))*float(TIME_UNIT));
-		}		
-	}
 	
 	Travel Terr::get_travel() const {
 		if (alt == AltSea) {

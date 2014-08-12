@@ -88,11 +88,11 @@ namespace col {
 				throw Error("no unit with this id");
 			}
 
-			game.order_move(
+			/*game.move_board(
 				(*it).second,
 				dir,
 				exec
-			);
+			);*/
 		}
 
 		virtual ostream& dump(ostream& out) const {

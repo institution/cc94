@@ -28,12 +28,12 @@ using roll::replay;
  * construct building by working in lumber mill *
  * board/leave shib by units *
  * working colonist consume food *
- * equip/unequip units
- * map tasks consume tools
+ * equip/unequip units *
+ * map tasks consume tools *
+ * ordered colony production
  * load/unload cargo into ship 
  * travel to europe by sea - exit_map(ship, dest) order
  * sell/buy in europe 
- * clear forest (add lumber to colony)
  *
  
  
@@ -147,7 +147,10 @@ TEST_CASE( "env::move_unit", "" ) {
 	REQUIRE(env.get_coords(u) == Coords(0,0));
 
 	env.set_random_gen(replay({0}));
-	env.order_move(u, Dir::D);
+
+	REQUIRE_NOTHROW(env.start());
+
+	REQUIRE(env.move_board(1, 0, u) == true);
 
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 
@@ -175,13 +178,13 @@ TEST_CASE( "equip unit", "" ) {
 	env.init(c, t);
 	
 	REQUIRE_NOTHROW(c.add(ItemMuskets, 50));	
+	
+	REQUIRE_NOTHROW(env.start());
 	REQUIRE_NOTHROW(env.equip(u, ut));	
 	REQUIRE(u.get_type() == ut);
 	REQUIRE(c.get(ItemMuskets) == 0);
 	REQUIRE(c.get(ItemHorses) == 0);
-	
-
-}
+	}
 
 
 
@@ -202,7 +205,7 @@ TEST_CASE( "board ship", "" ) {
 	env.init(u, env.get_terr({0,0}));
 	
 	auto& s = env.create<Unit>(
-		env.create<UnitType>().set_travel(SEA).set_slots(2),
+		env.create<UnitType>().set_travel(SEA).set_speed(2).set_slots(2),
 		p
 	);
 	env.init(s, env.get_terr({1,0}));
@@ -210,12 +213,13 @@ TEST_CASE( "board ship", "" ) {
 	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
 	
-	env.order_move(u, Dir::D);
+	REQUIRE_NOTHROW(env.start());
+	REQUIRE(env.move_board(1,0,u) == true);
 
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 	REQUIRE(u.transported == true);
 	
-	env.order_move(s, Dir::D);
+	REQUIRE(env.move_board(1,0,s) == true);
 	
 	REQUIRE(env.get_coords(s) == Coords(2,0));
 	REQUIRE(env.get_coords(u) == Coords(2,0));
@@ -516,8 +520,12 @@ TEST_CASE( "improve square", "" ) {
 
 
 	auto& t = env.get_terr({0,0});
+	
+	auto& ut1 = env.create<UnitType>();
+	auto& ut2 = env.create<UnitType>().set_travel(LAND).set_equip1(ItemTools, 20);
+	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
+		ut2,
 		env.create<Player>()
 	);
 	env.init(u, t);
@@ -525,16 +533,18 @@ TEST_CASE( "improve square", "" ) {
 	SECTION("build road") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE( env.build_road(u) == true );
-		REQUIRE( t.has(PhysRoad)       );
+		REQUIRE_NOTHROW(env.start());
+		REQUIRE( env.improve(u, PhysRoad) == true );
+		REQUIRE( t.has(PhysRoad) );
 
-		REQUIRE_THROWS_AS(env.build_road(u), Error);				
+		REQUIRE_THROWS_AS(env.improve(u, PhysRoad), Error);				
 	}
 
 	SECTION("plow field") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE( env.plow_field(u) == true );
+		REQUIRE_NOTHROW(env.start());
+		REQUIRE( env.improve(u, PhysPlow) == true );
 		REQUIRE( t.has(PhysPlow)       );
 	}
 

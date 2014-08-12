@@ -7,6 +7,8 @@ namespace col {
 
 	struct Phys: Enum<> {
 		using Enum<>::Enum;
+
+		using Id = int;
 	};
 
 
@@ -22,6 +24,11 @@ namespace col {
 		PhysPlow = 64,
 		PhysWorker = 128;
 
+	Phys const
+		PhysRiver = PhysMinorRiver | PhysMajorRiver;
+
+	Phys const
+		PhysAlterable = PhysRoad|PhysForest|PhysPlow;
 }
 
 #endif

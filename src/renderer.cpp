@@ -761,12 +761,7 @@ namespace col {
 				else 
 				if (b.under_construction()) 
 				{
-					
-					
-					
-					
-					//render_sprite(win, build_pos, res(ICON, get_item_icon_id(ItemHammers)));
-					
+					// render_sprite(win, build_pos, res(ICON, get_item_icon_id(ItemHammers)));					
 					render_text_line(
 						win,
 		
@@ -779,9 +774,7 @@ namespace col {
 						{0,0,0,255},
 							
 						std::to_string(b.get_hammers()) + '/' + std::to_string(b.get_cost_hammers())						
-					);
-
-					
+					);				
 				}
 				
 				// left click on building -- assign worker or show construction popup
@@ -837,7 +830,7 @@ namespace col {
 				int i = 0;
 				for (auto& unit_ptr: b.units) {
 					auto& unit = *unit_ptr;
-					auto& unit_tex = res(ICON, unit.get_type_id());
+					auto& unit_tex = res(ICON, get_icon_id(unit));
 
 					v2i unit_pos = calc_align(
 						Box(
@@ -918,13 +911,13 @@ namespace col {
 					v2i unit_dim = v2i(field_dim[0]/2, field_dim[1]);
 					v2i unit_pos = field_pos + v2i(field_dim[0]/2, 0);
 					
-					v2i item_dim = v2i(field_dim[0]/2, field_dim[1]);
+					v2i item_dim = field_dim; //v2i(field_dim[0]/2, field_dim[1]);
 					v2i item_pos = field_pos;					
 
 					v2i sel_pos = field_pos;
 					v2i sel_dim = field_dim;
 					
-					auto& unit_tex = res(ICON, unit.get_type_id());
+					auto& unit_tex = res(ICON, get_icon_id(unit));
 					
 					// render produced item
 					auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
@@ -934,12 +927,9 @@ namespace col {
 					);
 
 					// render produced item amount
-					render_text_line(
-						win,
-						item_pos, item_dim, v2f(1, 0),
-						res_pixfont("tiny.png"), ColorWhite, ColorBlack,
-						to_string(env.get_prodnum(field))
-					);
+					auto text = Text(to_string(env.get_prodnum(field)));
+					text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
+					render_text(win, item_pos, text);
 					
 					// render unit on field
 					render_sprite(win, 
@@ -1810,7 +1800,7 @@ namespace col {
 			
 			info += boost::str(
 				format("\nmove: %||\nimprov: %||\n") %
-					t.get_movement_cost() % t.get_roughness()
+					env.get_movement_cost(t, t, TravelLand) % env.get_improv_cost(t)
 			);
 			
 
@@ -1822,14 +1812,21 @@ namespace col {
 				format("\n%||\nTime left: %||/%||") %
 					u->get_name() % int(u->time_left) % int(TIME_UNIT)
 			);
+			
+			info += boost::str(
+				format("\nmoves: %||") % misc::get_moves(*u)
+			);
+			
 			info += boost::str(
 				format("\ntransported: %||") %
 					u->get_transported()
 			);
+			
 			info += boost::str(
 				format("\nspace left: %||") %
 					u->get_space_left()
 			);
+			
 			if (u->get_item1() == ItemTools) {
 				info += boost::str(
 					format("\ntools: %||") %

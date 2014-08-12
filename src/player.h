@@ -57,6 +57,10 @@ namespace col{
 		return self.id == other.id;
 	}
 
+	inline bool operator!=(Player const& self, Player const& other) {
+		return self.id != other.id;
+	}
+
 	ostream& operator<<(ostream &out, const Player &obj);
 
 

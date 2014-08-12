@@ -15,11 +15,12 @@
 #include "roll.h"
 #include "error.h"
 #include "field.h"
-
-
+#include "inter.h"
 
 
 namespace col{
+
+
 
 
 
@@ -289,7 +290,9 @@ namespace col{
 			return state == 1;
 		}
 
-		void ready(Player const& p, bool exec=1) {
+
+
+		bool ready(Player const& p, bool exec=1) {
 
 			if (get_current_player().id != p.id) {
 				if (exec) {
@@ -319,6 +322,12 @@ namespace col{
 				}
 			}
 
+			return 1;
+		}
+
+		bool apply(inter::ready const& a) {
+			ready(get_current_player());
+			return 1;
 		}
 
 		void activate_all() {
@@ -406,6 +415,10 @@ namespace col{
 		}
 
 		void equip(Unit & u, UnitType & ut) {
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
+
 			Terr & t = get_terr(u);
 			Colony & c = t.get_colony();
 
@@ -659,40 +672,10 @@ namespace col{
 
 		}
 
-		/*
-		int get_improvment_cost(Improv const& im) {
-			// zero mean immposible to build
-			//im.get_base_cost()
-		}*/
+		int get_roughness(Terr const& t) const;
 
-		bool build_road(Unit &u, bool exec=1) {
-			/* Build road on land terrain square (cost ~ 1.5 turns)
-			 */
-
-			// unit checks
-			if (!compatible(u.get_travel(), LAND)) {
-				throw Error("must be land based unit");
-			}
-
-			Terr& t = get_terr(u);
-
-			// terrain checks
-			if (!compatible(t.get_travel(), LAND)) {
-				throw Error("can build on land only");
-			}
-			if (t.has(PhysRoad)) {
-				throw Error("road already exists");
-			}
-
-			// execute
-			if (exec)  {
-				if (run_map_task(u, t.get_roughness())) {
-					t.add(PhysRoad);
-					return 1;
-				}
-				return 0;
-			}
-			return -1; // unspecified
+		int get_improv_cost(Terr const& t) const {
+			return 3 * get_roughness(t) * TIME_UNIT;
 		}
 
 
@@ -714,22 +697,47 @@ namespace col{
 			return space;
 		}
 
+		int get_movement_cost(Terr const& dest, Terr const& orig, Travel const&) const;
+
 
 		bool has_transport(Terr const& dest, Unit const& u) const {
 			return get_transport_space(dest, u.get_player()) >= u.get_size();
 		}
 
-		bool order_move(Unit &u, Dir::t const& dir, bool exec=1) {
-			/* Move unit
+
+		bool has_tools(Unit const& u) {
+			return u.get_item1() == ItemTools and u.get_num1() >= 20;
+		}
+
+		void use_tools(Unit & u) {
+			// special hack for pioniers only
+			u.set_type(get<UnitType>(u.get_type_id() - 1));
+		}
+
+		bool move_board(int8 dx, int8 dy, Unit & u) {
+			/* Move/board unit on adjacent square/ship
 			 */
 
-			// static check
-			if (dir == Dir::S) {
+			// unit checks
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
+
+			if (u.get_speed() == 0) {
+				throw Error("this unit cannot move (speed = 0)");
+			}
+
+			// direction check
+			if (!(-1 <= dx and dx <= 1 and -1 <= dy and dy <= 1)) {
+				throw Error("invalid coords");
+			}
+
+			if (dx == 0 and dy == 0) {
 				throw Error("already here");
 			}
 
 			auto & orig = get_terr(u);
-			auto dest_coords = get_coords(orig) + vec4dir(dir);
+			auto dest_coords = get_coords(orig) + Coords(dx,dy);
 
 			if (!in_bounds(dest_coords)) {
 				throw Error("destination outside of map");
@@ -746,49 +754,52 @@ namespace col{
 				else {
 					throw Error("cannot travel through this terrain");
 				}
-
 			}
 
 			// dynamic check
-			if (has_defender(dest)) {
-				if (get_defender(dest).get_player().id != u.get_player().id) {
-					throw Error("destination occupied by enemy");
-				}
+			Player * cp = get_control(dest);
+			if (cp and cp->id != get_current_player().id) {
+				throw Error("destination occupied by enemy");
 			}
 
 			// execute
 
-			if (exec) {
+			// cost to move
+			int time_cost = -1;
 
-				// cost to move = 1t
-
-				auto time_cost = dest.get_movement_cost() / u.get_speed();
-
-				if (run_map_task(u, time_cost)) {
-					t_move(dest, u);
-					u.transported = transported;
-
-					auto space = u.get_space_left();
-					for (auto& p: orig.units) {
-						if (!space) break;
-						if (p->transported) {
-
-							t_move(dest, *p);
-							space -= 1;
-						}
-					}
-
-					record_action();
-					return 1; // success
-				}
-				else {
-					record_action();
-					return 0; // try next turn
-				}
+			if (transported or u.transported) {
+				// board/unboard from/to land
+				time_cost = TIME_UNIT;
 			}
 			else {
-				return -1; // unspecified
+				time_cost = get_movement_cost(dest, orig, u.get_travel()) / u.get_speed();
 			}
+
+			if (time_cost <= 0) {
+				throw Critical("time_cost == 0???");
+			}
+
+
+			if (run_map_task(u, time_cost)) {
+				t_move(dest, u);
+				u.transported = transported;
+
+				auto space = u.get_space_left();
+				for (auto& p: orig.units) {
+					if (!space) break;
+					if (p->transported) {
+						t_move(dest, *p);
+						space -= 1;
+					}
+				}
+
+				record_action();
+				return 1; // success
+			}
+
+			record_action();
+			return 0; // try next turn
+
 		}
 
 
@@ -904,11 +915,43 @@ namespace col{
 		}
 
 
-		bool plow_field(Unit& u, bool exec=1) {
+		bool destroy(Unit & u, Phys const& feat) {
+			// unit checks
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
 
-			// unit check
-			if (!compatible(u.get_travel(), LAND)) {
-				throw Error("need land based unit to perform this action");
+			if (!has_tools(u)) {
+				throw Error("need tools");
+			}
+
+			auto& t = get_terr(u);
+
+			// terrain checks
+			if (!compatible(t.get_travel(), LAND)) {
+				throw Error("can clear on land only");
+			}
+
+			if (!t.has(feat)) {
+				throw Error("no feat to clear");
+			}
+
+			if (run_map_task(u, get_improv_cost(t))) {
+				use_tools(u);
+				t.sub(feat);
+				return 1;
+			}
+			return 0;
+		}
+
+		bool improve(Unit & u, Phys const& feat) {
+			// unit checks
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
+
+			if (!has_tools(u)) {
+				throw Error("need tools");
 			}
 
 			auto& t = get_terr(u);
@@ -918,33 +961,19 @@ namespace col{
 				throw Error("can build on land only");
 			}
 
-			if (t.has(PhysPlow)) {
-				throw Error("improvment already exists");
+			if (t.has(feat)) {
+				throw Error("feat already exists");
 			}
 
-			// execute
-			if (exec) {
-				if (run_map_task(u, t.get_roughness())) {
-					t.add(PhysPlow);
-					return 1;
-				}
-				return 0;
+			if (run_map_task(u, get_improv_cost(t))) {
+				use_tools(u);
+				t.add(feat);
+				return 1;
 			}
-			return -1;
-		}
-
-		bool clear_forest(Unit const& u) {
-			//uint8 time_cost = TIME_UNIT * 3;  // 3t
-
-
 			return 0;
 		}
 
 
-		bool plant_forest() {
-
-			return 0;
-		}
 
 		void kill(Colony & c) {
 			c.terr->colony = nullptr;

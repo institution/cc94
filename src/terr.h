@@ -153,19 +153,10 @@ namespace col{
 		Terr & set_alt(Alt const& alt) { this->alt = alt; return *this; }
 
 		Travel get_travel() const;
-		int8 get_movement_cost(Travel const& t) const;
-		int get_movement_cost() const;
 
 		bool is_water_tile() const {
 			return alt == AltSea;
 		}
-
-		int get_roughness() const;
-
-	// private
-		// max speed
-		int8 get_land_movement_cost() const;
-		int8 get_naval_movement_cost() const;
 
 	};
 

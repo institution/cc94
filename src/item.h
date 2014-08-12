@@ -12,6 +12,8 @@ namespace col {
 
 		string const& get_name() const;
 		int get_serial_id() const;
+
+		using Id = int;
 	};
 
 	inline

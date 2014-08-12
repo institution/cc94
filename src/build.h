@@ -118,7 +118,8 @@ namespace col{
 
 
 	struct Build: Workplace {
-
+		using Id = int;
+		
 		BuildType const* type;
 		int8 free_slots;
 		int hammers{0};

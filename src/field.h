@@ -10,6 +10,7 @@ namespace col{
 
 
 	struct Field: Workplace{
+		using Id = int8;
 		PlaceType::type place_type() { return PlaceType::Field; }
 
 		Terr *terr{nullptr};

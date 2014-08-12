@@ -67,8 +67,8 @@ namespace col {
 
 
 
-	uint8 const TIME_UNIT = 24;
-	uint8 const SPACE_UNIT = 24;
+	uint8 const TIME_UNIT = 12;
+	uint8 const SPACE_UNIT = 12;
 	// uint8 const COLONIZE_TP_COST = 6;
 
 
@@ -85,7 +85,7 @@ namespace col {
 	//using Travel = uint8;
 	Travel const LAND = 1;
 	Travel const SEA = 2;
-	
+
 	Travel const TravelNone = 0;
 	Travel const TravelLand = 1;
 	Travel const TravelSea = 2;
