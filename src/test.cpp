@@ -30,10 +30,16 @@ using roll::replay;
  * working colonist consume food *
  * equip/unequip units *
  * map tasks consume tools *
- * ordered colony production
+ * ordered colony production *
+ *     MAKEFILE: source organization - separate modules
+ *     REGRESS: zero tool building builds on first turn
+ *     VISUAL: unselect unit after assigment to field/build (BUG?)
+ * colony screen: background on fields
+ * replace messages with effects (let clients use them for messages)
  * load/unload cargo into ship 
  * travel to europe by sea - exit_map(ship, dest) order
  * sell/buy in europe 
+ * fog of war
  *
  
  
@@ -82,12 +88,24 @@ TEST_CASE( "tree2", "" ) {
  */
 TEST_CASE( "env", "" ) {
 	Env env;
+	
+	// resize
 	REQUIRE_NOTHROW(env.resize({1,1}));
+	
+	// fill
 	REQUIRE_NOTHROW(env.fill(Terr{AltSea, BiomeTundra}));
 	REQUIRE(env.get_terr({0,0}).get_alt() == AltSea);
 	REQUIRE(env.get_terr({0,0}).get_biome() == BiomeTundra);
 	
+	// get<Terr>
+	REQUIRE_NOTHROW(env.get<Terr>({0,0}));
+	
+	
+	
 }
+
+
+
 
 TEST_CASE( "terr", "" ) {
 	Terr t(AltFlat, BiomePlains, PhysForest);
@@ -114,19 +132,6 @@ TEST_CASE( "terr", "" ) {
 	
 }
 
-TEST_CASE( "get terr", "" ) {
-
-	Env env;
-
-	env.resize({1,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
-
-
-	auto& t = env.get<Terr>(Coords(0,0));
-	REQUIRE(t.biome == BiomePlains);
-
-}
-
 
 
 TEST_CASE( "env::move_unit", "" ) {
@@ -142,16 +147,15 @@ TEST_CASE( "env::move_unit", "" ) {
 		env.create<Player>()
 	);
 
-	env.init(u, env.get_terr({0,0}));
-
+	// init
+	REQUIRE_NOTHROW(env.init(u, env.get_terr({0,0})));
 	REQUIRE(env.get_coords(u) == Coords(0,0));
-
-	env.set_random_gen(replay({0}));
-
+	
 	REQUIRE_NOTHROW(env.start());
 
+	env.set_random_gen(replay({0}));
+	// move/board
 	REQUIRE(env.move_board(1, 0, u) == true);
-
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 
 
@@ -287,8 +291,13 @@ TEST_CASE( "colony workplace/production", "" ) {
 	env.loads<BuildType>("../col94/builds.csv");
 	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
 	
+	REQUIRE_NOTHROW(env.start());
+	
+	
 	SECTION("build") {
 		env.set_random_gen(replay({0}));
+		
+		
 		
 		REQUIRE_NOTHROW(env.colonize(u, "aaa"));
 		REQUIRE(t.colony != nullptr);
@@ -306,25 +315,29 @@ TEST_CASE( "colony workplace/production", "" ) {
 			REQUIRE_NOTHROW(env.work_build(0, u));			
 		}
 		
-		SECTION("work field") {
-			REQUIRE_NOTHROW(c.add(ItemFood, 2));
+		SECTION("work_field") {
 			REQUIRE_NOTHROW(env.work_field(0, u));
 			REQUIRE_NOTHROW(env.get_field(t, 0).set_proditem(ItemFood));
 			REQUIRE_NOTHROW(env.turn());
-			REQUIRE(c.get(ItemFood) > 0);
+			
+			// yield - consumption -> produced
+			REQUIRE( (t.get_yield(ItemFood, 0) - 2) == c.get(ItemFood) );
+			// unit used all time
 			REQUIRE(u.time_left == 0);
 		}
 
-		SECTION("work build") {
+		SECTION("work_build") {
 			
-			REQUIRE_NOTHROW(env.put_build(t, 0, BuildFurTradersHouse));
-			REQUIRE(env.get_build(t, 0).get_proditem() == ItemCoats);
-			REQUIRE_NOTHROW(env.work_build(0, u));
+			REQUIRE_NOTHROW( env.put_build(t, 0, BuildFurTradersHouse)   );
+			REQUIRE( env.get_build(t, 0).get_proditem() == ItemCoats );
+			REQUIRE_NOTHROW( env.work_build(0, u) );
 
 			SECTION("just enough") {
 				REQUIRE_NOTHROW(c.add(ItemFood, 2));
 				REQUIRE_NOTHROW(c.add(ItemFurs, 3));
 				REQUIRE_NOTHROW(env.turn());
+				
+				REQUIRE(c.get(ItemFood) == 0);
 				REQUIRE(c.get(ItemCoats) == 3);
 				REQUIRE(c.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
@@ -333,7 +346,9 @@ TEST_CASE( "colony workplace/production", "" ) {
 			SECTION("not enough") {
 				REQUIRE_NOTHROW(c.add(ItemFood, 2));
 				REQUIRE_NOTHROW(c.add(ItemFurs, 1));
-				REQUIRE_NOTHROW(env.turn());				
+				REQUIRE_NOTHROW(env.turn());
+				
+				REQUIRE(c.get(ItemFood) == 0);
 				REQUIRE(c.get(ItemCoats) == 1);
 				REQUIRE(c.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
@@ -342,7 +357,9 @@ TEST_CASE( "colony workplace/production", "" ) {
 			SECTION("more than enough") {
 				REQUIRE_NOTHROW(c.add(ItemFood, 2));
 				REQUIRE_NOTHROW(c.add(ItemFurs, 5));
-				REQUIRE_NOTHROW(env.turn());				
+				REQUIRE_NOTHROW(env.turn());
+
+				REQUIRE(c.get(ItemFood) == 0);
 				REQUIRE(c.get(ItemCoats) == 3);
 				REQUIRE(c.get(ItemFurs) == 2);
 				REQUIRE(u.time_left == 0);
@@ -388,7 +405,7 @@ TEST_CASE( "scoring", "" ) {
 }
 
 
-TEST_CASE( "actions equality", "" ) {
+TEST_CASE( "actions_equality", "" ) {
 
 	REQUIRE(OrderMove(1,1,1) == OrderMove(1,1,1));
 	REQUIRE(!(OrderMove(1,1,1) == OrderAttack(1,1,1)));
@@ -411,7 +428,7 @@ TEST_CASE( "serialize", "" ) {
 
 	env.init(u, env.get_terr({0,0}));
 
-	SECTION("save/load unstarted game") {
+	SECTION("save_load_unstarted_game") {
 
 		std::stringstream stream;
 
@@ -429,7 +446,7 @@ TEST_CASE( "serialize", "" ) {
 
 	}
 
-	SECTION("save/load started game") {
+	SECTION("save_load_started_game") {
 
 		env.start();
 
@@ -465,7 +482,7 @@ TEST_CASE( "serialize", "" ) {
 
 
 
-TEST_CASE( "two units", "" ) {
+TEST_CASE( "two_units", "" ) {
 
 	Env env;
 
@@ -491,7 +508,7 @@ TEST_CASE( "two units", "" ) {
 		REQUIRE(u1.id != u2.id);  // regress
 	}
 
-	SECTION("can order attack") {
+	SECTION("attack") {
 		auto id1 = u1.id;
 		auto id2 = u2.id;
 
@@ -504,7 +521,7 @@ TEST_CASE( "two units", "" ) {
 }
 
 
-TEST_CASE( "compatible", "[env][misc]" ) {	
+TEST_CASE( "compatible", "[env][misc][regress]" ) {		
 	REQUIRE(compatible(LAND,SEA) == false);
 	REQUIRE(compatible(SEA,LAND) == false);
 	REQUIRE(compatible(LAND,LAND) == true);
@@ -517,12 +534,10 @@ TEST_CASE( "improve square", "" ) {
 	Env env;
 	env.resize({1,1}).set_terr({0,0}, Terr(AltFlat, BiomePlains));
 
-
-
 	auto& t = env.get_terr({0,0});
 	
-	auto& ut1 = env.create<UnitType>();
-	auto& ut2 = env.create<UnitType>().set_travel(LAND).set_equip1(ItemTools, 20);
+	auto& ut1 = env.create<UnitType>().set_base(11).set_equip1(ItemTools, 20);
+	auto& ut2 = env.create<UnitType>().set_base(11).set_travel(LAND).set_equip1(ItemTools, 40);
 	
 	auto& u = env.create<Unit>(
 		ut2,
@@ -536,7 +551,10 @@ TEST_CASE( "improve square", "" ) {
 		REQUIRE_NOTHROW(env.start());
 		REQUIRE( env.improve(u, PhysRoad) == true );
 		REQUIRE( t.has(PhysRoad) );
+		REQUIRE( u.get_item1() == ItemTools );
+		REQUIRE( u.get_num1() == 20 );
 
+		// cant double-improve
 		REQUIRE_THROWS_AS(env.improve(u, PhysRoad), Error);				
 	}
 
@@ -545,7 +563,10 @@ TEST_CASE( "improve square", "" ) {
 
 		REQUIRE_NOTHROW(env.start());
 		REQUIRE( env.improve(u, PhysPlow) == true );
-		REQUIRE( t.has(PhysPlow)       );
+		REQUIRE( t.has(PhysPlow) );
+		REQUIRE( u.get_item1() == ItemTools );
+		REQUIRE( u.get_num1() == 20 );
+		
 	}
 
 

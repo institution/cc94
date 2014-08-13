@@ -816,20 +816,17 @@ namespace col {
 					put("Usage: move <dx> <dy>");
 					break;
 				case 3:
-					auto& u = env.get<Unit>(sel_unit_id);
-					exec(OrderMove(							
-						env.get_current_player().id,
-						u.id,
-						dir4vec(
-							Coords(
-								stoi(es.at(1)), // dx
-								stoi(es.at(2))  // dy
-							)
-						)
-					));
-					
-					select_next_unit();
-						 
+					if (Unit* u = get_sel_unit()) {
+						env.move_board(
+							stoi(es.at(1)), // dx
+							stoi(es.at(2)), //dy
+							*get_sel_unit()
+						);					
+						select_next_unit();						 
+					}
+					else {
+						put("no selected unit");
+					}
 					break;
 			}
 		}

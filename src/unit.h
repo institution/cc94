@@ -120,11 +120,10 @@ namespace col{
 
 
 
-
-		Order::type order{Order::Unknown};
+		Order::type order{Order::Unknown};   // TODO: remove
 
 		uint16 space_left{0}; // [t]
-		uint8 extend{0}; // num of boarded units
+		uint8 extend{0}; // num of boarded units TODO: need this?
 
 		Unit(
 			Id const& id,

@@ -14,7 +14,12 @@ namespace col {
 		int get_serial_id() const;
 
 		using Id = int;
+
 	};
+
+	inline int get_id(Item const& item) {
+		return item.get_value();
+	}
 
 	inline
 	int Item::get_serial_id() const {
@@ -24,27 +29,30 @@ namespace col {
 	constexpr
 	Item const
 		ItemNone{0},
+		// Field items
 		ItemFood{1},
-		ItemSugar{2},
-		ItemTobacco{3},
-		ItemCotton{4},
-		ItemFurs{5},
-		ItemLumber{6},
-		ItemOre{7},
-		ItemSilver{8},
-		ItemHorses{9},
-		ItemRum{10},
-		ItemCigars{11},
-		ItemCloth{12},
-		ItemCoats{13},
-		ItemTradeGoods{14},
-		ItemTools{15},
-		ItemMuskets{16},
-		ItemHammers{17},
-		ItemCross{18},
-		ItemFish{19},
+		ItemFish{2},
+		ItemSugar{3},
+		ItemTobacco{4},
+		ItemCotton{5},
+		ItemFurs{6},
+		ItemLumber{7},
+		ItemOre{8},
+		ItemSilver{9},
+		// Build items
+		ItemHorses{10},
+		ItemRum{11},
+		ItemCigars{12},
+		ItemCloth{13},
+		ItemCoats{14},
+		ItemTradeGoods{15},
+		ItemTools{16},
+		ItemMuskets{17},
+		ItemHammers{18},
+		ItemCross{19},
 		ItemBell{20};
 
+	int const NITEMS = 21; // total num of items
 
 }
 

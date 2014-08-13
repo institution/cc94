@@ -13,6 +13,13 @@ namespace col {
 
 
 
+	template<class T>
+	struct cont{ using type = vector<T>; };
+
+	template<>
+	struct cont<Build>{ using type = array<Build,15>; };
+
+
 	struct Colony {
 
 		using Id = uint32;
@@ -26,13 +33,13 @@ namespace col {
 
 		Terr *terr{nullptr};
 
-		vector<Field> fields;
+		cont<Field>::type fields;
 
 		Colony & add_field(Field const& f) { fields.push_back(f); return *this; }
 		void sub_field(Field const& f) { fields.erase(find(fields.begin(), fields.end(), f)); }
 
 
-		array<Build,15> builds;
+		cont<Build>::type builds;
 
 		Build& construct_building(BuildType const& type, int slot) {
 			builds.at(slot).ctype = &type;
@@ -131,7 +138,42 @@ namespace col {
 		Colony(Colony const&) = delete;
 
 
+
+
+
+		template <typename T>
+		typename cont<T>::type & get_cont();
+
+		template <typename T>
+		typename cont<T>::type const& get_cont() const;
+
+
+
 	};
+
+
+
+
+	template <>	inline
+	typename cont<Field>::type & Colony::get_cont<Field>() {
+		return fields;
+	}
+
+	template <>	inline
+	typename cont<Build>::type & Colony::get_cont<Build>() {
+		return builds;
+	}
+
+	template <>	inline
+	typename cont<Field>::type const& Colony::get_cont<Field>() const {
+		return fields;
+	}
+
+	template <>	inline
+	typename cont<Build>::type const& Colony::get_cont<Build>() const {
+		return builds;
+	}
+
 }
 
 #endif

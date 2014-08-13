@@ -338,60 +338,166 @@ namespace col{
 			}
 		}
 
-		void turn(Colony & c) {
-			auto& t = get_terr(c);
-			auto p = get_control(t);
 
-			// new colonists creation
-			if (p and c.get(ItemFood) >= 100) {
 
-				c.sub(ItemFood, 100);
-				c.add(ItemFood, 20);
-				auto& u = create<Unit>(get<UnitType>(101), *p);
-				init(u,t);
-				add_message(*p, t, "population growth");
+
+
+
+		void produce(Colony & c, Field & wp, Unit & u) {
+			auto const& proditem = wp.get_proditem();
+
+			auto prodnum = get_terr(wp).get_yield(proditem, false);
+
+			switch (proditem) {
+				case ItemFish:
+					c.add(ItemFood, prodnum);
+					break;
+				default:
+					c.add(proditem, prodnum);
+					break;
 			}
 
+			u.time_left = 0;
+		}
 
+		void produce(Colony & c, Build & wp, Unit & u) {
+			auto const& proditem = wp.get_proditem();
+			auto const& consitem = wp.get_consitem();
+
+			int base = get_yield(u, proditem);
+			int prodnum = wp.get_prod() * base;
+			int consnum = wp.get_cons() * base;
+
+			int real_cons = std::min(consnum, int(c.get(consitem)));
+			int real_prod = float(float(prodnum) * float(real_cons) / float(consnum));
+
+			c.sub(consitem, real_cons);
+			add_prod(c, proditem, real_prod);
+
+			u.time_left = 0;
+		}
+
+		template<typename F, int i, int j>
+		void resolve(Colony & c) {
+			// sort fields by produced item
+			array<vector<F*>, j-i> ws;
+
+			for (auto& wp: c.get_cont<F>()) {
+				int v = wp.get_proditem().get_value();
+				if (v) { // may produce None
+					if (v < i or j <= v) {
+						throw Critical("produced item out of range");
+					}
+					ws.at(v-i).push_back(&wp);
+				}
+			}
+
+			// produce items in order; items produced earlier can be used by produced later
+			// iterate by items
+			for (size_t item_id = i; item_id < j; ++item_id) {
+				for (F* wp: ws.at(item_id-i)) {
+					for (auto& u: wp->units) {
+						produce(c, *wp, *u);
+					}
+				}
+			}
+		}
+
+		void turn(Terr & t) {
+
+			if (!t.has_colony()) {
+				return;
+			}
+
+			auto& c = t.get_colony();
+			auto p = get_control(t);
+
+			// resolve production
+			resolve<Field, 1, 10>(c);
+			resolve<Build, 10, 21>(c);
 
 			// construction
 			for (auto& b: c.builds) {
 				construction_consume(t, b);
 			}
 
-			// clear non-staragable resources
+			// food consumption/starvation
+			size_t i = 0;
+			while (i < t.units.size()) {
+				Unit &u = *t.units.at(i);
+				if (u.is_working()) {
+					// consume food
+					if (c.has(ItemFood, 2)) {
+						c.sub(ItemFood, 2);
+						// iterate
+						++i;
+					}
+					else {
+						// starvation
+						// this will remove element from current iteration !!!
+						kill(u);
+						// do not iterate
+					}
+				}
+			}
+
+			// new colonists creation
+			if (p and c.get(ItemFood) >= 100) {
+				c.sub(ItemFood, 100);
+				auto& u = create<Unit>(get<UnitType>(101), *p);
+				init(u,t);
+				add_message(*p, t, "population growth");
+			}
+
+			// decay of non-storageable resources
 			c.set(ItemHammers, 0);
 			c.set(ItemBell, 0);
 			c.set(ItemCross, 0);
 
-			// clear resources above max storage
+			// decay resources above storage limit
 			for (auto& p: c.storage) {
 				auto& item = p.first;
 				auto& value = p.second;
 				if (value > c.get_max_storage()) {
 					value = c.get_max_storage();
 				}
-
 			}
 
 		}
 
 		void turn() {
+			/*
+			 turn order:
+
+			 [global]
+				increase turn counter
+
+			 [per tile]
+				time reset on units
+				colony production
+				building construction
+				food consumption/starvation
+				new colonists creation
+				items decay (due to non-storageable nature or lack of storage space)
+			*/
+
+
 			// clear old messages
-			clear_messages();
+			clear_messages();  // <- replacve with effects and let clients collect messages from them (TODO)
 
 			// time progress
 			++turn_no;
 
-			// all units - new movment, work
+			// time reset on units
 			for (auto& item: units) {
 				// cerr << "turn calc for: " << item.second << endl;
-				turn(item.second);
+				Unit & u = item.second;
+				u.time_left = TIME_UNIT;
 			}
 
 			// all colonies
 			for (auto& p: colonies) {
-				turn(p.second);
+				turn(get_terr(p.second));
 			}
 
 			if (turn_limit > 0 and turn_no >= turn_limit) {
@@ -462,71 +568,7 @@ namespace col{
 			}
 		}
 
-		void turn(Unit &u) {
 
-			u.time_left = TIME_UNIT;
-
-			if (u.order == Order::Space) {
-				u.order = Order::Unknown;
-			}
-
-			if (u.build) {
-
-				auto & t = get_terr(u);
-				auto & c = t.get_colony();
-
-				if (consume_food(u)) {
-
-					auto const& wp = u.get_workplace<Build>();
-
-					auto const& proditem = wp.get_proditem();
-					auto const& consitem = wp.get_consitem();
-
-					int base = get_yield(u, proditem);
-					int prodnum = wp.get_prod() * base;
-					int consnum = wp.get_cons() * base;
-
-					int real_cons = std::min(consnum, int(c.get(consitem)));
-					int real_prod = float(float(prodnum) * float(real_cons) / float(consnum));
-
-					c.sub(consitem, real_cons);
-					add_prod(c, proditem, real_prod);
-
-					u.time_left = 0;
-				}
-				else {
-					work_none(u);
-				}
-			}
-			else if (u.field) {
-				auto & t = get_terr(u);
-				auto & c = t.get_colony();
-
-				if (consume_food(u)) {
-					auto const& wp = u.get_workplace<Field>();
-
-					auto const& proditem = wp.get_proditem();
-
-					auto prodnum = get_terr(wp).get_yield(proditem, false);
-
-					switch (proditem) {
-						case ItemFish:
-							c.add(ItemFood, prodnum);
-							break;
-						default:
-							c.add(proditem, prodnum);
-							break;
-					}
-
-
-					u.time_left = 0;
-				}
-				else {
-					work_none(u);
-				}
-			}
-
-		}
 
 
 
@@ -839,8 +881,26 @@ namespace col{
 
 
 		void kill(Unit & u) {
-			u.terr->sub(u);
-			u.terr = nullptr;
+			// this function will erase from container you are currently iterating over
+			// TODO: delayed removal?
+			if (u.terr) {
+				u.terr->sub(u);
+				u.terr = nullptr;
+			}
+			if (u.build) {
+				u.build->sub(u);
+				u.build = nullptr;
+			}
+			if (u.field) {
+				u.field->sub(u);
+				u.field = nullptr;
+			}
+			u.type = nullptr;
+			u.player = nullptr;
+
+			units.erase(get_id(u));
+
+			// wow! that was radical
 		}
 
 		bool order_attack(Unit & attacker, Dir::t const& dir, bool exec=1) {
@@ -994,7 +1054,15 @@ namespace col{
 		}
 
 
-		bool colonize(Unit &u, string const& name, bool exec=1) {
+		bool colonize(Unit &u, string const& name) {
+
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
+
+			if (!compatible(u.get_travel(), LAND)) {
+				throw Error("not land-based unit");
+			}
 
 			auto& t = get_terr(u);
 
@@ -1002,55 +1070,51 @@ namespace col{
 				throw Error("already colonized");
 			}
 
-			if (exec) {
-				auto time_cost = TIME_UNIT;
-				if (run_map_task(u, time_cost)) {
-					// create colony
-					auto& c = create<Colony>(name);
-					init(c, t);
+			auto time_cost = TIME_UNIT;
+			if (run_map_task(u, time_cost)) {
+				// create colony
+				auto& c = create<Colony>(name);
+				init(c, t);
 
-					BuildType::Id const TREE_1 = 45;
-					BuildType::Id const TREE_2 = 44;
-					BuildType::Id const TREE_3 = 43;
-					BuildType::Id const COAST = 46;
-					BuildType::Id const CARPENTERS_SHOP = 36;
-					BuildType::Id const FENCE = 17;
-					BuildType::Id const CHURCH = 38;
-					BuildType::Id const TOWN_HALL = 10;
+				BuildType::Id const TREE_1 = 45;
+				BuildType::Id const TREE_2 = 44;
+				BuildType::Id const TREE_3 = 43;
+				BuildType::Id const COAST = 46;
+				BuildType::Id const CARPENTERS_SHOP = 36;
+				BuildType::Id const FENCE = 17;
+				BuildType::Id const CHURCH = 38;
+				BuildType::Id const TOWN_HALL = 10;
 
-					set_build(c, 0, CARPENTERS_SHOP);
-					set_build(c, 1, TREE_1);
-					set_build(c, 2, TREE_3);
-					set_build(c, 3, TREE_1);
-					set_build(c, 4, TREE_1);
+				// init buildings
+				set_build(c, 0, CARPENTERS_SHOP);
+				set_build(c, 1, TREE_1);
+				set_build(c, 2, TREE_3);
+				set_build(c, 3, TREE_1);
+				set_build(c, 4, TREE_1);
 
-					set_build(c, 5, TREE_1);
-					set_build(c, 6, TREE_1);
-					set_build(c, 7, TREE_1);
-					set_build(c, 8, TREE_1);
-					set_build(c, 9, TREE_2);
+				set_build(c, 5, TREE_1);
+				set_build(c, 6, TREE_1);
+				set_build(c, 7, TREE_1);
+				set_build(c, 8, TREE_1);
+				set_build(c, 9, TREE_2);
 
-					set_build(c, 10, TREE_2);
-					set_build(c, 11, TREE_2);
-					set_build(c, 12, TOWN_HALL);
-					set_build(c, 13, COAST);
-					set_build(c, 14, FENCE);
+				set_build(c, 10, TREE_2);
+				set_build(c, 11, TREE_2);
+				set_build(c, 12, TOWN_HALL);
+				set_build(c, 13, COAST);
+				set_build(c, 14, FENCE);
 
-					for (auto dir: ALL_DIRS) {
-						auto dest = get_coords(t) + vec4dir(dir);
-						if (in_bounds(dest)) {
-							c.add_field(Field(get_terr(dest)));
-						}
+				// init fields
+				for (auto dir: ALL_DIRS) {
+					auto dest = get_coords(t) + vec4dir(dir);
+					if (in_bounds(dest)) {
+						c.add_field(Field(get_terr(dest)));
 					}
-
-
-					c.add(ItemFood, 10);
-
-					return 1;  // ok
 				}
-				return 0;  // try next turn
+
+				return 1;  // ok
 			}
-			return -1;
+			return 0;  // try next turn
 		}
 
 		void colony_construct(Colony & colony, BuildType::Id type_id, int slot) {
