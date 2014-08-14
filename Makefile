@@ -7,7 +7,7 @@
 CC:=g++-4.9
 
 # output files
-OUTS:=main test
+OUTS:=client/main server/test
 
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
@@ -16,7 +16,7 @@ WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-nul
 # -Wall -Wextra 
 
 # compiler options
-CCOPTS:=-I./src -I./inc -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
+CCOPTS:=-I./src/server -I./inc -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
 DEOPTS:=-g -O0
 
 # linker options
@@ -25,7 +25,9 @@ LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-win
 
 # assert dirs
 $(shell mkdir -p b)
+$(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p b/{})
 $(shell mkdir -p bin)
+$(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p bin/{})
 
 # list of compiled source b/fname.cpp.obj
 OBJS:=$(shell find src -name '*.cpp')
@@ -43,7 +45,7 @@ ${OUTS}: $(OBJS)
 	${CC} -o bin/$@ $(filter-out b/$(filter-out $@,$(OUTS)).cpp.obj,$(OBJS)) ${LLOPTS}
 
 clean:
-	rm -f b/* bin/*
+	rm -rf b/* bin/*
 	
 
 # test
