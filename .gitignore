@@ -1,6 +1,7 @@
 *~
 *.pyc
 bin/*
+__/*
 COLONIZE*
 nbproject
 
