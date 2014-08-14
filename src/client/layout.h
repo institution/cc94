@@ -52,8 +52,8 @@ namespace col{
 			);
 
 			city_fields = Box2(
-				scr.end[0] - TILE_DIM*5, bar.end[1] + LINE,
-				TILE_DIM*5, TILE_DIM*5
+				city.end[0] + LINE, city.pos[1],
+				scr.dim[0] - city.dim[0] - LINE, city.dim[1]
 			);
 
 			auto b_width = int(res_height * 1.618);

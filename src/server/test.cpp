@@ -31,10 +31,10 @@ using roll::replay;
  * equip/unequip units *
  * map tasks consume tools *
  * ordered colony production *
- *     MAKEFILE: source organization - separate modules
- *     REGRESS: zero tool building builds on first turn
- *     VISUAL: unselect unit after assigment to field/build (BUG?)
- * colony screen: background on fields
+ *     MAKEFILE: source organization - separate modules *
+ *     REGRESS: zero tool building builds on first turn *
+ *     VISUAL: unselect unit after assigment to field/build  *
+ * colony screen: background on fields *
  * replace messages with effects (let clients use them for messages)
  * load/unload cargo into ship 
  * travel to europe by sea - exit_map(ship, dest) order
@@ -294,6 +294,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 	REQUIRE_NOTHROW(env.start());
 	
 	
+	
 	SECTION("build") {
 		env.set_random_gen(replay({0}));
 		
@@ -303,6 +304,13 @@ TEST_CASE( "colony workplace/production", "" ) {
 		REQUIRE(t.colony != nullptr);
 
 		auto& c = t.get_colony();
+	
+		SECTION("non_worker_on_colony_hangup") {
+			// regress
+			// non working unit on colony square causes hangup when turn ends
+			REQUIRE_NOTHROW(env.turn());
+		}
+		
 		
 		SECTION("multiple assign to same workplace") {
 			REQUIRE_NOTHROW(env.work_build(0, u));

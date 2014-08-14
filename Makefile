@@ -7,7 +7,7 @@
 CC:=g++-4.9
 
 # output files
-OUTS:=client/main server/test
+OUTS:=client/main server/test client/test
 
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
@@ -42,7 +42,8 @@ ${OBJS}: b/%.obj: src/%
 	
 # linker
 ${OUTS}: $(OBJS)
-	${CC} -o bin/$@ $(filter-out b/$(filter-out $@,$(OUTS)).cpp.obj,$(OBJS)) ${LLOPTS}
+	${CC} -o bin/$@ b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
+
 
 clean:
 	rm -rf b/* bin/*

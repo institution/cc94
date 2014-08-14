@@ -167,12 +167,17 @@ namespace col{
 		}
 
 
+
 		void start() {
+			if (players.size() < 1) {
+				throw Critical("need at least one player to start game");
+			}
+
 			state = 1;
 			cpid = 0;
 			while (players.find(cpid) == players.end()) {
-				if (cpid > 10) {
-					throw Critical("need at least one player to start game");
+				if (cpid > 100) {   // TODO: pfff...
+					throw Critical("UNEXPECTED ERROR: cannot find player");
 				}
 				++cpid;
 			}
@@ -429,16 +434,16 @@ namespace col{
 					// consume food
 					if (c.has(ItemFood, 2)) {
 						c.sub(ItemFood, 2);
-						// iterate
-						++i;
 					}
 					else {
 						// starvation
 						// this will remove element from current iteration !!!
 						kill(u);
 						// do not iterate
+						continue;
 					}
 				}
+				++i;
 			}
 
 			// new colonists creation
@@ -1212,15 +1217,17 @@ namespace col{
 
 				b.hammers += consume_part(t, ItemHammers, b.get_cost_hammers() - b.hammers);
 
-				if (consume_all(t, ItemTools, b.get_cost_tools())) {
-					b.morph();
+				if (b.hammers == b.get_cost_hammers() ) {
+					if (consume_all(t, ItemTools, b.get_cost_tools())) {
+						b.morph();
 
-					// warehouse constructed
-					if (b.get_type().id == 16) {
-						c.max_storage += 100;
+						// warehouse constructed
+						if (b.get_type().id == 16) {
+							c.max_storage += 100;
+						}
+
+						add_message(*get_control(t), t, "building constructed");
 					}
-
-					add_message(*get_control(t), t, "building constructed");
 				}
 			}
 

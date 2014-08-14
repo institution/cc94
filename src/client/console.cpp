@@ -63,36 +63,20 @@ namespace col {
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
 		auto type = event.type;
 
-
+		// prepare pattern
+		Pattern p;
 		
 		if (type == sf::Event::KeyPressed) {
-			//cerr << "key released!" << event.key.code << endl;
-			
-			auto code = event.key.code;
-			
-			if (handle_event(Dev::Keyboard, v2i(0,0), Event::Press, Button::None, code)) {
-				modified();
-			}
-			
-			if (event.key.code == sf::Keyboard::Tilde or event.key.code == sf::Keyboard::Unknown) {
-
-			}
+			p.dev = Dev::Keyboard;
+			p.event = Event::Press;
+			p.key = event.key.code;		
 		}
-		else
-		if (type == sf::Event::TextEntered) {
-
-			if (handle_event(Dev::Keyboard, v2i(0,0), Event::Char, Button::None, Key::Unknown, event.text.unicode)) {
-				modified();
-			}
-			else {			
-				if (is_active()) {
-					handle_char(event.text.unicode);
-				}
-			}
-			
+		else if (type == sf::Event::TextEntered) {
+			p.dev = Dev::Keyboard;
+			p.event = Event::Char;
+			p.unicode = event.text.unicode;
 		}
-		else			
-		if (type == sf::Event::MouseMoved)			
+		else if (type == sf::Event::MouseMoved)			
 		{			
 			sf::Vector2f mp = app.mapPixelToCoords(
 				sf::Vector2i(
@@ -101,10 +85,9 @@ namespace col {
 				)
 			);
 			
-			if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Hover, Button::None, Key::Unknown)) {
-				modified();
-			}
-				
+			p.dev = Dev::Mouse;
+			p.event = Event::Hover;
+			p.area = Box2(v2i(mp.x, mp.y), {0,0});				
 		}		
 		else if (type == sf::Event::MouseButtonPressed)
 		{			
@@ -115,20 +98,23 @@ namespace col {
 				)
 			);
 			
-			if (event.mouseButton.button == sf::Mouse::Left)
-			{
-				if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Press, Button::Left, Key::Unknown)) {
-					modified();
-				}
-			}
+			p.dev = Dev::Mouse;
+			p.event = Event::Press;
+			p.area = Box2(v2i(mp.x, mp.y), {0,0});
 			
-			if (event.mouseButton.button == sf::Mouse::Right)
-			{
-				if (handle_event(Dev::Mouse, v2i(mp.x, mp.y), Event::Press, Button::Right, Key::Unknown)) {
-					modified();
-				}				
-			}
-			
+			if (event.mouseButton.button == sf::Mouse::Left) {
+				p.button = Button::Left;
+			}			
+			else if (event.mouseButton.button == sf::Mouse::Right) {
+				p.button = Button::Right;
+			}			
+		}
+		
+		
+		// handle
+		if (halo::handle_event(hts, p)) {
+			cerr << "event" << endl;
+			modified();
 		}
 	}
 
@@ -145,8 +131,11 @@ namespace col {
 	
 	
 	void Console::handle_char(uint16 code) {
-		//cerr << "--" << code << endl;
-
+		
+		if (!is_active()) {
+			throw Critical("console not active");
+		}
+		
 		if (charset.find(code) == charset.end()) {
 			return;
 		}
@@ -479,7 +468,8 @@ namespace col {
 					break;
 				}
 				case 1: {
-					exec(Ready(env.get_current_player().id));
+					//exec(Ready(env.get_current_player().id));
+					env.ready(env.get_current_player());
 					select_next_unit();
 					break;
 				}
@@ -496,8 +486,7 @@ namespace col {
 				put(str(format("%u: %s") % uint16(ut.id) % ut.name));
 			}
 		}
-		else
-		if (es[0] == "deli") {
+		else if (es[0] == "deli") {
 			env.destroy<Unit>(std::stoi(es[1]));
 		}
 		else if (cmd == "create-unit") {
@@ -553,8 +542,7 @@ namespace col {
 					break;
 			}
 		}
-		else
-		if (es[0] == "sel") {
+		else if (es[0] == "sel") {
 			switch (es.size()) {
 				default: {
 					output.push_back("Usage: sel <x> <y> OR sel <unit_id>\n");
@@ -577,8 +565,7 @@ namespace col {
 				}
 			}
 		}
-		else
-		if (es[0] == "setturn") {
+		else if (es[0] == "setturn") {
 			switch (es.size()) {
 				default: {
 					output.push_back("Usage1: setturn num\n");
@@ -590,8 +577,7 @@ namespace col {
 				}
 			}
 		}
-		else
-		if (es[0] == "delp") {
+		else if (es[0] == "delp") {
 			env.del_player(std::stoi(es[1]));
 		}
 		else if (cmd == "save") {
@@ -620,8 +606,7 @@ namespace col {
 					break;
 			}
 		}
-		else
-		if (es[0] == "set_owner") {
+		else if (es[0] == "set_owner") {
 			env.set_owner(
 				stoi(es[1]),
 				stoi(es[2])
@@ -664,8 +649,7 @@ namespace col {
 					break;
 			}
 		}
-		else if (cmd == "construct") {
-			
+		else if (cmd == "construct") {			
 			switch (es.size()) {
 				default:
 					put("Usage: construct <place-number> <building-id>");
@@ -762,8 +746,7 @@ namespace col {
 				}
 				
 			}
-		}
-		
+		}		
 		else if (cmd == "sel-place") {
 			switch (es.size()) {
 				default:
@@ -781,15 +764,6 @@ namespace col {
 					break;
 			}
 		}
-		
-			
-		else if (cmd == "work") {
-			
-		}
-		else if (cmd == "worknext") {
-			
-		}
-		
 		else if (cmd == "build-colony") {
 			switch (es.size()) {
 				default:
@@ -854,8 +828,7 @@ namespace col {
 					break;
 			}
 		}
-		else
-		if (es.at(0) == "enter") {
+		else if (es.at(0) == "enter") {
 			switch (es.size()) {
 				default: {
 					output.push_back("Usage: enter [x y]");
@@ -875,14 +848,19 @@ namespace col {
 				}
 			}
 		}
-		else
-		if (es.at(0) == "exit") {
+		else if (es.at(0) == "exit") {
 			switch (es.size()) {
 				default: {
 					output.push_back("Usage: exit");
 					break;
 				}
 				case 1: {
+					// when exiting city view select next unit if current unit is working
+					if (auto u = get_sel_unit()) {
+						if (u->is_working()) {
+							select_next_unit();
+						}
+					}
 					mode = Mode::AMERICA;
 					mod++;
 					break;

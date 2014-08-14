@@ -15,6 +15,7 @@
 #include "ai.h"
 #include "user.h"
 #include "ai-env-helpers.h"
+#include "halo.h"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -56,14 +57,7 @@ namespace col {
 		} arg;
 	}*/
 
-	inline
-	bool overlap(Box2 const& b, v2i const& pos) {
-		return
-			b.pos[0] <= pos[0] and
-			b.pos[1] <= pos[1] and
-			pos[0] <= b.end[0] and
-			pos[1] <= b.end[1];
-	}
+
 
 
 
@@ -225,149 +219,19 @@ namespace col {
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
 
 
-		// EVENTS --------------
-
-		enum struct Dev {
-			None, Mouse, Keyboard
-		};
-
-		enum struct Mod {
-			None, Alt, Ctrl, Shift
-		};
-
-		enum struct Event {
-			Press, Release, Hover, Char
-		};
-
-		enum struct Button{
-			None, Left, Right,
-		};
-
-		using Key = sf::Keyboard::Key;
-
-
-
-		struct HotSpot{
-			Dev d{Dev::Mouse};
-			Event t{Event::Press};
-			Button b{Button::None};
-			Key k{Key::Unknown};
-			Box2 box{0,0,0,0};
-			bool anywhere{0};
-			std::function<void()> callback;
-			uint32 u{0};
-
-			HotSpot() {}
-
-			HotSpot(
-				Box2 const& box,
-				std::function<void()> callback,
-				Event t,
-				Button b,
-				bool anywhere
-			):
-				box(box), callback(callback),
-				t(t), b(b), anywhere(anywhere) {}
-
-			HotSpot(
-				std::function<void()> callback,
-				Event t,
-				Key k
-			):
-				callback(callback),
-				d(Dev::Keyboard), t(t), k(k), anywhere(1) {}
-
-			HotSpot(
-				std::function<void()> callback,
-				Event t
-			):
-				callback(callback),
-				d(Dev::Keyboard), t(t), anywhere(1) {}
-
-			HotSpot& set_unicode(uint32 uni) { u = uni; return *this; }
-
-		};
-
-
-
-		void on(Event t, uint32 uni, std::function<void()> cl) {
-			hts.push_back(HotSpot(cl, t).set_unicode(uni));
-		}
-
-
-		//
-		void on(Event t, Key k, std::function<void()> cl) {
-			hts.push_back({cl, t, k});
-		}
-
-
-		// ----------- callback
-
-		// mouse button over area
-		void on(Event t, Button b, v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box2(pos, dim), cl, t, b, false});
-		}
-
-		// mouse button anywhere
-		void on(Event t, Button b, std::function<void()> cl) {
-			hts.push_back({Box2(0,0,0,0), cl, t, b, true});
-		}
-
-		// mouse hover over area
-		void on(Event t, v2i const& pos, v2i const& dim, std::function<void()> cl) {
-			hts.push_back({Box2(pos, dim), cl, t, Button::None, false});
-		}
-
-		// mouse hover anywhere
-		void on(Event t, std::function<void()> cl) {
-			hts.push_back({Box2(0,0,0,0), cl, t, Button::None, true});
-		}
-
-
-
-		// ----------- autocommand
-
-		// mouse button over area - string command
-		void on(Event t, Button b, v2i const& pos, v2i const& dim, string const& cmd) {
-			on(t, b, pos, dim, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse button anywhere - string command
-		void on(Event t, Button b, string const& cmd) {
-			on(t, b, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse hover over area - string command
-		void on(Event t, v2i const& pos, v2i const& dim, string const& cmd) {
-			on(t, pos, dim, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse hover anywhere - string command
-		void on(Event t, string const& cmd) {
-			on(t, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-
-
-
-
-
-
-
 		BuildType::Id select_build{0};
 		int sel_slot_num{-1};
 
-		using HotSpots = std::vector<HotSpot>;
 
-		HotSpots hts;
+
+		using Event = halo::Event;
+		using Button = halo::Button;
+		using Key = halo::Key;
+		using Pattern = halo::Pattern;
+		using Dev = halo::Dev;
+
+
+		halo::Patterns hts;
 
 		void trapall() {
 			hts.clear();
@@ -375,22 +239,39 @@ namespace col {
 
 
 
-		bool handle_event(Dev dev, v2i const& pos, Event type, Button button, Key key, uint32 uni=0) {
-			for (int i = hts.size(); 0 < i; --i) {
-				auto& p = hts[i-1];
-				if (p.d == dev and p.t == type
-					and (p.anywhere or overlap(p.box, pos))
-					and (p.b == Button::None or p.b == button)
-					and (p.k == Key::Unknown or p.k == key)
-					and (p.u == 0 or p.u == uni)
-				) {
-					p.callback();
-					return true;
-				}
-			}
-			return false;
+
+		template<typename... T>
+		void on(T&&... t) {
+			hts.push_back(halo::Pattern(std::forward<T>(t)...));
 		}
 
+		// mouse button over area - string command
+		void on2(Event t, Button b, v2i const& pos, v2i const& dim, std::string const& cmd) {
+			on(t, b, pos, dim, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse button anywhere - string command
+		void on2(Event t, Button b, std::string const& cmd) {
+			on(t, b, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse hover over area - string command
+		void on2(Event t, v2i const& pos, v2i const& dim, std::string const& cmd) {
+			on(t, pos, dim, [this,cmd](){
+				command(cmd);
+			});
+		}
+
+		// mouse hover anywhere - string command
+		void on2(Event t, std::string const& cmd) {
+			on(t, [this,cmd](){
+				command(cmd);
+			});
+		}
 
 
 

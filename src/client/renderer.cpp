@@ -13,6 +13,7 @@ namespace col {
 	using Event = Console::Event;
 	using Button = Console::Button;
 	using Key = Console::Key;
+	using Dev = Console::Dev;
 	
 
 	Layout const ly(SCREEN_W, SCREEN_H);
@@ -106,10 +107,11 @@ namespace col {
 		ARCH = RES_PATH + "PARCH_SS",
 		COLONY = RES_PATH + "COLONY_PIK",
 		BUILD = RES_PATH + "BUILDING_SS",
+		WOODBG = RES_PATH + "WOODTILE_SS",
 		DIFFUSE = "DIFFUSE*",
 		COAST = "*COAST*";
 
-	Res::mapped_type const& res(string const& d, uint const& i) {
+	Res::mapped_type const& res(string const& d, uint const& i = 1) {
 
 		auto key = Res::key_type(d,i);
 		auto p = g_res.find(key);
@@ -295,6 +297,11 @@ namespace col {
 		Text(string const& text): text(text) {}
 	};
 
+	void render_terr(sf::RenderWindow &win,
+			v2i const& pos,
+			Env const& env,
+			Terr const& terr);
+	
 	void render_shield(sf::RenderWindow &win, int16 x, int16 y, Color const& col, char letter) {
 		
 		auto t = Text(string() + letter).set_font("tiny.png").set_fg(ColorBlack);
@@ -419,10 +426,10 @@ namespace col {
 
 	
 	void render_area(
-		sf::RenderWindow &win,
-		sf::Texture const& tex,
-		Vector2<int> const& area_pos,
-		Vector2<int> const& area_dim
+		sf::RenderWindow & win,
+		v2i const& area_pos,
+		v2i const& area_dim,
+		sf::Texture const& tex		
 	);
 
 
@@ -484,11 +491,9 @@ namespace col {
 		render_sprite(win, pos, res(ICON, item));
 	}
 
-	void Renderer::fill(Texture const& tex, v2i const& pos, v2i const& dim) {
-		render_area(win, tex, pos, dim);
-	}
+
 	
-	void Renderer::fill(Color const& color, v2i const& pos, v2i const& dim) {
+	void render_area(sf::RenderWindow & win, v2i const& pos, v2i const& dim, Color const& color) {
 		win.draw(
 			RectShape(
 				pos,
@@ -523,11 +528,11 @@ namespace col {
 
 	
 	void render_area(
-		sf::RenderWindow &win,
-		sf::Texture const& tex,
-		Vector2<int> const& area_pos,
-		Vector2<int> const& area_dim)
-	{
+		sf::RenderWindow & win,
+		v2i const& area_pos,
+		v2i const& area_dim,
+		sf::Texture const& tex
+	) {
 		using sf::Sprite;
 		using sf::IntRect;
 		using sf::Vector2f;
@@ -633,7 +638,7 @@ namespace col {
 		con.on(Event::Press, oncancel);
 		
 		// background
-		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);		
+		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
 		
 		// click on dialog -- do nothing 
 		con.on(Event::Press, pos, dim, [](){});
@@ -700,8 +705,8 @@ namespace col {
 		
 		// render area
 		auto sand_tex = res(ARCH, 1);
-		render.fill(sand_tex, ly.city.pos, ly.city.dim);
-
+		render_area(win, ly.city.pos, ly.city.dim, sand_tex);
+		
 		// relative positions
 		vector<v2i> pixs({
 			v2i(6,6), v2i(56,5), v2i(87,3), v2i(145,7), v2i(173,10),
@@ -872,9 +877,18 @@ namespace col {
 
 		// render fields
 		{
+			
+			/// render background
+			// render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
+			
+			
 			auto pix = ly.city_fields.pos;
 
-			auto city_terr_pos = ly.city_fields.pos + ly.terr_dim;
+			auto& tex_wood = res(WOODBG, 1);
+			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
+			
+			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, {0.5f,0.5f}, ly.terr_dim);
+			
 			auto& city_terr = terr;
 			
 			auto pos = env.get_coords(terr);
@@ -891,9 +905,7 @@ namespace col {
 				auto field_dim = ly.terr_dim;
 				
 				
-				render_terr(win, env.get_coords(field_terr), env, field_terr, pix,
-					city_coords
-				);
+				render_terr(win, field_pos, env, field_terr);
 															
 				
 				if (field.units.size() == 0) {
@@ -1007,7 +1019,7 @@ namespace col {
 		
 		// left click on city terrain area with selected unit -- unwork that unit
 		if (con.get_sel_unit()) {
-			con.on(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
+			con.on2(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
 				"work-none"
 			);
 		}
@@ -1063,7 +1075,7 @@ namespace col {
 
 		// render storage
 
-		render.fill({76,100,172,255}, ly.city_res.pos, ly.city_res.dim);
+		render_area(win, ly.city_res.pos, ly.city_res.dim, {76,100,172,255});
 
 		int width = 16;
 
@@ -1096,7 +1108,7 @@ namespace col {
 		}
 		
 		// render EXIT button
-		render.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
+		render_area(win, ly.city_exit.pos, ly.city_exit.dim, {140,0,140,255});
 		
 		auto txt = Text("Ret").set_font("tiny.png");
 		render_text(
@@ -1745,7 +1757,7 @@ namespace col {
 		// pos - left top pix
 		// dim - size
 
-		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);
+		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
 
 	}
 
@@ -1764,7 +1776,7 @@ namespace col {
 
 		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, res(RES_PATH + "WOODTILE_SS", 1), pos, dim);
+		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
 
 		// terrain info
 		/*
@@ -1857,32 +1869,7 @@ namespace col {
 			
 		auto ren = Renderer(win, env);
 			
-		// render START / NEXT TURN button
-		{
-			string lab, cmd;
-			if (env.in_progress()) {
-				lab = "Ready";
-				cmd = "ready";
-			}
-			else {
-				lab = "Start";
-				cmd = "start";
-			}
-
-			ren.fill({140,0,140,255}, ly.city_exit.pos, ly.city_exit.dim);
-
-			auto txt = Text(lab).set_font("tiny.png");
-			render_text(
-				win,
-				ly.city_exit.pos + v2i(1,1),
-				txt				
-			);
-
-			// left click on Start/Ready button -- start game or ready turn
-			con.on(Event::Press, Button::Left, ly.city_exit.pos, ly.city_exit.dim,
-				[&con,cmd](){ con.command(cmd); }
-			);
-		}
+		
 		
 		if (auto t = con.get_sel_terr()) {
 			v2i pos = ly.pan.pos + v2i(0,100);
@@ -1898,35 +1885,42 @@ namespace col {
 			); 
 		}
 		
-		
+		// End of turn/Start game
 		// nothing to move -> enter to ready turn
-		if (auto pp = env.get_current_player_p()) {
+		{
+			auto lab = string();
+			auto cmd = string();
+			auto col = ColorNone;
 			
-			auto text = Text("End of turn").set_font("tiny.png");
-			v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
-			
-			if (!con.mem.has_next_unit(env, *pp)) {				
-				text.set_fg(ColorWhite);
-
+			if (env.in_progress()) {
+				auto& p = env.get_current_player();
+				
+				lab = "End of turn";
+				cmd = "ready";
+				
+				col = (con.mem.has_next_unit(env, p)) ? ColorGray : ColorWhite;
+									
 				// Enter -> end turn
 				con.on(Event::Press, Key::Return,
 					[&con](){ con.command("ready"); }
-				);				
+				);
 			}
 			else {
-				text.set_fg(ColorGray);
+				lab = "Start game";
+				cmd = "start";
+				
+				col = (env.players.size() < 1) ? ColorGray : ColorWhite;
 			}
+
+			auto text = Text(lab).set_font("tiny.png").set_fg(col);
+			v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
 								
 			// label			
-			render_text(
-				win,
-				text_pos,
-				text
-			);
+			render_text(win, text_pos, text);
 			
-			// left click -> end turn
+			// left click -> start/ready
 			con.on(Event::Press, Button::Left, text_pos, text.get_dim(),
-				[&con](){ con.command("ready"); }
+				[&con,cmd](){ con.command(cmd); }
 			);
 			
 		}
@@ -2307,7 +2301,15 @@ namespace col {
 				ly.scr.pos,
 				Text(con.buffer + "_").set_font("tiny.png")				
 			);
-				
+		
+			// trap all keyboard
+			con.on(Dev::Keyboard);
+			
+			// char entered
+			con.on(Event::Char, [&con](halo::Pattern const& p){
+				con.handle_char(*p.unicode);
+			});
+			
 			// deactivate
 			con.on(Event::Char, u'`', [&con](){
 				con.set_active(false);
