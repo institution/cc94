@@ -119,7 +119,7 @@ namespace col{
 
 	struct Build: Workplace {
 		using Id = int;
-		
+
 		BuildType const* type;
 		int8 free_slots;
 		int hammers{0};
@@ -179,6 +179,7 @@ namespace col{
 		Build & set_type(BuildType const& type) {
 			this->type = &type;
 			set_proditem(type.proditem);
+			// set free slots
 			return *this;
 		}
 

@@ -35,7 +35,9 @@ using roll::replay;
  *     REGRESS: zero tool building builds on first turn *
  *     VISUAL: unselect unit after assigment to field/build  *
  * colony screen: background on fields *
+ *     uniform EVENT handling *
  * replace messages with effects (let clients use them for messages)
+ * by name from csv ?
  * load/unload cargo into ship 
  * travel to europe by sea - exit_map(ship, dest) order
  * sell/buy in europe 

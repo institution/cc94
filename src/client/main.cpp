@@ -34,8 +34,6 @@ using std::to_string;
 using std::cout;
 using std::endl;
 
-using boost::format;
-
 using std::pair;
 using std::map;
 using std::vector;

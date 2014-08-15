@@ -120,7 +120,7 @@ namespace col {
 		}
 		else {
 			auto &img = g_res[key];
-			auto path = str(format("./%||/%|03|.png") % d % i);
+			auto path = format("./%||/%|03|.png", d, i);
 			if (!img.loadFromFile(string(path))) {
 				// try default
 				if (!img.loadFromFile(string("./" + ICON + "/065.png"))) {
@@ -542,10 +542,6 @@ namespace col {
 
 		int ei,ej;
 
-		//cerr << format("area_dim: %||\n") % area_dim;
-		//cerr << format("area_pos: %||\n") % area_pos;
-		//cerr << format("tile_dim: %||\n") % tile_dim;
-
 		// center
 		{
 			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], tile_dim[1]));
@@ -566,9 +562,7 @@ namespace col {
 			ej = j;
 		}
 
-		//cerr << format("e: %||,%||\n") % ei % ej;
-
-
+		
 		// bottom
 		{
 			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], area_end[1] - ej));
@@ -786,7 +780,7 @@ namespace col {
 				con.on(Event::Press, Button::Left, build_pos, build_dim,
 					[&con, workplace_id]() { 
 						if (con.get_sel_unit()) {
-							con.command(str(format("work-build %||") % workplace_id));
+							con.command(format("work-build %||", workplace_id));
 						}
 						else {
 							con.select_build = 1;  // todo slot_id blablabla
@@ -824,7 +818,6 @@ namespace col {
 				
 				// hover on building -- show label with building name (select buildplace)
 				con.on(Event::Hover, build_pos, build_dim,
-					//str(format("sel_place %||") % i)
 					[&con, i]() { con.sel_colony_slot_id = i; }
 				);
 				
@@ -910,7 +903,7 @@ namespace col {
 				
 				if (field.units.size() == 0) {
 					// left click on field -- assign unit to work there
-					string cmd = str(format("work-field %||") % field_id);
+					string cmd = format("work-field %||", field_id);
 					con.on(Event::Press, Button::Left, field_pos, field_dim,
 						[&con,cmd](){ con.command(cmd); }
 					);
@@ -1148,7 +1141,7 @@ namespace col {
 				kvs,
 				con.select_build,
 				[&con](){ 
-					con.command(str(format("construct %|| %||") % con.sel_slot_num % con.select_build));
+					con.command(format("construct %|| %||", con.sel_slot_num, con.select_build));
 					con.select_build = 0;
 					con.sel_slot_num = -1;
 				},  // onselect
@@ -1164,7 +1157,7 @@ namespace col {
 			for (auto& t: misc::equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
 				entries.push_back(pair<int, string>{
 					t->id, 
-					str(format("%|| (%||) (%||)") % t->get_name() % t->get_num1() % t->get_num2())
+					format("%|| (%||) (%||)", t->get_name(), t->get_num1(), t->get_num2())
 				});
 			}
 
@@ -1805,14 +1798,11 @@ namespace col {
 				if (t.has(phys)) phys_info += name + ",";
 			}
 
-			info += boost::str(
-				format("\n%||\n[%||]\n") %
-					BIOME_NAMES.at((t.biome)) % phys_info
-			);
+			info += format("\n%||\n[%||]\n", BIOME_NAMES.at((t.biome)), phys_info);
 			
-			info += boost::str(
-				format("\nmove: %||\nimprov: %||\n") %
-					env.get_movement_cost(t, t, TravelLand) % env.get_improv_cost(t)
+			info += format("\nmove: %||\nimprov: %||\n",
+				env.get_movement_cost(t, t, TravelLand),
+				env.get_improv_cost(t)
 			);
 			
 
@@ -1820,30 +1810,21 @@ namespace col {
 		
 		if (auto u = con.get_sel_unit()) {
 			
-			info += boost::str(
-				format("\n%||\nTime left: %||/%||") %
-					u->get_name() % int(u->time_left) % int(TIME_UNIT)
+			info += format("\n%||\nTime left: %||/%||",
+				u->get_name(),
+				int(u->time_left),
+				int(TIME_UNIT)
 			);
 			
-			info += boost::str(
-				format("\nmoves: %||") % misc::get_moves(*u)
-			);
+			info += format("\nmoves: %||", misc::get_moves(*u));
 			
-			info += boost::str(
-				format("\ntransported: %||") %
-					u->get_transported()
-			);
 			
-			info += boost::str(
-				format("\nspace left: %||") %
-					u->get_space_left()
-			);
+			info += format("\ntransported: %||", u->get_transported());
+			
+			info += format("\nspace left: %||", u->get_space_left());
 			
 			if (u->get_item1() == ItemTools) {
-				info += boost::str(
-					format("\ntools: %||") %
-						u->get_num1()
-				);
+				info += format("\ntools: %||", u->get_num1());
 			}
 
 		}
@@ -2255,9 +2236,6 @@ namespace col {
 
 			auto &r = g.TexCoords;
 
-			//cout << format("c=%1% x,y=%2%,%3%\n") % c % x % y;
-			//cout << format("%1%;%2%;%3%;%4%\n") % r.Left % r.Top % r.Right % r.Bottom;
-
 			s.setPosition(x + rr.left ,y + rr.top + 6);
 
 			auto dim = img.getSize();
@@ -2346,8 +2324,7 @@ namespace col {
 		int w = app.getSize().x / GLOBAL_SCALE;
 		int h = app.getSize().y / GLOBAL_SCALE;
 
-		//cout << format("%||,%||\n") % w % h;
-
+		
 		// bar top
 		render_bar(app, env, con, {0,0}, {w,7});
 		// hline under the bar

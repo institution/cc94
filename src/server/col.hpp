@@ -18,16 +18,16 @@
 #include <algorithm>
 #include <boost/multi_array.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/serialization/split_member.hpp>
 #include "roll.h"
 #include "aga2.hpp"
+#include "format.hpp"
 
 namespace col{
 
-	using boost::format;
+
 	using std::ifstream;
 	using std::ofstream;
 	using std::string;
@@ -80,6 +80,7 @@ namespace col{
 	using int16 = std::int16_t;
 	using int32 = std::int32_t;
 
+	using format::format;
 
 	template <typename T>
 	using Vector2 = aga2::Mv1<T>;

@@ -7,7 +7,7 @@
 CC:=g++-4.9
 
 # output files
-OUTS:=client/main server/test client/test
+OUTS:=client/main server/test client/test format/test_format
 
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
@@ -16,7 +16,7 @@ WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-nul
 # -Wall -Wextra 
 
 # compiler options
-CCOPTS:=-I./src/server -I./inc -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
+CCOPTS:=-I./inc -I./src/format -I./src/server -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
 DEOPTS:=-g -O0
 
 # linker options

@@ -113,7 +113,6 @@ namespace col {
 		
 		// handle
 		if (halo::handle_event(hts, p)) {
-			cerr << "event" << endl;
 			modified();
 		}
 	}
@@ -224,7 +223,7 @@ namespace col {
 		
 		if (cmd == "list-players") {
 			for (auto &item: env.players) {
-				put(str(format("%||") % item.second));
+				put(format("%||", item.second));
 			}
 		}
 		else if (cmd == "comment") {
@@ -374,7 +373,7 @@ namespace col {
 		}
 		else if (cmd == "turn") {
 			env.turn();
-			put(str(format("Turn %||") % env.turn_no));
+			put(format("Turn %||", env.turn_no));
 		}
 		else if (cmd == "expert") {
 			switch (es.size()) {
@@ -477,13 +476,13 @@ namespace col {
 		}
 		else if (cmd == "list-units") {
 			for (auto &item: env.units) {
-				put(str(format("%||") % item.second));
+				put(format("%||", item.second));
 			}
 		}
 		else if (cmd == "list-unit-types") {
 			for (auto &utp: *env.uts) {
 				auto &ut = utp.second;
-				put(str(format("%u: %s") % uint16(ut.id) % ut.name));
+				put(format("%u: %s", uint16(ut.id), ut.name));
 			}
 		}
 		else if (es[0] == "deli") {

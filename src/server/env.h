@@ -690,7 +690,7 @@ namespace col{
 		bool check(int L, int M) {
 			int r = roll(M); // 0, M-1
 			if (verbose) {
-				cerr << str(format("check %||/%|| -> %||\n") % L % M % (r+1));
+				cerr << format("check %||/%|| -> %||\n", L, M, r + 1);
 			}
 			return r < L;
 
@@ -1429,7 +1429,7 @@ namespace col{
 				return (*p).second;
 			}
 			else {
-				throw std::runtime_error(str(format("no player with id=%||") % id));
+				throw std::runtime_error(format("no player with id=%||", id));
 			}
 		}
 
