@@ -9,7 +9,7 @@
 
 namespace col {
 
-	using Storage = map<uint8, uint16>;
+	using Storage = map<Item, uint16>;
 
 
 

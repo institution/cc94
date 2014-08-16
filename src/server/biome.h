@@ -2,26 +2,14 @@
 #define BIOME2_H
 
 #include "col.hpp"
-#include "enum.hpp"
+#include "distinct.hpp"
 
 
 
 namespace col {
 
-	struct Biome: Enum<> {
-		using Enum<>::Enum;
-
-		//string const& get_name() const;
-		int get_serial_id() const;
-
-		//static
-		//Biome by_name(string const& name);
-	};
-
-	inline
-	int Biome::get_serial_id() const {
-		return get_value();
-	}
+	namespace detail { struct Biome; }
+	using Biome = distinct::Enum<detail::Biome, uint8>;
 
 	constexpr
 	Biome const

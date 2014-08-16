@@ -2,7 +2,7 @@
 #define BASE2_H
 
 #include <array>
-#include "enum.hpp"
+#include "distinct.hpp"
 #include "col.hpp"
 #include "phys.h"
 #include "item.h"
@@ -77,10 +77,8 @@ namespace col {
 	uint8 const PLOW = 'p';
 	//uint8 const BUILD = 'b';
 
-
-	struct Travel: Enum<uint8> {
-		using Enum<uint8>::Enum;
-	};
+	namespace detail { struct Travel; }
+	using Travel = distinct::Flag<detail::Travel, uint8>;
 
 	//using Travel = uint8;
 	Travel const LAND = 1;

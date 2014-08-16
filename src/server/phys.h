@@ -1,15 +1,16 @@
 #ifndef PHYS_H
 #define PHYS_H
 
-#include "enum.hpp"
+#include "col.hpp"
+#include "distinct.hpp"
 
 namespace col {
 
-	struct Phys: Enum<> {
-		using Enum<>::Enum;
+	namespace detail {
+		struct Phys;
+	}
 
-		using Id = int;
-	};
+	using Phys = distinct::Flag<detail::Phys,uint16>;
 
 
 	constexpr

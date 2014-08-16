@@ -42,7 +42,7 @@ namespace col {
 
 	inline
 	int get_biome_icon_id(Biome const& b) {
-		return biome_icons_ids.at(b.get_serial_id());
+		return biome_icons_ids.at(b.get_value());
 	}
 
 
@@ -51,7 +51,7 @@ namespace col {
 
 	inline
 	int get_item_icon_id(Item const& b) {
-		return item_icons_ids.at(b.get_serial_id());
+		return item_icons_ids.at(b.get_value());
 	}
 
 

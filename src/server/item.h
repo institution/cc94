@@ -2,28 +2,19 @@
 #define ITEM2_H
 
 #include "col.hpp"
-#include "enum.hpp"
+#include "distinct.hpp"
 
 
 
 namespace col {
-	struct Item: Enum<> {
-		using Enum<>::Enum;
+	namespace detail{
+		struct Item;
+	}
 
-		string const& get_name() const;
-		int get_serial_id() const;
-
-		using Id = int;
-
-	};
+	using Item = distinct::Enum<detail::Item, uint8>; 
 
 	inline int get_id(Item const& item) {
 		return item.get_value();
-	}
-
-	inline
-	int Item::get_serial_id() const {
-		return get_value();
 	}
 
 	constexpr

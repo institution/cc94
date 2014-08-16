@@ -71,7 +71,7 @@ namespace col{
 
 
 
-	struct Env{
+	struct Env {
 
 		Msgs msgs;
 
@@ -353,13 +353,11 @@ namespace col{
 
 			auto prodnum = get_terr(wp).get_yield(proditem, false);
 
-			switch (proditem) {
-				case ItemFish:
-					c.add(ItemFood, prodnum);
-					break;
-				default:
-					c.add(proditem, prodnum);
-					break;
+			if (proditem == ItemFish) {
+				c.add(ItemFood, prodnum);
+			}
+			else {
+				c.add(proditem, prodnum);
 			}
 
 			u.time_left = 0;
