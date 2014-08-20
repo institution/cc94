@@ -21,7 +21,7 @@ namespace col {
 
 	};
 
-	struct Player;
+	struct Nation;
 
 	struct Color{
 		uint8 r,g,b,a;

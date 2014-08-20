@@ -50,15 +50,15 @@ using std::vector;
  *
  *
  */
-
+/*
 namespace col{
 
-	enum PlayerType{
+	enum NationType{
 		HUMAN,
 		AI
 	};
 
-	PlayerType get_player_type(const Player &p) {
+	NationType get_nation_type(const Nation &p) {
 		if (p.id == 0) {
 			return HUMAN;
 		}
@@ -78,8 +78,7 @@ namespace col{
 
 
 }
-
-
+*/
 
 using Threads = vector<std::thread>;
 

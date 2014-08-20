@@ -25,12 +25,12 @@ namespace col{
 		}
 
 		inline
-		bool owned(Unit const& u, Player const& p) {
-			return u.get_player() == p;
+		bool owned(Unit const& u, Nation const& p) {
+			return u.get_nation() == p;
 		}
 
-		Unit const* get_next_to_move(Env const& env, Player const& p, Unit const* cur=nullptr);
-		Unit::Id get_next_to_move_id(Env const& env, Player const& pl, Unit::Id cur_id=0);
+		Unit const* get_next_to_move(Env const& env, Nation const& p, Unit const* cur=nullptr);
+		Unit::Id get_next_to_move_id(Env const& env, Nation const& pl, Unit::Id cur_id=0);
 
 		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func);
 
@@ -49,8 +49,8 @@ namespace col{
 				Order() = default;
 			};
 
-			Unit * get_next_unit(Env & env, Player const& p, Unit * cur) const;
-			bool has_next_unit(Env const& env, Player const& p) const;
+			Unit * get_next_unit(Env & env, Nation const& p, Unit * cur) const;
+			bool has_next_unit(Env const& env, Nation const& p) const;
 
 			using Unit2Order = map<Unit::Id, Order>;
 			Unit2Order uos;

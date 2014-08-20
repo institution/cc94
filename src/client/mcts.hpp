@@ -128,8 +128,8 @@ namespace tree {
 			out<<"Node(nullptr, "<<n.win<<", "<<n.total<<")";
 		}
 		//out << (format(
-		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, player_id=%||)"
-		//) % t.id % t.type->id % t.x % t.y % t.player->id);
+		//	"Icon(id=%||, type_id=%||, x=%||, y=%||, nation_id=%||)"
+		//) % t.id % t.type->id % t.x % t.y % t.nation->id);
 		return out;
 	}
 
@@ -354,16 +354,16 @@ namespace mcts {
 namespace col {
 	template<typename Game>
 	struct MCTS {
-		using PlayerId = typename Game::PlayerId;
+		using NationId = typename Game::NationId;
 		using NodeType = Node<typename Game::Action>;
 		using Action = typename Game::Action;
 
 
-		PlayerId player_id;
+		NationId nation_id;
 		NodeType *root;
 		Game const& o_env;
 
-		MCTS(Game const& env, PlayerId const& pid): o_env(env), player_id(pid) {
+		MCTS(Game const& env, NationId const& pid): o_env(env), nation_id(pid) {
 			root = new NodeType(nullptr);
 		}
 
@@ -374,7 +374,7 @@ namespace col {
 
 		void think(Node *root, Game &game) {
 			Action *ra = nullptr;
-			auto const& pid = player_id;
+			auto const& pid = nation_id;
 			int const NUM_OF_PLAYERS = 2;
 
 			Game env(o_env);  // copy curr state
@@ -439,7 +439,7 @@ namespace col {
 				}
 			}
 
-			float result = env.get_result(player_id);
+			float result = env.get_result(nation_id);
 
 			// backprop
 			while (node) {
@@ -478,15 +478,15 @@ namespace col {
 	};
 
 
-	float get_result(Env const& env, Player::Id pid) {
-		map<Player::Id, float> pts;
+	float get_result(Env const& env, Nation::Id pid) {
+		map<Nation::Id, float> pts;
 
-		for (auto& x: env.players) {
+		for (auto& x: env.nations) {
 			pts[x.second.id] = 0;
 		}
 
 		for (auto& x: env.icons) {
-			pts[x.second.player->id] += 1;
+			pts[x.second.nation->id] += 1;
 		}
 
 		float total = 0;
@@ -586,7 +586,7 @@ namespace col {
 		Node(const Env &org): env(org) {
 
 			for (auto &u: env.icons) {
-				if (u.player == env.curr_player) {
+				if (u.nation == env.curr_nation) {
 					actions.push_back(AttackMove(u.id));
 				}
 			}
@@ -641,14 +641,14 @@ namespace col {
 		}
 
 
-		void minmax(float &best_val, int &best_ind, Node<Env> &node, uint depth, bool maximizing_player) {
+		void minmax(float &best_val, int &best_ind, Node<Env> &node, uint depth, bool maximizing_nation) {
 
 			if (depth == 0 or node.is_terminal()) {
 				best_value = node.hvalue();
 				best_index = 0;
 			}
 
-			if (maximizing_player)
+			if (maximizing_nation)
 			{
 				best_value = node.hvalue();
 				best_index = 0;

@@ -109,7 +109,7 @@ namespace col{
 
 		Id id{0};
 		UnitType const* type{nullptr};
-		Player * player{nullptr};
+		Nation * nation{nullptr};
 		uint8 time_left{0};
 		bool transported{0};
 
@@ -128,11 +128,11 @@ namespace col{
 		Unit(
 			Id const& id,
 			UnitType const& type,
-			Player & player
+			Nation & nation
 		):
 			id(id),
 			type(&type),
-			player(&player),
+			nation(&nation),
 			time_left(TIME_UNIT),
 			space_left(type.slots)
 		{}
@@ -141,7 +141,7 @@ namespace col{
 		Unit(Unit &&) = default;
 		Unit(Unit const&) = delete;
 
-		Player & get_player() const { return *player; }
+		Nation & get_nation() const { return *nation; }
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }
 		string const& get_name() const { return type->get_name(); }

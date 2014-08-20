@@ -7,18 +7,18 @@
 #include <iostream>
 
 #include "envgame.h"
-#include "user.h"
+#include "player.h"
 #include "inter.h"
 
 namespace expert_ai{
 	// AI operating under coded "expert" rules
 
-	using col::User;
-	using col::EnvGame;
 	using col::Player;
+	using col::EnvGame;
+	using col::Nation;
 	using col::Ready;
 
-	struct ExpertAi: User {
+	struct ExpertAi: Player {
 		std::mutex mtx;
 
 		ExpertAi() {
@@ -37,7 +37,7 @@ namespace expert_ai{
 	};
 
 
-	void run(Player::Id pid, EnvGame * env, bool *running);
+	void run(Nation::Id pid, EnvGame * env, bool *running);
 
 }
 

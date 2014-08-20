@@ -11,9 +11,9 @@ namespace col {
 
 	struct Action {
 
-		Player::Id pid;
+		Nation::Id pid;
 
-		Action(Player::Id const& pid): pid(pid) {
+		Action(Nation::Id const& pid): pid(pid) {
 
 		}
 
@@ -66,7 +66,7 @@ namespace col {
 		Unit::Id uid;
 		Dir::t dir;
 
-		OrderMove(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
+		OrderMove(Nation::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
 			Action(pid),
 			uid(uid), dir(dir)
 		{}
@@ -108,7 +108,7 @@ namespace col {
 		Unit::Id uid;
 		Dir::t dir;
 
-		OrderAttack(Player::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
+		OrderAttack(Nation::Id const& pid, Unit::Id const& uid, Dir::t const& dir):
 			Action(pid),
 			uid(uid), dir(dir)
 		{}
@@ -154,7 +154,7 @@ namespace col {
 		Unit::Id uid;
 
 		WorkBuild(
-			Player::Id const& pid,
+			Nation::Id const& pid,
 			int const& slot_id,
 			Unit::Id const& uid
 		):
@@ -196,7 +196,7 @@ namespace col {
 
 	struct Ready: Action {
 
-		Ready(Player::Id const& pid): Action(pid) {}
+		Ready(Nation::Id const& pid): Action(pid) {}
 
 		bool unsafe_eq(Action const& a) const {
 			auto b = static_cast<Ready const&>(a);
@@ -208,7 +208,7 @@ namespace col {
 		}
 
 		void exec(Game &game, bool exec=1) const {
-			game.ready(game.get<Player>(pid), exec);
+			game.ready(game.get<Nation>(pid), exec);
 		}
 
 		virtual ostream& dump(ostream& out) const {
@@ -220,10 +220,10 @@ namespace col {
 
 
 	/*struct Start: Action {
-		Start(Player::Id const& pid): Action(pid) {}
+		Start(Nation::Id const& pid): Action(pid) {}
 
 		void exec(Game &game, bool exec=1) const {
-			game.start(game.get<Player>(pid), exec);
+			game.start(game.get<Nation>(pid), exec);
 		}
 
 		bool unsafe_eq(Action const& a) const {

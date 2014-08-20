@@ -221,8 +221,8 @@ namespace col {
 		put(line);
 		auto& con = *this;
 		
-		if (cmd == "list-players") {
-			for (auto &item: env.players) {
+		if (cmd == "list-nations") {
+			for (auto &item: env.nations) {
 				put(format("%||", item.second));
 			}
 		}
@@ -244,11 +244,11 @@ namespace col {
 			put("save");
 			put("load");
 			// editor
-			put("list-players");
+			put("list-nations");
 			put("list-units");
 			put("list-unit-types");
 			put("list-orders");
-			put("create-player");
+			put("create-nation");
 			put("create-unit");
 			put("create-colony");
 			put("delete-colony");
@@ -314,7 +314,7 @@ namespace col {
 					break;
 				case 1:
 					put("Turn: " + to_string(env.get_turn_no()) + "; " +
-						"Player: " + env.get_current_player().name  + "; " +
+						"Nation: " + env.get_current_nation().name  + "; " +
 						"State: " + to_string(env.state)
 					);
 					break;
@@ -323,7 +323,7 @@ namespace col {
 		else if (cmd == "connect") {
 			switch (es.size()) {
 				default:
-					put("Usage: connect <player-id>");
+					put("Usage: connect <nation-id>");
 					break;
 				case 2:
 					env.connect(stoi(es.at(1)), *this);					
@@ -333,7 +333,7 @@ namespace col {
 		else if (cmd == "score") {
 			switch (es.size()) {
 				default:
-					put("Usage: score <player_id>");
+					put("Usage: score <nation_id>");
 					break;
 				case 2:
 					auto f = env.get_result(stoi(es.at(1)));
@@ -383,17 +383,17 @@ namespace col {
 				}
 				case 2: {
 					auto pid = std::stoi(es.at(1));
-					auto & p = env.get<Player>(pid);
-					if (p.user == nullptr) {
+					auto & p = env.get<Nation>(pid);
+					if (p.player == nullptr) {
 						ths.emplace_back(expert_ai::run, pid, &env, &running);
-						put("expert ai connected to player");
+						put("expert ai connected to nation");
 					}
 					break;
 				}
 			}
 		}
 		else if (cmd == "ai") {				
-			// calculate and show preffered move for current player
+			// calculate and show preffered move for current nation
 			switch (es.size()) {
 				default: {
 					output.push_back("Usage: ai <num> <exec>\n");
@@ -401,9 +401,9 @@ namespace col {
 				}
 				case 3: {
 					if (env.in_progress()) {
-						auto & p = env.get_current_player();
-						if (p.user == nullptr) {
-							put("creating ai for this player");
+						auto & p = env.get_current_nation();
+						if (p.player == nullptr) {
+							put("creating ai for this nation");
 							
 							ths.emplace_back(Ai::run, p.id, &env);
 						}
@@ -458,7 +458,7 @@ namespace col {
 		else if (cmd == "ready") {
 			switch (es.size()) {
 				default: {
-					output.push_back("Usage: ready [player_id]\n");
+					output.push_back("Usage: ready [nation_id]\n");
 					break;
 				}
 				case 2: {
@@ -467,8 +467,8 @@ namespace col {
 					break;
 				}
 				case 1: {
-					//exec(Ready(env.get_current_player().id));
-					env.ready(env.get_current_player());
+					//exec(Ready(env.get_current_nation().id));
+					env.ready(env.get_current_nation());
 					select_next_unit();
 					break;
 				}
@@ -491,12 +491,12 @@ namespace col {
 		else if (cmd == "create-unit") {
 			switch (es.size()) {
 				default: {
-					put("Usage: create-unit <type_id> <player_id>");
+					put("Usage: create-unit <type_id> <nation_id>");
 					break;
 				}
 				case 3: {
 					auto& c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
-					auto& p = env.get<Player>(std::stoi(es.at(2)));  // player_id
+					auto& p = env.get<Nation>(std::stoi(es.at(2)));  // nation_id
 					auto& t = *get_sel_terr(); 
 					auto& u = env.create<Unit>(c, p);
 					env.init(u, t);
@@ -509,14 +509,14 @@ namespace col {
 				}
 			}
 		}
-		else if (cmd == "create-player") {
+		else if (cmd == "create-nation") {
 			switch (es.size()) {
 				default: {
-					put("Usage: create-player <player-name> <color-name>");
+					put("Usage: create-nation <nation-name> <color-name>");
 					break;
 				}
 				case 3: {
-					env.create<Player>(
+					env.create<Nation>(
 						string(es[1]), // name
 						make_color_by_name(string(es[2])), // color
 						flag_id4color_name(string(es[2]))  // flag_id
@@ -577,7 +577,7 @@ namespace col {
 			}
 		}
 		else if (es[0] == "delp") {
-			env.del_player(std::stoi(es[1]));
+			env.del_nation(std::stoi(es[1]));
 		}
 		else if (cmd == "save") {
 			switch (es.size()) {
@@ -811,7 +811,7 @@ namespace col {
 				case 3:
 					if (env.has_defender(sel)) {
 						exec(OrderAttack(
-							env.get_current_player().id,
+							env.get_current_nation().id,
 							env.get_defender(env.get_terr(sel)).id,
 							dir4vec(
 								Coords(

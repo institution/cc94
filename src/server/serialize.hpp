@@ -55,7 +55,7 @@ namespace col {
 				forward_as_tuple(key),
 				forward_as_tuple(Reserve())
 			);*/
-			Player p(key);
+			Nation p(key);
 			ar & p;
 			xs.emplace(key,
 					std::move(p)
@@ -85,7 +85,7 @@ namespace col {
 		// unit
 		write(ar, x.id);
 		write(ar, x.type->id);
-		write(ar, x.player->id);
+		write(ar, x.nation->id);
 		write(ar, x.space_left);
 		write(ar, x.time_left);
 		write(ar, x.transported);
@@ -119,7 +119,7 @@ namespace col {
 		Unit x;
 		read(ar, x.id);
 		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
-		x.player = & env.get<Player> ( read<Player::Id> (ar) );
+		x.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
 		read(ar, x.space_left);
 		read(ar, x.time_left);
 		read(ar, x.transported);
@@ -174,16 +174,16 @@ namespace col {
 		// save version
 		ar << ver;
 
-		// players
-		if (verbose) cerr << "save players" << endl;
+		// nations
+		if (verbose) cerr << "save nations" << endl;
 		{
-			auto& ps = env.get_cont<Player>();
+			auto& ps = env.get_cont<Nation>();
 			auto tmp = ps.size();
 			ar << tmp;
 			for (auto& p: ps) {
 				auto& x = p.second;
 
-				// player
+				// nation
 				ar << x.id;
 				ar << x.name;
 				ar << x.color;
@@ -275,14 +275,14 @@ namespace col {
 		ar << next_id;
 		// state
 		ar << state;
-		// current player
+		// current nation
 		if (env.state == 1) {
-			if (verbose) cerr << "save current player" << env.get_current_player().id << endl;
-			ar << env.get_current_player().id;
+			if (verbose) cerr << "save current nation" << env.get_current_nation().id << endl;
+			ar << env.get_current_nation().id;
 		}
 		else {
-			if (verbose) cerr << "save current player INV STATE: " << env.state << endl;
-			write<Player::Id>(ar, -1);
+			if (verbose) cerr << "save current nation INV STATE: " << env.state << endl;
+			write<Nation::Id>(ar, -1);
 		}
 
 
@@ -299,18 +299,18 @@ namespace col {
 		// version
 		ar >> ver;
 
-		// players
+		// nations
 		if (verbose) {
-			cerr << "load players" << endl;
+			cerr << "load nations" << endl;
 		}
 
 		{
-			auto& ps = env.get_cont<Player>();
+			auto& ps = env.get_cont<Nation>();
 			size_t tmp;
 			ar >> tmp;
 			for (size_t i=0; i<tmp; ++i) {
 
-				Player x;
+				Nation x;
 				ar >> x.id;
 				ar >> x.name;
 				ar >> x.color;
@@ -425,18 +425,18 @@ namespace col {
 		ar >> env.next_id;
 		// state
 		ar >> env.state;
-		// current player
+		// current nation
 		if (env.state == 1) {
-			env.set_current_player(
-				env.get<Player>(
-					read<Player::Id>(ar) ) );
+			env.set_current_nation(
+				env.get<Nation>(
+					read<Nation::Id>(ar) ) );
 		}
 		else {
-			read<Player::Id>(ar);
+			read<Nation::Id>(ar);
 		}
 
-		// current player
-		//l += write(f, env.current_player_id);
+		// current nation
+		//l += write(f, env.current_nation_id);
 
 	}
 

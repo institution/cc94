@@ -9,7 +9,7 @@ namespace col {
 
 
 
-	void copy_det(EnvGame &trg, EnvGame const& src, Player::Id const& pid)
+	void copy_det(EnvGame &trg, EnvGame const& src, Nation::Id const& pid)
 	{
 
 		// copy availbe information

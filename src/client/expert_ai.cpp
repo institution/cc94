@@ -5,7 +5,7 @@
 
 namespace expert_ai{
 		
-	void run(Player::Id pid, EnvGame * env, bool * running) {
+	void run(Nation::Id pid, EnvGame * env, bool * running) {
 		
 		ExpertAi ai;
 		env->connect(pid, ai);

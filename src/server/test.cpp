@@ -158,7 +158,7 @@ TEST_CASE( "env::move_unit", "" ) {
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND).set_speed(1),
-		env.create<Player>()
+		env.create<Nation>()
 	);
 
 	// init
@@ -186,7 +186,7 @@ TEST_CASE( "equip unit", "" ) {
 	
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50),
-		env.create<Player>()
+		env.create<Nation>()
 	);
 	env.init(u, t);
 	
@@ -214,7 +214,7 @@ TEST_CASE( "board ship", "" ) {
 	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
 	env.set_terr({2,0}, Terr(AltSea, BiomePlains));
 		
-	auto& p = env.create<Player>();
+	auto& p = env.create<Nation>();
 	
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND).set_speed(1),
@@ -253,30 +253,30 @@ TEST_CASE( "turn sequence", "" ) {
 
 	Env env;
 
-	auto& p1 = env.create<Player>();
+	auto& p1 = env.create<Nation>();
 
 	env.start();
 
 	SECTION("1p") {
 		auto t = env.turn_no;
 
-		REQUIRE(env.get_current_player().id == p1.id);
+		REQUIRE(env.get_current_nation().id == p1.id);
 		env.ready(p1);
-		REQUIRE(env.get_current_player().id == p1.id);
+		REQUIRE(env.get_current_nation().id == p1.id);
 		REQUIRE(env.turn_no == t + 1);
 
 
 	}
 
-	auto& p2 = env.create<Player>();
+	auto& p2 = env.create<Nation>();
 
 	SECTION("2p") {
 		auto t = env.turn_no;
 
-		REQUIRE(env.get_current_player().id == p1.id);
+		REQUIRE(env.get_current_nation().id == p1.id);
 		env.ready(p1);
 		env.ready(p2);
-		REQUIRE(env.get_current_player().id == p1.id);
+		REQUIRE(env.get_current_nation().id == p1.id);
 		REQUIRE(env.turn_no == t+1);
 
 	}
@@ -295,7 +295,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 	
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
-		env.create<Player>()
+		env.create<Nation>()
 	);
 
 	auto& t = env.get_terr({0,0});	
@@ -405,8 +405,8 @@ TEST_CASE( "scoring", "" ) {
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
-	auto& p1 = env.create<Player>();
-	auto& p2 = env.create<Player>();
+	auto& p1 = env.create<Nation>();
+	auto& p2 = env.create<Nation>();
 
 	auto& ut = env.create<UnitType>();
 
@@ -445,7 +445,7 @@ TEST_CASE( "serialize", "" ) {
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
-		env.create<Player>()
+		env.create<Nation>()
 	);
 
 	env.init(u, env.get_terr({0,0}));
@@ -518,7 +518,7 @@ TEST_CASE( "two_units", "" ) {
 	auto& ut = env.create<UnitType>().set_travel(LAND);
 	ut.set_attack(2).set_combat(1);
 
-	auto& p = env.create<Player>();
+	auto& p = env.create<Nation>();
 
 	auto& u1 = env.create<Unit>(ut, p);
 	env.init(u1, t1);
@@ -563,7 +563,7 @@ TEST_CASE( "improve square", "" ) {
 	
 	auto& u = env.create<Unit>(
 		ut2,
-		env.create<Player>()
+		env.create<Nation>()
 	);
 	env.init(u, t);
 

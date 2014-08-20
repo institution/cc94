@@ -1530,7 +1530,7 @@ namespace col {
 
 
 	Color get_unit_color(Unit const& u) {
-		auto c = u.get_player().get_color();
+		auto c = u.get_nation().get_color();
 		if (u.get_time_left() == 0) {
 			return Color(c.r/2, c.g/2, c.b/2, c.a/2);
 		}
@@ -1779,13 +1779,13 @@ namespace col {
 
 		string info;
 		
-		string player_name = "EDITING";
+		string nation_name = "EDITING";
 		if (env.in_progress()) {
-			player_name = env.get_current_player().name;
+			nation_name = env.get_current_nation().name;
 		}
 		
 		// Turn 5, England 
-		info += "Turn " + to_string(env.get_turn_no()) + ", " + player_name + "\n";
+		info += "Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n";
 			
 		
 		if (Terr const* tp = con.get_sel_terr()) {
@@ -1843,9 +1843,9 @@ namespace col {
 			0
 		);
 		
-		// top right: player indicator
+		// top right: nation indicator
 		if (env.in_progress()) {
-			render_pixel(win, pos + v2i(dim[0]-1,0), env.get_current_player().color);
+			render_pixel(win, pos + v2i(dim[0]-1,0), env.get_current_nation().color);
 		}
 			
 		auto ren = Renderer(win, env);
@@ -1874,7 +1874,7 @@ namespace col {
 			auto col = ColorNone;
 			
 			if (env.in_progress()) {
-				auto& p = env.get_current_player();
+				auto& p = env.get_current_nation();
 				
 				lab = "End of turn";
 				cmd = "ready";
@@ -1890,7 +1890,7 @@ namespace col {
 				lab = "Start game";
 				cmd = "start";
 				
-				col = (env.players.size() < 1) ? ColorGray : ColorWhite;
+				col = (env.nations.size() < 1) ? ColorGray : ColorWhite;
 			}
 
 			auto text = Text(lab).set_font("tiny.png").set_fg(col);
@@ -2351,8 +2351,8 @@ namespace col {
 			);
 		}
 
-		//if (env.curr_player) {
-		//	render_playerind(app, 0, 0, env.curr_player->color);
+		//if (env.curr_nation) {
+		//	render_nationind(app, 0, 0, env.curr_nation->color);
 		//}
 
 		// BACKGROUND

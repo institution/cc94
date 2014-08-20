@@ -61,7 +61,7 @@ namespace col{
 		
 		
 		
-		Unit const* get_next_to_move(Env const& env, Player const& pl, Unit const* cur) {
+		Unit const* get_next_to_move(Env const& env, Nation const& pl, Unit const* cur) {
 			if (cur and owned(*cur, pl) and to_move(*cur)) {
 				return cur;
 			}
@@ -95,13 +95,13 @@ namespace col{
 			return nullptr;
 		}
 		
-		Unit * Memory::get_next_unit(Env & env, Player const& p, Unit * cur) const {
+		Unit * Memory::get_next_unit(Env & env, Nation const& p, Unit * cur) const {
 			return find_unit(env, cur, [this,&p](Unit const& u) -> bool{
 				return owned(u, p) and to_move(u) and get_order(u.id).code != ' ';
 			});
 		}
 
-		bool Memory::has_next_unit(Env const& env, Player const& p) const {
+		bool Memory::has_next_unit(Env const& env, Nation const& p) const {
 			return find_unit(const_cast<Env&>(env), nullptr, [this,&p](Unit const& u) -> bool{
 				return owned(u, p) and to_move(u) and get_order(u.id).code != ' ';
 			});

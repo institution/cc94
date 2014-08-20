@@ -16,7 +16,7 @@
 #include "meta.hpp"
 #include "base.h"
 #include "objs.h"
-#include "player.h"
+#include "nation.h"
 #include "csv.h"
 #include "terr.h"
 #include "build.h"
@@ -135,7 +135,7 @@ namespace col{
 		kill unit_id
 		set-time unit_id num
 		set-turn num
-		set-current-player player_id (activate)
+		set-current-nation nation_id (activate)
 		...
 
 
@@ -196,7 +196,7 @@ namespace col{
 		morph-build terr_id build_id build_type_id
 
 		set-turn num
-		set-current-player player_id (activate)
+		set-current-nation nation_id (activate)
 
 	 effect(3)(only editor):
 		resize x y
@@ -413,8 +413,8 @@ namespace col{
 
 		// effect
 		CC94_DEFINE_INTER(
-			set_current_player,
-			(Id<Player>, player_id)
+			set_current_nation,
+			(Id<Nation>, nation_id)
 		)
 
 		// effect (editor)

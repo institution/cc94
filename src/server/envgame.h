@@ -11,7 +11,7 @@ namespace col{
 	using std::unique_ptr;
 
 	struct EnvGame: Env {
-		// add player score
+		// add nation score
 		// extract actions
 		// create_random_action function
 
@@ -33,12 +33,12 @@ namespace col{
 
 		// Action create_random_action
 
-		float get_result(Player::Id pid) {
+		float get_result(Nation::Id pid) {
 
 			// % of units
 			float score = 0, total = 0;
 			for (auto& p: units) {
-				if (p.second.get_player().id == pid) {
+				if (p.second.get_nation().id == pid) {
 					score += 1;
 				}
 				total += 1;
@@ -59,7 +59,7 @@ namespace col{
 		}
 
 		/*
-		bool get_assign_action(Assign & a, Player::Id const& pid, Unit const& unit) {
+		bool get_assign_action(Assign & a, Nation::Id const& pid, Unit const& unit) {
 			// [0-14] building
 			// [16-24] field square
 
@@ -116,13 +116,13 @@ namespace col{
 			// OrderMove or Ready
 
 			if (in_progress()) {
-				auto pid = get_current_player().id;
+				auto pid = get_current_nation().id;
 
 				for (auto& it: units) {
 					auto& u = it.second;
 
 
-					if (u.order != Order::Space and u.get_player().id == pid) {
+					if (u.order != Order::Space and u.get_nation().id == pid) {
 
 						/*
 						if (u.assigned() and roll::roll2(0, 16) >= 2) {
@@ -174,12 +174,12 @@ namespace col{
 	};
 
 	/*
-	void add_player() {
-		auto& id = next_id<Player>();
-		auto& p = create<Player>(id, );
+	void add_nation() {
+		auto& id = next_id<Nation>();
+		auto& p = create<Nation>(id, );
 	}*/
 
-	void copy_det(EnvGame &trg, EnvGame const& src, Player::Id const& pid);
+	void copy_det(EnvGame &trg, EnvGame const& src, Nation::Id const& pid);
 
 
 

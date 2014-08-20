@@ -5,21 +5,21 @@
 #include <thread>
 #include "mcts.hpp"
 #include "envgame.h"
-#include "user.h"
+#include "player.h"
 #include "inter.h"
 
 namespace col {
 
 	using GameType = EnvGame;
-	using PlayerIdType = Player::Id;
+	using NationIdType = Nation::Id;
 
 	// template G(ameType) P(layerIdType)
-	struct Ai: User {
+	struct Ai: Player {
 		// mcts tree node type
 		using NodeType = tree::Node<Action>;
 		// for playing random games
 		GameType game_copy;
-		PlayerIdType pid;
+		NationIdType pid;
 		NodeType *root {nullptr};
 		int action_count{0};
 
@@ -34,7 +34,7 @@ namespace col {
 		}
 
 
-		void create(PlayerIdType const& pid) {
+		void create(NationIdType const& pid) {
 			this->pid = pid;
 			auto tmp = unique_ptr<Action>(nullptr);
 			root = new NodeType(tmp);
@@ -49,7 +49,7 @@ namespace col {
 
 
 
-		Ai(PlayerIdType const& pid) {
+		Ai(NationIdType const& pid) {
 			create(pid);
 		}
 
@@ -61,7 +61,7 @@ namespace col {
 		Ai(Ai &&) { throw Critical("disabled"); };
 		Ai const& operator=(Ai const&) { throw Critical("disabled"); };
 
-		static void run(Player::Id pid, EnvGame *env) {
+		static void run(Nation::Id pid, EnvGame *env) {
 			Ai ai(pid);
 			ai.action_count = env->action_count;
 			env->connect(pid, ai);
@@ -75,7 +75,7 @@ namespace col {
 			}
 		}
 
-		void reset(PlayerIdType const& pid) {
+		void reset(NationIdType const& pid) {
 			// clear tree
 			//auto tmp = unique_ptr<Action>(new Start(1));
 			destroy();
@@ -128,7 +128,7 @@ namespace col {
 				//dump(root, 8);
 				//cout << endl;
 
-				// copy game state visible for player
+				// copy game state visible for nation
 				copy_det(game_copy, game, pid);
 
 				// determinization

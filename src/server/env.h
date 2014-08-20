@@ -7,7 +7,7 @@
 #include "col.hpp"
 #include "base.h"
 #include "objs.h"
-#include "player.h"
+#include "nation.h"
 #include "csv.h"
 #include "terr.h"
 #include "build.h"
@@ -21,7 +21,7 @@
 namespace col{
 
 
-	struct User{
+	struct Player{
 
 		virtual void activate() = 0;
 		virtual bool apply_inter(inter::Any const& a) = 0;
@@ -40,12 +40,12 @@ namespace col{
 
 	// game event like: "Colony Abc builds Warehouse"
 	struct Msg{
-		Player const* player{nullptr};
+		Nation const* nation{nullptr};
 		Terr const* terr{nullptr};
 		string msg{""};
 
-		Msg(Player const& p, Terr const& t, string const& msg):
-			player(&p), terr(&t), msg(msg)
+		Msg(Nation const& p, Terr const& t, string const& msg):
+			nation(&p), terr(&t), msg(msg)
 		{}
 
 
@@ -63,8 +63,8 @@ namespace col{
 	using Units = unordered_map<Unit::Id, Unit>;
 	//using Builds = unordered_map<Build::Id, Build>;
 	using Colonies = unordered_map<Colony::Id, Colony>;
-	// using Players = unordered_map<Player::Id, Player>;
-	using Players = unordered_map<Player::Id, Player>;
+	// using Nations = unordered_map<Nation::Id, Nation>;
+	using Nations = unordered_map<Nation::Id, Nation>;
 
 
 
@@ -89,7 +89,7 @@ namespace col{
 
 		Msgs msgs;
 
-		void add_message(Player const& p, Terr const& t, string const& m) {
+		void add_message(Nation const& p, Terr const& t, string const& m) {
 			msgs.push_back(Msg(p,t,m));
 		}
 
@@ -102,11 +102,11 @@ namespace col{
 		shared_ptr<UnitTypes> uts;
 
 		// state
-		Players players;
+		Nations nations;
 		Colonies colonies;
 		Units units;
 
-		Player::Id cpid;
+		Nation::Id cpid;
 
 		// map state
 		Coord w, h;
@@ -129,7 +129,7 @@ namespace col{
 		void clear() {
 			units.clear();
 			colonies.clear();
-			players.clear();
+			nations.clear();
 
 			resize({0,0});
 
@@ -142,9 +142,9 @@ namespace col{
 			mod++;
 		}
 
-		void connect(Player::Id pid, User & u) {
-			// connect player(game nation) with AI or Human
-			get<Player>(pid).set_user(&u);
+		void connect(Nation::Id pid, Player & u) {
+			// connect nation(game nation) with AI or Human
+			get<Nation>(pid).set_player(&u);
 		}
 
 		int get_turn_no() const {
@@ -152,29 +152,29 @@ namespace col{
 		}
 
 
-		Player const* get_current_player_p() const {
+		Nation const* get_current_nation_p() const {
 			if (!in_progress()) {
 				return nullptr;
 			}
-			return &players.at(cpid);
+			return &nations.at(cpid);
 		}
 
-		Player const& get_current_player() const {
+		Nation const& get_current_nation() const {
 			if (!in_progress()) {
-				throw Error("no current player: game in regress");
+				throw Error("no current nation: game in regress");
 			}
-			return players.at(cpid);
+			return nations.at(cpid);
 		}
 
-		Player & get_current_player() {
-			return const_cast<Player&>(
-				static_cast<Env const*>	(this) -> get_current_player() );
+		Nation & get_current_nation() {
+			return const_cast<Nation&>(
+				static_cast<Env const*>	(this) -> get_current_nation() );
 		}
 
-		Env& set_current_player(Player const& p) {
-			auto it = players.find(p.id);
-			if (it == players.end()) {
-				throw Error("no such player");
+		Env& set_current_nation(Nation const& p) {
+			auto it = nations.find(p.id);
+			if (it == nations.end()) {
+				throw Error("no such nation");
 			}
 			cpid = p.id;
 			return *this;
@@ -183,15 +183,15 @@ namespace col{
 
 
 		void start() {
-			if (players.size() < 1) {
-				throw Critical("need at least one player to start game");
+			if (nations.size() < 1) {
+				throw Critical("need at least one nation to start game");
 			}
 
 			state = 1;
 			cpid = 0;
-			while (players.find(cpid) == players.end()) {
+			while (nations.find(cpid) == nations.end()) {
 				if (cpid > 100) {   // TODO: pfff...
-					throw Critical("UNEXPECTED ERROR: cannot find player");
+					throw Critical("UNEXPECTED ERROR: cannot find nation");
 				}
 				++cpid;
 			}
@@ -311,9 +311,9 @@ namespace col{
 
 
 
-		bool ready(Player const& p, bool exec=1) {
+		bool ready(Nation const& p, bool exec=1) {
 
-			if (get_current_player().id != p.id) {
+			if (get_current_nation().id != p.id) {
 				if (exec) {
 					throw Critical("not your turn");
 				}
@@ -324,7 +324,7 @@ namespace col{
 
 			if (exec) {
 				++cpid;
-				while (players.find(cpid) == players.end()) {
+				while (nations.find(cpid) == nations.end()) {
 					if (cpid > 10) {
 						turn();     // TURN HERE
 						cpid = 0;
@@ -336,7 +336,7 @@ namespace col{
 
 				record_action();
 
-				if (auto u = get_current_player().get_user()) {
+				if (auto u = get_current_nation().get_player()) {
 					u->activate();
 				}
 			}
@@ -347,8 +347,8 @@ namespace col{
 
 
 		void activate_all() {
-			for (auto& p: players) {
-				if (auto u = p.second.get_user()) {
+			for (auto& p: nations) {
+				if (auto u = p.second.get_player()) {
 					u->activate();
 				}
 			}
@@ -535,7 +535,7 @@ namespace col{
 		}
 
 		void equip(Unit & u, UnitType & ut) {
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -586,20 +586,20 @@ namespace col{
 
 
 
-		bool has_vision(Player const& p, Terr const& t) {
+		bool has_vision(Nation const& p, Terr const& t) {
 			return 1;
 		}
 
 
-		void send(Player const& p, inter::Any const& a) {
-			if (auto u = p.get_user()) {
+		void send(Nation const& p, inter::Any const& a) {
+			if (auto u = p.get_player()) {
 				u->apply_inter(a);
 			}
 		}
 
 
 		void notify_effect(Terr const& t, inter::Any const& a) {
-			for (auto& p: players) {
+			for (auto& p: nations) {
 				if (has_vision(p.second, t)) {
 					send(p.second, a);
 				}
@@ -761,10 +761,10 @@ namespace col{
 		}
 
 
-		int get_transport_space(Terr const& dest, Player const& player) const {
+		int get_transport_space(Terr const& dest, Nation const& nation) const {
 			int space = 0;
 			for (auto& p: dest.units) {
-				if (p->get_player() == player) {
+				if (p->get_nation() == nation) {
 					space += p->get_space_left();
 					if (p->transported) {
 						space -= p->get_size();
@@ -778,7 +778,7 @@ namespace col{
 
 
 		bool has_transport(Terr const& dest, Unit const& u) const {
-			return get_transport_space(dest, u.get_player()) >= u.get_size();
+			return get_transport_space(dest, u.get_nation()) >= u.get_size();
 		}
 
 
@@ -797,7 +797,7 @@ namespace col{
 			 */
 
 			// unit checks
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -835,8 +835,8 @@ namespace col{
 			}
 
 			// dynamic check
-			Player * cp = get_control(dest);
-			if (cp and cp->id != get_current_player().id) {
+			Nation * cp = get_control(dest);
+			if (cp and cp->id != get_current_nation().id) {
 				throw Error("destination occupied by enemy");
 			}
 
@@ -932,7 +932,7 @@ namespace col{
 				u.field = nullptr;
 			}
 			u.type = nullptr;
-			u.player = nullptr;
+			u.nation = nullptr;
 
 			units.erase(get_id(u));
 
@@ -1013,7 +1013,7 @@ namespace col{
 
 		bool destroy(Unit & u, Phys const& feat) {
 			// unit checks
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -1050,7 +1050,7 @@ namespace col{
 			}
 
 			// unit checks
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -1087,7 +1087,7 @@ namespace col{
 			}
 
 			// unit checks
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -1160,7 +1160,7 @@ namespace col{
 
 		bool colonize(Unit &u, string const& name) {
 
-			if (u.get_player() != get_current_player()) {
+			if (u.get_nation() != get_current_nation()) {
 				throw Error("not your unit");
 			}
 
@@ -1284,16 +1284,16 @@ namespace col{
 			return dir4vec(get_coords(to) - get_coords(from));
 		}
 
-		Player const* get_control(Terr const& terr) const {
+		Nation const* get_control(Terr const& terr) const {
 			if (terr.units.size()) {
-				return &terr.units.at(0)->get_player();
+				return &terr.units.at(0)->get_nation();
 			}
 			return nullptr;
 		}
 
-		Player * get_control(Terr const& terr) {
+		Nation * get_control(Terr const& terr) {
 			if (terr.units.size()) {
-				return &terr.units.at(0)->get_player();
+				return &terr.units.at(0)->get_nation();
 			}
 			return nullptr;
 		}
@@ -1339,14 +1339,14 @@ namespace col{
 		}
 
 
-		bool has_control(Terr const& terr, Player const& p) const {
-			Player const* c = get_control(terr);
+		bool has_control(Terr const& terr, Nation const& p) const {
+			Nation const* c = get_control(terr);
 			return c and *c == p;
 		}
 
 
 		// order
-		void set_proditem_field(Player const& p, Terr & terr, int field_id, Item const& item) {
+		void set_proditem_field(Nation const& p, Terr & terr, int field_id, Item const& item) {
 			get_field(terr, field_id, p).set_proditem(item);
 		}
 
@@ -1374,21 +1374,21 @@ namespace col{
 			}
 		}
 
-		Field const& get_field(Terr const& terr, int const& field_id, Player const& p) const {
+		Field const& get_field(Terr const& terr, int const& field_id, Nation const& p) const {
 			if (has_control(terr, p)) {
 				return get_field(terr, field_id);
 			}
 			else {
-				throw Error("this player has no control here");
+				throw Error("this nation has no control here");
 			}
 		}
 
-		Field & get_field(Terr & terr, int const& field_id, Player const& p) {
+		Field & get_field(Terr & terr, int const& field_id, Nation const& p) {
 			if (has_control(terr, p)) {
 				return get_field(terr, field_id);
 			}
 			else {
-				throw Error("this player has no control here");
+				throw Error("this nation has no control here");
 			}
 		}
 
@@ -1453,12 +1453,12 @@ namespace col{
 			}
 		}
 
-		Build & get_build(Terr & terr, int build_id, Player const& p) {
+		Build & get_build(Terr & terr, int build_id, Nation const& p) {
 			if (has_control(terr, p)) {
 				return get_build(terr, build_id);
 			}
 			else {
-				throw Error("this player has no control here");
+				throw Error("this nation has no control here");
 			}
 		}
 
@@ -1466,13 +1466,13 @@ namespace col{
 
 		void work_field(int field_id, Unit & u) {
 			Terr & terr = get_terr(u);
-			auto& f = get_field(terr, field_id, u.get_player());
+			auto& f = get_field(terr, field_id, u.get_nation());
 			work_workplace(f, u);
 		}
 
 		void work_build(int build_id, Unit & u) {
 			Terr & terr = get_terr(u);
-			auto& f = get_build(terr, build_id, u.get_player());
+			auto& f = get_build(terr, build_id, u.get_nation());
 			work_workplace(f, u);
 		}
 
@@ -1520,7 +1520,7 @@ namespace col{
 
 
 		bool apply(inter::ready const& a) {
-			ready(get_current_player());
+			ready(get_current_nation());
 			return 1;
 		}
 
@@ -1547,32 +1547,32 @@ namespace col{
 
 
 
-		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {
-			units.at(icon_id).player = &players.at(player_id);
+		void set_owner(const Unit::Id &icon_id, const Nation::Id &nation_id) {
+			units.at(icon_id).nation = &nations.at(nation_id);
 			++mod;
 		}
 
-		Player& get_player(Player::Id const& id) {
-			return players.at(id);
+		Nation& get_nation(Nation::Id const& id) {
+			return nations.at(id);
 		}
 
-		const Player& get_player(const Player::Id &id) const {
-			auto p = players.find(id);
-			if (p != players.end()) {
+		const Nation& get_nation(const Nation::Id &id) const {
+			auto p = nations.find(id);
+			if (p != nations.end()) {
 				return (*p).second;
 			}
 			else {
-				throw std::runtime_error(format("no player with id=%||", id));
+				throw std::runtime_error(format("no nation with id=%||", id));
 			}
 		}
 
-		void del_player(const Player::Id &id) {
-			players.erase(id);
+		void del_nation(const Nation::Id &id) {
+			nations.erase(id);
 			++mod;
 		}
 
-		Player::Id next_key_player() {
-			return players.size();
+		Nation::Id next_key_nation() {
+			return nations.size();
 		}
 
 		bool apply(inter::echo const& a) {
@@ -1640,8 +1640,8 @@ namespace col{
 		return colonies;
 	}
 
-	template <>	inline Players& Env::get_cont<Player>() {
-		return players;
+	template <>	inline Nations& Env::get_cont<Nation>() {
+		return nations;
 	}
 
 	template <>	inline UnitTypes& Env::get_cont<UnitType>() {
@@ -1660,8 +1660,8 @@ namespace col{
 		return colonies;
 	}
 
-	template <>	inline Players const& Env::get_cont<Player>() const {
-		return players;
+	template <>	inline Nations const& Env::get_cont<Nation>() const {
+		return nations;
 	}
 
 	template <>	inline UnitTypes const& Env::get_cont<UnitType>() const {

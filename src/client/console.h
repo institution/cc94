@@ -13,7 +13,7 @@
 #include "layout.h"
 #include "action.h"
 #include "ai.h"
-#include "user.h"
+#include "player.h"
 #include "ai-env-helpers.h"
 #include "halo.h"
 
@@ -61,7 +61,7 @@ namespace col {
 
 
 
-	struct Console: User{
+	struct Console: Player{
 		vector<string> output;
 		string buffer;
 		std::deque<string> history;
@@ -91,7 +91,7 @@ namespace col {
 			select_unit(
 				mem.get_next_unit(
 					env,
-					env.get_current_player(),
+					env.get_current_nation(),
 					get_sel_unit()
 				)
 			);
