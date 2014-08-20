@@ -8,6 +8,7 @@
 
 #include "envgame.h"
 #include "user.h"
+#include "inter.h"
 
 namespace expert_ai{
 	// AI operating under coded "expert" rules
@@ -28,7 +29,9 @@ namespace expert_ai{
 			mtx.unlock();
 		}
 
-
+		bool apply_inter(col::inter::Any const& a) {
+			return 1;
+		}
 
 
 	};

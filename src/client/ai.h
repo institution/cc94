@@ -6,6 +6,7 @@
 #include "mcts.hpp"
 #include "envgame.h"
 #include "user.h"
+#include "inter.h"
 
 namespace col {
 
@@ -28,6 +29,9 @@ namespace col {
 			active = true;
 		}
 
+		bool apply_inter(inter::Any const& a) {
+			return 1;
+		}
 
 
 		void create(PlayerIdType const& pid) {

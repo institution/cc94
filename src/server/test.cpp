@@ -106,6 +106,18 @@ TEST_CASE( "env", "" ) {
 	
 }
 
+TEST_CASE( "inter", "" ) {
+	
+	REQUIRE(inter::type_name<inter::build_colony>::get() == "build_colony");
+	
+	Env env;
+	
+	inter::Any a;
+	a = inter::echo(1);
+	REQUIRE(env.apply_inter(a) == 1);
+	
+	
+}
 
 
 

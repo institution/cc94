@@ -21,7 +21,21 @@
 namespace col{
 
 
+	struct User{
 
+		virtual void activate() = 0;
+		virtual bool apply_inter(inter::Any const& a) = 0;
+
+		//template <class t>
+		//virtual void receive(T const& t) = 0;
+		// CONTROL FLOW
+		// 1: master -> ai: activate
+		//    ai -> master: sends commands
+		//    ai -> master: ready
+		//    goto 1 or 2
+		// 2: master -> ai: win/lose
+
+	};
 
 
 	// game event like: "Colony Abc builds Warehouse"
@@ -41,7 +55,6 @@ namespace col{
 	using Msgs = vector<Msg>;
 
 
-	using Id = uint32;
 
 	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
 	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
@@ -52,6 +65,7 @@ namespace col{
 	using Colonies = unordered_map<Colony::Id, Colony>;
 	// using Players = unordered_map<Player::Id, Player>;
 	using Players = unordered_map<Player::Id, Player>;
+
 
 
 	inline bool compatible(Travel const& x, Travel const& y) {
@@ -330,10 +344,7 @@ namespace col{
 			return 1;
 		}
 
-		bool apply(inter::ready const& a) {
-			ready(get_current_player());
-			return 1;
-		}
+
 
 		void activate_all() {
 			for (auto& p: players) {
@@ -575,6 +586,27 @@ namespace col{
 
 
 
+		bool has_vision(Player const& p, Terr const& t) {
+			return 1;
+		}
+
+
+		void send(Player const& p, inter::Any const& a) {
+			if (auto u = p.get_user()) {
+				u->apply_inter(a);
+			}
+		}
+
+
+		void notify_effect(Terr const& t, inter::Any const& a) {
+			for (auto& p: players) {
+				if (has_vision(p.second, t)) {
+					send(p.second, a);
+				}
+			}
+		}
+
+
 
 		bool in_bounds(Coords const& p) const;
 
@@ -758,6 +790,7 @@ namespace col{
 			// special hack for pioniers only
 			u.set_type(get<UnitType>(u.get_type_id() - 1));
 		}
+
 
 		bool move_board(int8 dx, int8 dy, Unit & u) {
 			/* Move/board unit on adjacent square/ship
@@ -1007,7 +1040,15 @@ namespace col{
 			return 0;
 		}
 
+
+
 		bool improve(Unit & u, Phys const& feat) {
+
+
+			if (!(feat & PhysAlterable)) {
+				throw Error("only road,plow and forest can be altered");
+			}
+
 			// unit checks
 			if (u.get_player() != get_current_player()) {
 				throw Error("not your unit");
@@ -1038,6 +1079,44 @@ namespace col{
 
 
 
+
+		bool a_destroy(Unit & u, Phys const& feat) {
+
+			if (!(feat & PhysAlterable)) {
+				throw Error("only road,plow and forest can be altered");
+			}
+
+			// unit checks
+			if (u.get_player() != get_current_player()) {
+				throw Error("not your unit");
+			}
+
+			if (!has_tools(u)) {
+				throw Error("need tools");
+			}
+
+			auto& t = get_terr(u);
+
+			// terrain checks
+			if (!compatible(t.get_travel(), LAND)) {
+				throw Error("not on land");
+			}
+
+			if (!t.has(feat)) {
+				throw Error("no feat here");
+			}
+
+			if (run_map_task(u, get_improv_cost(t))) {
+				use_tools(u);
+				t.sub(feat);
+				return 1;
+			}
+			return 0;
+		}
+
+
+
+
 		void kill(Colony & c) {
 			c.terr->colony = nullptr;
 			c.terr = nullptr;
@@ -1055,6 +1134,28 @@ namespace col{
 		void set_build(Colony & c, int i, BuildType::Id const& id) {
 			c.set_build(i, Build(get<BuildType>(id)));
 		}
+
+
+
+		void init_colony() {
+
+		}
+
+
+		void set_tp(Unit & u, int tp) {
+			u.time_left = tp;
+		}
+
+		bool apply(inter::set_tp const& e) {
+			auto & u = get<Unit>(e.unit_id);
+			set_tp(u, e.num);
+			notify_effect(get_terr(u), e);
+			return 1;
+		}
+
+
+
+
 
 
 		bool colonize(Unit &u, string const& name) {
@@ -1119,6 +1220,11 @@ namespace col{
 			}
 			return 0;  // try next turn
 		}
+
+		bool apply(inter::build_colony const& a) {
+			return colonize(get<Unit>(a.unit_id), "");
+		}
+
 
 		void colony_construct(Colony & colony, BuildType::Id type_id, int slot) {
 			auto& type = get<BuildType>(type_id);
@@ -1412,6 +1518,35 @@ namespace col{
 
 
 
+
+		bool apply(inter::ready const& a) {
+			ready(get_current_player());
+			return 1;
+		}
+
+
+		bool apply(inter::move_board const& a) {
+			return move_board(a.dx, a.dy, get<Unit>(a.unit_id));
+		}
+
+
+		bool apply(inter::improve const& a) {
+			return improve(get<Unit>(a.unit_id), a.phys_id);
+		}
+
+
+		bool apply(inter::destroy const& a) {
+			return a_destroy(get<Unit>(a.unit_id), a.phys_id);
+		}
+
+		bool apply(inter::init_colony const& a) {
+			return 1;
+		}
+
+
+
+
+
 		void set_owner(const Unit::Id &icon_id, const Player::Id &player_id) {
 			units.at(icon_id).player = &players.at(player_id);
 			++mod;
@@ -1440,6 +1575,12 @@ namespace col{
 			return players.size();
 		}
 
+		bool apply(inter::echo const& a) {
+			return 1;
+		}
+
+		bool apply_inter(inter::Any const& a);
+
 
 		template<class Archive>
 		void save(Archive & ar, uint const& version) const;
@@ -1454,8 +1595,27 @@ namespace col{
 
 
 
+	struct Apply: boost::static_visitor<bool>{
+		Env & env;
+		Apply(Env & e): env(e) {}
 
 
+		template <class T>
+		bool operator()(T const& t) {
+			return env.apply(t);
+		}
+
+	};
+
+
+
+
+
+
+	inline bool Env::apply_inter(inter::Any const& a) {
+		Apply ap(*this);
+		return boost::apply_visitor(ap, a);
+	}
 
 
 

@@ -98,6 +98,21 @@ namespace col {
 		}
 
 
+		struct Apply: boost::static_visitor<bool>{
+			Env & env;
+
+			Apply(Env & env): env(env) {}
+
+			template <class T>
+			bool operator()(T const& a) const {
+				return env.apply(a);
+			}
+		};
+
+		bool apply_inter(inter::Any const& a) {
+			return boost::apply_visitor(Apply(env), a);
+		}
+
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
 			if (unit) {

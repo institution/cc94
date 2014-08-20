@@ -78,7 +78,7 @@ namespace col {
 	//uint8 const BUILD = 'b';
 
 	namespace detail { struct Travel; }
-	using Travel = distinct::Flag<detail::Travel, uint8>;
+	using Travel = distinct::Enum<detail::Travel, uint8>;
 
 	//using Travel = uint8;
 	Travel const LAND = 1;

@@ -4,6 +4,8 @@
 #include <limits>
 #include <memory>
 #include <functional>
+#include <iostream>
+#include "format.hpp"
 
 namespace distinct {
 
@@ -38,6 +40,9 @@ namespace distinct {
 			ar & val;
 		}
 
+		operator void*() const {
+			return bool(get_value());
+		}
 
 		struct hash
 		{
@@ -48,6 +53,13 @@ namespace distinct {
 		};
 
 	};
+
+
+	template<class U,class T>
+	std::ostream & operator<<(std::ostream & o, Enum<U,T> const& x) {
+		o << format::format("Enum(%||)", x.get_value());
+		return o;
+	}
 
 	template<class U,class T>
 	bool operator==(Enum<U,T> const& x, Enum<U,T> const& y) {
@@ -70,28 +82,19 @@ namespace distinct {
 	}
 
 
-	template<typename U, typename T>
-	struct Flag: Enum<U,T> {
-		using Enum<U,T>::Enum;
-
-		operator bool() const {
-			return bool(Enum<U,T>::get_value());
-		}
-	};
-
 	template<class U,class T>
-	Flag<U,T> operator~(Flag<U,T> const& x) {
-		return Flag<U,T>(~x.get_value());
+	Enum<U,T> operator~(Enum<U,T> const& x) {
+		return Enum<U,T>(~x.get_value());
 	}
 
 	template<class U,class T>
-	Flag<U,T> operator|(Flag<U,T> const& x, Flag<U,T> const& y) {
-		return Flag<U,T>(x.get_value() | y.get_value());
+	Enum<U,T> operator|(Enum<U,T> const& x, Enum<U,T> const& y) {
+		return Enum<U,T>(x.get_value() | y.get_value());
 	}
 
 	template<class U,class T>
-	Flag<U,T> operator&(Flag<U,T> const& x, Flag<U,T> const& y) {
-		return Flag<U,T>(x.get_value() & y.get_value());
+	Enum<U,T> operator&(Enum<U,T> const& x, Enum<U,T> const& y) {
+		return Enum<U,T>(x.get_value() & y.get_value());
 	}
 
 }

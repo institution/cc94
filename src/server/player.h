@@ -1,12 +1,12 @@
-#ifndef PLAYER_H
-#define PLAYER_H
+#ifndef PLAYER43567_H
+#define PLAYER43567_H
 
 #include "objs.h"
-#include "user.h"
+#include "meta.hpp"
 
 namespace col{
 
-
+	struct User;
 
 	struct Player {
 		using Id = uint32;
@@ -52,6 +52,17 @@ namespace col{
 
 
 	};
+
+
+
+
+	template<>
+	struct Id<Player>{
+		using type = uint32;
+	};
+
+
+
 
 	inline bool operator==(Player const& self, Player const& other) {
 		return self.id == other.id;

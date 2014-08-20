@@ -10,7 +10,7 @@ namespace col {
 		struct Phys;
 	}
 
-	using Phys = distinct::Flag<detail::Phys,uint16>;
+	using Phys = distinct::Enum<detail::Phys,uint16>;
 
 
 	constexpr
