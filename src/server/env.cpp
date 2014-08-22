@@ -19,10 +19,10 @@ namespace col {
 		}
 		else if (travel == TravelLand) {
 			if (dest.alt != AltSea) {
-				if (dest.has(PhysRoad) and orig.has(PhysRoad)) {
+				if (dest.has_phys(PhysRoad) and orig.has_phys(PhysRoad)) {
 					return TIME_UNIT / 3;
 				}
-				else if (dest.has(PhysRiver) and orig.has(PhysRiver)) {
+				else if (dest.has_phys(PhysRiver) and orig.has_phys(PhysRiver)) {
 					return TIME_UNIT / 3;
 				}
 				else {
@@ -49,7 +49,7 @@ namespace col {
 		else if (biome == BiomeSwamp or biome == BiomeMarsh or biome == BiomeArctic) {
 			return 2;
 		}
-		else if (t.has(PhysForest) or t.has(PhysRiver)) {
+		else if (t.has_phys(PhysForest) or t.has_phys(PhysRiver)) {
 			return 2;
 		}		
 		else {

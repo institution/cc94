@@ -13,7 +13,7 @@ namespace col {
 	{
 
 		// copy availbe information
-		trg.clear();
+		trg.clear_all();
 
 		trg.uts = src.uts;
 		trg.bts = src.bts;

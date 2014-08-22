@@ -1,6 +1,8 @@
 #ifndef COL_H
 #define COL_H
 
+#include "pre.h"
+
 #include <typeinfo>
 #include <iostream>
 #include <fstream>
@@ -87,6 +89,8 @@ namespace col{
 
 	using v2i = Vector2<int>;
 	using v2f = Vector2<float>;
+
+	using Amount = int16;
 
 	//template <typename T>
 	//unique_ptr<T> make_unique()

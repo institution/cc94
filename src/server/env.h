@@ -1,20 +1,8 @@
 #ifndef ENV_H
 #define ENV_H
 
-#include <signal.h>
-#include <list>
 
-#include "col.hpp"
-#include "base.h"
-#include "objs.h"
-#include "nation.h"
-#include "csv.h"
-#include "terr.h"
-#include "build.h"
-#include "unit.h"
-#include "roll.h"
-#include "error.h"
-#include "field.h"
+#include "core.h"
 #include "inter.h"
 
 
@@ -24,7 +12,7 @@ namespace col{
 	struct Player{
 
 		virtual void activate() = 0;
-		virtual bool apply_inter(inter::Any const& a) = 0;
+		virtual void apply_inter(inter::Any const& a) = 0;
 
 
 		//template <class t>
@@ -56,19 +44,6 @@ namespace col{
 	using Msgs = vector<Msg>;
 
 
-
-	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
-	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
-
-	using Terrs = boost::multi_array<Terr, 2>;
-	using Units = unordered_map<Unit::Id, Unit>;
-	//using Builds = unordered_map<Build::Id, Build>;
-	using Colonies = unordered_map<Colony::Id, Colony>;
-	// using Nations = unordered_map<Nation::Id, Nation>;
-	using Nations = unordered_map<Nation::Id, Nation>;
-
-
-
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x & y;
 	}
@@ -86,103 +61,49 @@ namespace col{
 
 
 
-	struct Env {
 
-		Msgs msgs;
 
-		void add_message(Nation const& p, Terr const& t, string const& m) {
-			msgs.push_back(Msg(p,t,m));
-		}
 
-		void clear_messages() {
-			msgs.clear();
-		}
+	struct Env: Core {
 
-		// const
-		shared_ptr<BuildTypes> bts;
-		shared_ptr<UnitTypes> uts;
-
-		// state
-		Nations nations;
-		Colonies colonies;
-		Units units;
-
-		Nation::Id cpid;
-
-		// map state
-		Coord w, h;
-		Terrs terrs;
-
-		// global state
+		// turn system
+		uint8 state{0}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 		uint32 turn_no{0};
-		uint32 next_id;
-		uint8 state; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
-		uint32 turn_limit; // nonzero => end game when turn_no >= turn_limit
+		uint32 turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
+		Nation::Id cpid{0}; // current nation
 
 		// misc non game state
 		uint32 mod;
 		boost::function<int (int range)> roll;
 
+		// opts
 		int verbose{0};
 		int action_count{0};
 
+		void clear_all() {
+			clear_units();
+			clear_colonies();
+			clear_nations();
+		}
 
-		void clear() {
-			units.clear();
-			colonies.clear();
-			nations.clear();
-
-			resize({0,0});
-
-			next_id = 0;
+		void clear_misc() {
 			turn_no = 0;
+			turn_limit = 0;
 			state = 0;
-
 			cpid = -1;
-
 			mod++;
 		}
 
-		void connect(Id<Nation>::type pid, Player & u) {
-			// connect nation(game nation) with AI or Human
-			get<Nation>(pid).set_player(&u);
-		}
 
 		int get_turn_no() const {
 			return turn_no;
 		}
 
-		void free(Colony & c) {
-			if (c.terr) {
-				c.terr->colony = nullptr;
-				c.terr = nullptr;
-			}
-		}
 
-		void free(Unit & u) {
-			if (u.terr) {
-				u.terr->sub(u);
-				u.terr = nullptr;
-			}
-			if (u.build) {
-				u.build->sub(u);
-				u.build = nullptr;
-			}
-			if (u.field) {
-				u.field->sub(u);
-				u.field = nullptr;
-			}
-			u.type = nullptr;
-			u.nation = nullptr;
+		void connect(Id<Nation>::type pid, Player & u) {
+			// connect nation(game nation) with AI or Human
+			get<Nation>(pid).set_player(&u);
 		}
-
-		void free(Nation & c) {
-			if (c.player) {
-				// send disconnect sig? no need this is internal pointer
-				c.player = nullptr;
-			}
-		}
-
 
 
 		Nation const* get_current_nation_p() const {
@@ -217,7 +138,7 @@ namespace col{
 
 		void start() {
 			if (nations.size() < 1) {
-				throw Critical("need at least one nation to start game");
+				throw Error("need at least one nation to start game");
 			}
 
 			state = 1;
@@ -231,26 +152,16 @@ namespace col{
 		}
 
 
-		Unit::Id get_id(Unit const& u) const {
-			return u.id;
-		}
+
+
+
 
 
 
 		explicit
-		Env(int verbose=0): terrs(Coords(0,0), boost::fortran_storage_order()) {
-
-			this->verbose = verbose;
-
-			bts = make_shared<BuildTypes>();
-			uts = make_shared<UnitTypes>();
-
+		Env(int verbose = 0): Core(), verbose(verbose) {
 			set_random_gen(roll::roll1);
-
-			turn_limit = 0;
-
-			clear();
-
+			clear_misc();
 		}
 
 		Env& set_random_gen(boost::function<int (int range)> const& func) {
@@ -259,84 +170,6 @@ namespace col{
 		}
 
 
-
-		template<class Type>
-		void loads(string const& fn) {
-
-			auto& ts = get_cont<Type>();
-
-			auto ls = read_conf(fn);
-			auto p = ls.begin();
-			auto e = ls.end();
-
-			++p; // skip header
-			// load line by line
-			while (p != e) {
-				auto& xs = *p;
-				if (xs.size() > 1) {
-					// id must be in second column
-					auto id = stoi(xs[1]);
-					ts.emplace(piecewise_construct,
-						forward_as_tuple(id),
-						forward_as_tuple(xs)
-					);
-				}
-				++p;
-			}
-
-		}
-
-
-		template <typename T>
-		unordered_map<typename T::Id, T>& get_cont();
-
-		template <typename T>
-		unordered_map<typename T::Id, T> const& get_cont() const;
-
-
-		//template<class T>
-		uint32 get_next_id() {
-			next_id = next_id + 1;
-			return next_id;
-		}
-
-
-		template<class T, class... A>
-		T& create(A&&... args) {
-			uint32 id = get_next_id();
-			auto& ts = get_cont<T>();
-			auto p = ts.emplace(piecewise_construct,
-				forward_as_tuple(id),
-				forward_as_tuple(id, std::forward<A>(args)...)
-			).first;
-
-			return (*p).second;
-		}
-
-		template <typename T>
-		void destroy(typename T::Id const& id) {
-			get_cont<T>().erase(id);
-		}
-
-		template <typename T>
-		T const& get(typename T::Id const& id) const {
-			auto it = get_cont<T>().find(id);
-			if (it == get_cont<T>().end()) {
-				throw Error("no such object");
-			}
-			return (*it).second;
-		}
-
-		template <typename T>
-		T & get(typename T::Id const& id) {
-			return const_cast<T&> (
-				static_cast<Env const*> (this) -> get<T>(id) );
-		}
-
-		template <typename T>
-		bool exist(typename T::Id const& id) {
-			return get_cont<T>().count(id);
-		}
 
 		bool in_progress() const {
 			return state == 1;
@@ -386,6 +219,7 @@ namespace col{
 				}
 			}
 		}
+
 
 
 
@@ -497,8 +331,8 @@ namespace col{
 			if (p and c.get(ItemFood) >= 100) {
 				c.sub(ItemFood, 100);
 				auto& u = create<Unit>(get<UnitType>(101), *p);
-				init(u,t);
-				add_message(*p, t, "population growth");
+				init(t, u);
+
 			}
 
 			// decay of non-storageable resources
@@ -650,104 +484,9 @@ namespace col{
 
 
 
-		bool in_bounds(Coords const& p) const;
-
-		template <Dir::t D>
-		bool in_bound(Coords const& p) const;
-
-		template <Dir::t D>
-		bool on_bound(Coords const& p) const;
 
 
-
-		Coords get_coords(Terr const& t) const {
-
-			// offset = x*w + y
-
-			uint32 offset = uint32(&t - &terrs[0][0]);
-			return Coords(offset % w, offset / w);
-		}
-
-
-		Coords get_coords(Terr const& t, Terr const& base) const {
-			return get_coords(t) - get_coords(t);
-		}
-
-		Coords get_coords(Unit const& u) const {
-			return get_coords(get_terr(u));
-		}
-
-		Terr const& get_terr(Coords const& z) const {
-			return terrs(z);
-		}
-
-		Terr & get_terr(Coords const& z) {
-				return terrs(z);
-		}
-
-
-		template <typename T>
-		Terr const& get_terr(T const& u) const {
-			if (u.terr) {
-				return *u.terr;
-			}
-			else {
-				throw Error("not in field");
-			}
-		}
-
-
-		template <typename T> inline
-		Terr & get_terr(T const& u) {
-			if (u.terr) {
-				return *u.terr;
-			}
-			else {
-				throw Error("not in field");
-			}
-		}
-
-
-
-
-		Env & set_terr(Coords const& z, Terr const& t) {
-			terrs(z) = t;
-			return *this;
-		}
-
-		Env & resize(Coords const& dim) {
-			//terrs.resize(boost::extents[dim[1]][dim[0]]);
-			w = dim[0]; h = dim[1];
-			terrs.resize(Coords(w,h));
-			return *this;
-		}
-
-
-		void clear_units() {
-			// remove all units
-			for (auto& u: units) {
-				free(u.second);
-			}
-			units.clear();
-		}
-
-		void clear_colonies()  {
-			// remove all colonies; first remove units
-			for (auto& c: colonies) {
-				free(c.second);
-			}
-			colonies.clear();
-		}
-
-		void clear_nations() {
-			// remove all nations; first remove colonies
-			for (auto& p: nations) {
-				free(p.second);
-			}
-			nations.clear();
-		}
-
-		bool apply(inter::reset const& a) {
+		void apply(inter::reset const& a) {
 			// clear_all
 			// resize
 			// fill with dessert ocean
@@ -757,8 +496,6 @@ namespace col{
 			resize({a.x,a.y});
 
 			notify_effect(a);
-
-			return 1;
 		}
 
 
@@ -776,12 +513,6 @@ namespace col{
 
 			return *this;
 		}
-
-
-		Unit& icon4id(Unit::Id const& id) {
-			return units.at(id);
-		}
-
 
 
 	/*
@@ -998,18 +729,15 @@ namespace col{
 		//	return get_terr(get_coords(u) + vec4dir(dir));
 		//}
 
-		~Env() {
-			clear_units();
-			clear_colonies();
-			clear_nations();
-		}
+
 
 		void kill(Unit & u) {
 			// this function will erase from container you are currently iterating over
 			// TODO: delayed removal?
 			free(u);
 
-			units.erase(get_id(u));
+			Core::remove<Unit>(get_id(u));
+
 
 			// wow! that was radical
 		}
@@ -1065,11 +793,9 @@ namespace col{
 
 					if (check(attack*10, (attack + combat)*10)) {
 						kill(defender);
-						destroy<Unit>(defender.id);
 					}
 					else {
 						kill(attacker);
-						destroy<Unit>(attacker.id);
 					}
 
 					record_action();
@@ -1103,13 +829,13 @@ namespace col{
 				throw Error("can clear on land only");
 			}
 
-			if (!t.has(feat)) {
+			if (!t.has_phys(feat)) {
 				throw Error("no feat to clear");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
-				t.sub(feat);
+				t.sub_phys(feat);
 				return 1;
 			}
 			return 0;
@@ -1140,13 +866,13 @@ namespace col{
 				throw Error("can build on land only");
 			}
 
-			if (t.has(feat)) {
+			if (t.has_phys(feat)) {
 				throw Error("feat already exists");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
-				t.add(feat);
+				t.add_phys(feat);
 				return 1;
 			}
 			return 0;
@@ -1177,13 +903,13 @@ namespace col{
 				throw Error("not on land");
 			}
 
-			if (!t.has(feat)) {
+			if (!t.has_phys(feat)) {
 				throw Error("no feat here");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
-				t.sub(feat);
+				t.sub_phys(feat);
 				return 1;
 			}
 			return 0;
@@ -1203,7 +929,7 @@ namespace col{
 			auto& col = t.get_colony();
 			kill(col);
 			auto id = col.id;
-			destroy<Colony>(id);
+			Core::remove<Colony>(id);
 		}
 
 		void set_build(Colony & c, int i, BuildType::Id const& id) {
@@ -1211,21 +937,14 @@ namespace col{
 		}
 
 
-
-		void init_colony() {
-
-		}
-
-
 		void set_tp(Unit & u, int tp) {
 			u.time_left = tp;
 		}
 
-		bool apply(inter::set_tp const& e) {
+		void apply(inter::set_tp const& e) {
 			auto & u = get<Unit>(e.unit_id);
 			set_tp(u, e.num);
 			notify_effect(get_terr(u), e);
-			return 1;
 		}
 
 
@@ -1251,53 +970,20 @@ namespace col{
 
 			auto time_cost = TIME_UNIT;
 			if (run_map_task(u, time_cost)) {
-				// create colony
-				auto& c = create<Colony>(name);
-				init(c, t);
 
-				BuildType::Id const TREE_1 = 45;
-				BuildType::Id const TREE_2 = 44;
-				BuildType::Id const TREE_3 = 43;
-				BuildType::Id const COAST = 46;
-				BuildType::Id const CARPENTERS_SHOP = 36;
-				BuildType::Id const FENCE = 17;
-				BuildType::Id const CHURCH = 38;
-				BuildType::Id const TOWN_HALL = 10;
-
-				// init buildings
-				set_build(c, 0, CARPENTERS_SHOP);
-				set_build(c, 1, TREE_1);
-				set_build(c, 2, TREE_3);
-				set_build(c, 3, TREE_1);
-				set_build(c, 4, TREE_1);
-
-				set_build(c, 5, TREE_1);
-				set_build(c, 6, TREE_1);
-				set_build(c, 7, TREE_1);
-				set_build(c, 8, TREE_1);
-				set_build(c, 9, TREE_2);
-
-				set_build(c, 10, TREE_2);
-				set_build(c, 11, TREE_2);
-				set_build(c, 12, TOWN_HALL);
-				set_build(c, 13, COAST);
-				set_build(c, 14, FENCE);
-
-				// init fields
-				for (auto dir: ALL_DIRS) {
-					auto dest = get_coords(t) + vec4dir(dir);
-					if (in_bounds(dest)) {
-						c.add_field(Field(get_terr(dest)));
-					}
-				}
+				init_colony(t);
 
 				return 1;  // ok
 			}
 			return 0;  // try next turn
 		}
 
-		bool apply(inter::build_colony const& a) {
-			return colonize(get<Unit>(a.unit_id), "");
+		void apply(inter::build_colony const& a) {
+			colonize(get<Unit>(a.unit_id), "");
+		}
+
+		void apply(inter::error const& a) {
+
 		}
 
 
@@ -1342,7 +1028,7 @@ namespace col{
 			else if (alt == AltHill) {
 				return 0.50;
 			}
-			else if (terr.has(PhysForest)) {
+			else if (terr.has_phys(PhysForest)) {
 				return 0.50;
 			}
 			return 0.0;
@@ -1405,7 +1091,7 @@ namespace col{
 							c.max_storage += 100;
 						}
 
-						add_message(*get_control(t), t, "building constructed");
+						//add_message(*get_control(t), t, "building constructed");
 					}
 				}
 			}
@@ -1495,7 +1181,7 @@ namespace col{
 		}
 
 
-		void init(Colony & c, Terr & t) {
+		void init(Terr & t, Colony & c) {
 			assert(t.colony == nullptr);
 			assert(c.terr == nullptr);
 			t.set_colony(c);
@@ -1513,7 +1199,7 @@ namespace col{
 		}
 
 
-		void init(Unit & u, Terr & t) {
+		void init(Terr & t, Unit & u) {
 			t.add(u);
 			u.terr = &t;
 		}
@@ -1590,34 +1276,121 @@ namespace col{
 			}
 		}
 
+		void init_colony(Terr & t) {
+			auto& c = create<Colony>();
+			init(t, c);
+
+			BuildType::Id const tree1 = 45;
+			BuildType::Id const tree2 = 44;
+			BuildType::Id const tree3 = 43;
+			BuildType::Id const coast = 46;
+			BuildType::Id const carpenters_shop = 36;
+			BuildType::Id const fence = 17;
+			BuildType::Id const church = 38;
+			BuildType::Id const town_hall = 10;
+
+			// init buildings
+			set_build(c, 0, carpenters_shop);
+			set_build(c, 1, tree1);
+			set_build(c, 2, tree3);
+			set_build(c, 3, tree1);
+			set_build(c, 4, tree1);
+
+			set_build(c, 5, tree1);
+			set_build(c, 6, tree1);
+			set_build(c, 7, tree1);
+			set_build(c, 8, tree1);
+			set_build(c, 9, tree2);
+
+			set_build(c, 10, tree2);
+			set_build(c, 11, tree2);
+			set_build(c, 12, town_hall);
+			set_build(c, 13, coast);
+			set_build(c, 14, fence);
+
+			// init fields
+			for (auto dir: ALL_DIRS) {
+				auto dest = get_coords(t) + vec4dir(dir);
+				if (in_bounds(dest)) {
+					c.add_field(Field(get_terr(dest)));
+				}
+			}
+
+			notify_effect(t, inter::init_colony(get_id(t)));
+		}
+
+		void apply(inter::init_colony const& a) {
+			auto& t = get<Terr>(a.terr_id);
+			init_colony(t);
+		}
+
+		void apply(inter::init_unit const& a) {
+			auto& t = get<Terr>(a.terr_id);
+			auto &u = create<Unit>();
+			init(t, u);
+			u.set_type(get<UnitType>(a.unit_type_id));
+			u.set_nation(get_current_nation());
+		}
+
+		void apply(inter::init_build const& a) {
+			//terr_id build_id build_type_id
+		}
 
 
 
 
-		bool apply(inter::ready const& a) {
+		void apply(inter::sub_phys const& a) {
+			Terr & t = get<Terr>(a.terr_id);
+			t.sub_phys(a.phys);
+			notify_effect(t, a);
+		}
+
+		void apply(inter::add_phys const& a) {
+			Terr & t = get<Terr>(a.terr_id);
+			t.add_phys(a.phys);
+			notify_effect(t, a);
+		}
+
+
+		void apply(inter::ready const& a) {
 			ready(get_current_nation());
-			return 1;
 		}
 
 
-		bool apply(inter::move_board const& a) {
-			return move_board(a.dx, a.dy, get<Unit>(a.unit_id));
+		void apply(inter::move_board const& a) {
+			move_board(a.dx, a.dy, get<Unit>(a.unit_id));
 		}
 
 
-		bool apply(inter::improve const& a) {
-			return improve(get<Unit>(a.unit_id), a.phys_id);
+		void apply(inter::improve const& a) {
+			improve(get<Unit>(a.unit_id), a.phys_id);
 		}
 
 
-		bool apply(inter::destroy const& a) {
-			return a_destroy(get<Unit>(a.unit_id), a.phys_id);
+		void apply(inter::destroy const& a) {
+			a_destroy(get<Unit>(a.unit_id), a.phys_id);
 		}
 
-		bool apply(inter::init_colony const& a) {
-			return 1;
+		void apply(inter::sub_item const& a) {
+			Terr & t = get<Terr>(a.terr_id);
+			auto& c = t.get_colony();
+			c.sub(a.item, a.num);
+			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
 		}
 
+	 	void apply(inter::add_item const& a) {
+			Terr & t = get<Terr>(a.terr_id);
+			auto& c = t.get_colony();
+			c.add(a.item, a.num);
+			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
+		}
+
+		void apply(inter::set_item const& a) {
+			Terr & t = get<Terr>(a.terr_id);
+			auto& c = t.get_colony();
+			c.set(a.item, a.num);
+			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
+		}
 
 
 
@@ -1650,16 +1423,16 @@ namespace col{
 			return nations.size();
 		}
 
-		bool apply(inter::echo const& a) {
-			return 1;
+		void apply(inter::echo const& a) {
+
 		}
 
-		bool apply(inter::set_turn const& a);
-		bool apply(inter::set_current_nation const& a);
-		bool apply(inter::set_biome const& a);
-		bool apply(inter::set_alt const& a);
+		void apply(inter::set_turn const& a);
+		void apply(inter::set_current_nation const& a);
+		void apply(inter::set_biome const& a);
+		void apply(inter::set_alt const& a);
 
-		bool apply_inter(inter::Any const& a);
+		void apply_inter(inter::Any const& a);
 
 
 		template<class Archive>
@@ -1675,167 +1448,46 @@ namespace col{
 
 
 
-	struct Apply: boost::static_visitor<bool>{
+	struct Apply: boost::static_visitor<void>{
 		Env & env;
 		Apply(Env & e): env(e) {}
 
 
 		template <class T>
-		bool operator()(T const& t) {
-			return env.apply(t);
+		void operator()(T const& t) {
+			env.apply(t);
 		}
 
 	};
 
 
-
-
-
-
-	inline bool Env::apply_inter(inter::Any const& a) {
+	inline void Env::apply_inter(inter::Any const& a) {
 		Apply ap(*this);
-		return boost::apply_visitor(ap, a);
+		boost::apply_visitor(ap, a);
 	}
 
-
-
-
-
-
-	template <> inline
-	Terr & Env::get<Terr>(Terr::Id const& id) {
-		return get_terr(id);
-	}
-
-	template <> inline
-	Terr const& Env::get(Terr::Id const& id) const {
-		return get_terr(id);
-	}
-
-	template <>	inline Units& Env::get_cont<Unit>() {
-		return units;
-	}
-
-	template <>	inline Colonies& Env::get_cont<Colony>() {
-		return colonies;
-	}
-
-	template <>	inline Nations& Env::get_cont<Nation>() {
-		return nations;
-	}
-
-	template <>	inline UnitTypes& Env::get_cont<UnitType>() {
-		return *uts;
-	}
-
-	template <>	inline BuildTypes& Env::get_cont<BuildType>() {
-		return *bts;
-	}
-
-	template <>	inline Units const& Env::get_cont<Unit>() const {
-		return units;
-	}
-
-	template <>	inline Colonies const& Env::get_cont<Colony>() const {
-		return colonies;
-	}
-
-	template <>	inline Nations const& Env::get_cont<Nation>() const {
-		return nations;
-	}
-
-	template <>	inline UnitTypes const& Env::get_cont<UnitType>() const {
-		return *uts;
-	}
-
-	template <>	inline BuildTypes const& Env::get_cont<BuildType>() const {
-		return *bts;
-	}
-
-
-
-	template <> inline
-	bool Env::in_bound<Dir::A>(Coords const& p) const {
-		return 0 <= p[0];
-	}
-
-	template <> inline
-	bool Env::in_bound<Dir::D>(Coords const& p) const {
-		return p[0] < w;
-	}
-
-	template <> inline
-	bool Env::in_bound<Dir::W>(Coords const& p) const {
-		return 0 <= p[1];
-	}
-
-	template <> inline
-	bool Env::in_bound<Dir::X>(Coords const& p) const {
-		return p[1] < h;
-	}
-
-	template <> inline
-	bool Env::on_bound<Dir::A>(Coords const& p) const {
-		return 0 == p[0];
-	}
-
-	template <> inline
-	bool Env::on_bound<Dir::D>(Coords const& p) const {
-		return p[0] == w - 1;
-	}
-
-	template <> inline
-	bool Env::on_bound<Dir::W>(Coords const& p) const {
-		return 0 == p[1];
-	}
-
-	template <> inline
-	bool Env::on_bound<Dir::X>(Coords const& p) const {
-		return p[1] == h - 1;
-	}
-
-
-	inline
-	bool Env::in_bounds(Coords const& p) const {
-		return in_bound<Dir::A>(p) and in_bound<Dir::D>(p)
-		   and in_bound<Dir::W>(p) and in_bound<Dir::X>(p);
-	}
-
-
-
-
-
-
-
-	inline bool Env::apply(inter::set_turn const& a) {
+	inline void Env::apply(inter::set_turn const& a) {
 		turn_no = a.turn_no;
 		notify_effect(a);
-		return 1;
 	}
 
-	inline bool Env::apply(inter::set_current_nation const& a) {
+	inline void Env::apply(inter::set_current_nation const& a) {
 		set_current_nation(get<Nation>(a.nation_id));
 		notify_effect(a);
-		return 1;
 	}
 
-	inline bool Env::apply(inter::set_biome const& a) {
+	inline void Env::apply(inter::set_biome const& a) {
 		auto& t = get<Terr>(a.terr_id);
 		t.set_biome(a.biome);
 		notify_effect(t, a);
-		return 1;
 	}
 
 
-	inline bool Env::apply(inter::set_alt const& a) {
+	inline void Env::apply(inter::set_alt const& a) {
 		auto& t = get<Terr>(a.terr_id);
 		t.set_alt(a.alt);
 		notify_effect(t, a);
-		return 1;
 	}
-
-
-
 
 
 

@@ -29,8 +29,8 @@ namespace col {
 			active = true;
 		}
 
-		bool apply_inter(inter::Any const& a) {
-			return 1;
+		void apply_inter(inter::Any const& a) {
+			
 		}
 
 

@@ -1,5 +1,5 @@
-#ifndef EXPERT_AI_H
-#define EXPERT_AI_H
+#ifndef NULL_AI_H
+#define NULL_AI_H
 
 #include <thread>
 #include <mutex>
@@ -8,29 +8,40 @@
 
 #include "envgame.h"
 #include "player.h"
+#include "format.hpp"
 #include "inter.h"
 
-namespace expert_ai{
+namespace null_ai{
 	// AI operating under coded "expert" rules
 
 	using col::Player;
 	using col::EnvGame;
 	using col::Nation;
 	using col::Ready;
+	using format::format;
+	namespace inter = col::inter;
 
-	struct ExpertAi: Player {
+	struct Apply: boost::static_visitor<void>{
+		template <class T>
+		void operator()(T const& t) const {
+			std::cout << format("Null Ai: inter received: %||\n", inter::type_name<T>::get());
+		}
+	};
+
+	struct NullAi: Player {
 		std::mutex mtx;
 
-		ExpertAi() {
+		NullAi() {
 
 		}
 
 		void activate() {
+			std::cout << "Null Ai: activate\n";
 			mtx.unlock();
 		}
 
 		void apply_inter(col::inter::Any const& a) {
-
+			boost::apply_visitor(Apply(), a);
 		}
 
 

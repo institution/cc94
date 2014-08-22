@@ -294,14 +294,14 @@ namespace col{
 		CC94_DEFINE_INTER(
 			add_phys,
 			(Terr::Id, terr_id)
-			(Phys::Id, phys_id)
+			(Phys::Id, phys)
 		)
 
 		// effect
 		CC94_DEFINE_INTER(
 			sub_phys,
 			(Terr::Id, terr_id)
-			(Phys::Id, phys_id)
+			(Phys::Id, phys)
 		)
 
 		// effect
@@ -315,24 +315,24 @@ namespace col{
 		CC94_DEFINE_INTER(
 			sub_item,
 			(Terr::Id, terr_id)
-			(Item::Id, item_id)
-			(int, num)
+			(Item::Id, item)
+			(Amount, num)
 		)
 
 		// effect
 		CC94_DEFINE_INTER(
 			add_item,
 			(Terr::Id, terr_id)
-			(Item::Id, item_id)
-			(int, num)
+			(Item::Id, item)
+			(Amount, num)
 		)
 
 		// effect
 		CC94_DEFINE_INTER(
 			set_item,
 			(Terr::Id, terr_id)
-			(Item::Id, item_id)
-			(int, num)
+			(Item::Id, item)
+			(Amount, num)
 		)
 
 		// effect
@@ -400,16 +400,32 @@ namespace col{
 			improve,
 			destroy,
 			build_colony,
+
+			error,
+
 			init_colony,
+			init_unit,
+			init_build,
+
+			add_phys,
+			sub_phys,
+
 			set_tp,
 
+			add_item,
+			sub_item,
+			set_item,
+
+			// effect
+			set_biome,
+			set_alt,
+
+			// effect
 			set_turn,
 			set_current_nation,
 
-			// action/effect (editor)
-			reset,
-			set_biome,
-			set_alt
+			// effect
+			reset
 
 		>;
 
@@ -441,19 +457,19 @@ namespace col{
 	 effect(15):
 		error text
 
-		init-colony terr_id
-		init-unit terr_id unit-type-id
-		init-build terr_id build_id build_type_id
-		kill unit_id
+		+ init-colony terr_id
+		+ init-unit terr_id unit-type-id
+		+ init-build terr_id build_id build_type_id
+		kill-unit unit_id
 
-		add-phys terr_id phys_id
-		sub-phys terr_id phys_id
+		+ add-phys terr_id phys_id
+		+ sub-phys terr_id phys_id
 
-		set-tp unit_id num
+		+ set-tp unit_id num
 
-		sub-item terr_id item_id num
-	 	add-item terr_id item_id num
-		set-item terr_id item_id num
+		+ sub-item terr_id item num
+	 	+ add-item terr_id item num
+		+ set-item terr_id item num
 
 		morph-unit unit_id unit_type_id
 		morph-build terr_id build_id build_type_id

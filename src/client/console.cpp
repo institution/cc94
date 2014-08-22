@@ -9,6 +9,7 @@
 #include "view_base.h"
 #include "renderer.h"
 #include "expert_ai.h"
+#include "null_ai.h"
 
 namespace col {
 	using boost::str;
@@ -103,14 +104,6 @@ namespace col {
 			p.event = Event::Hover;
 			p.mod = get_mod();
 			p.area = Box2(v2i(mp.x, mp.y), {0,0});
-						
-			if (dragging) {
-				drop_pos = v2i(mp.x, mp.y);
-			}
-			else {
-				drag_pos = v2i(mp.x, mp.y);
-			}
-			
 		}		
 		else if (type == sf::Event::MouseButtonPressed)
 		{			
@@ -343,7 +336,7 @@ namespace col {
 				case 2:
 					Phys p = get_phys_by_name(es.at(1));
 					for (auto tp: get_sel_terrs()) {
-						tp->add(p);						
+						tp->add_phys(p);						
 					}
 					break;
 			}
@@ -356,7 +349,7 @@ namespace col {
 				case 2:
 					Phys p = get_phys_by_name(es.at(1));
 					for (auto tp: get_sel_terrs()) {
-						tp->sub(p);						
+						tp->sub_phys(p);						
 					}
 					break;
 			}
@@ -439,6 +432,23 @@ namespace col {
 					if (p.player == nullptr) {
 						ths.emplace_back(expert_ai::run, pid, &env, &running);
 						put("expert ai connected to nation");
+					}
+					break;
+				}
+			}
+		}
+		else if (cmd == "null-ai") {
+			switch (es.size()) {
+				default: {
+					output.push_back("Usage: null-ai <pid>\n");
+					break;
+				}
+				case 2: {
+					auto pid = std::stoi(es.at(1));
+					auto & p = env.get<Nation>(pid);
+					if (p.player == nullptr) {
+						ths.emplace_back(null_ai::run, pid, &env, &running);
+						put("null ai connected to nation");
 					}
 					break;
 				}
@@ -537,8 +547,8 @@ namespace col {
 				put(format("%u: %s", uint16(ut.id), ut.name));
 			}
 		}
-		else if (es[0] == "deli") {
-			env.destroy<Unit>(std::stoi(es[1]));
+		else if (es[0] == "remove-unit") {
+			env.remove<Unit>(std::stoi(es[1]));			    
 		}
 		else if (cmd == "create-unit") {
 			switch (es.size()) {
@@ -551,7 +561,7 @@ namespace col {
 					auto& p = env.get<Nation>(std::stoi(es.at(2)));  // nation_id
 					auto& t = *get_sel_terr(); 
 					auto& u = env.create<Unit>(c, p);
-					env.init(u, t);
+					env.init(t, u);
 					if (compatible(u.get_travel(), LAND) and
 						!compatible(u.get_travel(), t.get_travel())) 
 					{

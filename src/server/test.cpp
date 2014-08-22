@@ -97,7 +97,7 @@ TEST_CASE( "sys", "" ) {
 			env.create<UnitType>(),
 			env.create<Nation>()
 		);
-		REQUIRE_NOTHROW(env.init(u, env.get_terr({0,0})));
+		REQUIRE_NOTHROW(env.init(env.get_terr({0,0}), u));
 		REQUIRE_NOTHROW(env.clear_units());
 		REQUIRE(env.units.size() == 0);
 		REQUIRE(env.get_terr({0,0}).units.size() == 0);
@@ -134,7 +134,7 @@ TEST_CASE( "inter", "" ) {
 	
 	inter::Any a;
 	a = inter::echo(1);
-	REQUIRE(env.apply_inter(a) == 1);
+	REQUIRE_NOTHROW(env.apply_inter(a));
 	
 	
 }
@@ -143,14 +143,14 @@ TEST_CASE( "inter", "" ) {
 
 TEST_CASE( "terr", "" ) {
 	Terr t(AltFlat, BiomePlains, PhysForest);
-	REQUIRE(t.has(PhysForest));
+	REQUIRE(t.has_phys(PhysForest));
 	
 	SECTION("phys: worker does not change forest") {
-		t.add(PhysWorker);
-		REQUIRE(t.has(PhysWorker));
-		REQUIRE(t.has(PhysForest));		
-		t.sub(PhysWorker);
-		REQUIRE(t.has(PhysForest));
+		t.add_phys(PhysWorker);
+		REQUIRE(t.has_phys(PhysWorker));
+		REQUIRE(t.has_phys(PhysForest));		
+		t.sub_phys(PhysWorker);
+		REQUIRE(t.has_phys(PhysForest));
 	}
 	
 	SECTION("yield food mixed forest no-expert == 4") {
@@ -182,7 +182,7 @@ TEST_CASE( "env::move_unit", "" ) {
 	);
 
 	// init
-	REQUIRE_NOTHROW(env.init(u, env.get_terr({0,0})));
+	REQUIRE_NOTHROW(env.init(env.get_terr({0,0}), u));
 	REQUIRE(env.get_coords(u) == Coords(0,0));
 	
 	REQUIRE_NOTHROW(env.start());
@@ -208,12 +208,12 @@ TEST_CASE( "equip unit", "" ) {
 		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50),
 		env.create<Nation>()
 	);
-	env.init(u, t);
+	env.init(t, u);
 	
 	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
 	
 	auto& c = env.create<Colony>();
-	env.init(c, t);
+	env.init(t, c);
 	
 	REQUIRE_NOTHROW(c.add(ItemMuskets, 50));	
 	
@@ -240,13 +240,13 @@ TEST_CASE( "board ship", "" ) {
 		env.create<UnitType>().set_travel(LAND).set_speed(1),
 		p
 	);
-	env.init(u, env.get_terr({0,0}));
+	env.init(env.get_terr({0,0}), u);
 	
 	auto& s = env.create<Unit>(
 		env.create<UnitType>().set_travel(SEA).set_speed(2).set_slots(2),
 		p
 	);
-	env.init(s, env.get_terr({1,0}));
+	env.init(env.get_terr({1,0}), s);
 		
 	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
@@ -319,7 +319,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 	);
 
 	auto& t = env.get_terr({0,0});	
-	env.init(u, t);
+	env.init(t, u);
 
 	
 	env.loads<BuildType>("../col94/builds.csv");
@@ -468,7 +468,7 @@ TEST_CASE( "serialize", "" ) {
 		env.create<Nation>()
 	);
 
-	env.init(u, env.get_terr({0,0}));
+	env.init(env.get_terr({0,0}), u);
 
 	SECTION("save_load_unstarted_game") {
 
@@ -541,10 +541,10 @@ TEST_CASE( "two_units", "" ) {
 	auto& p = env.create<Nation>();
 
 	auto& u1 = env.create<Unit>(ut, p);
-	env.init(u1, t1);
+	env.init(t1, u1);
 
 	auto& u2 = env.create<Unit>(ut, p);
-	env.init(u2, t2);
+	env.init(t2, u2);
 
 	SECTION("have diffrent id") {
 		REQUIRE(u1.id != u2.id);  // regress
@@ -574,7 +574,8 @@ TEST_CASE( "compatible", "[env][misc][regress]" ) {
 TEST_CASE( "improve square", "" ) {
 
 	Env env;
-	env.resize({1,1}).set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 
 	auto& t = env.get_terr({0,0});
 	
@@ -585,14 +586,14 @@ TEST_CASE( "improve square", "" ) {
 		ut2,
 		env.create<Nation>()
 	);
-	env.init(u, t);
+	env.init(t, u);
 
 	SECTION("build road") {
 		env.set_random_gen(replay({0}));
 
 		REQUIRE_NOTHROW(env.start());
 		REQUIRE( env.improve(u, PhysRoad) == true );
-		REQUIRE( t.has(PhysRoad) );
+		REQUIRE( t.has_phys(PhysRoad) );
 		REQUIRE( u.get_item1() == ItemTools );
 		REQUIRE( u.get_num1() == 20 );
 
@@ -605,7 +606,7 @@ TEST_CASE( "improve square", "" ) {
 
 		REQUIRE_NOTHROW(env.start());
 		REQUIRE( env.improve(u, PhysPlow) == true );
-		REQUIRE( t.has(PhysPlow) );
+		REQUIRE( t.has_phys(PhysPlow) );
 		REQUIRE( u.get_item1() == ItemTools );
 		REQUIRE( u.get_num1() == 20 );
 		

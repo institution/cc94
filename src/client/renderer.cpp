@@ -1300,10 +1300,10 @@ namespace col {
 
 	int get_wxad_index(LocalArea const& loc, Phys const& phys) {
 		int idx = 0;
-		if ( get(loc, Dir::W).has(phys) ) idx |= 8;
-		if ( get(loc, Dir::X).has(phys) ) idx |= 4;
-		if ( get(loc, Dir::A).has(phys) ) idx |= 2;
-		if ( get(loc, Dir::D).has(phys) ) idx |= 1;
+		if ( get(loc, Dir::W).has_phys(phys) ) idx |= 8;
+		if ( get(loc, Dir::X).has_phys(phys) ) idx |= 4;
+		if ( get(loc, Dir::A).has_phys(phys) ) idx |= 2;
+		if ( get(loc, Dir::D).has_phys(phys) ) idx |= 1;
 		return idx;
 	}
 
@@ -1388,7 +1388,7 @@ namespace col {
 		auto loc = make_terr_ext(env, coords);
 
 		auto biome = terr.biome;
-		auto forest = terr.has(PhysForest);
+		auto forest = terr.has_phys(PhysForest);
 		
 		auto hill = (terr.get_alt() == AltHill);
 		auto mountain = (terr.get_alt() == AltMountain);
@@ -1418,7 +1418,7 @@ namespace col {
 		if (is_water(terr)) {
 			int base;
 			
-			if (terr.has(PhysSeaLane)) {
+			if (terr.has_phys(PhysSeaLane)) {
 				base = 50;
 			}
 			else {
@@ -1456,15 +1456,15 @@ namespace col {
 		}
 
 		// phys feats & improvments
-		if (terr.has(PhysPlow)) {
+		if (terr.has_phys(PhysPlow)) {
 			render_sprite(win, pix, res(PHYS, 150));
 		}
 
-		if (terr.has(PhysForest)) {
+		if (terr.has_phys(PhysForest)) {
 			render_sprite(win, pix, res(PHYS, 65 + get_wxad_index(loc, PhysForest)));
 		}
 
-		if (terr.has(PhysMajorRiver)) {
+		if (terr.has_phys(PhysMajorRiver)) {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
@@ -1476,14 +1476,14 @@ namespace col {
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
-					if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysMajorRiver) ) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMajorRiver) ) {
 						render_sprite(win, pix, res(PHYS, 141 + (i >> 1)));
 					}
 				}
 			}
 
 		}
-		else if (terr.has(PhysMinorRiver)) {
+		else if (terr.has_phys(PhysMinorRiver)) {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
@@ -1495,17 +1495,17 @@ namespace col {
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
-					if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysMinorRiver) ) {
+					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMinorRiver) ) {
 						render_sprite(win, pix, res(PHYS, 145 + (i >> 1)));
 					}
 				}
 			}
 		}
 
-		if (terr.has(PhysRoad)) {
+		if (terr.has_phys(PhysRoad)) {
 			bool r = false;
 			for (int i=0; i<8; ++i) {
-				if ( get(loc, CLOCKWISE_DIRS[i]).has(PhysRoad) ) {
+				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) ) {
 					render_sprite(win, pix, res(PHYS, 82 + i));
 					r = true;
 				}
@@ -1586,7 +1586,7 @@ namespace col {
 			// unit
 			auto& unit = env.get_defender(terr);
 
-			auto icon = res(ICON, unit.get_icon());
+			auto icon = res(ICON, get_icon_id(unit));
 			// render unit in field
 			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
 			render_sprite(win, 
@@ -1860,7 +1860,7 @@ namespace col {
 				auto const& phys = item.first;
 				auto const& name = item.second;
 
-				if (t.has(phys)) phys_info += name + ",";
+				if (t.has_phys(phys)) phys_info += name + ",";
 			}
 
 			info += format("\n%||\n[%||]\n", BIOME_NAMES.at(t.biome), phys_info);

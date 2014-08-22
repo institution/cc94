@@ -90,13 +90,6 @@ namespace col {
 		Unit* sel_unit{nullptr};
 
 
-		// (-1 Sub) (0 Set) (+1 Add)
-		int8 selmod = 0;
-
-		int8 get_selmod() const { return selmod; }
-
-		void set_selmod(int8 selmode) { this->selmod = selmod; }
-
 		bool is_selected(Terr * terr) {
 			if (terr) {
 				return sel_terrs.count(terr);
@@ -112,19 +105,6 @@ namespace col {
 			return is_selected( env.in_bounds(c) ? (&env.get_terr(c)) : nullptr );
 		}
 
-		v2i drag_pos{0,0};
-		v2i drop_pos{0,0};
-		bool dragging;
-
-		void drag() {
-			dragging = 1;
-		}
-
-		void drop() {
-			dragging = 0;
-			drag_pos = drop_pos;
-		}
-
 		void select_next_unit() {
 			select_unit(
 				mem.get_next_unit(
@@ -136,20 +116,20 @@ namespace col {
 		}
 
 
-		struct Apply: boost::static_visitor<bool>{
+		struct Apply: boost::static_visitor<>{
 			Env & env;
 
 			Apply(Env & env): env(env) {}
 
 			template <class T>
-			bool operator()(T const& a) const {
-				return env.apply(a);
+			void operator()(T const& a) const {
+				env.apply(a);
 			}
 		};
 
-		bool apply_inter(inter::Any const& a) {
+		void apply_inter(inter::Any const& a) {
 			cout << "console.apply_inter\n";
-			return 1;
+			
 			//return boost::apply_visitor(Apply(env), a);
 		}
 

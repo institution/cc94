@@ -9,7 +9,9 @@
 
 namespace col {
 
-	using Storage = map<Item, uint16>;
+	
+
+	using Storage = map<Item, Amount>;
 
 
 
@@ -18,6 +20,7 @@ namespace col {
 
 	template<>
 	struct cont<Build>{ using type = array<Build,15>; };
+
 
 
 	struct Colony {
@@ -70,7 +73,7 @@ namespace col {
 
 
 
-		void add(Item const& item, int num) {
+		void add(Item const& item, Amount num) {
 			auto key = item;
 			if (storage.count(key)) {
 				storage[key] += num;
@@ -80,7 +83,7 @@ namespace col {
 			}
 		}
 
-		void sub(Item const& item, int num) {
+		void sub(Item const& item, Amount num) {
 			auto key = item;
 			if (num <= get(item)) {
 				storage[key] -= num;
@@ -90,7 +93,7 @@ namespace col {
 			}
 		}
 
-		void set(Item const& item, int num) {
+		void set(Item const& item, Amount num) {
 			if (num == 0) {
 				storage.erase(item);
 			}
@@ -100,7 +103,7 @@ namespace col {
 		}
 
 
-		uint16 get(Item const& item) const {
+		Amount get(Item const& item) const {
 			auto key = item;
 			if (storage.count(key)) {
 				return storage.at(key);
@@ -110,7 +113,7 @@ namespace col {
 			}
 		}
 
-		bool has(Item const& item, int num) const {
+		bool has(Item const& item, Amount num) const {
 			return get(item) >= num;
 		}
 

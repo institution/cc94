@@ -131,7 +131,7 @@ namespace col {
 		auto& unit = (*p).second;
 
 		// terr
-		env.init(unit, env.get_terr(read<Coords>(ar)));
+		env.init(env.get_terr(read<Coords>(ar)), unit);
 
 		auto build_id = read<int>(ar);
 		auto field_id = read<int>(ar);
@@ -143,6 +143,8 @@ namespace col {
 		if (field_id) {
 			env.work_field(field_id - 1, unit);
 		}
+
+		assert(unit.type != nullptr);
 	}
 
 
@@ -394,7 +396,7 @@ namespace col {
 
 
 				// location
-				env.init((*p).second, env.get_terr(read<Coords>(ar)));
+				env.init(env.get_terr(read<Coords>(ar)), (*p).second);
 
 			}
 		}

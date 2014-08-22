@@ -28,7 +28,7 @@ namespace col{
 		 TODO: simplify in AC spirit; yields should be devised from climate parameters; 			
 		*/
 		int ret = 0;
-		int forest = has(PhysForest);
+		int forest = has_phys(PhysForest);
 		switch(item) {
 			case ItemFish:
 				if (alt == AltSea) {

@@ -110,7 +110,7 @@ namespace col{
 		Id id{0};
 		UnitType const* type{nullptr};
 		Nation * nation{nullptr};
-		uint8 time_left{0};
+		uint8 time_left{TIME_UNIT};
 		bool transported{0};
 
 		// where am I
@@ -126,6 +126,12 @@ namespace col{
 		uint8 extend{0}; // num of boarded units TODO: need this?
 
 		Unit(
+			Id const& id
+		):
+			id(id)
+		{}
+
+		Unit(
 			Id const& id,
 			UnitType const& type,
 			Nation & nation
@@ -133,13 +139,16 @@ namespace col{
 			id(id),
 			type(&type),
 			nation(&nation),
-			time_left(TIME_UNIT),
 			space_left(type.slots)
 		{}
 
 		Unit() = default;
 
+		Unit& operator=(Unit const&) = default;
+
 		Unit(Unit && w) {
+			*this = w;
+
 			assert(w.terr == nullptr);
 			assert(w.build == nullptr);
 			assert(w.field == nullptr);
@@ -158,6 +167,8 @@ namespace col{
 		}
 
 		Nation & get_nation() const { return *nation; }
+		Unit & set_nation(Nation & nation) { this->nation = &nation; return *this; }
+
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }
 		string const& get_name() const { return type->get_name(); }
@@ -181,7 +192,11 @@ namespace col{
 		int const& get_num2() const { return type->num2; }
 
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
-		Unit& set_type(UnitType const& t) { type = &t; return *this; }
+		Unit& set_type(UnitType const& t) {
+			space_left = t.slots;
+			type = &t;
+			return *this;
+		}
 
 		bool is_working() const {
 			return field or build;

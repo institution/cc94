@@ -90,17 +90,17 @@ namespace col{
 		}
 
 		bool assign(bool const& exec=1) {
-			if (has(PhysWorker)) {
+			if (has_phys(PhysWorker)) {
 				return false;
 			}
 			if (exec) {
-				add(PhysWorker);
+				add_phys(PhysWorker);
 			}
 			return true;
 		}
 
 		bool leave(bool const& exec=1) {
-			if (!has(PhysWorker)) {
+			if (!has_phys(PhysWorker)) {
 				if (!exec) {
 					throw Error("no worker to leave this place");
 				}
@@ -109,7 +109,7 @@ namespace col{
 				}
 			}
 			if (exec) {
-				sub(PhysWorker);
+				sub_phys(PhysWorker);
 			}
 			return true;
 		}
@@ -139,15 +139,15 @@ namespace col{
 		}
 
 		// features
-		bool has(Phys const& p) const {
+		bool has_phys(Phys const& p) const {
 			return phys & p;
 		}
 
-		void add(Phys const& p) {
+		void add_phys(Phys const& p) {
 			phys = phys | p;
 		}
 
-		void sub(Phys const& p) {
+		void sub_phys(Phys const& p) {
 			phys = phys & (~p);
 		}
 

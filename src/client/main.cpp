@@ -5,6 +5,9 @@
 #include <vector>
 #include <map>
 #include <thread>
+
+#include "pre.h"
+
 #include <boost/cstdint.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/format.hpp>
