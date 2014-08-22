@@ -88,11 +88,32 @@ TEST_CASE( "tree2", "" ) {
 }
 
  */
+
+TEST_CASE( "sys", "" ) {
+	SECTION("env_clean_units") {
+		Env env;		
+		env.resize({1,1});
+		auto& u = env.create<Unit>(
+			env.create<UnitType>(),
+			env.create<Nation>()
+		);
+		REQUIRE_NOTHROW(env.init(u, env.get_terr({0,0})));
+		REQUIRE_NOTHROW(env.clear_units());
+		REQUIRE(env.units.size() == 0);
+		REQUIRE(env.get_terr({0,0}).units.size() == 0);
+	}	
+}
+
+
 TEST_CASE( "env", "" ) {
 	Env env;
 	
 	// resize
 	REQUIRE_NOTHROW(env.resize({1,1}));
+	
+	auto& t = env.get_terr({0,0});
+	REQUIRE(t.get_biome() == BiomeNone);
+	
 	
 	// fill
 	REQUIRE_NOTHROW(env.fill(Terr{AltSea, BiomeTundra}));
@@ -101,8 +122,7 @@ TEST_CASE( "env", "" ) {
 	
 	// get<Terr>
 	REQUIRE_NOTHROW(env.get<Terr>({0,0}));
-	
-	
+		
 	
 }
 

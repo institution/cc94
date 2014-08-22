@@ -31,6 +31,10 @@ namespace col{
 
 		Nation(Nation const&) = delete;
 
+		~Nation() {
+			assert(player == nullptr);
+		}
+
 		template<class A>
 		void serialize(A & ar, uint const& version) {
 			ar & id;

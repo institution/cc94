@@ -12,7 +12,7 @@ namespace halo{
 			t = t and (!p.event or (q.event and *p.event == *q.event));
 			t = t and (!p.button or (q.button and *p.button == *q.button));
 			t = t and (!p.key or (q.key and *p.key == *q.key));
-			t = t and (!p.mod or (q.mod and (*p.mod & *q.mod)));
+			t = t and (!p.mod or (q.mod and (*p.mod == *q.mod)));
 			t = t and (!p.unicode or (q.unicode and *p.unicode == *q.unicode));
 			t = t and (!p.area or (q.area and col::overlap(*p.area, (*q.area).pos)));
 			

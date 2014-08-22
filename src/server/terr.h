@@ -39,6 +39,11 @@ namespace col{
 			biome(biome), phys(phys), alt(alt)
 		{}
 
+		~Terr() {
+			assert(colony == nullptr);
+			assert(units.size() == 0);
+		}
+
 		/*
 		move_unit(Unit &u, Place &from) {
 

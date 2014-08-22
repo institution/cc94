@@ -26,6 +26,7 @@ namespace col{
 		virtual void activate() = 0;
 		virtual bool apply_inter(inter::Any const& a) = 0;
 
+
 		//template <class t>
 		//virtual void receive(T const& t) = 0;
 		// CONTROL FLOW
@@ -113,7 +114,7 @@ namespace col{
 		Terrs terrs;
 
 		// global state
-		uint32 turn_no;
+		uint32 turn_no{0};
 		uint32 next_id;
 		uint8 state; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 		uint32 turn_limit; // nonzero => end game when turn_no >= turn_limit
@@ -142,7 +143,7 @@ namespace col{
 			mod++;
 		}
 
-		void connect(Nation::Id pid, Player & u) {
+		void connect(Id<Nation>::type pid, Player & u) {
 			// connect nation(game nation) with AI or Human
 			get<Nation>(pid).set_player(&u);
 		}
@@ -150,6 +151,38 @@ namespace col{
 		int get_turn_no() const {
 			return turn_no;
 		}
+
+		void free(Colony & c) {
+			if (c.terr) {
+				c.terr->colony = nullptr;
+				c.terr = nullptr;
+			}
+		}
+
+		void free(Unit & u) {
+			if (u.terr) {
+				u.terr->sub(u);
+				u.terr = nullptr;
+			}
+			if (u.build) {
+				u.build->sub(u);
+				u.build = nullptr;
+			}
+			if (u.field) {
+				u.field->sub(u);
+				u.field = nullptr;
+			}
+			u.type = nullptr;
+			u.nation = nullptr;
+		}
+
+		void free(Nation & c) {
+			if (c.player) {
+				// send disconnect sig? no need this is internal pointer
+				c.player = nullptr;
+			}
+		}
+
 
 
 		Nation const* get_current_nation_p() const {
@@ -436,6 +469,7 @@ namespace col{
 			}
 
 			// food consumption/starvation
+			vector<Unit*> starve;
 			size_t i = 0;
 			while (i < t.units.size()) {
 				Unit &u = *t.units.at(i);
@@ -446,14 +480,18 @@ namespace col{
 					}
 					else {
 						// starvation
-						// this will remove element from current iteration !!!
-						kill(u);
-						// do not iterate
-						continue;
+						starve.push_back(&u);
 					}
 				}
 				++i;
 			}
+
+			// destroy starved units
+			for (Unit* u: starve) {
+				free(*u);
+				units.erase(get_id(*u));
+			}
+			starve.clear();
 
 			// new colonists creation
 			if (p and c.get(ItemFood) >= 100) {
@@ -495,18 +533,16 @@ namespace col{
 				items decay (due to non-storageable nature or lack of storage space)
 			*/
 
-
-			// clear old messages
-			clear_messages();  // <- replacve with effects and let clients collect messages from them (TODO)
-
 			// time progress
-			++turn_no;
+			turn_no++;
+			notify_effect(inter::set_turn(turn_no));
 
 			// time reset on units
 			for (auto& item: units) {
 				// cerr << "turn calc for: " << item.second << endl;
 				Unit & u = item.second;
 				u.time_left = TIME_UNIT;
+				notify_effect(get_terr(u), inter::set_tp(u.id, TIME_UNIT));
 			}
 
 			// all colonies
@@ -598,6 +634,12 @@ namespace col{
 		}
 
 
+		void notify_effect(inter::Any const& a) {
+			for (auto& p: nations) {
+				send(p.second, a);
+			}
+		}
+
 		void notify_effect(Terr const& t, inter::Any const& a) {
 			for (auto& p: nations) {
 				if (has_vision(p.second, t)) {
@@ -679,6 +721,47 @@ namespace col{
 			terrs.resize(Coords(w,h));
 			return *this;
 		}
+
+
+		void clear_units() {
+			// remove all units
+			for (auto& u: units) {
+				free(u.second);
+			}
+			units.clear();
+		}
+
+		void clear_colonies()  {
+			// remove all colonies; first remove units
+			for (auto& c: colonies) {
+				free(c.second);
+			}
+			colonies.clear();
+		}
+
+		void clear_nations() {
+			// remove all nations; first remove colonies
+			for (auto& p: nations) {
+				free(p.second);
+			}
+			nations.clear();
+		}
+
+		bool apply(inter::reset const& a) {
+			// clear_all
+			// resize
+			// fill with dessert ocean
+			clear_units();
+			clear_colonies();
+
+			resize({a.x,a.y});
+
+			notify_effect(a);
+
+			return 1;
+		}
+
+
 
 		Env & fill(Terr const& t) {
 
@@ -915,24 +998,16 @@ namespace col{
 		//	return get_terr(get_coords(u) + vec4dir(dir));
 		//}
 
+		~Env() {
+			clear_units();
+			clear_colonies();
+			clear_nations();
+		}
 
 		void kill(Unit & u) {
 			// this function will erase from container you are currently iterating over
 			// TODO: delayed removal?
-			if (u.terr) {
-				u.terr->sub(u);
-				u.terr = nullptr;
-			}
-			if (u.build) {
-				u.build->sub(u);
-				u.build = nullptr;
-			}
-			if (u.field) {
-				u.field->sub(u);
-				u.field = nullptr;
-			}
-			u.type = nullptr;
-			u.nation = nullptr;
+			free(u);
 
 			units.erase(get_id(u));
 
@@ -1579,6 +1654,11 @@ namespace col{
 			return 1;
 		}
 
+		bool apply(inter::set_turn const& a);
+		bool apply(inter::set_current_nation const& a);
+		bool apply(inter::set_biome const& a);
+		bool apply(inter::set_alt const& a);
+
 		bool apply_inter(inter::Any const& a);
 
 
@@ -1720,6 +1800,45 @@ namespace col{
 		return in_bound<Dir::A>(p) and in_bound<Dir::D>(p)
 		   and in_bound<Dir::W>(p) and in_bound<Dir::X>(p);
 	}
+
+
+
+
+
+
+
+	inline bool Env::apply(inter::set_turn const& a) {
+		turn_no = a.turn_no;
+		notify_effect(a);
+		return 1;
+	}
+
+	inline bool Env::apply(inter::set_current_nation const& a) {
+		set_current_nation(get<Nation>(a.nation_id));
+		notify_effect(a);
+		return 1;
+	}
+
+	inline bool Env::apply(inter::set_biome const& a) {
+		auto& t = get<Terr>(a.terr_id);
+		t.set_biome(a.biome);
+		notify_effect(t, a);
+		return 1;
+	}
+
+
+	inline bool Env::apply(inter::set_alt const& a) {
+		auto& t = get<Terr>(a.terr_id);
+		t.set_alt(a.alt);
+		notify_effect(t, a);
+		return 1;
+	}
+
+
+
+
+
+
 
 
 }

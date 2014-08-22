@@ -151,61 +151,6 @@ namespace col{
 
 
 
-	/*
-	 action(7):
-		+build-colony unit_id    // claim-land
-		+improve unit_id phys_id (Plow|Road|Forest)
-		+destroy unit_id phys_id (Plow|Road|Forest)
-
-		+move/board dx dy unit_id
-		attack dx dy unit_id
-		equip unit_type_id unit_id
-
-	 	ready
-
-	 action/effect(7):
-		toogle-board unit_id
-
-	 	work-build build_id unit_id
-		work-field field_id unit_id
-		work-none unit_id
-
-	 	prod-build terr_id build_id item_id
-		prod-field terr_id field_id item_id
-
-	 	construct terr_id build_id build_type_id
-
-	 effect(15):
-		error text
-
-		init-colony terr_id name
-		init-unit terr_id unit-type-id
-		init-build terr_id build_id build_type_id
-		kill unit_id
-
-		add-phys terr_id phys_id
-		sub-phys terr_id phys_id
-
-		set-tp unit_id num
-
-		sub-item terr_id item_id num
-	 	add-item terr_id item_id num
-		set-item terr_id item_id num
-
-		morph-unit unit_id unit_type_id
-		morph-build terr_id build_id build_type_id
-
-		set-turn num
-		set-current-nation nation_id (activate)
-
-	 effect(3)(only editor):
-		resize x y
-		set-biome terr_id biome_id
-		set-alt terr_id alt
-
-
-
-	 */
 
 
 
@@ -408,18 +353,18 @@ namespace col{
 		// effect
 		CC94_DEFINE_INTER(
 			set_turn,
-			(int, num)
+			(uint32, turn_no)
 		)
 
 		// effect
 		CC94_DEFINE_INTER(
 			set_current_nation,
-			(Id<Nation>, nation_id)
+			(Id<Nation>::type, nation_id)
 		)
 
 		// effect (editor)
 		CC94_DEFINE_INTER(
-			resize,
+			reset,
 			(Coord, x)
 			(Coord, y)
 		)
@@ -429,7 +374,7 @@ namespace col{
 		CC94_DEFINE_INTER(
 			set_biome,
 			(Terr::Id, terr_id)
-			(Biome::Id, biome_id)
+			(Biome::Id, biome)
 		)
 
 
@@ -456,10 +401,74 @@ namespace col{
 			destroy,
 			build_colony,
 			init_colony,
-			set_tp
+			set_tp,
+
+			set_turn,
+			set_current_nation,
+
+			// action/effect (editor)
+			reset,
+			set_biome,
+			set_alt
+
 		>;
 
 
+	/*
+	 action(7):
+		+build-colony unit_id    // claim-land
+		+improve unit_id phys_id (Plow|Road|Forest)
+		+destroy unit_id phys_id (Plow|Road|Forest)
+
+		+move/board dx dy unit_id
+		attack dx dy unit_id
+		equip unit_type_id unit_id
+
+	 	ready
+
+	 action/effect(7):
+		toogle-board unit_id
+
+	 	work-build build_id unit_id
+		work-field field_id unit_id
+		work-none unit_id
+
+	 	prod-build terr_id build_id item_id
+		prod-field terr_id field_id item_id
+
+	 	construct terr_id build_id build_type_id
+
+	 effect(15):
+		error text
+
+		init-colony terr_id
+		init-unit terr_id unit-type-id
+		init-build terr_id build_id build_type_id
+		kill unit_id
+
+		add-phys terr_id phys_id
+		sub-phys terr_id phys_id
+
+		set-tp unit_id num
+
+		sub-item terr_id item_id num
+	 	add-item terr_id item_id num
+		set-item terr_id item_id num
+
+		morph-unit unit_id unit_type_id
+		morph-build terr_id build_id build_type_id
+
+		+ set-turn num
+		+ set-current-nation nation_id (activate)
+
+	 effect(3)(only editor):
+		+ reset x y
+		+ set-biome terr_id biome
+		+ set-alt terr_id alt
+
+
+
+	 */
 
 
 	}

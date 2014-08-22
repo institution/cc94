@@ -138,8 +138,24 @@ namespace col{
 		{}
 
 		Unit() = default;
-		Unit(Unit &&) = default;
+
+		Unit(Unit && w) {
+			assert(w.terr == nullptr);
+			assert(w.build == nullptr);
+			assert(w.field == nullptr);
+			w.type = nullptr;
+			w.nation = nullptr;
+		}
+
 		Unit(Unit const&) = delete;
+
+		~Unit() {
+			assert(terr == nullptr);
+			assert(build == nullptr);
+			assert(field == nullptr);
+			assert(type == nullptr);
+			assert(nation == nullptr);
+		}
 
 		Nation & get_nation() const { return *nation; }
 		UnitType const& get_type() const { return *type; }

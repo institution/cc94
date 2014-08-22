@@ -154,7 +154,8 @@ int main(int argc, char* argv[])
 	}
 	else {
 		env.resize({15,12});
-		env.fill(Terr{AltSea, BiomeDesert});
+		//env.fill(Terr{AltSea, BiomeDesert});
+		env.fill(Terr{AltSea, BiomeNone});
 	}
 	
 	

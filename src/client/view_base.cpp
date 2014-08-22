@@ -9,6 +9,7 @@ namespace col {
 	//tile_dim = v2i(TILE_DIM, TILE_DIM);
 	
 	unordered_map<Biome,string,Biome::hash> BIOME_NAMES{
+		{BiomeNone, "unknown"},
 		{BiomeTundra, "tundra"},
 		{BiomePrairie, "prairie"},
 		{BiomePlains, "plains"},

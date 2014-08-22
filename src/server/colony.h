@@ -137,7 +137,9 @@ namespace col {
 
 		Colony(Colony const&) = delete;
 
-
+		~Colony() {
+			assert(terr == nullptr);
+		}
 
 
 

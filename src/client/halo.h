@@ -24,11 +24,12 @@ namespace halo{
 	};
 
 
-
+	using Mod = uint8_t;
 	uint8_t const ModNone = 0;
 	uint8_t const ModAlt = 1 << 0;
 	uint8_t const ModCtrl = 1 << 1;
 	uint8_t const ModShift = 1 << 2;
+	uint8_t const ModButton = 1 << 3;
 
 
 	enum struct Event {
@@ -77,10 +78,19 @@ namespace halo{
 			this->callback = callback;
 		}
 
-		// mouse left/right press/release left/right over area
+		// mouse left/right press/release over area
 		Pattern(Event event, Button button, v2i const& pos, v2i const& dim, std::function<void()> callback) {
 			this->event = event;
 			this->button = button;
+			this->area = Box2(pos,dim);
+			this->callback = callback;
+		}
+
+		// mouse left/right press/release over area with modifier
+		Pattern(Event event, Button button, Mod mod, v2i const& pos, v2i const& dim, std::function<void()> callback) {
+			this->event = event;
+			this->button = button;
+			this->mod = mod;
 			this->area = Box2(pos,dim);
 			this->callback = callback;
 		}
@@ -95,6 +105,14 @@ namespace halo{
 		// mouse move over area
 		Pattern(Event event, v2i const& pos, v2i const& dim, std::function<void()> callback) {
 			this->event = event;
+			this->area = Box2(pos,dim);
+			this->callback = callback;
+		}
+
+		// mouse move over area with mod
+		Pattern(Event event, Mod mod, v2i const& pos, v2i const& dim, std::function<void()> callback) {
+			this->event = event;
+			this->mod = mod;
 			this->area = Box2(pos,dim);
 			this->callback = callback;
 		}

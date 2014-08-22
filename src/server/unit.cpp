@@ -7,6 +7,6 @@ namespace col{
 		return out;
 	}
 	
-	
-	
+
+
 }

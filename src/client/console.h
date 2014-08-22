@@ -80,12 +80,50 @@ namespace col {
 
 		int select_unit_popup{0};
 
+		// selected area (affects edit mode)   TODO:: set
+		std::set<Terr*> sel_terrs;
+
 		// selected square
-		Terr * sel_terr{nullptr};
+		//Terr * sel_terr{nullptr};
 
 		// selected unit
 		Unit* sel_unit{nullptr};
 
+
+		// (-1 Sub) (0 Set) (+1 Add)
+		int8 selmod = 0;
+
+		int8 get_selmod() const { return selmod; }
+
+		void set_selmod(int8 selmode) { this->selmod = selmod; }
+
+		bool is_selected(Terr * terr) {
+			if (terr) {
+				return sel_terrs.count(terr);
+			}
+			else {
+				return true;  // nullptr == empty set -- always selected
+			}
+		}
+
+		bool is_selected(Terr & terr) { return is_selected(&terr); }
+
+		bool is_selected(Coords const& c) {
+			return is_selected( env.in_bounds(c) ? (&env.get_terr(c)) : nullptr );
+		}
+
+		v2i drag_pos{0,0};
+		v2i drop_pos{0,0};
+		bool dragging;
+
+		void drag() {
+			dragging = 1;
+		}
+
+		void drop() {
+			dragging = 0;
+			drag_pos = drop_pos;
+		}
 
 		void select_next_unit() {
 			select_unit(
@@ -110,8 +148,12 @@ namespace col {
 		};
 
 		bool apply_inter(inter::Any const& a) {
-			return boost::apply_visitor(Apply(env), a);
+			cout << "console.apply_inter\n";
+			return 1;
+			//return boost::apply_visitor(Apply(env), a);
 		}
+
+
 
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
@@ -120,48 +162,64 @@ namespace col {
 			}
 		}
 
+		void unselect_unit() {
+			select_unit(nullptr);
+		}
+
 		void select_unit(Unit &unit) {
 			select_unit(&unit);
 		}
 
 		void select_unit(Unit::Id id) {
-			if (id) {
-				select_unit(&env.get<Unit>(id));
-			}
-			else {
-				unselect_unit();
-			}
-		}
-
-		void unselect_unit() {
-			select_unit(nullptr);
+			select_unit( id ? (&env.get<Unit>(id)) : nullptr );
 		}
 
 
-		void select_terr(Terr * terr) {
-			sel_terr = terr;
+
+
+
+		void select_terr(Terr * terr = nullptr, int8 v = 0) {
 			sel_unit = nullptr;
-		}
-
-		void select_terr(Terr & terr) {
-			sel_terr = &terr;
-			sel_unit = nullptr;
-		}
-
-		void select_terr(Terr::Id const& c) {
-			if (env.in_bounds(c)) {
-				sel_terr = &env.get_terr(c);
+			switch (v) {
+				case -1:
+					if (terr) {
+						sel_terrs.erase(terr);
+					}
+					break;
+				case 0:
+					sel_terrs.clear();
+					if (terr) {
+						sel_terrs.insert(terr);
+					}
+					break;
+				case 1:
+					if (terr) {
+						sel_terrs.insert(terr);
+					}
+					break;
+				default:
+					assert(0);
+					break;
 			}
-			else {
-				sel_terr = nullptr;
-			}
-			sel_unit = nullptr;
 		}
 
 		void unselect_terr() {
-			sel_terr = nullptr;
-			sel_unit = nullptr;
+			select_terr();
 		}
+
+		void select_terr(Terr & terr) {
+			select_terr(&terr);
+		}
+
+		void select_terr(Terr::Id const& c, int8 v = 0) {
+			select_terr(
+				(env.in_bounds(c) ? (&env.get_terr(c)) : nullptr),
+				v
+			);
+		}
+
+
+
 
 
 		char get_letter(Unit const& u) {
@@ -176,8 +234,18 @@ namespace col {
 			if (sel_unit) {
 				return &env.get_terr(*sel_unit);
 			}
-			return sel_terr;
+			if (sel_terrs.size()) {
+				return *(sel_terrs.begin());
+			}
+			else {
+				return nullptr;
+			}
 		}
+
+		auto get_sel_terrs() const -> decltype(sel_terrs) const& {
+			return sel_terrs;
+		}
+
 
 		Unit::Id get_sel_unit_id() const {
 			if (sel_unit) {

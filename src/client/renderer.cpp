@@ -15,6 +15,8 @@ namespace col {
 	using Key = Console::Key;
 	using Dev = Console::Dev;
 	
+	
+	
 
 	Layout const ly(SCREEN_W, SCREEN_H);
 
@@ -1355,9 +1357,12 @@ namespace col {
 		int offset
 	) {
 		auto b = get(loc, d).biome;
-		
-		render_sprite(win, pix, res(DIFFUSE, get_biome_icon_id(b) + offset) );
-		
+		if (b != BiomeNone) {
+			render_sprite(win, pix, res(DIFFUSE, get_biome_icon_id(b) + offset) );
+		}
+		else {
+			// no diffuse from unexplored terrain (looks as bad as diffuse on water from terrain)
+		}
 	}
 
 
@@ -1390,8 +1395,13 @@ namespace col {
 
 		
 		// render biome
+		if (biome == BiomeNone) {
+			render_sprite(win, pix, res(PHYS, 149));			
+			return;  // unknown terrain - early return !!!
+		}
+		
 		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
-
+		
 		// render neighs pattern
 		render_diffuse_from(win, pix, loc, Dir::W, 0);
 		render_diffuse_from(win, pix, loc, Dir::D, 50);
@@ -1664,6 +1674,9 @@ namespace col {
 		
 	}
 
+	//void select_area()
+		
+	
 	void render_map(sf::RenderWindow &win, Env const& env, Console & con, v2i const& pos,
 			Coords const& delta)
 	{
@@ -1683,13 +1696,49 @@ namespace col {
 					auto& terr = env.get_terr(coords);
 					render_terr(win, pos, env, terr);
 
-					// right click on terr -- select terr
+					
+					// right press on terr -- select terr
 					con.on(Event::Press, Button::Right, pos, ly.terr_dim, 
 						[&con,coords](){
 							con.select_terr(coords);
 						}
 					);
 					
+					// right press on terr with shift -- add select terr
+					con.on(Event::Press, Button::Right, halo::ModButton|halo::ModShift, pos, ly.terr_dim, 
+						[&con,coords](){
+							con.select_terr(coords, +1);
+						}
+					);
+					
+					// right press on terr with shift -- sub select terr
+					con.on(Event::Press, Button::Right, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim, 
+						[&con,coords](){
+							cout << "ctrel\n";
+							con.select_terr(coords, -1);
+						}
+					);
+					
+					// hover with button down over terr -- select set
+					con.on(Event::Hover, halo::ModButton, pos, ly.terr_dim, 
+						[&con,coords](){
+							con.select_terr(coords);
+						}
+					);
+					
+					// hover with button down with shift over terr -- select add
+					con.on(Event::Hover, halo::ModButton|halo::ModShift, pos, ly.terr_dim, 
+						[&con,coords](){
+							con.select_terr(coords, +1);
+						}
+					);
+					
+					// hover with button down with shift over terr -- select add
+					con.on(Event::Hover, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim, 
+						[&con,coords](){
+							con.select_terr(coords, -1);
+						}
+					);
 					
 					
 				}
@@ -1697,6 +1746,11 @@ namespace col {
 				
 			}
 		}
+		
+		
+		
+
+		
 		
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
@@ -1721,9 +1775,20 @@ namespace col {
 		// render cursor on selected tile
 		if (!con.get_sel_unit()) {
 			if (Terr* tp = con.get_sel_terr()) {
+				
+				for (auto tp: con.get_sel_terrs()) {
+					auto coords = env.get_coords(*tp);
+					
+					render_inline(win, 
+						vmul(coords, ly.terr_dim) + pos,
+						ly.terr_dim, 
+						{128,128,128,255}
+					);
+				}
+				
 				auto coords = env.get_coords(*tp);
 
-				// blink
+				// blink main terr
 				if (int(con.time * 10.0) % 10 >= 5) {
 					// rect frame on tile
 					render_inline(win, 
@@ -1732,6 +1797,8 @@ namespace col {
 						{255,255,255,255}
 					);
 				}
+				
+				
 			}
 		}
 		
@@ -1753,8 +1820,6 @@ namespace col {
 		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
 
 	}
-
-
 
 
 
@@ -1798,7 +1863,7 @@ namespace col {
 				if (t.has(phys)) phys_info += name + ",";
 			}
 
-			info += format("\n%||\n[%||]\n", BIOME_NAMES.at((t.biome)), phys_info);
+			info += format("\n%||\n[%||]\n", BIOME_NAMES.at(t.biome), phys_info);
 			
 			info += format("\nmove: %||\nimprov: %||\n",
 				env.get_movement_cost(t, t, TravelLand),

@@ -1,5 +1,6 @@
 #include "console.h"
 
+#include <SFML/Window.hpp>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -57,10 +58,23 @@ namespace col {
 		}
 	}
 
-
-
+	halo::Mod get_mod() {
+		halo::Mod mod = 0;
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+			mod = mod | halo::ModShift;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RControl)) {
+			mod = mod | halo::ModCtrl;
+		}
+		if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
+			mod = mod | halo::ModButton;
+		}
+		return mod;	
+	}
 	
 	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
+		
+		
 		auto type = event.type;
 
 		// prepare pattern
@@ -87,7 +101,16 @@ namespace col {
 			
 			p.dev = Dev::Mouse;
 			p.event = Event::Hover;
-			p.area = Box2(v2i(mp.x, mp.y), {0,0});				
+			p.mod = get_mod();
+			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+						
+			if (dragging) {
+				drop_pos = v2i(mp.x, mp.y);
+			}
+			else {
+				drag_pos = v2i(mp.x, mp.y);
+			}
+			
 		}		
 		else if (type == sf::Event::MouseButtonPressed)
 		{			
@@ -100,7 +123,9 @@ namespace col {
 			
 			p.dev = Dev::Mouse;
 			p.event = Event::Press;
+			p.mod = get_mod();
 			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+			
 			
 			if (event.mouseButton.button == sf::Mouse::Left) {
 				p.button = Button::Left;
@@ -109,6 +134,29 @@ namespace col {
 				p.button = Button::Right;
 			}			
 		}
+		else if (type == sf::Event::MouseButtonReleased)
+		{	
+			sf::Vector2f mp = app.mapPixelToCoords(
+				sf::Vector2i(
+					event.mouseButton.x,
+					event.mouseButton.y
+				)
+			);
+			
+			p.dev = Dev::Mouse;
+			p.event = Event::Release;
+			p.mod = get_mod();
+			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+			
+			
+			if (event.mouseButton.button == sf::Mouse::Left) {
+				p.button = Button::Left;
+			}			
+			else if (event.mouseButton.button == sf::Mouse::Right) {
+				p.button = Button::Right;
+			}			
+		}
+		
 		
 		
 		// handle
@@ -254,6 +302,7 @@ namespace col {
 			put("delete-colony");
 			put("set-biome");
 			put("add-phys");
+			put("sub-phys");
 			put("set-alt");
 			// orders
 			put("build-colony");
@@ -292,18 +341,26 @@ namespace col {
 					put("Usage: add-phys <phys-name>");
 					break;
 				case 2:
-					if (get_sel_terr()) {
-						Phys p = get_phys_by_name(es.at(1));
-						if (p != PhysNone) {
-							get_sel_terr()->add(p);
-						}
-						else {
-							put("invalid phys name");
-						}
+					Phys p = get_phys_by_name(es.at(1));
+					for (auto tp: get_sel_terrs()) {
+						tp->add(p);						
 					}
 					break;
 			}
 		}
+		else if (cmd == "sub-phys") {
+			switch (es.size()) {
+				default:
+					put("Usage: sub-phys <phys-name>");
+					break;
+				case 2:
+					Phys p = get_phys_by_name(es.at(1));
+					for (auto tp: get_sel_terrs()) {
+						tp->sub(p);						
+					}
+					break;
+			}
+		}		
 		else if (cmd == "cls") {
 			output.clear();
 		}
@@ -347,14 +404,9 @@ namespace col {
 					put("Usage: set-biome <biome-name>");
 					break;
 				case 2:
-					if (auto tp = get_sel_terr()) {
-						Biome b = get_biome_by_name(es.at(1));
-						if (b != BiomeNone) {
-							tp->set_biome(b);
-						}
-						else {
-							put("invalid biome name");
-						}
+					Biome b = get_biome_by_name(es.at(1));					
+					for (auto tp: con.get_sel_terrs()) {
+						tp->set_biome(b);	
 					}
 					break;
 			}
@@ -365,7 +417,7 @@ namespace col {
 					put("Usage: set-alt <0,1,2,3>");
 					break;
 				case 2:
-					if (auto tp = get_sel_terr()) {
+					for (auto tp: get_sel_terrs()) {
 						tp->set_alt(stoi(es.at(1)));						
 					}
 					break;
@@ -879,6 +931,7 @@ namespace col {
 	
 	
 	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running) {
+		// ee -- server
 
 		Console con(*ee, *tt, *running);
 
