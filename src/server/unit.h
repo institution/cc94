@@ -26,9 +26,9 @@ namespace col{
 		uint8 travel{0}; // travel flags LAND | SEA
 		int base{0};
 		Item item1{ItemNone};
-		int num1{0};
+		Amount num1{0};
 		Item item2{ItemNone};
-		int num2{0};
+		Amount num2{0};
 
 
 		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
@@ -39,8 +39,8 @@ namespace col{
 		UnitType& set_icon(uint8 const& c) { icon = c; return *this; }
 		UnitType& set_travel(uint8 const& t) { travel = t; return *this; }
 		UnitType& set_base(int const& t) { base = t; return *this; }
-		UnitType& set_equip1(Item const& it, int num) { item1 = it; num1 = num; return *this; }
-		UnitType& set_equip2(Item const& it, int num) { item2 = it; num2 = num; return *this; }
+		UnitType& set_equip1(Item const& it, Amount num) { item1 = it; num1 = num; return *this; }
+		UnitType& set_equip2(Item const& it, Amount num) { item2 = it; num2 = num; return *this; }
 
 
 		string const& get_name() const { return name; }
@@ -53,9 +53,9 @@ namespace col{
 		uint8 const& get_travel() const { return travel; }
 		int const& get_base() const { return base; }
 		Item const& get_item2() const { return item2; }
-		int const& get_num1() const { return num1; }
+		Amount const& get_num1() const { return num1; }
 		Item const& get_item1() const { return item1; }
-		int const& get_num2() const { return num2; }
+		Amount const& get_num2() const { return num2; }
 
 		UnitType() {}
 
@@ -187,9 +187,9 @@ namespace col{
 
 		int const& get_base() const { return type->base; }
 		Item const& get_item2() const { return type->item2; }
-		int const& get_num1() const { return type->num1; }
+		Amount const& get_num1() const { return type->num1; }
 		Item const& get_item1() const { return type->item1; }
-		int const& get_num2() const { return type->num2; }
+		Amount const& get_num2() const { return type->num2; }
 
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
 		Unit& set_type(UnitType const& t) {

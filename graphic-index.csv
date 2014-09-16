@@ -221,12 +221,12 @@ TERRAIN 211 ocean A *
 TERRAIN 212 sealane A * 
      
      
-ICONS 201 "colony + stockade"  ** 
-ICONS 202 "colony fort"  ** 
-ICONS 203 "colony fortress"  ** 
-ICONS 204 colony  ** 
+ICONS 201 "colony + stockade (no flag)"  ** 
+ICONS 202 "colony fort (no flag)"  ** 
+ICONS 203 "colony fortress (no flag)"  ** 
+ICONS 204 "colony (no flag)"  ** 
      
-ICONS 5 -   
+     
 ICONS 6 caravel   
 ICONS 7 merchantman   
 ICONS 8 galleon   
@@ -339,3 +339,9 @@ ICONS 97
  129 "cont. soldier"   
  130 "cont. dragoon"   
  131 "USA flag"   
+     
+     
+     
+     
+     
+COLONY 1 "colony screen units background"   

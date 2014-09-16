@@ -16,6 +16,7 @@
 #include "player.h"
 #include "ai-env-helpers.h"
 #include "halo.h"
+#include "human_ai.h"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -128,8 +129,9 @@ namespace col {
 		};
 
 		void apply_inter(inter::Any const& a) {
-			cout << "console.apply_inter\n";
-			
+			cout << format("console %|| apply_inter: %||\n", memtag, a);
+
+			env.apply_inter(a);
 			//return boost::apply_visitor(Apply(env), a);
 		}
 
@@ -344,10 +346,16 @@ namespace col {
 		int sel_colony_slot_id{-1};
 
 		Mode mode;
-		vector<std::thread> & ths;
+		vector<std::thread> * ths;
 		bool &running;
 
-		Console(EnvGame & env, vector<std::thread> & ths, bool & running): env(env), ths(ths), running(running) {
+		Nation::Id nation_id;
+
+		string memtag;
+		
+		Console(string memtag, EnvGame & env, vector<std::thread> * ths, bool & running, Nation::Id nid):
+			env(env), ths(ths), running(running), nation_id(nid), memtag(memtag)
+		{
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}

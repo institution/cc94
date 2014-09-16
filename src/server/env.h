@@ -41,7 +41,6 @@ namespace col{
 
 	};
 
-	using Msgs = vector<Msg>;
 
 
 	inline bool compatible(Travel const& x, Travel const& y) {
@@ -103,6 +102,29 @@ namespace col{
 		void connect(Id<Nation>::type pid, Player & u) {
 			// connect nation(game nation) with AI or Human
 			get<Nation>(pid).set_player(&u);
+
+			// send map info
+			u.apply_inter(inter::reset(w, h));
+
+			for(Coord j = 0; j < h; ++j) {
+				for(Coord i = 0; i < w; ++i) {
+					auto& t = get_terr(Coords(i,j));
+
+					auto terr_id = Coords(i,j);
+					u.apply_inter(
+						inter::set_alt(terr_id, t.get_alt())
+					);
+
+					u.apply_inter(
+						inter::set_biome(terr_id, t.get_biome())
+					);
+
+					u.apply_inter(
+						inter::set_phys(terr_id, t.get_phys())
+					);
+				}
+			}
+
 		}
 
 
@@ -423,12 +445,16 @@ namespace col{
 			if (c.has(ut.get_item1(), ut.get_num1())
 				and c.has(ut.get_item2(), ut.get_num2()))
 			{
+
+				notify_effect(t, inter::add_item(get_id(t), u.get_item1(), u.get_num1()));
+				notify_effect(t, inter::add_item(get_id(t), u.get_item2(), u.get_num2()));
+
 				// consume
-				c.sub(ut.get_item1(), ut.get_num1());
-				c.sub(ut.get_item2(), ut.get_num2());
+				sub_item(t, ut.get_item1(), ut.get_num1());
+				sub_item(t, ut.get_item2(), ut.get_num2());
 
 				// change type
-				u.set_type(ut);
+				morph_unit(u, ut);
 			}
 			else {
 				// rollback
@@ -986,10 +1012,11 @@ namespace col{
 
 		}
 
-
-		void colony_construct(Colony & colony, BuildType::Id type_id, int slot) {
-			auto& type = get<BuildType>(type_id);
-			colony.construct_building(type, slot);
+		void apply(inter::construct const& a) {
+			auto& t = get_terr(a.terr_id);
+			auto& type = get<BuildType>(a.build_type_id);
+			t.get_colony().construct_building(type, a.build_id);
+			notify_effect(t, a);
 		}
 
 		void put_build(Terr & t, int slot, BuildType & btype) {
@@ -1107,14 +1134,17 @@ namespace col{
 
 
 		// order
-		void set_proditem_field(Nation const& p, Terr & terr, int field_id, Item const& item) {
+		void set_proditem_field(Nation const& p, Terr & terr, Field::Id field_id, Item const& item) {
 			get_field(terr, field_id, p).set_proditem(item);
 		}
 
 
-		void set_proditem_field(Terr & terr, int field_id, Item const& item) {
+		void set_proditem_field(Terr & terr, Field::Id field_id, Item const& item) {
 			get_field(terr, field_id).set_proditem(item);
 		}
+
+
+
 
 
 		Field const& get_field(Terr const& terr, int field_id) const {
@@ -1163,6 +1193,11 @@ namespace col{
 				u.field = nullptr;
 			}
 		}
+
+
+
+
+
 
 		// build - unit
 		void t_move(Build & b, Unit & u) {
@@ -1225,17 +1260,57 @@ namespace col{
 
 
 
-		void work_field(int field_id, Unit & u) {
+		void work_field(Field::Id field_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_field(terr, field_id, u.get_nation());
 			work_workplace(f, u);
+			notify_effect(terr,	inter::work_field(field_id, get_id(u)));
 		}
 
-		void work_build(int build_id, Unit & u) {
+		void work_build(Build::Id build_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_nation());
 			work_workplace(f, u);
+			notify_effect(terr,	inter::work_build(build_id, get_id(u)));
 		}
+
+
+
+		void apply(inter::work_build const& a) {
+			work_build(a.build_id, get<Unit>(a.unit_id));
+		}
+
+		void apply(inter::work_field const& a) {
+			work_field(a.field_id, get<Unit>(a.unit_id));
+		}
+
+		void apply(inter::work_none const& a) {
+			work_none(get<Unit>(a.unit_id));
+		}
+
+
+
+
+
+		void apply(inter::prod_field const& a) {
+			auto & n = get_current_nation();
+			auto & t = get_terr(a.terr_id);
+			set_proditem_field(n, t, a.field_id, a.item_id);
+			notify_effect(t, a);
+		}
+
+		void apply(inter::prod_build const& a) {
+			throw Critical("not yet used");
+			/*auto & n = get_current_nation();
+			auto & t = get_terr(a.terr_id);
+			set_proditem_build(n, t, a.build_id, a.item_id);
+			notify_effect(t, a);*/
+		}
+
+
+
+
+
 
 		template<typename T>
 		void work_workplace(T & wp, Unit & u) {
@@ -1356,6 +1431,16 @@ namespace col{
 			ready(get_current_nation());
 		}
 
+		void toogle_board(Unit & u) {
+			u.transported = !u.transported;
+			notify_effect(get_terr(u), inter::toogle_board(get_id(u)));
+		}
+
+		void apply(inter::toogle_board const& a) {
+			toogle_board(get<Unit>(a.unit_id));
+		}
+
+
 
 		void apply(inter::move_board const& a) {
 			move_board(a.dx, a.dy, get<Unit>(a.unit_id));
@@ -1371,11 +1456,14 @@ namespace col{
 			a_destroy(get<Unit>(a.unit_id), a.phys_id);
 		}
 
-		void apply(inter::sub_item const& a) {
-			Terr & t = get<Terr>(a.terr_id);
+		void sub_item(Terr & t, Item const& item, Amount num) {
 			auto& c = t.get_colony();
-			c.sub(a.item, a.num);
-			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
+			c.sub(item, num);
+			notify_effect(t, inter::set_item(get_id(t), item, c.get(item)));
+		}
+
+		void apply(inter::sub_item const& a) {
+			sub_item(get<Terr>(a.terr_id), a.item, a.num);
 		}
 
 	 	void apply(inter::add_item const& a) {
@@ -1391,6 +1479,24 @@ namespace col{
 			c.set(a.item, a.num);
 			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
 		}
+
+
+		void morph_unit(Unit & u, UnitType const& ut) {
+			u.set_type(ut);
+			notify_effect(get_terr(u), inter::morph_unit(get_id(u), get_id(ut)));
+		}
+
+		void apply(inter::morph_unit const& a) {
+			morph_unit(get<Unit>(a.unit_id), get<UnitType>(a.unit_type_id));
+		}
+
+		void apply(inter::morph_build const& a) {
+			//terr_id build_id build_type_id
+		}
+
+
+
+
 
 
 
@@ -1431,6 +1537,7 @@ namespace col{
 		void apply(inter::set_current_nation const& a);
 		void apply(inter::set_biome const& a);
 		void apply(inter::set_alt const& a);
+		void apply(inter::set_phys const& a);
 
 		void apply_inter(inter::Any const& a);
 
@@ -1461,6 +1568,7 @@ namespace col{
 	};
 
 
+
 	inline void Env::apply_inter(inter::Any const& a) {
 		Apply ap(*this);
 		boost::apply_visitor(ap, a);
@@ -1486,6 +1594,12 @@ namespace col{
 	inline void Env::apply(inter::set_alt const& a) {
 		auto& t = get<Terr>(a.terr_id);
 		t.set_alt(a.alt);
+		notify_effect(t, a);
+	}
+
+	inline void Env::apply(inter::set_phys const& a) {
+		auto& t = get<Terr>(a.terr_id);
+		t.set_phys(a.phys);
 		notify_effect(t, a);
 	}
 

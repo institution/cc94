@@ -13,16 +13,18 @@ OUTS:=client/main server/test client/test format/test_format
 IGNORE_SRC:=src/tree.cpp
 
 WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null
-DEBUGOPTS:=-g -O0
 M4OPTS:=-E -P
+INCL:=-I./inc -I./src/format -I./src/server
+STD:=-std=c++14
 # -Wall -Wextra 
+# -g -O0
 
 # compiler options
-CCOPTS:=-I./inc -I./src/format -I./src/server -std=c++11 -fmax-errors=5 -g -O0 ${WARNOPTS}
+CCOPTS:= ${INCL} ${STD} -fmax-errors=5 -O3 ${WARNOPTS}
 
 
 # linker options
-LLOPTS:=-lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LLOPTS:=-lX11 -lpthread -lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 
 # assert dirs

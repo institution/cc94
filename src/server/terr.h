@@ -151,6 +151,9 @@ namespace col{
 			phys = phys & (~p);
 		}
 
+		Phys const& get_phys() const { return phys; }
+		void set_phys(Phys const& phys) { this->phys = phys; }
+
 		Biome const& get_biome() const { return biome; }
 		Terr & set_biome(Biome const& biome) { this->biome = biome; return *this; }
 

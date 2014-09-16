@@ -6,12 +6,12 @@
 #include "build.h"
 #include "error.h"
 #include "field.h"
+#include "storage.h"
 
 namespace col {
 
-	
 
-	using Storage = map<Item, Amount>;
+
 
 
 
@@ -23,14 +23,13 @@ namespace col {
 
 
 
-	struct Colony {
+
+	struct Colony: Storage {
 
 		using Id = uint32;
 
 		Id id;
 		string name;
-		Storage storage;
-		int max_storage{100};
 
 		int get_max_storage() { return max_storage; }
 
@@ -73,49 +72,6 @@ namespace col {
 
 
 
-		void add(Item const& item, Amount num) {
-			auto key = item;
-			if (storage.count(key)) {
-				storage[key] += num;
-			}
-			else {
-				storage.insert({key, num});
-			}
-		}
-
-		void sub(Item const& item, Amount num) {
-			auto key = item;
-			if (num <= get(item)) {
-				storage[key] -= num;
-			}
-			else {
-				throw Error("out of item");
-			}
-		}
-
-		void set(Item const& item, Amount num) {
-			if (num == 0) {
-				storage.erase(item);
-			}
-			else {
-				storage[item] = num;
-			}
-		}
-
-
-		Amount get(Item const& item) const {
-			auto key = item;
-			if (storage.count(key)) {
-				return storage.at(key);
-			}
-			else {
-				return 0;
-			}
-		}
-
-		bool has(Item const& item, Amount num) const {
-			return get(item) >= num;
-		}
 
 		PlaceType::type place_type() {
 			return PlaceType::Colony;

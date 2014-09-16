@@ -430,8 +430,25 @@ namespace col {
 					auto pid = std::stoi(es.at(1));
 					auto & p = env.get<Nation>(pid);
 					if (p.player == nullptr) {
-						ths.emplace_back(expert_ai::run, pid, &env, &running);
+						ths->emplace_back(expert_ai::run, pid, &env, &running);
 						put("expert ai connected to nation");
+					}
+					break;
+				}
+			}
+		}
+		else if (cmd == "gui") {
+			switch (es.size()) {
+				default: {
+					output.push_back("Usage: gui <pid>\n");
+					break;
+				}
+				case 2: {
+					auto pid = std::stoi(es.at(1));
+					auto & p = env.get<Nation>(pid);
+					if (p.player == nullptr) {
+						ths->emplace_back(human_ai::run, pid, &env, &running);
+						put("gui connected to nation");
 					}
 					break;
 				}
@@ -447,7 +464,7 @@ namespace col {
 					auto pid = std::stoi(es.at(1));
 					auto & p = env.get<Nation>(pid);
 					if (p.player == nullptr) {
-						ths.emplace_back(null_ai::run, pid, &env, &running);
+						ths->emplace_back(null_ai::run, pid, &env, &running);
 						put("null ai connected to nation");
 					}
 					break;
@@ -467,7 +484,7 @@ namespace col {
 						if (p.player == nullptr) {
 							put("creating ai for this nation");
 							
-							ths.emplace_back(Ai::run, p.id, &env);
+							ths->emplace_back(Ai::run, p.id, &env);
 						}
 
 						auto run_mode = stoi(es.at(2));  // 0 no, 1 step, 2 full turn
@@ -716,14 +733,13 @@ namespace col {
 					put("Usage: construct <place-number> <building-id>");
 					break;
 				case 3: {
-					auto place_id = stoi(es.at(1));
-					auto buildtype_id = stoi(es.at(2));
-					
-					auto& c = get_sel_terr()->get_colony();
-					env.colony_construct(c, buildtype_id, place_id);
-					
+					if (auto tp = get_sel_terr()) {
+						Build::Id place_id = stoi(es.at(1));
+						BuildType::Id buildtype_id = stoi(es.at(2));					
+						env.apply(inter::construct(env.get_id(*tp), buildtype_id, place_id));
 					}
 					break;
+				}
 			}
 		}
 		else if (cmd == "work-build") {
@@ -928,6 +944,19 @@ namespace col {
 				}
 			}
 		}
+		else if (es.at(0) == "get-state") {
+			switch (es.size()) {
+				default: {
+					output.push_back("Usage: get-state <nation-id>");
+					break;
+				}
+				case 1: {
+					//env.get_state(stoi(es[1]))
+					
+					break;
+				}
+			}
+		}
 		else {
 			put("ERROR: no such command");
 
@@ -943,7 +972,7 @@ namespace col {
 	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running) {
 		// ee -- server
 
-		Console con(*ee, *tt, *running);
+		Console con("run_console", *ee, tt, *running, 0);
 
 		preload_terrain();
 

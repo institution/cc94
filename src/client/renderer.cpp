@@ -617,7 +617,7 @@ namespace col {
 	
 	template<typename K>
 	void render_select(sf::RenderWindow & win, Console & con,
-		std::function<v2i(v2i const&)> cpos,
+		std::function<v2i(v2i const& dim)> cpos,
 		//Box const& par, v2f const& align, 
 		vector<pair<K, string>> const& kvs,
 		K & selected,
@@ -1851,6 +1851,12 @@ namespace col {
 		
 		// Turn 5, England 
 		info += "Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n";
+		
+		if (con.nation_id) {			
+			//info += format("You are (id): %||", env.get<Nation>(con.nation_id).get_name());
+			info += format("You are (id): %||", con.nation_id);
+		}
+		
 			
 		
 		if (Terr const* tp = con.get_sel_terr()) {

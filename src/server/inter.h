@@ -207,6 +207,8 @@ namespace col{
 		)
 
 
+
+
 		// action/effect
 		CC94_DEFINE_INTER(
 			toogle_board,
@@ -385,6 +387,13 @@ namespace col{
 			(int, alt)
 		)
 
+		// effect (editor)
+		CC94_DEFINE_INTER(
+			set_phys,
+			(Terr::Id, terr_id)
+			(Phys::Id, phys)
+		)
+
 
 		// for testing
 		CC94_DEFINE_INTER(
@@ -400,6 +409,18 @@ namespace col{
 			improve,
 			destroy,
 			build_colony,
+
+
+			toogle_board,
+
+			work_build,
+			work_field,
+			work_none,
+
+			prod_build,
+			prod_field,
+
+			construct,
 
 			error,
 
@@ -419,6 +440,10 @@ namespace col{
 			// effect
 			set_biome,
 			set_alt,
+			set_phys,
+
+			morph_unit,
+			morph_build,
 
 			// effect
 			set_turn,
@@ -432,6 +457,7 @@ namespace col{
 
 	/*
 	 action(7):
+
 		+build-colony unit_id    // claim-land
 		+improve unit_id phys_id (Plow|Road|Forest)
 		+destroy unit_id phys_id (Plow|Road|Forest)
@@ -440,26 +466,30 @@ namespace col{
 		attack dx dy unit_id
 		equip unit_type_id unit_id
 
-	 	ready
+	 	ready  // nation_id defaults to current player
+
+
+	 pseudoaction
+		get-state nation_id
 
 	 action/effect(7):
-		toogle-board unit_id
+		+ toogle-board unit_id
 
-	 	work-build build_id unit_id
-		work-field field_id unit_id
-		work-none unit_id
+	 	+ work-build build_id unit_id
+		+ work-field field_id unit_id
+		+ work-none unit_id
 
-	 	prod-build terr_id build_id item_id
-		prod-field terr_id field_id item_id
+	 	+ prod-build terr_id build_id item_id
+		+ prod-field terr_id field_id item_id
 
-	 	construct terr_id build_id build_type_id
+	 	+ construct terr_id build_id build_type_id
 
 	 effect(15):
-		error text
+		+ error text
 
 		+ init-colony terr_id
 		+ init-unit terr_id unit-type-id
-		+ init-build terr_id build_id build_type_id
+		init-build terr_id build_id build_type_id
 		kill-unit unit_id
 
 		+ add-phys terr_id phys_id
@@ -471,8 +501,8 @@ namespace col{
 	 	+ add-item terr_id item num
 		+ set-item terr_id item num
 
-		morph-unit unit_id unit_type_id
-		morph-build terr_id build_id build_type_id
+		+ morph-unit unit_id unit_type_id
+		+ morph-build terr_id build_id build_type_id
 
 		+ set-turn num
 		+ set-current-nation nation_id (activate)

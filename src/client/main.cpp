@@ -87,10 +87,16 @@ using Threads = vector<std::thread>;
 
 bool running{true};
 
+#include <X11/Xlib.h>  // XInitThreads
+
+
 int main(int argc, char* argv[])
 {
+	XInitThreads();
+	
 	string const CSV_PATH = "../col94/";
 
+	
 
 	string fname("./aaa.mp");
 	

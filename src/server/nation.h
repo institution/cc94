@@ -43,6 +43,8 @@ namespace col{
 			ar & flag_id;
 		}
 
+		string const& get_name() const { return name; }
+
 		Nation& set_name(string const& n) { name = n; return *this; }
 		Nation& set_color(Color const& c) { color = c; return *this; }
 		Nation& set_flag_id(uint8 const& fi) { flag_id = fi; return *this; }
