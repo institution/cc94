@@ -80,6 +80,15 @@ namespace col {
 		ar << t;
 	}
 
+
+	template<typename A>
+	void write(A & ar, Env const& env, Nation const& x) {
+		write(ar, x.id);
+		write(ar, x.name);
+		write(ar, x.color);
+		write(ar, x.flag_id);
+	}
+
 	template<typename A>
 	void write(A & ar, Env const& env, Unit const& x) {
 		// unit
@@ -110,6 +119,15 @@ namespace col {
 		}
 	}
 
+
+
+	template<typename A>
+	void read(A & ar, Env & env, Nation & x) {
+		read(ar, x.id);
+		read(ar, x.name);
+		read(ar, x.color);
+		read(ar, x.flag_id);
+	}
 
 	template<typename A>
 	void read_unit(A & ar, Env & env) {
@@ -147,16 +165,44 @@ namespace col {
 		assert(unit.type != nullptr);
 	}
 
+	template<typename A>
+	void read(A & ar, Env & env, Unit & x) {
+
+		read(ar, x.id);
+		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
+		x.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
+		read(ar, x.space_left);
+		read(ar, x.time_left);
+		read(ar, x.transported);
+
+		auto& unit = x;
+
+		// terr
+		env.init(env.get_terr(read<Coords>(ar)), unit);
+
+		auto build_id = read<int>(ar);
+		auto field_id = read<int>(ar);
+
+		if (build_id) {
+			env.work_build(build_id - 1, unit);
+		}
+
+		if (field_id) {
+			env.work_field(field_id - 1, unit);
+		}
+
+		assert(unit.type != nullptr);
+	}
 
 	template<typename A>
-	void write_terr(A & ar, Env const& env, Terr const& x) {
+	void write(A & ar, Env const& env, Terr const& x) {
 		ar << x.biome;
 		ar << x.phys;
 		ar << x.alt;
 	}
 
 	template<typename A>
-	void read_terr(A & ar, Env const& env, Terr const& x) {
+	void read(A & ar, Env const& env, Terr const& x) {
 		ar >> x.biome;
 		ar >> x.phys;
 		ar >> x.alt;
@@ -181,15 +227,18 @@ namespace col {
 		{
 			auto& ps = env.get_cont<Nation>();
 			auto tmp = ps.size();
-			ar << tmp;
+
+			// num of nations
+			write(ar, tmp);
 			for (auto& p: ps) {
 				auto& x = p.second;
+				auto& id = p.first;
 
-				// nation
-				ar << x.id;
-				ar << x.name;
-				ar << x.color;
-				ar << x.flag_id;
+				// nation id
+				write(ar, id);
+
+				// nation data
+				write(ar, env, x);
 			}
 		}
 
@@ -206,9 +255,7 @@ namespace col {
 					//cerr << Coords(i,j) << endl;
 
 					// terr value
-					ar << x.biome;
-					ar << x.phys;
-					ar << x.alt;
+					write(ar, env, x);
 
 				}
 			}
@@ -312,14 +359,13 @@ namespace col {
 			ar >> tmp;
 			for (size_t i=0; i<tmp; ++i) {
 
-				Nation x;
-				ar >> x.id;
-				ar >> x.name;
-				ar >> x.color;
-				ar >> x.flag_id;
+				Nation::Id id;
+				read(ar, id);
 
-				auto key = x.id;
-				ps.emplace(key, std::move(x));
+				//Nation x;
+				read(ar, env, ps[id]);
+
+				//ps.emplace(id, std::move(x));
 			}
 		}
 

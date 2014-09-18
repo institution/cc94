@@ -402,14 +402,42 @@ namespace col{
 		)
 
 
+		CC94_DEFINE_INTER(
+			load,
+			(string, data)
+		)
+
+		CC94_DEFINE_INTER(
+			start,
+		)
+
+		CC94_DEFINE_INTER(
+			activate,
+		)
+
+		CC94_DEFINE_INTER(
+			take_unit,
+			(Unit::Id, id)
+		)
+
+		CC94_DEFINE_INTER(
+			set_unit,
+			(Unit::Id, id)
+			(string, data)
+		)
+
+
+
 		using Any = boost::variant<
+			take_unit,
+			set_unit,
+
 			echo,
 			ready,
 			move_board,
 			improve,
 			destroy,
 			build_colony,
-
 
 			toogle_board,
 
@@ -450,7 +478,12 @@ namespace col{
 			set_current_nation,
 
 			// effect
-			reset
+			reset,
+
+			// load data
+			load,
+			start,
+			activate
 
 		>;
 
@@ -512,6 +545,7 @@ namespace col{
 		+ set-biome terr_id biome
 		+ set-alt terr_id alt
 
+		+ load_nation nation_id *data
 
 
 	 */

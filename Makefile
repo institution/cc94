@@ -20,7 +20,7 @@ STD:=-std=c++14
 # -g -O0
 
 # compiler options
-CCOPTS:= ${INCL} ${STD} -fmax-errors=5 -O3 ${WARNOPTS}
+CCOPTS:= ${INCL} ${STD} -fmax-errors=5 -O0 -g ${WARNOPTS}
 
 
 # linker options

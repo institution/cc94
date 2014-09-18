@@ -225,7 +225,8 @@ namespace col {
 	T const& Core::get(typename T::Id const& id) const {
 		auto it = get_cont<T>().find(id);
 		if (it == get_cont<T>().end()) {
-			throw Error("no such object");
+			throw Error("no such object with id=%||", id);
+			//assert(0);
 		}
 		return (*it).second;
 	}

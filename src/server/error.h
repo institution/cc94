@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "format.hpp"
+
 namespace col {
 
 	/*
@@ -16,6 +18,8 @@ namespace col {
 	};*/
 
 
+	using format::format;
+
 	class Critical: public std::runtime_error {
 		public:
 			explicit Critical (const std::string& what_arg): std::runtime_error(what_arg) {}
@@ -26,8 +30,15 @@ namespace col {
 		public:
 			explicit Error (const std::string & what_arg):
 				std::runtime_error(what_arg) {}
+
 			explicit Error (const char* what_arg):
 				std::runtime_error(what_arg) {}
+
+
+			template <class ... Args>
+			explicit Error (const char* what_arg, Args... args):
+				std::runtime_error(format(what_arg, args...)) {}
+
 	};
 
 

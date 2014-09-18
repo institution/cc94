@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <mutex>
+#include <string>
 
 #include "renderer.h"
 
@@ -36,9 +37,14 @@ namespace human_ai{
 		
 	
 	
+		std::string const CSV_PATH = "../col94/";
+		EnvGame l_env;
+		l_env.loads<col::BuildType>(CSV_PATH + "builds.csv");
+		l_env.loads<col::UnitType>(CSV_PATH + "units.csv");
 		
-		EnvGame env;
-		col::Console con("human_ai", env, nullptr, *running, pid);
+		col::Console con("human_ai", l_env, nullptr, *running, pid);
+		con.set_server(*s_env);
+		
 		s_env->connect(pid, con);
 
 		//preload_terrain();

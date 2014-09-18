@@ -914,56 +914,57 @@ namespace col {
 				// units on field
 				for (auto& unit_p: field.units) {
 					auto& unit = *unit_p;
-					
-					v2i unit_dim = v2i(field_dim[0]/2, field_dim[1]);
-					v2i unit_pos = field_pos + v2i(field_dim[0]/2, 0);
-					
-					v2i item_dim = field_dim; //v2i(field_dim[0]/2, field_dim[1]);
-					v2i item_pos = field_pos;					
+					if (unit.in_game) {
+						v2i unit_dim = v2i(field_dim[0]/2, field_dim[1]);
+						v2i unit_pos = field_pos + v2i(field_dim[0]/2, 0);
 
-					v2i sel_pos = field_pos;
-					v2i sel_dim = field_dim;
-					
-					auto& unit_tex = res(ICON, get_icon_id(unit));
-					
-					// render produced item
-					auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
-					render_sprite(win, 
-						calc_align(Box(item_pos, item_dim), v2f(0.5, 0.5), get_dim(item_tex)),
-						item_tex
-					);
+						v2i item_dim = field_dim; //v2i(field_dim[0]/2, field_dim[1]);
+						v2i item_pos = field_pos;					
 
-					// render produced item amount
-					auto text = Text(to_string(env.get_prodnum(field)));
-					text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
-					render_text(win, item_pos, text);
-					
-					// render unit on field
-					render_sprite(win, 
-						calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
-						unit_tex
-					);
+						v2i sel_pos = field_pos;
+						v2i sel_dim = field_dim;
 
-					auto unit_id = unit.id;
+						auto& unit_tex = res(ICON, get_icon_id(unit));
 
-					if (unit_id == con.get_sel_unit_id()) {
-						// render selection frame
-						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
-												
-						// left click on field with selected worker -- switch to next proditem
-						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
-							[&con,field_id]() { 
-								con.command("prodnext-field " + to_string(field_id));
-							}
+						// render produced item
+						auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
+						render_sprite(win, 
+							calc_align(Box(item_pos, item_dim), v2f(0.5, 0.5), get_dim(item_tex)),
+							item_tex
 						);
-					}
-					else {
-						// left click on field with worker -- select this worker
-						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
-							[&con,unit_id]() { 
-								con.command("sel " + to_string(unit_id)); 					
-							}
+
+						// render produced item amount
+						auto text = Text(to_string(env.get_prodnum(field)));
+						text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
+						render_text(win, item_pos, text);
+
+						// render unit on field
+						render_sprite(win, 
+							calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+							unit_tex
 						);
+
+						auto unit_id = unit.id;
+
+						if (unit_id == con.get_sel_unit_id()) {
+							// render selection frame
+							render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+
+							// left click on field with selected worker -- switch to next proditem
+							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+								[&con,field_id]() { 
+									con.command("prodnext-field " + to_string(field_id));
+								}
+							);
+						}
+						else {
+							// left click on field with worker -- select this worker
+							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+								[&con,unit_id]() { 
+									con.command("sel " + to_string(unit_id)); 					
+								}
+							);
+						}
 					}
 				}
 				
@@ -1022,7 +1023,7 @@ namespace col {
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 			
-			if (!unit.is_working()) {
+			if (unit.in_game and !unit.is_working()) {
 
 				auto& unit_tex = res(ICON, get_icon_id(unit));
 				v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
@@ -1200,8 +1201,8 @@ namespace col {
 		v2i unit_dim = ly.terr_dim;
 		
 		for (auto& p: terr.units) {
-			auto& unit = *p;			
-			if (!unit.is_working()) {
+			auto& unit = *p;
+			if (unit.in_game and !unit.is_working()) {
 
 				auto& unit_tex = res(ICON, get_icon_id(unit));
 				v2i unit_pos = pos + vmul(unit_dim, v2i(i,j));

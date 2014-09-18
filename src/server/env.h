@@ -2,6 +2,11 @@
 #define ENV_H
 
 
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+#include <sstream>
+
+
 #include "core.h"
 #include "inter.h"
 
@@ -11,7 +16,6 @@ namespace col{
 
 	struct Player{
 
-		virtual void activate() = 0;
 		virtual void apply_inter(inter::Any const& a) = 0;
 
 
@@ -59,11 +63,15 @@ namespace col{
 	using ErrorMsg = char const*;
 
 
+	struct Env;
+
+	string write_string(Env const& env, Unit const& x);
+	void read_string(Env & env, Unit & x, string const& data);
 
 
 
 
-	struct Env: Core {
+	struct Env: Core, Player {
 
 		// turn system
 		uint8 state{0}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
@@ -99,13 +107,13 @@ namespace col{
 		}
 
 
-		void connect(Id<Nation>::type pid, Player & u) {
-			// connect nation(game nation) with AI or Human
-			get<Nation>(pid).set_player(&u);
-
+		void send_game_state(Player & u) {
 			// send map info
+
+			// reset map
 			u.apply_inter(inter::reset(w, h));
 
+			// fill tiles
 			for(Coord j = 0; j < h; ++j) {
 				for(Coord i = 0; i < w; ++i) {
 					auto& t = get_terr(Coords(i,j));
@@ -124,6 +132,30 @@ namespace col{
 					);
 				}
 			}
+
+			// add nations
+
+
+			// add units
+
+			// add colonies
+
+			// set game mode (playing, editing, turn_no,...)
+
+		}
+
+		void connect(Id<Nation>::type pid, Player & u) {
+			// connect nation(game nation) with AI or Human
+			get<Nation>(pid).set_player(&u);
+
+
+			std::ostringstream ostr;
+			boost::archive::binary_oarchive ar(ostr);
+			ar << *this;
+
+			u.apply_inter(
+				inter::load(ostr.str())
+			);
 
 		}
 
@@ -157,6 +189,14 @@ namespace col{
 		}
 
 
+		void apply(inter::start a) {
+			start();
+			notify_effect(a);
+		}
+
+		void apply(inter::activate a) {
+
+		}
 
 		void start() {
 			if (nations.size() < 1) {
@@ -225,7 +265,7 @@ namespace col{
 				record_action();
 
 				if (auto u = get_current_nation().get_player()) {
-					u->activate();
+					u->apply_inter(inter::activate());
 				}
 			}
 
@@ -237,7 +277,7 @@ namespace col{
 		void activate_all() {
 			for (auto& p: nations) {
 				if (auto u = p.second.get_player()) {
-					u->activate();
+					u->apply_inter(inter::activate());
 				}
 			}
 		}
@@ -524,7 +564,15 @@ namespace col{
 			notify_effect(a);
 		}
 
+		void apply(inter::load const& a) {
 
+			std::istringstream istr(a.data);
+
+			boost::archive::binary_iarchive ar(istr);
+			ar >> *this;
+
+			//notify_effect(a);
+		}
 
 		Env & fill(Terr const& t) {
 
@@ -700,24 +748,63 @@ namespace col{
 
 			if (run_map_task(u, time_cost)) {
 				t_move(dest, u);
+
+				notify_effect(orig,
+					inter::take_unit(get_id(u))
+				);
+
+				notify_effect(dest,
+					inter::set_unit(get_id(u), write_string(*this, u))
+				);
+
 				u.transported = transported;
 
 				auto space = u.get_space_left();
 				for (auto& p: orig.units) {
 					if (!space) break;
 					if (p->transported) {
-						t_move(dest, *p);
+						auto & u2 = *p;
+						t_move(dest, u2);
+
+						notify_effect(orig,
+							inter::take_unit(get_id(u2))
+						);
+
+						notify_effect(dest,
+							inter::set_unit(get_id(u2), write_string(*this, u2))
+						);
+
 						space -= 1;
 					}
 				}
 
 				record_action();
+
 				return 1; // success
 			}
 
 			record_action();
 			return 0; // try next turn
 
+		}
+
+		void apply(inter::take_unit const& a) {
+			auto it = units.find(a.id);
+			if (it == units.end()) {
+
+			}
+			else {
+				Unit & u = (*it).second;
+				u.in_game = false;
+
+				take(u);
+			}
+
+		}
+
+		void apply(inter::set_unit const& a) {
+			read_string(*this, units[a.id], a.data);
+			units[a.id].in_game = true;
 		}
 
 
@@ -1229,6 +1316,18 @@ namespace col{
 		template <typename X>
 		void t_move(Terr & t, X & x) {
 			x.terr->sub(x);
+			t.add(x);
+			x.terr = &t;
+		}
+
+		template <typename X>
+		void take(X & x) {
+			x.terr->sub(x);
+			x.terr = nullptr;
+		}
+
+		template <typename X>
+		void put(Terr & t, X & x) {
 			t.add(x);
 			x.terr = &t;
 		}

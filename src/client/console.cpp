@@ -5,7 +5,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
-#include "serialize.hpp"
+#include "serialize.h"
 #include "view_base.h"
 #include "renderer.h"
 #include "expert_ai.h"
@@ -250,6 +250,8 @@ namespace col {
 	}
 	
 	void Console::do_command(string const& line) {
+		
+		auto & r_env = get_server();
 		
 		vector<string> es;
 		split(es, line, is_any_of(" "));
@@ -527,7 +529,7 @@ namespace col {
 					break;
 				}
 				case 1: {
-					env.start();
+					r_env.apply_inter(inter::start());
 					put("Game started!");
 					select_next_unit();
 					break;
@@ -868,11 +870,14 @@ namespace col {
 					break;
 				case 3:
 					if (Unit* u = get_sel_unit()) {
-						env.move_board(
-							stoi(es.at(1)), // dx
-							stoi(es.at(2)), //dy
-							*get_sel_unit()
-						);					
+						r_env.apply_inter(
+							inter::move_board(
+								stoi(es.at(1)), // dx
+								stoi(es.at(2)), //dy
+								env.get_id(*u)  // unit_id							
+							)
+						);
+						
 						select_next_unit();						 
 					}
 					else {

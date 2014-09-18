@@ -204,6 +204,7 @@ namespace col {
 
 
 
+
 		char get_letter(Unit const& u) {
 			return mem.get_order(env.get_id(u)).code;
 		}
@@ -352,13 +353,22 @@ namespace col {
 		Nation::Id nation_id;
 
 		string memtag;
-		
+
+
+		Player *server{nullptr};
+
+		Player & get_server() { return *server; }
+		void set_server(Player & server) { this->server = &server; }
+
 		Console(string memtag, EnvGame & env, vector<std::thread> * ths, bool & running, Nation::Id nid):
-			env(env), ths(ths), running(running), nation_id(nid), memtag(memtag)
+			env(env), ths(ths), running(running), nation_id(nid), memtag(memtag), server(&env)
 		{
+
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
+
+
 
 			chi = history.begin();
 			mod = 0;

@@ -118,7 +118,8 @@ namespace col{
 		Build *build{nullptr};
 		Field *field{nullptr};
 
-
+		// system - not part of unit, false means unit non-existant
+		bool in_game{true};
 
 		Order::type order{Order::Unknown};   // TODO: remove
 
