@@ -17,11 +17,20 @@ WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-nul
 M4OPTS:=-E -P
 INCL:=-I./inc -I./src/format -I./src/server
 STD:=-std=c++11
+CCDEBUG:=-O0 -g
+CCRELEASE:=-O3
+	
 # -Wall -Wextra 
 # -g -O0
 
 # compiler options
-CCOPTS:= ${INCL} ${STD} -fmax-errors=5 -O0 -g ${WARNOPTS}
+CCOPTS_D:= ${INCL} ${STD} ${CCDEBUG} ${WARNOPTS} 
+CCOPTS_R:= ${INCL} ${STD} ${CCRELEASE} ${WARNOPTS} 
+CCOPTS:=${CCOPTS_D}
+
+release: CCOPTS := ${CCOPTS_R}
+release: client/main unmadspack/unmadspack
+
 
 
 # linker options
@@ -42,6 +51,7 @@ OBJS:=$(filter-out $(IGNORE_SRC),$(OBJS))
 OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
 
 -include $(OBJS:%.obj=%.d)
+
 
 # compiler
 ${OBJS}: b/%.obj: src/%
