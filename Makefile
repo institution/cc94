@@ -4,10 +4,11 @@
 # $^ -- The names of all the prerequisites
 # $(VARS:%.cpp=%.o) -- pattern replace
 
-CC:=g++-4.9
+#CC:=g++
+CC:=clang++
 
 # output files
-OUTS:=client/main server/test client/test format/test_format
+OUTS:=client/main server/test client/test format/test_format unmadspack/unmadspack
 
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
@@ -15,7 +16,7 @@ IGNORE_SRC:=src/tree.cpp
 WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null
 M4OPTS:=-E -P
 INCL:=-I./inc -I./src/format -I./src/server
-STD:=-std=c++14
+STD:=-std=c++11
 # -Wall -Wextra 
 # -g -O0
 
@@ -24,7 +25,9 @@ CCOPTS:= ${INCL} ${STD} -fmax-errors=5 -O0 -g ${WARNOPTS}
 
 
 # linker options
-LLOPTS:=-lX11 -lpthread -lboost_serialization -lboost_program_options -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LLOPTS:=-lX11 -lpthread 
+LLOPTS+=-lboost_serialization -lboost_program_options -lboost_filesystem -lboost_system
+LLOPTS+=-lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 
 
 # assert dirs

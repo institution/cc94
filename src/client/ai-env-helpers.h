@@ -55,7 +55,7 @@ namespace col{
 			using Unit2Order = map<Unit::Id, Order>;
 			Unit2Order uos;
 
-			Order get_order(Unit::Id id) {
+			Order get_order(Unit::Id id) const {
 				auto p = uos.find(id);
 				if (p != uos.end()) {
 					return (*p).second;
