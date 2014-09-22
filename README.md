@@ -13,7 +13,7 @@ cc94 runs under GNU/Linux OS. You can start the following way:
 
 ```bash
 # download and unpack
-wget -O cc94.tar.gz https://gitorious.org/cc94/cc94/archive/6a553f8c0097051ab5ba913b35fdb97cf5096827.tar.gz
+wget -O cc94.tar.gz http://gitorious.org/cc94/cc94/archive-tarball/master
 tar xzf cc94.tar.gz
 cd cc94-cc94/
 
