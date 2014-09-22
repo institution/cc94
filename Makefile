@@ -29,7 +29,7 @@ CCOPTS_R:= ${INCL} ${STD} ${CCRELEASE} ${WARNOPTS}
 CCOPTS:=${CCOPTS_D}
 
 release: CCOPTS := ${CCOPTS_R}
-release: client/main unmadspack/unmadspack server/test client/test
+release: client/main unmadspack server/test client/test
 
 
 
