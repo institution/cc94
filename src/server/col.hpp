@@ -23,12 +23,17 @@
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/filesystem.hpp>
 #include "roll.h"
 #include "aga2.hpp"
 #include "format.hpp"
 
+
+namespace filesys = boost::filesystem;
+
 namespace col{
 
+	using Path = filesys::path;
 
 	using std::ifstream;
 	using std::ofstream;
@@ -81,8 +86,6 @@ namespace col{
 	using int8 = std::int8_t;
 	using int16 = std::int16_t;
 	using int32 = std::int32_t;
-
-	using format::format;
 
 	template <typename T>
 	using Vector2 = aga2::Mv1<T>;

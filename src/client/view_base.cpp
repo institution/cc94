@@ -6,7 +6,7 @@ using std::unordered_map;
 
 namespace col {
 	
-	//tile_dim = v2i(TILE_DIM, TILE_DIM);
+	//tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 	
 	unordered_map<Biome,string,Biome::hash> BIOME_NAMES{
 		{BiomeNone, "unknown"},

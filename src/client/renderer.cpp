@@ -3,8 +3,10 @@
 //#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
+#include "lodepng/lodepng.h"
 #include "ai-env-helpers.h"
 #include "view_base.h"
+#include "conf.h"
 
 namespace col {
 
@@ -17,8 +19,13 @@ namespace col {
 	
 	
 	
+	
+	
+	
+	
+	
 
-	Layout const ly(SCREEN_W, SCREEN_H);
+	Layout const ly(conf.screen_w, conf.screen_h);
 
 
 	using Res = map<pair<string,uint>, sf::Texture>;
@@ -38,9 +45,8 @@ namespace col {
 		}
 		else {
 			auto &font = g_fonts[name];
-			auto path = string(FONT_PATH + name);
-			if (!font.loadFromFile(path)) {
-
+			Path path = conf.font_path / name;
+			if (!font.loadFromFile(path.c_str())) {
 				throw std::runtime_error("cannot load font");
 			}
 			// set size
@@ -60,8 +66,8 @@ namespace col {
 		}
 		else {
 			auto &font = g_pixfonts[name];
-			auto path = FONT_PATH + name;
-			font.load(path);
+			auto path = conf.font_path / name;
+			font.load(path.c_str());
 			return font;
 		}
 	}
@@ -102,35 +108,78 @@ namespace col {
 		return v2i(int(a[0])*b[0], int(a[1])*b[1]);
 	}
 
+	
+	
+	
+	// categories, *xxx* -- generated to memory image
 	string const
-		TERR = RES_PATH + "TERRAIN_SS",
-		ICON = RES_PATH + "ICONS_SS",
-		PHYS = RES_PATH + "PHYS0_SS",
-		ARCH = RES_PATH + "PARCH_SS",
-		COLONY = RES_PATH + "COLONY_PIK",
-		BUILD = RES_PATH + "BUILDING_SS",
-		WOODBG = RES_PATH + "WOODTILE_SS",
-		DIFFUSE = "DIFFUSE*",
+		TERR = "TERRAIN_SS",
+		ICON = "ICONS_SS",
+		PHYS = "PHYS0_SS",
+		ARCH = "PARCH_SS",
+		COLONY = "COLONY_PIK",
+		BUILD = "BUILDING_SS",
+		WOODBG = "WOODTILE_SS",
+		DIFFUSE = "*DIFFUSE*",
 		COAST = "*COAST*";
 
-	Res::mapped_type const& res(string const& d, uint const& i = 1) {
+	
+	// Load png file to sfml texture
+	unsigned load_png(sf::Texture & tex, Path const& path) {
 
-		auto key = Res::key_type(d,i);
+		std::vector<uint8> pix; 
+		unsigned width, height;
+		
+		unsigned error = lodepng::decode(pix, width, height, path.c_str());
+
+		if (error) {
+			return error;			
+		}
+		
+		sf::Image img;
+		img.create(width, height, &pix[0]);
+		
+		tex.loadFromImage(img);
+		return 0;
+	}
+		
+	
+	
+	// Load resource file
+	// cat -- category (dir name)
+	// i -- frame num (file name)
+	void load_res(Res::mapped_type & tex, string const& cat, uint const& i) {
+		
+		auto path = conf.res_path / cat / Path(format("%|03|.png", i));
+
+		if (auto err = load_png(tex, path)) {
+			print("WARNING: cannot load image file; path=%||; err=%||;\n", 
+				path.c_str(), lodepng_error_text(err)
+			);
+
+			// try default
+			auto def_path = conf.res_path / ICON / "065.png";
+			if (auto err = load_png(tex, def_path)) {
+				throw Critical("cannot load fallback image file; path=%||; err=%||;\n", 
+					def_path.c_str(),
+					lodepng_error_text(err)
+				);
+			}
+		}
+
+		tex.setSmooth(false);
+	}
+	
+	// Get resource from global cache (load on demand)
+	Res::mapped_type const& res(string const& cat, uint const& i = 1) {
+		auto key = Res::key_type(cat, i);
 		auto p = g_res.find(key);
 		if (p != g_res.end()) {
 			return (*p).second;
 		}
 		else {
 			auto &img = g_res[key];
-			auto path = format("./%||/%|03|.png", d, i);
-			if (!img.loadFromFile(string(path))) {
-				// try default
-				if (!img.loadFromFile(string("./" + ICON + "/065.png"))) {
-					throw std::runtime_error("can't load default image file while loading: " + path);
-				}
-				// throw std::runtime_error("cant't load image file: " + path);
-			}
-			img.setSmooth(false);
+			load_res(img, cat, i);
 			return img;
 		}
 	}
@@ -159,8 +208,8 @@ namespace col {
 	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim);
 
 		
-	void preload(string const& d, uint const& i, Res::mapped_type const& tex) {
-		auto key = Res::key_type(d,i);
+	void preload(Path const& d, uint const& i, Res::mapped_type const& tex) {
+		auto key = Res::key_type(d.string(),i);
 		g_res[key] = tex;
 	}
 
@@ -634,7 +683,7 @@ namespace col {
 		con.on(Event::Press, oncancel);
 		
 		// background
-		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res("WOODTILE_SS", 1));
 		
 		// click on dialog -- do nothing 
 		con.on(Event::Press, pos, dim, [](){});
@@ -874,7 +923,7 @@ namespace col {
 		{
 			
 			/// render background
-			// render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
+			// render_area(win, pos, dim, res(conf.res_path + "WOODTILE_SS", 1));
 			
 			
 			auto pix = ly.city_fields.pos;
@@ -1426,7 +1475,7 @@ namespace col {
 				base = 0;
 			}
 			
-			uint8 const h = TILE_DIM >> 1;
+			uint8 const h = conf.tile_dim >> 1;
 
 			render_sprite(win, pix + v2i(0,0), res(COAST,
 				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
@@ -1530,8 +1579,8 @@ namespace col {
 			Coords const& delta)
 	{
 
-		int x = (pos[0] - delta[0]) * ly.TERR_W + map_pix[0];
-		int y = (pos[1] - delta[1]) * ly.TERR_H + map_pix[1];
+		int x = (pos[0] - delta[0]) * conf.terr_w + map_pix[0];
+		int y = (pos[1] - delta[1]) * conf.terr_h + map_pix[1];
 		
 		render_terr(win, v2i(x,y), env, terr);
 		
@@ -1569,7 +1618,7 @@ namespace col {
 			render_sprite(win, pos[0], pos[1], res(ICON, 4));
 						
 			// left click on colony (on map) -- enter colony screen
-			con.on(Event::Press, Button::Left, pos, v2i(TILE_DIM, TILE_DIM),
+			con.on(Event::Press, Button::Left, pos, v2i(conf.tile_dim, conf.tile_dim),
 				[&con, coords](){ 
 					con.select_terr(coords);
 					con.command("enter"); 
@@ -1818,7 +1867,7 @@ namespace col {
 		// pos - left top pix
 		// dim - size
 
-		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res("WOODTILE_SS", 1));
 
 	}
 
@@ -1835,7 +1884,7 @@ namespace col {
 
 		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, pos, dim, res(RES_PATH + "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res("WOODTILE_SS", 1));
 
 		// terrain info
 		/*
@@ -2393,8 +2442,8 @@ namespace col {
 		app.clear();
 		con.reset_hotspots();
 
-		int w = app.getSize().x / GLOBAL_SCALE;
-		int h = app.getSize().y / GLOBAL_SCALE;
+		int w = app.getSize().x / conf.global_scale;
+		int h = app.getSize().y / conf.global_scale;
 
 		
 		// bar top

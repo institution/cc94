@@ -32,6 +32,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
+#include <boost/filesystem.hpp>
 
 
 
@@ -40,6 +41,12 @@
 #include "csv.h"
 #include "console.h"
 
+#include "format.hpp"
+#include "osdep.h"
+
+
+
+namespace filesys = boost::filesystem;
 
 
 using std::unique_ptr;
@@ -56,6 +63,8 @@ using std::endl;
 using std::pair;
 using std::map;
 using std::vector;
+
+using Path = filesys::path;
 
 
 /*
@@ -109,70 +118,22 @@ bool running{true};
 
 
 
-
-
-
-void my_terminate(void);
-
-namespace {
-    // invoke set_terminate as part of global constant initialization
-    static const bool SET_TERMINATE = std::set_terminate(my_terminate);
-}
-
-void my_terminate() {
-    static bool tried_throw = false;
-
-    try {
-        // try once to re-throw currently active exception
-        if (!tried_throw++) throw;
-    }
-    catch (const std::exception &e) {
-        std::cerr << __FUNCTION__ << " caught unhandled exception. what(): "
-                  << e.what() << std::endl;
-    }
-    catch (...) {
-        std::cerr << __FUNCTION__ << " caught unknown/unhandled exception." 
-                  << std::endl;
-    }
-
-    void * array[50];
-    int size = backtrace(array, 50);    
-
-    std::cerr << __FUNCTION__ << " backtrace returned " 
-              << size << " frames\n\n";
-
-    char ** messages = backtrace_symbols(array, size);
-
-    for (int i = 0; i < size && messages != NULL; ++i) {
-        std::cerr << "[bt]: (" << i << ") " << messages[i] << std::endl;
-    }
-    std::cerr << std::endl;
-
-    free(messages);
-
-    abort();
-}
-
-
-
-
-
-
-
-#include <X11/Xlib.h>  // XInitThreads
-
-
-
 int main(int argc, char* argv[])
 {
-	XInitThreads();
 	
-	string const CSV_PATH = "../col94/";
+	
+	XInitThreads(); // os dep	
 
+	Path bin_path = filesys::canonical((filesys::current_path() / Path(argv[0])).parent_path(), "/");
+	Path csv_path = filesys::canonical(bin_path / "../../col94/", "/");;
 	
+	col::conf.res_path = filesys::canonical(os::get_home_dir() / Path(".cc94/COLONIZE"), "/");
+	col::conf.font_path = filesys::canonical(bin_path / Path("../../font"), "/");;
+		
+	print("csv_path=%||\n", csv_path);
+	print("res_path=%||\n", col::conf.res_path);
+	print("font_path=%||\n", col::conf.font_path);
 
-	string fname("./aaa.mp");
-	
 	// handle options
 	/*{
 	 	namespace po = boost::program_options;
@@ -225,8 +186,8 @@ int main(int argc, char* argv[])
 
 
 	EnvGame env(1);
-	env.loads<BuildType>(CSV_PATH + "builds.csv");
-	env.loads<UnitType>(CSV_PATH + "units.csv");
+	env.loads<BuildType>((csv_path/"builds.csv").c_str());
+	env.loads<UnitType>((csv_path/"units.csv").c_str());
 
 	// load state from file
 	if (argc == 2) {

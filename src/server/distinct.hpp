@@ -57,7 +57,7 @@ namespace distinct {
 
 	template<class U,class T>
 	std::ostream & operator<<(std::ostream & o, Enum<U,T> const& x) {
-		o << format::format("Enum(%||)", x.get_value());
+		o << format("Enum(%||)", x.get_value());
 		return o;
 	}
 

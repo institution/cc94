@@ -18,8 +18,8 @@ namespace col{
 
 		static int const PAN_WIDTH = 79;
 		static int const LINE = 1;
-		static int const TERR_W = TILE_DIM;
-		static int const TERR_H = TILE_DIM;
+		static int const TERR_W = conf.tile_dim;
+		static int const TERR_H = conf.tile_dim;
 
 
 		Box scr, bar, pan, map, city, city_res, city_fields;
@@ -55,8 +55,8 @@ namespace col{
 			);
 
 			city_fields = Box(
-				scr.end[0] - TILE_DIM*5, bar.end[1] + LINE,
-				TILE_DIM*5, TILE_DIM*5
+				scr.end[0] - conf.tile_dim*5, bar.end[1] + LINE,
+				conf.tile_dim*5, conf.tile_dim*5
 			);
 		}
 

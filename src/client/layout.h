@@ -8,19 +8,19 @@ namespace col{
 
 
 
+	
+
 	struct Layout {
 
 		static int const PAN_WIDTH = 79;
 		static int const LINE = 1;
-		static int const TERR_W = TILE_DIM;
-		static int const TERR_H = TILE_DIM;
 
 		Box2 scr, bar, pan, map, city, city_res, city_fields, city_exit, city_units;
 		v2i terr_dim;
 
 		Layout(int const& w, int const& h) {
 
-			terr_dim = v2i(TILE_DIM, TILE_DIM);
+			terr_dim = v2i(conf.tile_dim, conf.tile_dim);
 
 			scr = Box2(0, 0, w, h);
 

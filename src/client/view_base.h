@@ -2,22 +2,22 @@
 #define VIEW_BASE44_H
 // ^renderer base
 
-#include "base.h"
-
+#include <boost/filesystem.hpp>
 #include <unordered_map>
+
+#include "base.h"
+#include "conf.h"
+
+
+namespace filesys = boost::filesystem;
+
 
 
 namespace col {
 
-	int const SCREEN_W = 320;
-	int const SCREEN_H = 200;
-	int const TILE_DIM = 16;
-	int const GLOBAL_SCALE = 3;
 
-	string const RES_PATH = "../COLONIZE/";
-	string const FONT_PATH = "../font/";
 
-	v2i const tile_dim = v2i(TILE_DIM, TILE_DIM);
+	v2i const tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 
 	extern std::unordered_map<Biome,string,Biome::hash> BIOME_NAMES;
 	Biome get_biome_by_name(string const& name);

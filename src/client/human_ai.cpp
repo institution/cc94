@@ -50,11 +50,11 @@ namespace human_ai{
 		//preload_terrain();
 
 		sf::RenderWindow app(
-			sf::VideoMode(col::SCREEN_W * col::GLOBAL_SCALE, col::SCREEN_H * col::GLOBAL_SCALE, 32),
+			sf::VideoMode(col::conf.screen_w * col::conf.global_scale, col::conf.screen_h * col::conf.global_scale, 32),
 			"cc14"
 		);
 
-		sf::View view(sf::FloatRect(0, 0, col::SCREEN_W, col::SCREEN_H));
+		sf::View view(sf::FloatRect(0, 0, col::conf.screen_w, col::conf.screen_h));
 		app.setView(view);
 		
 		auto last_env = con.env.mod - 1;

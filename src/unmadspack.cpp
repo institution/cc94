@@ -31,10 +31,6 @@ namespace filesys = boost::filesystem;
 
 using Path = filesys::path;
 
-template <class ... Args>
-void print(Args ... args) {
-	std::cout << format(args...);
-}
 
 // --------------------------------------------------
 
@@ -737,7 +733,11 @@ void unpack(Path const& fname) {
 
 
 int main(int argc, char *argv[]) {
-	assert(argc == 2);
+	if (argc != 2) {
+		print("Usage: %|| <path-to-colonize-dir>\n", argv[0]);
+		return 1;
+	}
+	
 	Path col_dir(argv[1]);
 
 	vector<string> colnames = {

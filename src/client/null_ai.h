@@ -18,7 +18,6 @@ namespace null_ai{
 	using col::EnvGame;
 	using col::Nation;
 	using col::Ready;
-	using format::format;
 	namespace inter = col::inter;
 
 	struct Apply: boost::static_visitor<void>{

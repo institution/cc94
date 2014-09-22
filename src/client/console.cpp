@@ -14,7 +14,7 @@
 namespace col {
 	using boost::str;
 
-	Layout const ly(SCREEN_W, SCREEN_H);
+	Layout const ly(conf.screen_w, conf.screen_h);
 
 
 	Color make_color_by_name(const string &s) {
@@ -982,11 +982,11 @@ namespace col {
 		preload_terrain();
 
 		sf::RenderWindow app(
-			sf::VideoMode(SCREEN_W * GLOBAL_SCALE, SCREEN_H * GLOBAL_SCALE, 32),
+			sf::VideoMode(conf.screen_w * conf.global_scale, conf.screen_h * conf.global_scale, 32),
 			"cc14"
 		);
 
-		sf::View view(sf::FloatRect(0, 0, SCREEN_W, SCREEN_H));
+		sf::View view(sf::FloatRect(0, 0, conf.screen_w, conf.screen_h));
 		app.setView(view);
 
 		auto last_env = con.env.mod - 1;

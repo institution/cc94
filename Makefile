@@ -8,14 +8,14 @@
 CC:=clang++
 
 # output files
-OUTS:=client/main server/test client/test format/test_format unmadspack/unmadspack
+OUTS:=client/main server/test client/test test_format unmadspack
 
 # temporary dont build following files
 IGNORE_SRC:=src/tree.cpp
 
 WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null
 M4OPTS:=-E -P
-INCL:=-I./inc -I./src/format -I./src/server
+INCL:=-I./inc -I./src -I./src/server
 STD:=-std=c++11
 CCDEBUG:=-O0 -g
 CCRELEASE:=-O3
@@ -29,7 +29,7 @@ CCOPTS_R:= ${INCL} ${STD} ${CCRELEASE} ${WARNOPTS}
 CCOPTS:=${CCOPTS_D}
 
 release: CCOPTS := ${CCOPTS_R}
-release: client/main unmadspack/unmadspack
+release: client/main unmadspack/unmadspack server/test client/test
 
 
 

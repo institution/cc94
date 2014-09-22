@@ -2,6 +2,7 @@
 #define FORMAT123_H
 
 #include <string>
+#include <iostream>
 #include <boost/format.hpp>
 
 
@@ -20,7 +21,10 @@ std::string format(std::string pattern, T&&... rest) {
 	return format(boost::format(pattern), rest...);
 }
 
-
+template <class ... Args>
+void print(Args ... args) {
+	std::cout << format(args...);
+}
 
 
 
