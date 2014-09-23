@@ -36,11 +36,27 @@ using roll::replay;
  *     VISUAL: unselect unit after assigment to field/build  *
  * colony screen: background on fields *
  *     uniform EVENT handling *
- * replace messages with effects (let clients use them for messages)
- * by name from csv ?
- * load/unload cargo into ship 
- * travel to europe by sea - exit_map(ship, dest) order
+ * portable COLONIZE data import *
+ * colony screen transport
+ * load/unload cargo into ship - transport 
+ * replace messages with effects (let clients use them for messages) 
+ * build system rethink
+ * specialists by experience
+ * v010
+ * build ships
+ * travel to europe by sea - exit_map(ship, dest) order - trade
  * sell/buy in europe 
+ * specialists by school
+ * combat 
+ * temporary fortification
+ * loyalyty
+ * immigration?
+ * artillery fire during enemy turn?
+ * colony abandonment
+ * trade with forein powers/indians
+ * consumable items in colonies
+ * silver -> coins conversion?
+ * by name from csv ?
  * fog of war
  *
  
@@ -167,6 +183,19 @@ TEST_CASE( "terr", "" ) {
 }
 
 
+TEST_CASE( "load_cargo", "" ) {
+
+	Env env;
+	
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_slots(1),
+		env.create<Nation>()
+	);
+	
+	u.add(ItemOre, 23);
+	REQUIRE(u.get(ItemOre) == 23);
+	
+}
 
 TEST_CASE( "env::move_unit", "" ) {
 
@@ -213,15 +242,17 @@ TEST_CASE( "equip unit", "" ) {
 	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
 	
 	auto& c = env.create<Colony>();
+	Store & st = env.get_store(t);
+	
 	env.init(t, c);
 	
-	REQUIRE_NOTHROW(c.add(ItemMuskets, 50));	
+	REQUIRE_NOTHROW(st.add(ItemMuskets, 50));	
 	
 	REQUIRE_NOTHROW(env.start());
 	REQUIRE_NOTHROW(env.equip(u, ut));	
 	REQUIRE(u.get_type() == ut);
-	REQUIRE(c.get(ItemMuskets) == 0);
-	REQUIRE(c.get(ItemHorses) == 0);
+	REQUIRE(st.get(ItemMuskets) == 0);
+	REQUIRE(st.get(ItemHorses) == 0);
 	}
 
 
@@ -304,8 +335,51 @@ TEST_CASE( "turn sequence", "" ) {
 }
 
 
+TEST_CASE( "colony_field_prod", "" ) {
+	
+	Env env;
+	env.loads<BuildType>("../col94/builds.csv");
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Nation>()
+	);
 
-TEST_CASE( "colony workplace/production", "" ) {
+	auto& t = env.get_terr({0,0});	
+	REQUIRE_NOTHROW( env.init(t, u) );
+	REQUIRE_NOTHROW( env.init_colony(t) );
+	REQUIRE_NOTHROW( env.work_field(0, u) );
+	auto& f = env.get_field(t, 0);
+	REQUIRE_NOTHROW( f.set_proditem(ItemFood) );
+	auto & c = t.get_colony();
+	auto &  st = env.get_store(t);
+	
+	REQUIRE(st.get(ItemFood) == 0);
+	
+	SECTION("produce") {
+		REQUIRE_NOTHROW( env.produce(st, f, u) );	
+		REQUIRE(st.get(ItemFood) > 0);
+	}
+	
+	SECTION("resolve") {
+		env.resolve<Field, 1, 10>(c);
+		REQUIRE(st.get(ItemFood) > 0);
+	}
+	
+	REQUIRE(c.get_max_storage() > 0);
+	
+	SECTION("turn_terr") {
+		env.turn(t);
+		REQUIRE(st.get(ItemFood) > 0);
+	}
+	
+	
+}
+
+
+TEST_CASE( "colony_workplace_production", "" ) {
 	
 	Env env;
 	BuildType::Id const BuildFurTradersHouse = 33;
@@ -320,7 +394,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 
 	auto& t = env.get_terr({0,0});	
 	env.init(t, u);
-
+	
 	
 	env.loads<BuildType>("../col94/builds.csv");
 	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
@@ -338,6 +412,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 		REQUIRE(t.colony != nullptr);
 
 		auto& c = t.get_colony();
+		auto & st = env.get_store(t);
 	
 		SECTION("non_worker_on_colony_hangup") {
 			// regress
@@ -363,7 +438,7 @@ TEST_CASE( "colony workplace/production", "" ) {
 			REQUIRE_NOTHROW(env.turn());
 			
 			// yield - consumption -> produced
-			REQUIRE( (t.get_yield(ItemFood, 0) - 2) == c.get(ItemFood) );
+			REQUIRE( (t.get_yield(ItemFood, 0) - 2) == st.get(ItemFood) );
 			// unit used all time
 			REQUIRE(u.time_left == 0);
 		}
@@ -375,35 +450,35 @@ TEST_CASE( "colony workplace/production", "" ) {
 			REQUIRE_NOTHROW( env.work_build(0, u) );
 
 			SECTION("just enough") {
-				REQUIRE_NOTHROW(c.add(ItemFood, 2));
-				REQUIRE_NOTHROW(c.add(ItemFurs, 3));
+				REQUIRE_NOTHROW(st.add(ItemFood, 2));
+				REQUIRE_NOTHROW(st.add(ItemFurs, 3));
 				REQUIRE_NOTHROW(env.turn());
 				
-				REQUIRE(c.get(ItemFood) == 0);
-				REQUIRE(c.get(ItemCoats) == 3);
-				REQUIRE(c.get(ItemFurs) == 0);
+				REQUIRE(st.get(ItemFood) == 0);
+				REQUIRE(st.get(ItemCoats) == 3);
+				REQUIRE(st.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
 			}
 
 			SECTION("not enough") {
-				REQUIRE_NOTHROW(c.add(ItemFood, 2));
-				REQUIRE_NOTHROW(c.add(ItemFurs, 1));
+				REQUIRE_NOTHROW(st.add(ItemFood, 2));
+				REQUIRE_NOTHROW(st.add(ItemFurs, 1));
 				REQUIRE_NOTHROW(env.turn());
 				
-				REQUIRE(c.get(ItemFood) == 0);
-				REQUIRE(c.get(ItemCoats) == 1);
-				REQUIRE(c.get(ItemFurs) == 0);
+				REQUIRE(st.get(ItemFood) == 0);
+				REQUIRE(st.get(ItemCoats) == 1);
+				REQUIRE(st.get(ItemFurs) == 0);
 				REQUIRE(u.time_left == 0);
 			}
 
 			SECTION("more than enough") {
-				REQUIRE_NOTHROW(c.add(ItemFood, 2));
-				REQUIRE_NOTHROW(c.add(ItemFurs, 5));
+				REQUIRE_NOTHROW(st.add(ItemFood, 2));
+				REQUIRE_NOTHROW(st.add(ItemFurs, 5));
 				REQUIRE_NOTHROW(env.turn());
 
-				REQUIRE(c.get(ItemFood) == 0);
-				REQUIRE(c.get(ItemCoats) == 3);
-				REQUIRE(c.get(ItemFurs) == 2);
+				REQUIRE(st.get(ItemFood) == 0);
+				REQUIRE(st.get(ItemCoats) == 3);
+				REQUIRE(st.get(ItemFurs) == 2);
 				REQUIRE(u.time_left == 0);
 			}
 

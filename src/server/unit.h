@@ -3,6 +3,7 @@
 
 #include "objs.h"
 #include "error.h"
+#include "storage.h"
 
 namespace col{
 
@@ -57,6 +58,8 @@ namespace col{
 		Item const& get_item1() const { return item1; }
 		Amount const& get_num2() const { return num2; }
 
+		Amount get_space() const { return Amount(slots) * 100; }
+
 		UnitType() {}
 
 		explicit UnitType(Id const& id): id(id) {}
@@ -104,7 +107,7 @@ namespace col{
 	struct Build;
 	struct Field;
 
-	struct Unit {
+	struct Unit{
 		using Id = uint32;
 
 		Id id{0};
@@ -112,6 +115,8 @@ namespace col{
 		Nation * nation{nullptr};
 		uint8 time_left{TIME_UNIT};
 		bool transported{0};
+
+		Storage store;
 
 		// where am I
 		Terr *terr{nullptr};
@@ -123,8 +128,33 @@ namespace col{
 
 		Order::type order{Order::Unknown};   // TODO: remove
 
-		uint16 space_left{0}; // [t]
+		Amount space_left{0}; // [t]
 		uint8 extend{0}; // num of boarded units TODO: need this?
+
+
+		Amount get(Item item) const {
+			return store.get(item);
+		}
+
+		void set(Item item, Amount num) {
+			space_left -= used_space(store.get(item));
+			space_left += used_space(num);
+			store.set(item, num);
+		}
+
+		static Amount used_space(Amount num) {
+			return 20 * Amount((num + 19) / 20);
+		}
+
+		void add(Item item, Amount num) {
+			set(item, get(item) + num);
+		}
+
+		void sub(Item item, Amount num) {
+			set(item, get(item) - num);
+		}
+
+
 
 		Unit(
 			Id const& id
@@ -140,7 +170,7 @@ namespace col{
 			id(id),
 			type(&type),
 			nation(&nation),
-			space_left(type.slots)
+			space_left(type.get_space())
 		{}
 
 		Unit() = default;
@@ -167,6 +197,9 @@ namespace col{
 			assert(nation == nullptr);
 		}
 
+		auto get_cargos() const -> decltype(store.cargos) const& { return store.cargos; }
+		auto get_cargos() -> decltype(store.cargos) & { return store.cargos; }
+
 		Nation & get_nation() const { return *nation; }
 		Unit & set_nation(Nation & nation) { this->nation = &nation; return *this; }
 
@@ -176,7 +209,12 @@ namespace col{
 		uint8 const& get_travel() const { return type->get_travel(); }
 		float get_speed() const { return type->get_speed(); }
 		float get_slots() const { return type->get_slots(); }
-		float get_space_left() const { return space_left; }
+
+		Amount get_space() const { return type->get_space(); }
+
+		Amount get_space_left() const { return space_left; }
+
+
 		float get_size() const { return type->get_size(); }
 		float get_attack() const { return type->get_attack(); }
 		float get_combat() const { return type->get_combat(); }

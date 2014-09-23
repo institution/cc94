@@ -31,6 +31,8 @@ namespace col {
 
 
 
+
+
 	template<typename T, typename Archive>
 	void save_cont(Archive & ar, Env const& env) {
 		auto& xs = env.get_cont<T>();
@@ -80,6 +82,29 @@ namespace col {
 		ar << t;
 	}
 
+	template<typename T, typename Archive>
+	void write_map(Archive & ar, T const& xs) {
+		write(ar, xs.size());
+		for (auto & x: xs) {
+			ar << x.first;
+			ar << x.second;
+		}
+	}
+
+	template<typename T, typename Archive>
+	void read_map(Archive & ar, T & xs) {
+		using Size = decltype(xs.size());
+		using Key = typename T::key_type;
+		using Val = typename T::mapped_type;
+
+		auto size = read<Size>(ar);
+		for (Size i = 0; i < size; ++i) {
+			auto key = read<Key>(ar);
+			auto val = read<Val>(ar);
+			xs[key] = val;
+		}
+	}
+
 
 	template<typename A>
 	void write(A & ar, Env const& env, Nation const& x) {
@@ -95,7 +120,7 @@ namespace col {
 		write(ar, x.id);
 		write(ar, x.type->id);
 		write(ar, x.nation->id);
-		write(ar, x.space_left);
+		//write(ar, x.space_left);
 		write(ar, x.time_left);
 		write(ar, x.transported);
 
@@ -117,6 +142,10 @@ namespace col {
 		else {
 			write<int>(ar, 0);
 		}
+
+		// unit cargo
+		write_map(ar, x.get_cargos());
+
 	}
 
 
@@ -129,24 +158,16 @@ namespace col {
 		read(ar, x.flag_id);
 	}
 
+
+
 	template<typename A>
-	void read_unit(A & ar, Env & env) {
-		auto& ps = env.get_cont<Unit>();
+	void read_unit(A & ar, Env & env, Unit & unit) {
 
-
-		Unit x;
-		read(ar, x.id);
-		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
-		x.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
-		read(ar, x.space_left);
-		read(ar, x.time_left);
-		read(ar, x.transported);
-
-		auto key = x.id;
-		auto p = ps.emplace(key, std::move(x)).first;
-
-
-		auto& unit = (*p).second;
+		read(ar, unit.id);
+		unit.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
+		unit.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
+		read(ar, unit.time_left);
+		read(ar, unit.transported);
 
 		// terr
 		env.init(env.get_terr(read<Coords>(ar)), unit);
@@ -162,7 +183,16 @@ namespace col {
 			env.work_field(field_id - 1, unit);
 		}
 
+		// unit cargo
+		read_map(ar, unit.get_cargos());
+
 		assert(unit.type != nullptr);
+
+		unit.space_left = unit.get_space();
+		for (auto& p: unit.get_cargos()) {
+			unit.space_left -= p.second;
+		}
+
 	}
 
 	template<typename A>
@@ -207,6 +237,8 @@ namespace col {
 		ar >> x.phys;
 		ar >> x.alt;
 	}
+
+
 
 
 
@@ -275,7 +307,7 @@ namespace col {
 				// colony
 				ar << x.id;
 				ar << x.name;
-				ar << x.storage;
+				write(ar, x.store.cargos);
 
 				// buildings
 				for (auto& b: x.builds) {
@@ -311,7 +343,7 @@ namespace col {
 			ar << tmp;
 			for (auto& p: ps) {
 				auto& x = p.second;
-
+				write(ar, p.first);
 				write(ar, env, x);
 
 			}
@@ -410,7 +442,7 @@ namespace col {
 				Colony x;
 				ar >> x.id;
 				ar >> x.name;
-				ar >> x.storage;
+				read(ar, x.store.cargos);
 
 				auto key = x.id;
 				auto p = ps.emplace(key, std::move(x)).first;
@@ -454,13 +486,12 @@ namespace col {
 		}
 
 		{
-
+			auto& units = env.get_cont<Unit>();
 			size_t tmp;
 			ar >> tmp;
-			for (size_t i=0; i<tmp; ++i) {
-
-				read_unit(ar, env);
-
+			for (size_t i = 0; i < tmp; ++i) {
+				auto unit_id = read<Unit::Id>(ar);
+				read_unit(ar, env, units[unit_id]);
 			}
 		}
 

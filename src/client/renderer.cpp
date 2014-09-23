@@ -200,12 +200,29 @@ namespace col {
 	sf::Color const ColorWhite = sf::Color(255,255,255,255);
 	sf::Color const ColorGray = sf::Color(128,128,128,128);
 	
+	sf::Color const ColorDarkSkyBlue = sf::Color(76,100,172,255);
+	sf::Color const ColorSkyBlue = sf::Color(104,136,192,255);
+	sf::Color const ColorLightSkyBlue = sf::Color(156,184,220,255);
+
+	sf::Color const ColorDarkWoodBrown = sf::Color(84,68,44,255);
+	sf::Color const ColorWoodBrown = sf::Color(132,112,80,255);
+	sf::Color const ColorLightWoodBrown = sf::Color(152,128,92,255);
+
+
+
+
+
+
+
+	
+	
 	v2f vmul(v2f const& a, v2f const& b);
 	v2f vmul(v2i const& a, v2f const& b);
 
 	
-	v2i calc_align(Box const& par, v2f const& align, v2i const& dim);
-	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim);
+	v2i calc_align(Box const& par, v2i const& dim, v2f const& align = v2f(0.5, 0.5));
+	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2i const& dim, v2f const& align = v2f(0.5, 0.5));
+		
 
 		
 	void preload(Path const& d, uint const& i, Res::mapped_type const& tex) {
@@ -544,7 +561,7 @@ namespace col {
 
 
 	
-	void render_area(sf::RenderWindow & win, v2i const& pos, v2i const& dim, Color const& color) {
+	void render_area(sf::RenderWindow & win, v2i const& pos, v2i const& dim, sf::Color const& color) {
 		win.draw(
 			RectShape(
 				pos,
@@ -721,7 +738,59 @@ namespace col {
 	}
 	
 	
-	
+	void render_unit_cargo(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Unit const& unit) {
+		// render unit cargo
+		auto space = unit.get_space();
+		
+		/*
+		float b = 10;
+		float a = float(ly.city_unit_resources.dim[0] - b)/float(600);
+
+		auto calc_width = [a,b](float x) {
+			return a * x + b;
+		};*/
+		
+		// unit cargo area frame
+		render_inline(win,
+			pos, v2i((space/100)*40, dim[1]),
+			ColorDarkWoodBrown
+		);
+
+		// render unit items
+		
+		auto pix = pos;
+		
+		
+		for (auto item: COLONY_ITEMS) {
+			int num = unit.get(item);
+			
+			if (num) {
+				auto clones = (unit.used_space(num) / 10);
+				auto width = 10 + clones * 2;
+				
+				render_inline(win,
+					pix, v2i(width, dim[1]),
+					ColorWoodBrown
+				);
+				
+				auto & item_tex = res(ICON, get_item_icon_id(item));
+				
+				auto item_pos = calc_align(pix, v2i(12, dim[1]), get_dim(item_tex));
+								
+				// render icons 
+				// clones
+				for (uint16 i = 0; i < clones; ++i) {
+					render_sprite(win,
+						item_pos + v2i(i * 2, 0),
+						item_tex						
+					);
+					
+				}
+				
+				pix[0] += width;
+			}
+		}
+	}
 	
 	
 
@@ -750,7 +819,7 @@ namespace col {
 		
 		// render area
 		auto sand_tex = res(ARCH, 1);
-		render_area(win, ly.city.pos, ly.city.dim, sand_tex);
+		render_area(win, ly.city_builds.pos, ly.city_builds.dim, sand_tex);
 		
 		// relative positions
 		vector<v2i> pixs({
@@ -785,7 +854,7 @@ namespace col {
 				
 				auto& b = col.builds.at(i);
 				auto& build_tex = res(BUILD, b.get_type_id());
-				auto build_pos = ly.city.pos + pixs.at(i);
+				auto build_pos = ly.city_builds.pos + pixs.at(i);
 				auto build_dim = get_dim(build_tex);
 				
 				render_sprite(win, build_pos, build_tex);
@@ -885,8 +954,8 @@ namespace col {
 						Box(
 							build_pos + build_dim - units_frame + v2i(1,2), units_frame
 						), 
-						v2f(float(i+1)/float(n+1), 1), 
-						get_dim(unit_tex)
+						get_dim(unit_tex),
+						v2f(float(i+1)/float(n+1), 1)
 					);
 					
 					v2i unit_dim = get_dim(unit_tex);
@@ -931,7 +1000,7 @@ namespace col {
 			auto& tex_wood = res(WOODBG, 1);
 			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
 			
-			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, {0.5f,0.5f}, ly.terr_dim);
+			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, ly.terr_dim);
 			
 			auto& city_terr = terr;
 			
@@ -978,7 +1047,7 @@ namespace col {
 						// render produced item
 						auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
 						render_sprite(win, 
-							calc_align(Box(item_pos, item_dim), v2f(0.5, 0.5), get_dim(item_tex)),
+							calc_align(Box(item_pos, item_dim), get_dim(item_tex)),
 							item_tex
 						);
 
@@ -989,7 +1058,7 @@ namespace col {
 
 						// render unit on field
 						render_sprite(win, 
-							calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+							calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
 							unit_tex
 						);
 
@@ -1024,6 +1093,13 @@ namespace col {
 		}
 
 		
+		
+		// render middle background
+		render_fill(win, ly.city_middle_bg.pos, ly.city_middle_bg.dim, ColorSkyBlue);
+		
+		
+		
+		
 
 		// render units
 		array<uint8,16> num_workers;
@@ -1051,12 +1127,6 @@ namespace col {
 			);
 		}
 
-		// background
-		render_sprite(win, 
-			ly.city_units.pos + v2i(0,-1),
-			res(COLONY, 1)
-		);
-		
 		render_inline(win,
 			ly.city_units.pos, ly.city_units.dim,
 			ColorDarkGreen
@@ -1083,7 +1153,7 @@ namespace col {
 
 				// render unit
 				render_sprite(win, 
-					calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+					calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
 					unit_tex
 				);
 
@@ -1099,6 +1169,8 @@ namespace col {
 							con.equip_to_unit_id = unit_id;
 						}
 					);
+		
+					render_unit_cargo(win, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
 					
 				}
 				else {
@@ -1120,20 +1192,17 @@ namespace col {
 
 		// render storage
 
-		render_area(win, ly.city_res.pos, ly.city_res.dim, {76,100,172,255});
+		render_area(win, ly.city_resources.pos, ly.city_resources.dim, {76,100,172,255});
 
 		int width = 16;
-
-		auto pix = ly.city_res.pos;
+		auto & col_st = env.get_store(terr);
+		
+		auto pix = ly.city_resources.pos;
 		for (auto item: COLONY_ITEMS) {
 
 			// num of items
-			int num = 0;
-			auto p = col.storage.find(item);
-			if (p != col.storage.end()) {
-				num = (*p).second;
-			}
-
+			int num = col_st.get(item);
+		
 			// render icon
 			render_sprite(win,
 				pix,
@@ -1145,7 +1214,7 @@ namespace col {
 			auto txt = Text(std::to_string(num)).set_font("tiny.png");
 			render_text(
 				win,
-				calc_align(v2i(pix[0], pix[1]+13), v2i(width,0), v2f(0.5, 0), txt.get_dim()),				
+				calc_align(v2i(pix[0], pix[1]+13), v2i(width,0), txt.get_dim(), v2f(0.5, 0)),
 				txt				
 			);
 			
@@ -1188,7 +1257,7 @@ namespace col {
 			
 			render_select<BuildType::Id>(win, con,
 				[](v2i const& dim) {
-					return calc_align(Box(ly.scr), {0.5, 0.5}, dim); 
+					return calc_align(Box(ly.scr), dim); 
 				},
 				kvs,
 				con.select_build,
@@ -1216,7 +1285,7 @@ namespace col {
 			// onclick -> equip/orders menu
 			render_select<int>(win, con,
 				[](v2i const& dim) {
-					return calc_align(Box(ly.scr), {0.5, 0.5}, dim); 
+					return calc_align(Box(ly.scr), dim); 
 				},
 				entries,
 				con.equip_to_unit_type_id,
@@ -1261,7 +1330,7 @@ namespace col {
 
 				// render unit
 				render_sprite(win, 
-					calc_align(Box(unit_pos, unit_dim), v2f(0.5, 0.5), get_dim(unit_tex)),
+					calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
 					unit_tex
 				);
 				
@@ -1640,7 +1709,7 @@ namespace col {
 			// render unit in field
 			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
 			render_sprite(win, 
-				calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
+				calc_align(Box(pos, ly.terr_dim), get_dim(icon)), 
 				icon
 			);
 			
@@ -1675,7 +1744,7 @@ namespace col {
 
 		// render unit in field
 		render_sprite(win, 
-			calc_align(Box(pos, ly.terr_dim), v2f(0.5, 0.5), get_dim(icon)), 
+			calc_align(Box(pos, ly.terr_dim), get_dim(icon)), 
 			icon
 		);
 
@@ -2015,7 +2084,7 @@ namespace col {
 			}
 
 			auto text = Text(lab).set_font("tiny.png").set_fg(col);
-			v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0), text.get_dim());
+			v2i text_pos = calc_align(ly.pan.pos, ly.pan.dim, text.get_dim(), v2f(0.5, 1.0));
 								
 			// label			
 			render_text(win, text_pos, text);
@@ -2107,11 +2176,11 @@ namespace col {
 	
 	
 	
-	v2i calc_align(Box const& par, v2f const& align, v2i const& dim) {
+	v2i calc_align(Box const& par, v2i const& dim, v2f const& align) {
 		return (par.pos.cast<float>() + vmul((par.dim - dim).cast<float>(), align)).cast<int>();
 	}
 
-	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim) {
+	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2i const& dim, v2f const& align) {
 		return (p_pos.cast<float>() + vmul((p_dim - dim).cast<float>(), align)).cast<int>();
 	}
 
@@ -2209,7 +2278,7 @@ namespace col {
 		string const& text
 	) {
 		return render_text_line_min(win,
-			calc_align(pos, dim, align, get_text_dim(font, text)),
+			calc_align(pos, dim, get_text_dim(font, text), align),
 			font,
 			fgcol,
 			bgcol,
@@ -2483,7 +2552,6 @@ namespace col {
 		app.display();
 
 	}
-
 
 
 }

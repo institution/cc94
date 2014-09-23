@@ -124,7 +124,16 @@ int main(int argc, char* argv[])
 	
 	XInitThreads(); // os dep	
 
-	Path bin_path = filesys::canonical((filesys::current_path() / Path(argv[0])).parent_path(), "/");
+	
+	Path argv0(argv[0]);
+	Path bin_path;
+	if (argv0.is_absolute()) {
+		bin_path = filesys::canonical(argv0.parent_path(), "/");
+	}
+	else {
+		bin_path = filesys::canonical(filesys::current_path() / argv0.parent_path(), "/"); 
+	}
+	
 	Path csv_path = filesys::canonical(bin_path / "../../col94/", "/");;
 	
 	col::conf.res_path = filesys::canonical(os::get_home_dir() / Path(".cc94/COLONIZE"), "/");

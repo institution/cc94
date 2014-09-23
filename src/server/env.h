@@ -5,6 +5,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <sstream>
+#include <cmath>
 
 
 #include "core.h"
@@ -214,10 +215,69 @@ namespace col{
 		}
 
 
+		//Storage & get_store(Unit & x) { return x.store; }
+		Storage & get_store(Colony & x) { return x.store; }
+		Storage & get_store(Terr & x) { return x.get_colony().store; }
+
+		//Storage const& get_store(Unit const& x) const { return x.store; }
+		Storage const& get_store(Colony const& x) const { return x.store; }
+		Storage const& get_store(Terr const& x) const { return x.get_colony().store; }
 
 
 
 
+
+		void apply(inter::unit_set_item const& a) {
+			auto & u = get<Unit>(a.unit_id);
+			u.set(a.item, a.num);
+			notify_effect(get_terr(u), a);
+		}
+
+		void apply(inter::terr_set_item const& a) {
+			auto & t = get_terr(a.terr_id);
+			get_store(t).set(a.item, a.num);
+			notify_effect(t, a);
+		}
+
+		void load_cargo(Unit & u, Item item, Amount want_num) {
+			auto & t = get_terr(u);
+			auto & st = get_store(t);
+
+			auto terr_num = st.get(item);
+			Amount free_num = u.get_space_left();
+
+			auto mod_num = std::min({terr_num, free_num, want_num});
+
+			apply(inter::terr_set_item(get_id(t), item, terr_num - mod_num));
+			apply(inter::unit_set_item(get_id(u), item, u.get(item) + mod_num));
+		}
+
+		void unload_cargo(Unit & u, Item item, Amount want_num = 100) {
+			auto & t = get_terr(u);
+			auto & st = get_store(t);
+
+			auto unit_num = u.get(item);
+
+			auto mod_num = std::min({unit_num, want_num});
+
+			apply(inter::unit_set_item(get_id(u), item, unit_num - mod_num));
+			apply(inter::terr_set_item(get_id(t), item, st.get(item) + mod_num));
+		}
+
+
+		void apply(inter::load_cargo const& a) {
+			auto & u = get<Unit>(a.unit_id);
+
+			if (a.num > 0) {
+				load_cargo(u, a.item, a.num);
+			}
+			else if (a.num < 0)
+				unload_cargo(u, a.item, -a.num);
+			else {
+
+			}
+
+		}
 
 
 		explicit
@@ -288,22 +348,22 @@ namespace col{
 
 
 
-		void produce(Colony & c, Field & wp, Unit & u) {
+		void produce(Store & st, Field & wp, Unit & u) {
 			auto const& proditem = wp.get_proditem();
 
 			auto prodnum = get_terr(wp).get_yield(proditem, false);
 
 			if (proditem == ItemFish) {
-				c.add(ItemFood, prodnum);
+				st.add(ItemFood, prodnum);
 			}
 			else {
-				c.add(proditem, prodnum);
+				st.add(proditem, prodnum);
 			}
 
 			u.time_left = 0;
 		}
 
-		void produce(Colony & c, Build & wp, Unit & u) {
+		void produce(Store & st, Build & wp, Unit & u) {
 			auto const& proditem = wp.get_proditem();
 			auto const& consitem = wp.get_consitem();
 
@@ -311,11 +371,11 @@ namespace col{
 			int prodnum = wp.get_prod() * base;
 			int consnum = wp.get_cons() * base;
 
-			int real_cons = std::min(consnum, int(c.get(consitem)));
+			int real_cons = std::min(consnum, int(st.get(consitem)));
 			int real_prod = float(float(prodnum) * float(real_cons) / float(consnum));
 
-			c.sub(consitem, real_cons);
-			add_prod(c, proditem, real_prod);
+			st.sub(consitem, real_cons);
+			add_prod(st, proditem, real_prod);
 
 			u.time_left = 0;
 		}
@@ -340,7 +400,7 @@ namespace col{
 			for (size_t item_id = i; item_id < j; ++item_id) {
 				for (F* wp: ws.at(item_id-i)) {
 					for (auto& u: wp->units) {
-						produce(c, *wp, *u);
+						produce(get_store(c), *wp, *u);
 					}
 				}
 			}
@@ -352,6 +412,7 @@ namespace col{
 				return;
 			}
 
+			auto& st = get_store(t);
 			auto& c = t.get_colony();
 			auto p = get_control(t);
 
@@ -371,8 +432,8 @@ namespace col{
 				Unit &u = *t.units.at(i);
 				if (u.is_working()) {
 					// consume food
-					if (c.has(ItemFood, 2)) {
-						c.sub(ItemFood, 2);
+					if (st.get(ItemFood) >= 2) {
+						st.sub(ItemFood, 2);
 					}
 					else {
 						// starvation
@@ -390,20 +451,20 @@ namespace col{
 			starve.clear();
 
 			// new colonists creation
-			if (p and c.get(ItemFood) >= 100) {
-				c.sub(ItemFood, 100);
+			if (p and st.get(ItemFood) >= 100) {
+				st.sub(ItemFood, 100);
 				auto& u = create<Unit>(get<UnitType>(101), *p);
 				init(t, u);
 
 			}
 
 			// decay of non-storageable resources
-			c.set(ItemHammers, 0);
-			c.set(ItemBell, 0);
-			c.set(ItemCross, 0);
+			st.set(ItemHammers, 0);
+			st.set(ItemBell, 0);
+			st.set(ItemCross, 0);
 
 			// decay resources above storage limit
-			for (auto& p: c.storage) {
+			for (auto& p: st.cargos) {
 				auto& item = p.first;
 				auto& value = p.second;
 				if (value > c.get_max_storage()) {
@@ -458,8 +519,8 @@ namespace col{
 			return 3;
 		}
 
-		void add_prod(Colony & c, Item const& item, int num) {
-			c.add(item, num);
+		void add_prod(Store & st, Item const& item, int num) {
+			st.add(item, num);
 		}
 
 		int get_prodnum(Field const& f) const {
@@ -472,18 +533,18 @@ namespace col{
 			}
 
 			Terr & t = get_terr(u);
-			Colony & c = t.get_colony();
+			Store & st = get_store(t);
 
 			if (u.get_base() != ut.get_base()) {
 				throw Error("incompatible types");
 			}
 
 			// recover
-			c.add(u.get_item1(), u.get_num1());
-			c.add(u.get_item2(), u.get_num2());
+			st.add(u.get_item1(), u.get_num1());
+			st.add(u.get_item2(), u.get_num2());
 
-			if (c.has(ut.get_item1(), ut.get_num1())
-				and c.has(ut.get_item2(), ut.get_num2()))
+			if (    st.get(ut.get_item1()) >= ut.get_num1()
+				and st.get(ut.get_item2()) >= ut.get_num2()   )
 			{
 
 				notify_effect(t, inter::add_item(get_id(t), u.get_item1(), u.get_num1()));
@@ -498,8 +559,8 @@ namespace col{
 			}
 			else {
 				// rollback
-				c.sub(u.get_item1(), u.get_num1());
-				c.sub(u.get_item2(), u.get_num2());
+				st.sub(u.get_item1(), u.get_num1());
+				st.sub(u.get_item2(), u.get_num2());
 
 				throw Error("not enough equipment");
 			}
@@ -509,8 +570,9 @@ namespace col{
 		bool consume_food(Unit & u) {
 			// return -- true if food consumed, false when no more food available
 			Terr & t = get_terr(u);
-			if (t.get_colony().get(ItemFood) >= 2) {
-				t.get_colony().sub(ItemFood, 2);
+			Storage st = get_store(t);
+			if (st.get(ItemFood) >= 2) {
+				st.sub(ItemFood, 2);
 				return 1;
 			}
 			else {
@@ -547,7 +609,6 @@ namespace col{
 				}
 			}
 		}
-
 
 
 
@@ -1174,15 +1235,17 @@ namespace col{
 		}
 
 
-		int consume_part(Terr & t, Item const& item, int const& num) {
-			int real = std::min(int(t.get_colony().get(item)), num);
-			t.get_colony().sub(item, real);
+		int consume_part(Terr & t, Item const& item, Amount const& num) {
+			Store & st = get_store(t);
+			auto real = std::min(st.get(item), num);
+			st.sub(item, real);
 			return real;
 		}
 
-		bool consume_all(Terr & t, Item const& item, int const& num) {
-			if (int(t.get_colony().get(item)) >= num) {
-				t.get_colony().sub(item, num);
+		bool consume_all(Terr & t, Item const& item, Amount const& num) {
+			Store & st = get_store(t);
+			if (st.get(item) >= num) {
+				st.sub(item, num);
 				return true;
 			}
 			return false;
@@ -1192,7 +1255,7 @@ namespace col{
 		void construction_consume(Terr & t, Build & b) {
 			if (b.under_construction()) {
 				// add hammers return overflow
-				auto& c = t.get_colony();
+				auto & st = get_store(t);
 
 				b.hammers += consume_part(t, ItemHammers, b.get_cost_hammers() - b.hammers);
 
@@ -1202,7 +1265,7 @@ namespace col{
 
 						// warehouse constructed
 						if (b.get_type().id == 16) {
-							c.max_storage += 100;
+							t.get_colony().max_storage += 100;
 						}
 
 						//add_message(*get_control(t), t, "building constructed");
@@ -1556,9 +1619,10 @@ namespace col{
 		}
 
 		void sub_item(Terr & t, Item const& item, Amount num) {
+			Store & st = get_store(t);
 			auto& c = t.get_colony();
-			c.sub(item, num);
-			notify_effect(t, inter::set_item(get_id(t), item, c.get(item)));
+			st.sub(item, num);
+			notify_effect(t, inter::set_item(get_id(t), item, st.get(item)));
 		}
 
 		void apply(inter::sub_item const& a) {
@@ -1567,16 +1631,16 @@ namespace col{
 
 	 	void apply(inter::add_item const& a) {
 			Terr & t = get<Terr>(a.terr_id);
-			auto& c = t.get_colony();
-			c.add(a.item, a.num);
-			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
+			auto& st = get_store(t);
+			st.add(a.item, a.num);
+			notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
 		}
 
 		void apply(inter::set_item const& a) {
 			Terr & t = get<Terr>(a.terr_id);
-			auto& c = t.get_colony();
-			c.set(a.item, a.num);
-			notify_effect(t, inter::set_item(a.terr_id, a.item, c.get(a.item)));
+			auto& st = get_store(t);
+			st.set(a.item, a.num);
+			notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
 		}
 
 

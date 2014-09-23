@@ -157,6 +157,30 @@ namespace col{
 
 	namespace inter {
 
+		// action
+		CC94_DEFINE_INTER(
+			load_cargo,
+			(Unit::Id, unit_id)
+			(Item, item)
+			(Amount, num)
+		)
+
+		// effect
+		CC94_DEFINE_INTER(
+			terr_set_item,
+			(Terr::Id, terr_id)
+			(Item, item)
+			(Amount, num)
+		)
+
+		// effect
+		CC94_DEFINE_INTER(
+			unit_set_item,
+			(Unit::Id, unit_id)
+			(Item, item)
+			(Amount, num)
+		)
+
 
 		// action
 		CC94_DEFINE_INTER(
@@ -429,6 +453,12 @@ namespace col{
 
 
 		using Any = boost::variant<
+
+			load_cargo,
+			unit_set_item,
+			terr_set_item,
+
+
 			take_unit,
 			set_unit,
 

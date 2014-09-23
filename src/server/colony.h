@@ -24,12 +24,16 @@ namespace col {
 
 
 
-	struct Colony: Storage {
+	struct Colony {
 
 		using Id = uint32;
 
 		Id id;
 		string name;
+
+		Storage store;
+
+		Amount max_storage{100};
 
 		int get_max_storage() { return max_storage; }
 
@@ -88,8 +92,6 @@ namespace col {
 			name(name),
 			builds()
 		{}
-
-
 
 		Colony() = default;
 		Colony(Colony &&) = default;

@@ -725,8 +725,27 @@ namespace col {
 					auto item = get_item_by_name(es.at(1));
 
 					auto &terr = *get_sel_terr();
-					terr.get_colony().add(item, number);
+					env.get_store(terr).add(item, number);
 					break;
+			}
+		}
+		else if (cmd == "load-cargo") {
+			switch (es.size()) {
+				default:
+					put("Usage: load-cargo <item-id> <amount>");
+					break;
+				case 3:
+					if (auto unit_id = get_sel_unit_id()) {
+						auto item = stoi(es.at(1));
+						auto num = stoi(es.at(2));
+
+						r_env.apply_inter(inter::load_cargo(unit_id, item, num));
+
+						break;
+					}
+					else {
+						put("no selected unit");
+					}
 			}
 		}
 		else if (cmd == "construct") {			

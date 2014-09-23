@@ -1,8 +1,7 @@
 cc94
 ====
 
-cc94 is a remake of Colonization game from 1994. Because it's based on 
-original graphic files you need a copy of Colonization to play this game.
+cc94 is a remake of the Colonization game from 1994. Because it's based on original graphic files, a copy of Colonization is required to play.
 
 cc94 is currently in early version of 0.1
 
