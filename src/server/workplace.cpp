@@ -12,7 +12,7 @@ namespace col{
 		 TODO: simplify in AC spirit; yields should be devised from climate parameters; 			
 		*/
 		auto& item = get_proditem();
-		return terr->get_yield(item, is_expert)		;
+		return terr->get_yield(item, is_expert);
 	}
 
 	

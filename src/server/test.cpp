@@ -37,19 +37,25 @@ using roll::replay;
  * colony screen: background on fields *
  *     uniform EVENT handling *
  * portable COLONIZE data import *
- * colony screen transport
- * load/unload cargo into ship - transport 
+ * v0.1
+ * colony screen transport *
+ * load/unload cargo into transport * 
+ * clear forest O / plow P
+ * orders -- keep trying
+ * construction complete message
+ * v0.2
+ * colony production changes gui 
  * replace messages with effects (let clients use them for messages) 
- * build system rethink
  * specialists by experience
- * v010
+ * autosave
+ * build system rethink
  * build ships
  * travel to europe by sea - exit_map(ship, dest) order - trade
  * sell/buy in europe 
  * specialists by school
  * combat 
  * temporary fortification
- * loyalyty
+ * loyality
  * immigration?
  * artillery fire during enemy turn?
  * colony abandonment
@@ -194,6 +200,8 @@ TEST_CASE( "load_cargo", "" ) {
 	
 	u.add(ItemOre, 23);
 	REQUIRE(u.get(ItemOre) == 23);
+	// regress
+	REQUIRE(u.get_space_left() == 77);  
 	
 }
 
@@ -242,9 +250,9 @@ TEST_CASE( "equip unit", "" ) {
 	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
 	
 	auto& c = env.create<Colony>();
-	Store & st = env.get_store(t);
-	
 	env.init(t, c);
+	
+	Store & st = env.get_store(t);
 	
 	REQUIRE_NOTHROW(st.add(ItemMuskets, 50));	
 	
@@ -279,7 +287,7 @@ TEST_CASE( "board ship", "" ) {
 	);
 	env.init(env.get_terr({1,0}), s);
 		
-	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 2);	
+	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 200);	
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
 	
 	REQUIRE_NOTHROW(env.start());

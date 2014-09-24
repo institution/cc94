@@ -147,10 +147,16 @@ namespace halo{
 
 	};
 
+	std::ostream & operator<<(std::ostream & o, Pattern const& p);
+	
+
+
+
+
 	using Patterns = std::vector<Pattern>;
 
 
-	bool handle_event(Patterns const& ps, Pattern const& q);
+	bool handle_event(Patterns const& ps, Pattern const& q, bool verbose = 0);
 
 
 }

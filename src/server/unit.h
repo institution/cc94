@@ -137,8 +137,8 @@ namespace col{
 		}
 
 		void set(Item item, Amount num) {
-			space_left -= used_space(store.get(item));
-			space_left += used_space(num);
+			space_left += store.get(item);
+			space_left -= num;
 			store.set(item, num);
 		}
 
@@ -232,7 +232,8 @@ namespace col{
 
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
 		Unit& set_type(UnitType const& t) {
-			space_left = t.slots;
+			store.cargos.clear();
+			space_left = t.get_space();
 			type = &t;
 			return *this;
 		}

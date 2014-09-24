@@ -158,6 +158,8 @@ namespace col {
 		}
 	}
 
+	
+	
 	/*
 	struct NotEnoughArgs: std::runtime_error {}
 	
@@ -168,7 +170,13 @@ namespace col {
 		return es[n];
 	}*/
 	
-	
+	void Console::load_cargo(Item const& item, Amount const& num) {
+		if (auto unit_id = get_sel_unit_id()) {
+			get_server().apply_inter(
+				inter::load_cargo(unit_id, item, num)
+			);
+		}
+	}
 	
 	void Console::handle_char(uint16 code) {
 		
@@ -277,7 +285,6 @@ namespace col {
 		}
 		else if (cmd == "list-orders") {
 			put("build-colony");
-			put("plow-fields");
 			put("clear-forest");
 			put("build-road");
 			put("move");
@@ -301,7 +308,6 @@ namespace col {
 			put("set-alt");
 			// orders
 			put("build-colony");
-			put("plow-fields");
 			put("clear-forest");
 			put("build-road");
 			put("move");
@@ -692,6 +698,29 @@ namespace col {
 				stoi(es[2])
 			);
 		}
+		else if (cmd == "plow") {
+			switch (es.size()) {
+				default:
+					put("Usage: plow");
+					break;
+				case 1:
+					if (auto up = get_sel_unit()) {
+						auto ret = env.improve(*up, PhysPlow);
+						if (ret) {
+							mem.set_order(up->id, '-');							
+						}
+						else {
+							mem.set_order(up->id, 'R');							
+						}
+						select_next_unit();
+					}
+					else {
+						put("no unit selected");
+					}
+					break;
+			}
+			
+		}
 		else if (cmd == "build-road") {
 			switch (es.size()) {
 				default:
@@ -757,7 +786,7 @@ namespace col {
 					if (auto tp = get_sel_terr()) {
 						Build::Id place_id = stoi(es.at(1));
 						BuildType::Id buildtype_id = stoi(es.at(2));					
-						env.apply(inter::construct(env.get_id(*tp), buildtype_id, place_id));
+						env.apply(inter::construct(env.get_id(*tp), place_id, buildtype_id));
 					}
 					break;
 				}
@@ -873,6 +902,8 @@ namespace col {
 							env.get_defender(env.get_terr(sel)),
 							es.at(1)
 						);
+						
+						
 						//select_next_unit();
 					}
 					else {

@@ -116,6 +116,11 @@ namespace col {
 			);
 		}
 
+		void do_unit_task(Unit::Id unit_id, char letter) {
+			// R,P,O,B - road,plow,clear-forest,build-colony
+			// 1,2,3,4,6,7,8,9 - move dir
+
+		}
 
 		struct Apply: boost::static_visitor<>{
 			Env & env;
@@ -274,6 +279,33 @@ namespace col {
 			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
 
+		void load_cargo(Item const& item, Amount const& num);
+
+
+		Item drag_item{ItemNone};
+		Amount drag_num{0};
+		// load = +1; unload = -1;
+		signed drag_dir{0};
+
+		void drag_cargo(Item const& item, Amount const& num, signed dir) {
+			assert(num >= 0);
+			drag_item = item;
+			drag_num = num;
+			drag_dir = dir;
+		}
+
+		void drop_cargo(signed dir) {
+			print("drop cargo expected=%||, actual=%||, num=%||\n", dir, drag_dir, dir * drag_num);
+			if (dir == drag_dir) {
+				load_cargo(drag_item, dir * drag_num);
+			}
+			drag_item = ItemNone;
+			drag_num = 0;
+			drag_dir = 0;
+		}
+
+
+
 
 
 		void activate() {
@@ -302,9 +334,6 @@ namespace col {
 		void trapall() {
 			hts.clear();
 		}
-
-
-
 
 		template<typename... T>
 		void on(T&&... t) {

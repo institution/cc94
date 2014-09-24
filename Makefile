@@ -31,6 +31,8 @@ CCOPTS:=${CCOPTS_D}
 release: CCOPTS := ${CCOPTS_R}
 release: client/main unmadspack server/test client/test
 
+all: client/main unmadspack server/test client/test
+
 
 
 # linker options

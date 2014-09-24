@@ -246,13 +246,17 @@ namespace col{
 			auto terr_num = st.get(item);
 			Amount free_num = u.get_space_left();
 
+			if (free_num < 0) {
+				throw Critical("ykhm; free_space=%||", free_num);
+			}
+
 			auto mod_num = std::min({terr_num, free_num, want_num});
 
 			apply(inter::terr_set_item(get_id(t), item, terr_num - mod_num));
 			apply(inter::unit_set_item(get_id(u), item, u.get(item) + mod_num));
 		}
 
-		void unload_cargo(Unit & u, Item item, Amount want_num = 100) {
+		void unload_cargo(Unit & u, Item item, Amount want_num) {
 			auto & t = get_terr(u);
 			auto & st = get_store(t);
 
@@ -822,7 +826,7 @@ namespace col{
 
 				auto space = u.get_space_left();
 				for (auto& p: orig.units) {
-					if (!space) break;
+					if (space < 100) break;
 					if (p->transported) {
 						auto & u2 = *p;
 						t_move(dest, u2);
@@ -835,7 +839,7 @@ namespace col{
 							inter::set_unit(get_id(u2), write_string(*this, u2))
 						);
 
-						space -= 1;
+						space -= 100;
 					}
 				}
 

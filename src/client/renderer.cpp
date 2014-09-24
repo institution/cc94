@@ -142,8 +142,6 @@ namespace col {
 		tex.loadFromImage(img);
 		return 0;
 	}
-		
-	
 	
 	// Load resource file
 	// cat -- category (dir name)
@@ -678,6 +676,13 @@ namespace col {
 	//sf::Color Black = {0,0,0,255};
 	//sf::Color Transparent = {0,0,0,0};
 	
+		
+	/*
+	static Res::mapped_type const* g_cursor_tex = nullptr;
+	void set_cursor(Res::mapped_type const* tex = nullptr) {
+		
+		g_cursor_tex = tex;
+	}*/
 	
 	
 	
@@ -738,9 +743,8 @@ namespace col {
 	}
 	
 	
-	void render_unit_cargo(sf::RenderWindow &win, v2i const& pos, v2i const& dim, Unit const& unit) {
+	void render_unit_cargo(sf::RenderWindow &win, Console & con, v2i const& pos, v2i const& dim, Unit const& unit) {
 		// render unit cargo
-		auto space = unit.get_space();
 		
 		/*
 		float b = 10;
@@ -750,16 +754,10 @@ namespace col {
 			return a * x + b;
 		};*/
 		
-		// unit cargo area frame
-		render_inline(win,
-			pos, v2i((space/100)*40, dim[1]),
-			ColorDarkWoodBrown
-		);
-
-		// render unit items
 		
-		auto pix = pos;
 		
+		// render unit items		
+		auto pix = pos;		
 		
 		for (auto item: COLONY_ITEMS) {
 			int num = unit.get(item);
@@ -768,9 +766,13 @@ namespace col {
 				auto clones = (unit.used_space(num) / 10);
 				auto width = 10 + clones * 2;
 				
-				render_inline(win,
-					pix, v2i(width, dim[1]),
-					ColorWoodBrown
+				auto tile_pos = pix;
+				auto tile_dim = v2i(width, dim[1]);
+				render_inline(win, tile_pos, tile_dim, ColorWoodBrown);
+				
+				// left click on cargo -- start drag cargo unload
+				con.on(Event::Press, Button::Left, tile_pos, tile_dim, 
+					[item,num,&con](){ con.drag_cargo(item, num, -1); }
 				);
 				
 				auto & item_tex = res(ICON, get_item_icon_id(item));
@@ -790,8 +792,82 @@ namespace col {
 				pix[0] += width;
 			}
 		}
+		
+		// reminder
+		{
+			int num = unit.get_space_left();
+			if (num) {
+				auto tile_pos = pix;
+				auto tile_dim = v2i(int16((num+19)/20)*4, dim[1]);
+				render_inline(win, tile_pos, tile_dim, ColorWoodBrown);
+				
+				pix[0] += tile_dim[0];
+			}
+		}
+		
+		
+		
+		
+		// unit cargo area frame
+		auto store_pos = pos;
+		auto store_dim = v2i(pix[0] - pos[0], dim[1]);
+		//render_inline(win, store_pos, store_dim, ColorDarkWoodBrown);
+
+		if (con.drag_item) {
+			// left release -- drop cargo
+			con.on(Event::Release, Button::Left, store_pos, store_dim,
+				[&con](){ con.drop_cargo(+1); }
+			);
+		}
+		
 	}
 	
+	
+	
+	void render_city_store(sf::RenderWindow & win, Console & con, v2i const& pos, v2i const& dim, Terr const& terr) {
+		auto const& env = con.env; // get_render_env
+		
+		// render storage area
+		render_area(win, pos, dim, {76,100,172,255});
+
+		if (con.drag_item) {
+			// left release city store -- unload cargo
+			con.on(Event::Release, Button::Left, pos, dim,
+				[&con](){ con.drop_cargo(-1); }
+			);
+		}
+		
+		int tile_width = 16;
+		auto & col_st = env.get_store(terr);
+		
+		auto pix = pos;
+		for (auto item: COLONY_ITEMS) {
+
+			// num of items
+			int num = col_st.get(item);
+		
+			auto tile_pos = pix;
+			auto tile_dim = v2i(tile_width,12);
+			
+			// render item
+			render_sprite(win, tile_pos, tile_dim, res(ICON, get_item_icon_id(item)));
+			
+			// left click on item -- start drag cargo load
+			con.on(Event::Press, Button::Left, tile_pos, tile_dim, 
+				[item,num,&con](){ con.drag_cargo(item, num, +1); }
+			);
+
+			// render number
+			auto txt = Text(std::to_string(num)).set_font("tiny.png");
+			render_text(
+				win,
+				calc_align(pix + v2i(0,13), v2i(tile_width,0), txt.get_dim(), v2f(0.5, 0)),
+				txt				
+			);
+			
+			pix[0] += tile_width;
+		}
+	}
 	
 
 	void render_city(sf::RenderWindow &win, Env const& env, Console & con) {
@@ -1044,17 +1120,20 @@ namespace col {
 
 						auto& unit_tex = res(ICON, get_icon_id(unit));
 
-						// render produced item
-						auto& item_tex = res(ICON, get_item_icon_id(field.get_proditem()));
-						render_sprite(win, 
-							calc_align(Box(item_pos, item_dim), get_dim(item_tex)),
-							item_tex
-						);
+						// field production
+						if (auto proditem = field.get_proditem()) {
+							// render produced item
+							auto& item_tex = res(ICON, get_item_icon_id(proditem));
+							render_sprite(win, 
+								calc_align(Box(item_pos, item_dim), get_dim(item_tex)),
+								item_tex
+							);
 
-						// render produced item amount
-						auto text = Text(to_string(env.get_prodnum(field)));
-						text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
-						render_text(win, item_pos, text);
+							// render produced item amount
+							auto text = Text(to_string(env.get_prodnum(field)));
+							text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
+							render_text(win, item_pos, text);
+						}
 
 						// render unit on field
 						render_sprite(win, 
@@ -1170,7 +1249,7 @@ namespace col {
 						}
 					);
 		
-					render_unit_cargo(win, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
+					render_unit_cargo(win, con, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
 					
 				}
 				else {
@@ -1189,37 +1268,12 @@ namespace col {
 		}
 		
 		
-
-		// render storage
-
-		render_area(win, ly.city_resources.pos, ly.city_resources.dim, {76,100,172,255});
-
-		int width = 16;
-		auto & col_st = env.get_store(terr);
+		render_city_store(win, con, ly.city_resources.pos, ly.city_resources.dim, terr);
 		
-		auto pix = ly.city_resources.pos;
-		for (auto item: COLONY_ITEMS) {
-
-			// num of items
-			int num = col_st.get(item);
 		
-			// render icon
-			render_sprite(win,
-				pix,
-				v2i(width,12),
-				res(ICON, get_item_icon_id(item))
-			);
-
-			// render number
-			auto txt = Text(std::to_string(num)).set_font("tiny.png");
-			render_text(
-				win,
-				calc_align(v2i(pix[0], pix[1]+13), v2i(width,0), txt.get_dim(), v2f(0.5, 0)),
-				txt				
-			);
-			
-			pix[0] += width;
-		}
+		
+		
+		
 		
 		// render EXIT button
 		render_area(win, ly.city_exit.pos, ly.city_exit.dim, {140,0,140,255});
@@ -2505,8 +2559,30 @@ namespace col {
 	}
 
 	
+	void render_cursor(sf::RenderWindow & win, Console const& con) {
+		if (con.drag_item) {
+			
+			sf::Vector2f mp = win.mapPixelToCoords(sf::Mouse::getPosition(win));
 
+			auto pos = v2i(mp.x, mp.y);
+			//print("cursor: %||, %||\n", mp.x, mp.y);
 
+			render_sprite(win, pos, res(ICON, get_item_icon_id(con.drag_item)));
+		}
+	}
+
+	
+	
+	void render_drag_clear(Console & con) {
+		if (con.drag_item) {
+			// left release anywhere -- end drag cargo
+			con.on(Event::Release, Button::Left,
+				[&con](){ con.drop_cargo(0); }
+			);
+		}
+	}
+	
+	
 	void render(sf::RenderWindow &app, col::Env & env, col::Console & con) {
 		app.clear();
 		con.reset_hotspots();
@@ -2514,6 +2590,7 @@ namespace col {
 		int w = app.getSize().x / conf.global_scale;
 		int h = app.getSize().y / conf.global_scale;
 
+		render_drag_clear(con);
 		
 		// bar top
 		render_bar(app, env, con, {0,0}, {w,7});
@@ -2549,9 +2626,14 @@ namespace col {
 
 		render_cmd(app, con);
 
+		render_cursor(app, con);
+		
 		app.display();
 
 	}
 
+	
+	
+	
 
 }

@@ -36,7 +36,7 @@ namespace col{
 				}
 				break;
 			case ItemLumber:
-				if (alt == AltFlat) {
+				if (alt >= AltFlat) {
 					if (forest) {
 						switch (biome) {
 							case BiomePlains:
@@ -54,9 +54,9 @@ namespace col{
 								ret = 2;
 								break;
 						}
-					}
-					break;
+					}					
 				}
+				break;
 			case ItemOre:
 				if (alt > AltFlat) {
 					ret = 4;
