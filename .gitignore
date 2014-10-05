@@ -5,6 +5,8 @@ __/*
 COLONIZE*
 p48x48/*
 nbproject
+core
+dist/*
 
 # Dependencies
 *.d
