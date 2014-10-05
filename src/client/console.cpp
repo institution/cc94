@@ -173,7 +173,7 @@ namespace col {
 	void Console::load_cargo(Item const& item, Amount const& num) {
 		if (auto unit_id = get_sel_unit_id()) {
 			get_server().apply_inter(
-				inter::load_cargo(unit_id, item, num)
+				inter::load_cargo(unit_id, item, num), auth
 			);
 		}
 	}
@@ -259,6 +259,7 @@ namespace col {
 	
 	void Console::do_command(string const& line) {
 		
+		auto & env = get_server();
 		auto & r_env = get_server();
 		
 		vector<string> es;
@@ -384,7 +385,7 @@ namespace col {
 					put("Usage: connect <nation-id>");
 					break;
 				case 2:
-					env.connect(stoi(es.at(1)), *this);					
+					gm.connect(this, stoi(es.at(1)));					
 					break;
 			}
 		}
@@ -431,103 +432,33 @@ namespace col {
 		else if (cmd == "expert") {
 			switch (es.size()) {
 				default: {
-					output.push_back("Usage: expert <pid>\n");
+					output.push_back("Usage: expert <nation_id>\n");
 					break;
 				}
 				case 2: {
-					auto pid = std::stoi(es.at(1));
-					auto & p = env.get<Nation>(pid);
-					if (p.player == nullptr) {
-						ths->emplace_back(expert_ai::run, pid, &env, &running);
-						put("expert ai connected to nation");
-					}
+					auto nation_id = std::stoi(es.at(1));
+					
+					gm.add_player<expert_ai::ExpertAi>(nation_id);
+										
 					break;
 				}
 			}
 		}
-		else if (cmd == "gui") {
+		else if (cmd == "null") {
 			switch (es.size()) {
 				default: {
-					output.push_back("Usage: gui <pid>\n");
+					output.push_back("Usage: null <nation_id>\n");
 					break;
 				}
 				case 2: {
-					auto pid = std::stoi(es.at(1));
-					auto & p = env.get<Nation>(pid);
-					if (p.player == nullptr) {
-						ths->emplace_back(human_ai::run, pid, &env, &running);
-						put("gui connected to nation");
-					}
+					auto nation_id = std::stoi(es.at(1));
+					
+					gm.add_player<null_ai::NullAi>(nation_id);
+										
 					break;
 				}
 			}
-		}
-		else if (cmd == "null-ai") {
-			switch (es.size()) {
-				default: {
-					output.push_back("Usage: null-ai <pid>\n");
-					break;
-				}
-				case 2: {
-					auto pid = std::stoi(es.at(1));
-					auto & p = env.get<Nation>(pid);
-					if (p.player == nullptr) {
-						ths->emplace_back(null_ai::run, pid, &env, &running);
-						put("null ai connected to nation");
-					}
-					break;
-				}
-			}
-		}
-		else if (cmd == "ai") {				
-			// calculate and show preffered move for current nation
-			switch (es.size()) {
-				default: {
-					output.push_back("Usage: ai <num> <exec>\n");
-					break;
-				}
-				case 3: {
-					if (env.in_progress()) {
-						auto & p = env.get_current_nation();
-						if (p.player == nullptr) {
-							put("creating ai for this nation");
-							
-							ths->emplace_back(Ai::run, p.id, &env);
-						}
-
-						auto run_mode = stoi(es.at(2));  // 0 no, 1 step, 2 full turn
-						auto power = stoi(es.at(1));
-						
-						/*
-						auto& ai = ais.at(pid);
-						
-						if (run_mode == 1) {
-							auto const& a = ai.calc(env, power, 0);
-							put(string("action: ") + to_string(a));
-							exec(a);
-						}
-						else {
-							while (1) {
-								auto const& a = ai.calc(env, power, 0);
-								put(string("action: ") + to_string(a));
-								exec(a);
-								if (a == Ready(pid)) {
-									break;
-								}
-							}
-
-						}
-						*/
-						
-
-					}
-					else {
-						put("game in regress; start game first");
-					}
-					break;
-				}
-			}
-		}
+		}		
 		else if (cmd == "start") {
 			switch (es.size()) {
 				default: {
@@ -535,7 +466,7 @@ namespace col {
 					break;
 				}
 				case 1: {
-					r_env.apply_inter(inter::start());
+					env.start();
 					put("Game started!");
 					select_next_unit();
 					break;
@@ -548,15 +479,11 @@ namespace col {
 					output.push_back("Usage: ready [nation_id]\n");
 					break;
 				}
-				case 2: {
-					exec(Ready(std::stoi(es.at(1))));
-					select_next_unit();
-					break;
-				}
 				case 1: {
 					//exec(Ready(env.get_current_nation().id));
-					env.ready(env.get_current_nation());
+					env.ready(env.get_current_nation());					
 					select_next_unit();
+					con.ready();
 					break;
 				}
 			}
@@ -722,7 +649,7 @@ namespace col {
 						auto item = stoi(es.at(1));
 						auto num = stoi(es.at(2));
 
-						r_env.apply_inter(inter::load_cargo(unit_id, item, num));
+						r_env.apply_inter(inter::load_cargo(unit_id, item, num), auth);
 
 						break;
 					}
@@ -874,12 +801,13 @@ namespace col {
 					break;
 				case 3:
 					if (Unit* u = get_sel_unit()) {
-						r_env.apply_inter(
+						env.apply_inter(
 							inter::move_unit(
 								stoi(es.at(1)), // dx
 								stoi(es.at(2)), //dy
 								env.get_id(*u)  // unit_id							
-							)
+							),
+							auth
 						);
 						
 						select_next_unit();						 
@@ -889,31 +817,7 @@ namespace col {
 					}
 					break;
 			}
-		}
-		else if (cmd == "attack") {
-			switch (es.size()) {
-				default:
-					put("Usage: attack <dx> <dy>");
-					break;
-				case 3:
-					if (env.has_defender(sel)) {
-						exec(OrderAttack(
-							env.get_current_nation().id,
-							env.get_defender(env.get_terr(sel)).id,
-							dir4vec(
-								Coords(
-									stoi(es.at(1)), // dx
-									stoi(es.at(2))  // dy
-								)
-							)
-						));
-					}
-					else {
-						put("no unit selected");
-					}
-					break;
-			}
-		}
+		}		
 		else if (es.at(0) == "enter") {
 			switch (es.size()) {
 				default: {
@@ -990,11 +894,10 @@ namespace col {
 
 	
 	
-	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running) {
-		// ee -- server
-
-		Console con("run_console", *ee, tt, *running, 0);
-
+	void run_gui(Console * cc, Env * ee) {
+		Env & env = *ee;
+		Console & con = *cc;
+		
 		preload_terrain();
 
 		sf::RenderWindow app(
@@ -1011,13 +914,14 @@ namespace col {
 		sf::Clock clock;
 		auto last_t = clock.getElapsedTime().asSeconds();
 		while (app.isOpen())
-		{
+		{		
+			
 			if ((con.env.mod != last_env) || (con.mod != last_con) || (last_t + 0.1 > clock.getElapsedTime().asSeconds())) {
 				//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
 				con.time = clock.getElapsedTime().asSeconds();
 				last_t = con.time;
 
-				render(app, con.env, con);
+				render(app, env, con);
 
 				last_env = con.env.mod;
 				last_con = con.mod;
@@ -1025,9 +929,16 @@ namespace col {
 
 			con.handle_events(app);
 
+			if (!con.running) {
+				break;
+			}
+			
 		}
-		(*running) = false;
-		std::cout << "run_console -- clean exit\n";
+		
+		con.running = false;
+		con.mtx.unlock();
+		con.gm.stop();
+		print("run_gui -- clean exit\n");		
 	}
 
 

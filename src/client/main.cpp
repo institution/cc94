@@ -37,8 +37,9 @@
 
 
 #include "col.hpp"
-#include "envgame.h"
+#include "env.h"
 #include "csv.h"
+#include "game.h"
 #include "console.h"
 
 #include "format.hpp"
@@ -108,9 +109,6 @@ namespace col{
 }
 */
 
-using Threads = vector<std::thread>;
-
-bool running{true};
 
 
 
@@ -122,7 +120,7 @@ int main(int argc, char* argv[])
 {
 	
 	
-	XInitThreads(); // os dep	
+	//XInitThreads(); // os dep	
 
 	
 	Path argv0(argv[0]);
@@ -194,7 +192,7 @@ int main(int argc, char* argv[])
 	//cout << " " << tts.size() << " loaded." << endl;
 
 
-	EnvGame env(1);
+	Env env(1);
 	env.loads<BuildType>((csv_path/"builds.csv").c_str());
 	env.loads<UnitType>((csv_path/"units.csv").c_str());
 
@@ -210,19 +208,13 @@ int main(int argc, char* argv[])
 		env.fill(Terr{AltSea, BiomeNone});
 	}
 	
+	Game game(env);
 	
 	
-	Threads ths;
+	game.add_player<Console>(0, env, game);
 	
-	run_console(&env, &ths, &running);
-	//std::thread(run_console, &env, &ths, &running);
+	game.play();
 	
-	env.activate_all();
-	
-	for (auto& t: ths) {
-		t.join();
-	}
-
 	
 	/*{
 		ofstream fo(fname, std::ios::binary);

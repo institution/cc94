@@ -6,48 +6,30 @@
 #include <chrono>
 #include <iostream>
 
-#include "envgame.h"
+#include "env.h"
 #include "player.h"
 #include "format.hpp"
 #include "inter.h"
+#include "player.h"
 
 namespace null_ai{
 	// AI operating under coded "expert" rules
 
 	using col::Player;
-	using col::EnvGame;
+	using col::Env;
 	using col::Nation;
-	using col::Ready;
 	namespace inter = col::inter;
 
-	struct Apply: boost::static_visitor<void>{
-		template <class T>
-		void operator()(T const& t) const {
-			std::cout << format("Null Ai: inter received: %||\n", inter::type_name<T>::get());
-		}
-	};
 
 	struct NullAi: Player {
-		std::mutex mtx;
 
-		NullAi() {
-
-		}
-
-		void activate() {
-			std::cout << "Null Ai: activate\n";
-			mtx.unlock();
-		}
-
-		void apply_inter(col::inter::Any const& a, Player & s) {
-			boost::apply_visitor(Apply(), a);
+		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+			print("null_ai: ready\n");
+			env.apply_inter(inter::ready(nation_id), nation_auth);
 		}
 
 
 	};
-
-
-	void run(Nation::Id pid, EnvGame * env, bool *running);
 
 }
 

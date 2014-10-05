@@ -8,9 +8,8 @@
 
 
 #include "env.h"
-#include "envgame.h"
+#include "env.h"
 #include "serialize.h"
-#include "action.h"
 
 
 using namespace col;
@@ -153,11 +152,11 @@ TEST_CASE( "inter", "" ) {
 	
 	REQUIRE(inter::type_name<inter::build_colony>::get() == "build_colony");
 	
-	Env env;
+	//Env env;
 	
-	inter::Any a;
-	a = inter::echo(1);
-	REQUIRE_NOTHROW(env.apply_inter(a), nullptr);
+	//inter::Any a;
+	//a = inter::noa(1);
+	//REQUIRE_NOTHROW(env.apply_inter(a, 0));
 	
 	
 }
@@ -503,7 +502,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 
 TEST_CASE( "scoring", "" ) {
 
-	EnvGame env;
+	Env env;
 
 	env.resize({2,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
@@ -531,13 +530,6 @@ TEST_CASE( "scoring", "" ) {
 }
 
 
-TEST_CASE( "actions_equality", "" ) {
-
-	REQUIRE(OrderMove(1,1,1) == OrderMove(1,1,1));
-	REQUIRE(!(OrderMove(1,1,1) == OrderAttack(1,1,1)));
-	REQUIRE(!(OrderMove(1,1,1) == OrderMove(1,1,2)));
-
-}
 
 TEST_CASE( "serialize", "" ) {
 
@@ -719,8 +711,8 @@ TEST_CASE( "io::write<Env>", "[env]" ) {
 
 	std::stringstream buf;
 
-	io::write<EnvGame>(buf, src);
-	//io::read<EnvGame>(trg, buf);
+	io::write<Env>(buf, src);
+	//io::read<Env>(trg, buf);
 
 
 }

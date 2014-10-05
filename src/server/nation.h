@@ -1,28 +1,30 @@
-#ifndef PLAYER43567_H
-#define PLAYER43567_H
+#ifndef NATION_56865643567
+#define NATION_56865643567
 
 #include "objs.h"
 #include "meta.hpp"
 
-namespace col{
+namespace col {
 
-	struct Player;
 
 	struct Nation {
 		using Id = uint32;
+		using Auth = uint32;
 
 		Id id;
 		string name;
 		Color color;
 		uint8 flag_id;
+		uint32 auth;
 
-		Player *player{nullptr};
+		//Player *player{nullptr};
 
 		Nation(Id const& id, string const& name="", Color const& color={0,0,0}, uint32 const& flag_id=0):
 			id(id),
 			name(name),
 			color(color),
-			flag_id(flag_id)
+			flag_id(flag_id),
+			auth(roll::roll1(100000))
 		{}
 
 
@@ -31,9 +33,7 @@ namespace col{
 
 		Nation(Nation const&) = delete;
 
-		~Nation() {
-			assert(player == nullptr);
-		}
+		~Nation() {}
 
 		template<class A>
 		void serialize(A & ar, uint const& version) {
@@ -52,8 +52,8 @@ namespace col{
 		uint8 const& get_flag_id() const { return flag_id; }
 		Color const& get_color() const { return color; }
 
-		Player * get_player() const { return player; }
-		Nation & set_player(Player * player) { this->player = player; return *this; }
+		//Player * get_player() const { return player; }
+		//Nation & set_player(Player * player) { this->player = player; return *this; }
 
 
 

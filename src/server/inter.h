@@ -165,23 +165,6 @@ namespace col{
 			(Amount, num)
 		)
 
-		// effect
-		CC94_DEFINE_INTER(
-			terr_set_item,
-			(Terr::Id, terr_id)
-			(Item, item)
-			(Amount, num)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			unit_set_item,
-			(Unit::Id, unit_id)
-			(Item, item)
-			(Amount, num)
-		)
-
-
 		// action
 		CC94_DEFINE_INTER(
 			build_colony,
@@ -228,38 +211,36 @@ namespace col{
 		// action
 		CC94_DEFINE_INTER(
 			ready,
+			(Nation::Id, nation_id)
 		)
 
-
-
-
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			toogle_board,
 			(Unit::Id, unit_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			work_build,
 			(Build::Id, build_id)
 			(Unit::Id, unit_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			work_field,
 			(Field::Id, field_id)
 			(Unit::Id, unit_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			work_none,
 			(Unit::Id, unit_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			prod_build,
 			(Terr::Id, terr_id)
@@ -267,7 +248,7 @@ namespace col{
 			(Item::Id, item_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			prod_field,
 			(Terr::Id, terr_id)
@@ -275,158 +256,13 @@ namespace col{
 			(Item::Id, item_id)
 		)
 
-		// action/effect
+		// action
 		CC94_DEFINE_INTER(
 			construct,
 			(Terr::Id, terr_id)
 			(Build::Id, build_id)
 			(BuildType::Id, build_type_id)
 		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			error,
-			(Unit::Id, unit_id)
-			(Terr::Id, terr_id)
-			(std::string, text)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			init_colony,
-			(Terr::Id, terr_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			init_unit,
-			(Terr::Id, terr_id)
-			(UnitType::Id, unit_type_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			init_build,
-			(Terr::Id, terr_id)
-			(Build::Id, build_id)
-			(BuildType::Id, build_type_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			kill,
-			(Unit::Id, unit_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			add_phys,
-			(Terr::Id, terr_id)
-			(Phys::Id, phys)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			sub_phys,
-			(Terr::Id, terr_id)
-			(Phys::Id, phys)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			set_tp,
-			(Unit::Id, unit_id)
-			(int, num)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			sub_item,
-			(Terr::Id, terr_id)
-			(Item::Id, item)
-			(Amount, num)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			add_item,
-			(Terr::Id, terr_id)
-			(Item::Id, item)
-			(Amount, num)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			set_item,
-			(Terr::Id, terr_id)
-			(Item::Id, item)
-			(Amount, num)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			morph_unit,
-			(Unit::Id, unit_id)
-			(UnitType::Id, unit_type_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			morph_build,
-			(Terr::Id, terr_id)
-			(Build::Id, build_id)
-			(BuildType::Id, build_type_id)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			set_turn,
-			(uint32, turn_no)
-		)
-
-		// effect
-		CC94_DEFINE_INTER(
-			set_current_nation,
-			(Id<Nation>::type, nation_id)
-		)
-
-		// effect (editor)
-		CC94_DEFINE_INTER(
-			reset,
-			(Coord, x)
-			(Coord, y)
-		)
-
-
-		// effect (editor)
-		CC94_DEFINE_INTER(
-			set_biome,
-			(Terr::Id, terr_id)
-			(Biome::Id, biome)
-		)
-
-
-		// effect (editor)
-		CC94_DEFINE_INTER(
-			set_alt,
-			(Terr::Id, terr_id)
-			(int, alt)
-		)
-
-		// effect (editor)
-		CC94_DEFINE_INTER(
-			set_phys,
-			(Terr::Id, terr_id)
-			(Phys::Id, phys)
-		)
-
-
-		// for testing
-		CC94_DEFINE_INTER(
-			echo,
-			(int, a)
-		)
-
 
 		CC94_DEFINE_INTER(
 			load,
@@ -441,32 +277,14 @@ namespace col{
 			activate,
 		)
 
-		CC94_DEFINE_INTER(
-			take_unit,
-			(Unit::Id, id)
-		)
-
-		CC94_DEFINE_INTER(
-			set_unit,
-			(Unit::Id, id)
-			(string, data)
-		)
-
-
 
 		using Any = boost::variant<
 
 			load_cargo,
-			unit_set_item,
-			terr_set_item,
 
 			improve,
 			destroy,
 
-			take_unit,
-			set_unit,
-
-			echo,
 			ready,
 			move_unit,
 			improve,
@@ -482,42 +300,7 @@ namespace col{
 			prod_build,
 			prod_field,
 
-			construct,
-
-			error,
-
-			init_colony,
-			init_unit,
-			init_build,
-
-			add_phys,
-			sub_phys,
-
-			set_tp,
-
-			add_item,
-			sub_item,
-			set_item,
-
-			// effect
-			set_biome,
-			set_alt,
-			set_phys,
-
-			morph_unit,
-			morph_build,
-
-			// effect
-			set_turn,
-			set_current_nation,
-
-			// effect
-			reset,
-
-			// load data
-			load,
-			start,
-			activate
+			construct
 
 		>;
 

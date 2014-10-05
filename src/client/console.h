@@ -7,18 +7,18 @@
 #include <deque>
 #include <functional>
 #include <thread>
+#include <mutex>
 #include <chrono>
 
 #include "col.hpp"
-#include "envgame.h"
+#include "env.h"
 #include "layout.h"
-#include "action.h"
-#include "ai.h"
 #include "player.h"
 #include "ai-env-helpers.h"
 #include "halo.h"
-#include "human_ai.h"
 #include "format.hpp"
+#include "player.h"
+#include "game.h"
 
 
 /*
@@ -42,8 +42,8 @@ namespace col {
 
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
-
-
+	struct Console;
+	void run_gui(Console * con, Env * env);
 
 
 	// mouse events: normal, drag&drop
@@ -73,9 +73,11 @@ namespace col {
 
 		misc::Memory mem;
 
-		EnvGame & env;
+		Env & env;
 
 		uint32 mod;
+
+		Auth auth{0};
 
 		float time{0.0f};
 
@@ -93,6 +95,7 @@ namespace col {
 		// selected unit
 		Unit* sel_unit{nullptr};
 
+		Game & gm;
 
 		void apply_inter(inter::Any const& a, Player & s);
 
@@ -155,7 +158,7 @@ namespace col {
 
 			mem.set_order(unit_id, letter, dx, dy);
 
-			get_server().apply_inter(a);
+			get_server().apply_inter(a, auth);
 
 			select_next_unit();
 
@@ -331,7 +334,7 @@ namespace col {
 					auto o = mem.get_order(unit_id);
 
 					get_server().apply_inter(
-						get_inter(unit_id, o.code, o.dx, o.dy)
+						get_inter(unit_id, o.code, o.dx, o.dy), auth
 					);
 
 
@@ -375,10 +378,25 @@ namespace col {
 
 
 
+		std::thread gui_th;
+
+		std::mutex mtx;
+
+		void start() {
+			running = true;
+			gui_th = std::move(std::thread(run_gui, this, &env));
+		}
+
+		void stop() {
+			running = false;
+			gui_th.join();
+		}
 
 
-		void activate() {
-			put("Activate!");
+		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+			print("console: active");
+
+			mtx.lock();
 		}
 
 
@@ -446,33 +464,30 @@ namespace col {
 
 		Mode mode;
 		vector<std::thread> * ths;
-		bool &running;
+		bool running{false};
 
 		Nation::Id nation_id;
 
 		string memtag;
 
 
-		Player *server{nullptr};
+		Env *server{nullptr};
 
-		Player & get_server() { return *server; }
-		void set_server(Player & server) { this->server = &server; }
+		Env & get_server() { return *server; }
+		void set_server(Env & server) { this->server = &server; }
 
-		Console(string memtag, EnvGame & env, vector<std::thread> * ths, bool & running, Nation::Id nid):
-			env(env), ths(ths), running(running), nation_id(nid), memtag(memtag), server(&env)
+		Console(Env & env, Game & gm):
+			env(env), server(&env), gm(gm)
 		{
 
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
 
-
-
 			chi = history.begin();
 			mod = 0;
 			mode = Mode::AMERICA;
 			clear();
-
 
 		}
 
@@ -502,12 +517,9 @@ namespace col {
 		}
 
 
-
-		void exec(Action const& action) {
-			env.exec(action);
+		void ready() {
+			mtx.unlock();
 		}
-
-
 
 		void clear() {
 			output.clear();
@@ -569,53 +581,9 @@ namespace col {
 
 
 
-
-
-		// 1. Apply effect to AI
-		// 2. Apply effect to env
-		struct Apply: boost::static_visitor<>{
-			EnvGame & env;
-			Console & con;
-
-			Apply(EnvGame & env, Console & con): env(env), con(con) {}
-
-			template <class T>
-			void operator()(T const& a) const;
-
-		};
-
-
-
-
 	};
 
-	inline void Console::apply_inter(inter::Any const& a) {
-		print("console %|| apply_inter: %||\n", memtag, a);
 
-		boost::apply_visitor(Apply(env, *this), a);
-	}
-
-	template <class T> inline
-	void Console::Apply::operator()(T const& a) const {
-		env.apply(a);
-
-		if (Unit *u = con.get_sel_unit()) {
-			if (u->get_time_left() == 0) {
-				con.select_next_unit();
-			}
-		}
-	}
-
-	template <> inline
-	void Console::Apply::operator()<inter::error>(inter::error const& a) const {
-
-		if (a.unit_id) {
-			con.mem.set_order(a.unit_id);
-		}
-		print("inter::error recived: %||\n", a.text);
-	}
-
-	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running);
 
 }
 #endif

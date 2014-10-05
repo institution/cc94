@@ -14,22 +14,8 @@
 
 namespace col{
 
+	using Auth = uint32;
 
-	struct Player{
-
-		virtual void apply_inter(inter::Any const& a, Player & sender) = 0;
-
-
-		//template <class t>
-		//virtual void receive(T const& t) = 0;
-		// CONTROL FLOW
-		// 1: master -> ai: activate
-		//    ai -> master: sends commands
-		//    ai -> master: ready
-		//    goto 1 or 2
-		// 2: master -> ai: win/lose
-
-	};
 
 	struct InvalidAction {
 		Error e;
@@ -86,7 +72,7 @@ namespace col{
 
 
 
-	struct Env: Core, Player {
+	struct Env: Core {
 
 		// turn system
 		uint8 state{0}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
@@ -112,7 +98,7 @@ namespace col{
 			turn_no = 0;
 			turn_limit = 0;
 			state = 0;
-			cpid = -1;
+			//cpid = -1;
 			mod++;
 		}
 
@@ -121,48 +107,10 @@ namespace col{
 			return turn_no;
 		}
 
-
-		void send_game_state(Player & u) {
-			// send map info
-
-			// reset map
-			u.apply_inter(inter::reset(w, h), *this);
-
-			// fill tiles
-			for(Coord j = 0; j < h; ++j) {
-				for(Coord i = 0; i < w; ++i) {
-					auto& t = get_terr(Coords(i,j));
-
-					auto terr_id = Coords(i,j);
-					u.apply_inter(
-						inter::set_alt(terr_id, t.get_alt()), *this
-					);
-
-					u.apply_inter(
-						inter::set_biome(terr_id, t.get_biome()), *this
-					);
-
-					u.apply_inter(
-						inter::set_phys(terr_id, t.get_phys()), *this
-					);
-				}
-			}
-
-			// add nations
-
-
-			// add units
-
-			// add colonies
-
-			// set game mode (playing, editing, turn_no,...)
-
-		}
-
+		/*
 		void connect(Id<Nation>::type pid, Player & u) {
 			// connect nation(game nation) with AI or Human
 			get<Nation>(pid).set_player(&u);
-
 
 			std::ostringstream ostr;
 			boost::archive::binary_oarchive ar(ostr);
@@ -173,9 +121,20 @@ namespace col{
 			);
 
 		}
+		*/
 
-		void apply(inter::set_phys const& a);
 
+
+
+
+		void apply(inter::start a) {
+			start();
+			//notify_effect(a);
+		}
+
+		void apply(inter::activate a) {
+
+		}
 
 
 		Nation const* get_current_nation_p() const {
@@ -207,21 +166,14 @@ namespace col{
 		}
 
 
-		void apply(inter::start a) {
-			start();
-			notify_effect(a);
-		}
-
-		void apply(inter::activate a) {
-
-		}
-
 		void start() {
-			if (nations.size() < 1) {
-				throw Error("need at least one nation to start game");
-			}
+			//if (nations.size() < 1) {
+			//	throw Error("need at least one nation to start game");
+			//}
 
 			state = 1;
+
+
 			cpid = 0;
 			while (nations.find(cpid) == nations.end()) {
 				if (cpid > 100) {   // TODO: pfff...
@@ -229,6 +181,8 @@ namespace col{
 				}
 				++cpid;
 			}
+
+
 		}
 
 
@@ -242,18 +196,12 @@ namespace col{
 
 
 
-
-
-		void apply(inter::unit_set_item const& a) {
-			auto & u = get<Unit>(a.unit_id);
-			u.set(a.item, a.num);
-			notify_effect(get_terr(u), a);
+		void unit_set_item(Unit & u, Item item, Amount num) {
+			u.set(item, num);
 		}
 
-		void apply(inter::terr_set_item const& a) {
-			auto & t = get_terr(a.terr_id);
-			get_store(t).set(a.item, a.num);
-			notify_effect(t, a);
+		void terr_set_item(Terr & t, Item item, Amount num) {
+			get_store(t).set(item, num);
 		}
 
 		void load_cargo(Unit & u, Item item, Amount want_num) {
@@ -269,8 +217,8 @@ namespace col{
 
 			auto mod_num = std::min({terr_num, free_num, want_num});
 
-			apply(inter::terr_set_item(get_id(t), item, terr_num - mod_num));
-			apply(inter::unit_set_item(get_id(u), item, u.get(item) + mod_num));
+			unit_set_item(u, item, u.get(item) + mod_num);
+			terr_set_item(t, item, terr_num - mod_num);
 		}
 
 		void unload_cargo(Unit & u, Item item, Amount want_num) {
@@ -281,8 +229,8 @@ namespace col{
 
 			auto mod_num = std::min({unit_num, want_num});
 
-			apply(inter::unit_set_item(get_id(u), item, unit_num - mod_num));
-			apply(inter::terr_set_item(get_id(t), item, st.get(item) + mod_num));
+			unit_set_item(u, item, unit_num - mod_num);
+			terr_set_item(t, item, st.get(item) + mod_num);
 		}
 
 
@@ -320,48 +268,16 @@ namespace col{
 
 
 
-		bool ready(Nation const& p, bool exec=1) {
-
-			if (get_current_nation().id != p.id) {
-				if (exec) {
-					throw Critical("not your turn");
-				}
-				else {
-					throw Error("not your turn");
-				}
-			}
-
-			if (exec) {
-				++cpid;
-				while (nations.find(cpid) == nations.end()) {
-					if (cpid > 10) {
-						turn();     // TURN HERE
-						cpid = 0;
-					}
-					else {
-						++cpid;
-					}
-				}
-
-				record_action();
-
-				if (auto u = get_current_nation().get_player()) {
-					u->apply_inter(inter::activate(), *this);
-				}
-			}
-
-			return 1;
-		}
 
 
-
+		/*
 		void activate_all() {
 			for (auto& p: nations) {
 				if (auto u = p.second.get_player()) {
 					u->apply_inter(inter::activate(), *this);
 				}
 			}
-		}
+		}*/
 
 
 
@@ -513,14 +429,14 @@ namespace col{
 
 			// time progress
 			turn_no++;
-			notify_effect(inter::set_turn(turn_no));
+			//notify_effect(inter::set_turn(turn_no));
 
 			// time reset on units
 			for (auto& item: units) {
 				// cerr << "turn calc for: " << item.second << endl;
 				Unit & u = item.second;
 				u.time_left = TIME_UNIT;
-				notify_effect(get_terr(u), inter::set_tp(u.id, TIME_UNIT));
+				//notify_effect(get_terr(u), inter::set_tp(u.id, TIME_UNIT));
 			}
 
 			// all colonies
@@ -568,8 +484,8 @@ namespace col{
 				and st.get(ut.get_item2()) >= ut.get_num2()   )
 			{
 
-				notify_effect(t, inter::add_item(get_id(t), u.get_item1(), u.get_num1()));
-				notify_effect(t, inter::add_item(get_id(t), u.get_item2(), u.get_num2()));
+				//notify_effect(t, inter::add_item(get_id(t), u.get_item1(), u.get_num1()));
+				//notify_effect(t, inter::add_item(get_id(t), u.get_item2(), u.get_num2()));
 
 				// consume
 				sub_item(t, ut.get_item1(), ut.get_num1());
@@ -609,7 +525,7 @@ namespace col{
 			return 1;
 		}
 
-
+		/*
 		void send(Player & p, inter::Any const& a) {
 			p.apply_inter(a, *this);
 		}
@@ -619,13 +535,13 @@ namespace col{
 				send(*u, a);
 			}
 		}
-
+		*/
 
 		//void notify_effect(Nation const& p, inter::Any const& a) {
 		//	send(p, a);
 		//}
 
-
+		/*
 		void notify_effect(inter::Any const& a) {
 			for (auto& p: nations) {
 				send(p.second, a);
@@ -639,21 +555,20 @@ namespace col{
 				}
 			}
 		}
+		*/
 
 
 
 
-
-		void apply(inter::reset const& a) {
+		void reset(Coords const& dim) {
 			// clear_all
 			// resize
 			// fill with dessert ocean
 			clear_units();
 			clear_colonies();
 
-			resize({a.x,a.y});
+			resize({dim[0],dim[1]});
 
-			notify_effect(a);
 		}
 
 		void apply(inter::load const& a) {
@@ -841,6 +756,7 @@ namespace col{
 			if (run_map_task(u, time_cost)) {
 				t_move(dest, u);
 
+				/*
 				notify_effect(orig,
 					inter::take_unit(get_id(u))
 				);
@@ -848,6 +764,7 @@ namespace col{
 				notify_effect(dest,
 					inter::set_unit(get_id(u), write_string(*this, u))
 				);
+				*/
 
 				u.transported = transported;
 
@@ -858,6 +775,7 @@ namespace col{
 						auto & u2 = *p;
 						t_move(dest, u2);
 
+						/*
 						notify_effect(orig,
 							inter::take_unit(get_id(u2))
 						);
@@ -865,6 +783,7 @@ namespace col{
 						notify_effect(dest,
 							inter::set_unit(get_id(u2), write_string(*this, u2))
 						);
+						*/
 
 						space -= 100;
 					}
@@ -880,6 +799,7 @@ namespace col{
 
 		}
 
+		/*
 		void apply(inter::take_unit const& a) {
 			auto it = units.find(a.id);
 			if (it == units.end()) {
@@ -898,7 +818,7 @@ namespace col{
 			read_string(*this, units[a.id], a.data);
 			units[a.id].in_game = true;
 		}
-
+		 */
 
 
 		bool has_defender(Coords const& pos) const {
@@ -1078,7 +998,7 @@ namespace col{
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
-				apply(inter::set_phys(get_id(t), t.get_phys() | feat));
+				t.add_phys(feat);
 			}
 		}
 
@@ -1120,6 +1040,26 @@ namespace col{
 		}
 
 
+		// calc some kind of score
+		float get_result(Nation::Id pid) {
+
+			// % of units
+			float score = 0, total = 0;
+			for (auto& p: units) {
+				if (p.second.get_nation().id == pid) {
+					score += 1;
+				}
+				total += 1;
+			}
+
+			if (total) {
+				return score/total;
+			}
+			else {
+				return score;
+			}
+
+		}
 
 
 		void kill(Colony & c) {
@@ -1145,11 +1085,13 @@ namespace col{
 			u.time_left = tp;
 		}
 
+		/*
 		void apply(inter::set_tp const& e) {
 			auto & u = get<Unit>(e.unit_id);
 			set_tp(u, e.num);
-			notify_effect(get_terr(u), e);
+			//notify_effect(get_terr(u), e);
 		}
+		 */
 
 
 
@@ -1186,15 +1128,12 @@ namespace col{
 			colonize(get<Unit>(a.unit_id), "");
 		}
 
-		void apply(inter::error const& a) {
-
-		}
 
 		void apply(inter::construct const& a) {
 			auto& t = get_terr(a.terr_id);
 			auto& type = get<BuildType>(a.build_type_id);
 			t.get_colony().construct_building(type, a.build_id);
-			notify_effect(t, a);
+			//notify_effect(t, a);
 		}
 
 		void put_build(Terr & t, int slot, BuildType & btype) {
@@ -1456,14 +1395,14 @@ namespace col{
 			Terr & terr = get_terr(u);
 			auto& f = get_field(terr, field_id, u.get_nation());
 			work_workplace(f, u);
-			notify_effect(terr,	inter::work_field(field_id, get_id(u)));
+			//notify_effect(terr,	inter::work_field(field_id, get_id(u)));
 		}
 
 		void work_build(Build::Id build_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_nation());
 			work_workplace(f, u);
-			notify_effect(terr,	inter::work_build(build_id, get_id(u)));
+			//notify_effect(terr,	inter::work_build(build_id, get_id(u)));
 		}
 
 
@@ -1488,7 +1427,7 @@ namespace col{
 			auto & n = get_current_nation();
 			auto & t = get_terr(a.terr_id);
 			set_proditem_field(n, t, a.field_id, a.item_id);
-			notify_effect(t, a);
+			//notify_effect(t, a);
 		}
 
 		void apply(inter::prod_build const& a) {
@@ -1521,6 +1460,38 @@ namespace col{
 		Terr& get_colony_field(Terr const& ct, int num) {
 			return get_terr(vec4dir(num) + get_coords(ct));
 		}
+
+
+
+		bool ready(Nation const& p) {
+
+			if (get_current_nation().id != p.id) {
+				throw Error("not your turn");
+			}
+
+
+			++cpid;
+			while (nations.find(cpid) == nations.end()) {
+				if (cpid > 10) {
+					turn();     // TURN HERE
+					cpid = 0;
+				}
+				else {
+					++cpid;
+				}
+			}
+
+			record_action();
+
+			/*if (auto u = get_current_nation().get_player()) {
+				u->apply_inter(inter::activate(), *this);
+			}*/
+
+
+			return 1;
+		}
+
+
 
 
 		Workplace const& get_workplace_by_index(Unit const& unit, int num) const {
@@ -1583,9 +1554,10 @@ namespace col{
 				}
 			}
 
-			notify_effect(t, inter::init_colony(get_id(t)));
+			//notify_effect(t, inter::init_colony(get_id(t)));
 		}
 
+		/*
 		void apply(inter::init_colony const& a) {
 			auto& t = get<Terr>(a.terr_id);
 			init_colony(t);
@@ -1598,25 +1570,29 @@ namespace col{
 			u.set_type(get<UnitType>(a.unit_type_id));
 			u.set_nation(get_current_nation());
 		}
+		*/
 
-		void apply(inter::init_build const& a) {
-			//terr_id build_id build_type_id
+
+		void set_turn(uint32 turn_no) {
+			this->turn_no = turn_no;
 		}
 
-
-
-
-		void apply(inter::sub_phys const& a) {
-			Terr & t = get<Terr>(a.terr_id);
-			t.sub_phys(a.phys);
-			notify_effect(t, a);
+		void set_current_nation(Nation::Id const& nation_id) {
+			set_current_nation(get<Nation>(nation_id));
 		}
 
-		void apply(inter::add_phys const& a) {
-			Terr & t = get<Terr>(a.terr_id);
-			t.add_phys(a.phys);
-			notify_effect(t, a);
+		void set_biome(Terr::Id terr_id, Biome const& biome) {
+			get<Terr>(terr_id).set_biome(biome);
 		}
+
+		void set_alt(Terr::Id terr_id, Alt const& alt) {
+			get<Terr>(terr_id).set_alt(alt);
+		}
+
+		void set_phys(Terr::Id terr_id, Phys const& phys) {
+			get<Terr>(terr_id).set_phys(phys);
+		}
+
 
 
 		void apply(inter::ready const& a) {
@@ -1625,7 +1601,7 @@ namespace col{
 
 		void toogle_board(Unit & u) {
 			u.transported = !u.transported;
-			notify_effect(get_terr(u), inter::toogle_board(get_id(u)));
+			//notify_effect(get_terr(u), inter::toogle_board(get_id(u)));
 		}
 
 		void apply(inter::toogle_board const& a) {
@@ -1652,9 +1628,10 @@ namespace col{
 			Store & st = get_store(t);
 			auto& c = t.get_colony();
 			st.sub(item, num);
-			notify_effect(t, inter::set_item(get_id(t), item, st.get(item)));
+			//notify_effect(t, inter::set_item(get_id(t), item, st.get(item)));
 		}
 
+		/*
 		void apply(inter::sub_item const& a) {
 			sub_item(get<Terr>(a.terr_id), a.item, a.num);
 		}
@@ -1663,22 +1640,23 @@ namespace col{
 			Terr & t = get<Terr>(a.terr_id);
 			auto& st = get_store(t);
 			st.add(a.item, a.num);
-			notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
+			//notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
 		}
 
 		void apply(inter::set_item const& a) {
 			Terr & t = get<Terr>(a.terr_id);
 			auto& st = get_store(t);
 			st.set(a.item, a.num);
-			notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
+			//notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
 		}
-
+		*/
 
 		void morph_unit(Unit & u, UnitType const& ut) {
 			u.set_type(ut);
-			notify_effect(get_terr(u), inter::morph_unit(get_id(u), get_id(ut)));
+			//notify_effect(get_terr(u), inter::morph_unit(get_id(u), get_id(ut)));
 		}
 
+		/*
 		void apply(inter::morph_unit const& a) {
 			morph_unit(get<Unit>(a.unit_id), get<UnitType>(a.unit_type_id));
 		}
@@ -1686,7 +1664,7 @@ namespace col{
 		void apply(inter::morph_build const& a) {
 			//terr_id build_id build_type_id
 		}
-
+		*/
 
 
 
@@ -1722,16 +1700,7 @@ namespace col{
 			return nations.size();
 		}
 
-		void apply(inter::echo const& a) {
-
-		}
-
-		void apply(inter::set_turn const& a);
-		void apply(inter::set_current_nation const& a);
-		void apply(inter::set_biome const& a);
-		void apply(inter::set_alt const& a);
-
-		void apply_inter(inter::Any const& a, Player & s);
+		void apply_inter(inter::Any const& a, uint32 auth);
 
 
 
@@ -1761,53 +1730,20 @@ namespace col{
 	};
 
 
-	inline void Env::apply_inter(inter::Any const& a, Player & sender) {
+	inline void Env::apply_inter(inter::Any const& a, uint32 auth) {
+		if (auth != get_current_nation().auth) {
+			throw Error("not your turn");
+		}
+
 		Apply ap(*this);
-		try {
-			boost::apply_visitor(ap, a);
-		}
-		catch (InvalidAction & e) {
-			print("invalid action send");
-			send(
-				sender,
-				inter::error(e.unit_id, e.terr_id, e.what())
-			);
-		}
+		boost::apply_visitor(ap, a);
 	}
-
-	inline void Env::apply(inter::set_turn const& a) {
-		turn_no = a.turn_no;
-		notify_effect(a);
-	}
-
-	inline void Env::apply(inter::set_current_nation const& a) {
-		set_current_nation(get<Nation>(a.nation_id));
-		notify_effect(a);
-	}
-
-	inline void Env::apply(inter::set_biome const& a) {
-		auto& t = get<Terr>(a.terr_id);
-		t.set_biome(a.biome);
-		notify_effect(t, a);
-	}
-
-
-	inline void Env::apply(inter::set_alt const& a) {
-		auto& t = get<Terr>(a.terr_id);
-		t.set_alt(a.alt);
-		notify_effect(t, a);
-	}
-
-	inline void Env::apply(inter::set_phys const& a) {
-		auto& t = get<Terr>(a.terr_id);
-		t.set_phys(a.phys);
-		notify_effect(t, a);
-	}
-
 
 
 
 
 }
 
+
 #endif
+

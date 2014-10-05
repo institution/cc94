@@ -1,4 +1,4 @@
-#include <X11/Xlib.h>  // XInitThreads
+//#include <X11/Xlib.h>  // XInitThreads
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>

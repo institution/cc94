@@ -74,6 +74,7 @@ namespace col {
 		Unit::Id get_id(Unit const& u) const { return u.id; }
 		Unit::Id get_id(Unit const* u) const { return (u) ? (u->id) : (Unit::Id(0)); }
 		UnitType::Id get_id(UnitType const& ut) const { return ut.id; }
+		Nation::Id get_id(Nation const& n) { return n.id; }
 
 
 		template<class Type>
@@ -279,10 +280,7 @@ namespace col {
 	}
 
 	inline void Core::free(Nation & c) {
-		if (c.player) {
-			// send disconnect sig? no need this is internal pointer
-			c.player = nullptr;
-		}
+
 	}
 
 

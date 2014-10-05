@@ -6,7 +6,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "envgame.h"
+#include "env.h"
 #include "player.h"
 #include "inter.h"
 
@@ -14,30 +14,18 @@ namespace expert_ai{
 	// AI operating under coded "expert" rules
 
 	using col::Player;
-	using col::EnvGame;
+	using col::Env;
 	using col::Nation;
-	using col::Ready;
 
 	struct ExpertAi: Player {
-		std::mutex mtx;
 
-		ExpertAi() {
-
-		}
-
-		void activate() {
-			mtx.unlock();
-		}
-
-		void apply_inter(col::inter::Any const& a, Player & s) {
-
+		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+			print("expert_ai: ready\n");
+			env.apply_inter(col::inter::ready(nation_id), nation_auth);
 		}
 
 
 	};
-
-
-	void run(Nation::Id pid, EnvGame * env, bool *running);
 
 }
 
