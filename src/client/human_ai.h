@@ -30,7 +30,7 @@ namespace human_ai{
 			mtx.unlock();
 		}
 
-		void apply_inter(col::inter::Any const& a) {
+		void apply_inter(col::inter::Any const& a, Player & s) {
 
 		}
 

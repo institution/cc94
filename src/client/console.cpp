@@ -698,52 +698,6 @@ namespace col {
 				stoi(es[2])
 			);
 		}
-		else if (cmd == "plow") {
-			switch (es.size()) {
-				default:
-					put("Usage: plow");
-					break;
-				case 1:
-					if (auto up = get_sel_unit()) {
-						auto ret = env.improve(*up, PhysPlow);
-						if (ret) {
-							mem.set_order(up->id, '-');							
-						}
-						else {
-							mem.set_order(up->id, 'R');							
-						}
-						select_next_unit();
-					}
-					else {
-						put("no unit selected");
-					}
-					break;
-			}
-			
-		}
-		else if (cmd == "build-road") {
-			switch (es.size()) {
-				default:
-					put("Usage: build-road");
-					break;
-				case 1:
-					if (auto up = get_sel_unit()) {
-						auto ret = env.improve(*up, PhysRoad);
-						if (ret) {
-							mem.set_order(up->id, '-');							
-						}
-						else {
-							mem.set_order(up->id, 'R');							
-						}
-						select_next_unit();
-					}
-					else {
-						put("no unit selected");
-					}
-					break;
-			}
-			
-		}
 		else if (cmd == "add-item") {
 			switch (es.size()) {
 				default:
@@ -921,7 +875,7 @@ namespace col {
 				case 3:
 					if (Unit* u = get_sel_unit()) {
 						r_env.apply_inter(
-							inter::move_board(
+							inter::move_unit(
 								stoi(es.at(1)), // dx
 								stoi(es.at(2)), //dy
 								env.get_id(*u)  // unit_id							
@@ -976,6 +930,18 @@ namespace col {
 					sel[1] = stoi(es[2]);
 					mode = Mode::COLONY;
 					mod++;
+					break;
+				}
+			}
+		}
+		else if (es.at(0) == "move-all") {
+			switch (es.size()) {
+				default: {
+					output.push_back("Usage: move-all");
+					break;
+				}
+				case 1: {
+					repeat_all();
 					break;
 				}
 			}

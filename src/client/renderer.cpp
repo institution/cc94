@@ -1790,7 +1790,8 @@ namespace col {
 
 	void render_selected_unit(RenderWindow & win, Console & con, v2i const& pos, Unit & unit) {
 		auto icon = res(ICON, unit.get_icon());
-
+		auto unit_id = unit.id;
+		
 		// render blinking shield
 		if (int(con.time * 10.0) % 10 >= 5) {
 			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
@@ -1834,11 +1835,15 @@ namespace col {
 		);
 		// build road
 		con.on(Event::Press, Key::R,
-			[&con](){ con.command("build-road"); }
+			[&con,unit_id](){ con.order_unit(unit_id, 'R'); }
 		);
 		// plow fields
 		con.on(Event::Press, Key::P,
-			[&con](){ con.command("plow-field"); }
+			[&con,unit_id](){ con.order_unit(unit_id, 'P'); }
+		);
+		// plow fields
+		con.on(Event::Press, Key::O,
+			[&con,unit_id](){ con.order_unit(unit_id, 'O'); }
 		);
 		// space - skip unit
 		con.on(Event::Press, Key::Space,
@@ -2120,20 +2125,32 @@ namespace col {
 			if (env.in_progress()) {
 				auto& p = env.get_current_nation();
 				
-				lab = "End of turn";
-				cmd = "ready";
+				auto & mem = con.mem;
 				
-				col = (con.mem.has_next_unit(env, p)) ? ColorGray : ColorWhite;
-									
-				// Enter -> end turn
-				con.on(Event::Press, Key::Return,
-					[&con](){ con.command("ready"); }
-				);
+				if (mem.get_next_to_repeat(env, p)) {
+					lab = "Move all";
+					cmd = "move-all";					
+					col = ColorWhite;
+					
+					// Enter -> move all
+					con.on(Event::Press, Key::Return,
+						[&con](){ con.repeat_all(); }
+					);
+				}
+				else {
+					lab = "End of turn";
+					cmd = "ready";				
+					col = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
+
+					// Enter -> end turn
+					con.on(Event::Press, Key::Return,
+						[&con](){ con.command("ready"); }
+					);
+				}
 			}
 			else {
 				lab = "Start game";
-				cmd = "start";
-				
+				cmd = "start";				
 				col = (env.nations.size() < 1) ? ColorGray : ColorWhite;
 			}
 

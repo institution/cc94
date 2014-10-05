@@ -39,7 +39,7 @@ namespace null_ai{
 			mtx.unlock();
 		}
 
-		void apply_inter(col::inter::Any const& a) {
+		void apply_inter(col::inter::Any const& a, Player & s) {
 			boost::apply_visitor(Apply(), a);
 		}
 

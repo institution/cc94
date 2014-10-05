@@ -33,6 +33,8 @@ bin/client/main aaa.mp
 Interface
 ---------
 
+GAMEPLAY:
+
 * press "Start game" in lower left corner -- start the game (turn progress)
 * right-click on map -- select map square
 * left-click on unit -- select unit
@@ -43,6 +45,7 @@ Interface
 * left-click on colony building or field -- assign worker
 * multiple left-clicks on assigned worker -- switch produced item
 * right-click -- unselect worker
+* left-click drag-drop items beetween ships and colony
 
 EDITOR:
 
@@ -64,6 +67,14 @@ load <filename.mp>
 * ctrl + hold-and-drag-left-click -- unselect multiple map squares
 
 
+
+
+
+Changes
+-------
+
+* ability to construct multiple buildings of the same type in one colony
+* multiple constructions may be conducted in pararel at one colony
 
 
 

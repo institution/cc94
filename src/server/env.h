@@ -17,7 +17,7 @@ namespace col{
 
 	struct Player{
 
-		virtual void apply_inter(inter::Any const& a) = 0;
+		virtual void apply_inter(inter::Any const& a, Player & sender) = 0;
 
 
 		//template <class t>
@@ -29,6 +29,20 @@ namespace col{
 		//    goto 1 or 2
 		// 2: master -> ai: win/lose
 
+	};
+
+	struct InvalidAction {
+		Error e;
+		Unit::Id unit_id;
+		Terr::Id terr_id;
+
+		InvalidAction(Unit::Id const& unit_id, string const& text):
+			e(text), unit_id(unit_id), terr_id(Coords(-1,-1))
+		{}
+
+		string what() {
+			return e.what();
+		}
 	};
 
 
@@ -112,7 +126,7 @@ namespace col{
 			// send map info
 
 			// reset map
-			u.apply_inter(inter::reset(w, h));
+			u.apply_inter(inter::reset(w, h), *this);
 
 			// fill tiles
 			for(Coord j = 0; j < h; ++j) {
@@ -121,15 +135,15 @@ namespace col{
 
 					auto terr_id = Coords(i,j);
 					u.apply_inter(
-						inter::set_alt(terr_id, t.get_alt())
+						inter::set_alt(terr_id, t.get_alt()), *this
 					);
 
 					u.apply_inter(
-						inter::set_biome(terr_id, t.get_biome())
+						inter::set_biome(terr_id, t.get_biome()), *this
 					);
 
 					u.apply_inter(
-						inter::set_phys(terr_id, t.get_phys())
+						inter::set_phys(terr_id, t.get_phys()), *this
 					);
 				}
 			}
@@ -155,10 +169,13 @@ namespace col{
 			ar << *this;
 
 			u.apply_inter(
-				inter::load(ostr.str())
+				inter::load(ostr.str()), *this
 			);
 
 		}
+
+		void apply(inter::set_phys const& a);
+
 
 
 		Nation const* get_current_nation_p() const {
@@ -329,7 +346,7 @@ namespace col{
 				record_action();
 
 				if (auto u = get_current_nation().get_player()) {
-					u->apply_inter(inter::activate());
+					u->apply_inter(inter::activate(), *this);
 				}
 			}
 
@@ -341,7 +358,7 @@ namespace col{
 		void activate_all() {
 			for (auto& p: nations) {
 				if (auto u = p.second.get_player()) {
-					u->apply_inter(inter::activate());
+					u->apply_inter(inter::activate(), *this);
 				}
 			}
 		}
@@ -593,11 +610,20 @@ namespace col{
 		}
 
 
+		void send(Player & p, inter::Any const& a) {
+			p.apply_inter(a, *this);
+		}
+
 		void send(Nation const& p, inter::Any const& a) {
 			if (auto u = p.get_player()) {
-				u->apply_inter(a);
+				send(*u, a);
 			}
 		}
+
+
+		//void notify_effect(Nation const& p, inter::Any const& a) {
+		//	send(p, a);
+		//}
 
 
 		void notify_effect(inter::Any const& a) {
@@ -613,6 +639,7 @@ namespace col{
 				}
 			}
 		}
+
 
 
 
@@ -745,7 +772,7 @@ namespace col{
 		}
 
 
-		bool move_board(int8 dx, int8 dy, Unit & u) {
+		bool move_unit(int8 dx, int8 dy, Unit & u) {
 			/* Move/board unit on adjacent square/ship
 			 */
 
@@ -1021,39 +1048,38 @@ namespace col{
 
 
 
-		bool improve(Unit & u, Phys const& feat) {
 
+		void improve(Unit & u, Phys const& feat) {
+			auto unit_id = get_id(u);
 
 			if (!(feat & PhysAlterable)) {
-				throw Error("only road,plow and forest can be altered");
+				throw InvalidAction(unit_id, "only road,plow and forest can be altered");
 			}
 
 			// unit checks
 			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
+				throw InvalidAction(unit_id, "not your unit");
 			}
 
 			if (!has_tools(u)) {
-				throw Error("need tools");
+				throw InvalidAction(unit_id, "need tools");
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
-				throw Error("can build on land only");
+				throw InvalidAction(unit_id, "can build on land only");
 			}
 
 			if (t.has_phys(feat)) {
-				throw Error("feat already exists");
+				throw InvalidAction(unit_id, "feat already exists");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
-				t.add_phys(feat);
-				return 1;
+				apply(inter::set_phys(get_id(t), t.get_phys() | feat));
 			}
-			return 0;
 		}
 
 
@@ -1608,8 +1634,8 @@ namespace col{
 
 
 
-		void apply(inter::move_board const& a) {
-			move_board(a.dx, a.dy, get<Unit>(a.unit_id));
+		void apply(inter::move_unit const& a) {
+			move_unit(a.dx, a.dy, get<Unit>(a.unit_id));
 		}
 
 
@@ -1704,9 +1730,9 @@ namespace col{
 		void apply(inter::set_current_nation const& a);
 		void apply(inter::set_biome const& a);
 		void apply(inter::set_alt const& a);
-		void apply(inter::set_phys const& a);
 
-		void apply_inter(inter::Any const& a);
+		void apply_inter(inter::Any const& a, Player & s);
+
 
 
 		template<class Archive>
@@ -1735,10 +1761,18 @@ namespace col{
 	};
 
 
-
-	inline void Env::apply_inter(inter::Any const& a) {
+	inline void Env::apply_inter(inter::Any const& a, Player & sender) {
 		Apply ap(*this);
-		boost::apply_visitor(ap, a);
+		try {
+			boost::apply_visitor(ap, a);
+		}
+		catch (InvalidAction & e) {
+			print("invalid action send");
+			send(
+				sender,
+				inter::error(e.unit_id, e.terr_id, e.what())
+			);
+		}
 	}
 
 	inline void Env::apply(inter::set_turn const& a) {

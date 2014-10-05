@@ -29,8 +29,8 @@ namespace col {
 			active = true;
 		}
 
-		void apply_inter(inter::Any const& a) {
-			
+		void apply_inter(inter::Any const& a, Player * s) {
+
 		}
 
 

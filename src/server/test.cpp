@@ -148,6 +148,7 @@ TEST_CASE( "env", "" ) {
 	
 }
 
+
 TEST_CASE( "inter", "" ) {
 	
 	REQUIRE(inter::type_name<inter::build_colony>::get() == "build_colony");
@@ -156,7 +157,7 @@ TEST_CASE( "inter", "" ) {
 	
 	inter::Any a;
 	a = inter::echo(1);
-	REQUIRE_NOTHROW(env.apply_inter(a));
+	REQUIRE_NOTHROW(env.apply_inter(a), nullptr);
 	
 	
 }
@@ -226,7 +227,7 @@ TEST_CASE( "env::move_unit", "" ) {
 
 	env.set_random_gen(replay({0}));
 	// move/board
-	REQUIRE(env.move_board(1, 0, u) == true);
+	REQUIRE(env.move_unit(1, 0, u) == true);
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 
 
@@ -291,12 +292,12 @@ TEST_CASE( "board ship", "" ) {
 	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
 	
 	REQUIRE_NOTHROW(env.start());
-	REQUIRE(env.move_board(1,0,u) == true);
+	REQUIRE(env.move_unit(1,0,u) == true);
 
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 	REQUIRE(u.transported == true);
 	
-	REQUIRE(env.move_board(1,0,s) == true);
+	REQUIRE(env.move_unit(1,0,s) == true);
 	
 	REQUIRE(env.get_coords(s) == Coords(2,0));
 	REQUIRE(env.get_coords(u) == Coords(2,0));
@@ -675,7 +676,7 @@ TEST_CASE( "improve square", "" ) {
 		env.set_random_gen(replay({0}));
 
 		REQUIRE_NOTHROW(env.start());
-		REQUIRE( env.improve(u, PhysRoad) == true );
+		REQUIRE_NOTHROW( env.improve(u, PhysRoad) );
 		REQUIRE( t.has_phys(PhysRoad) );
 		REQUIRE( u.get_item1() == ItemTools );
 		REQUIRE( u.get_num1() == 20 );
@@ -688,7 +689,7 @@ TEST_CASE( "improve square", "" ) {
 		env.set_random_gen(replay({0}));
 
 		REQUIRE_NOTHROW(env.start());
-		REQUIRE( env.improve(u, PhysPlow) == true );
+		REQUIRE_NOTHROW( env.improve(u, PhysPlow) );
 		REQUIRE( t.has_phys(PhysPlow) );
 		REQUIRE( u.get_item1() == ItemTools );
 		REQUIRE( u.get_num1() == 20 );

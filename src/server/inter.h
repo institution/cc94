@@ -204,7 +204,7 @@ namespace col{
 
 		// action
 		CC94_DEFINE_INTER(
-			move_board,
+			move_unit,
 			(int8, dx)
 			(int8, dy)
 			(Unit::Id, unit_id)
@@ -286,6 +286,8 @@ namespace col{
 		// effect
 		CC94_DEFINE_INTER(
 			error,
+			(Unit::Id, unit_id)
+			(Terr::Id, terr_id)
 			(std::string, text)
 		)
 
@@ -458,13 +460,15 @@ namespace col{
 			unit_set_item,
 			terr_set_item,
 
+			improve,
+			destroy,
 
 			take_unit,
 			set_unit,
 
 			echo,
 			ready,
-			move_board,
+			move_unit,
 			improve,
 			destroy,
 			build_colony,

@@ -7,6 +7,7 @@
 #include <deque>
 #include <functional>
 #include <thread>
+#include <chrono>
 
 #include "col.hpp"
 #include "envgame.h"
@@ -17,6 +18,8 @@
 #include "ai-env-helpers.h"
 #include "halo.h"
 #include "human_ai.h"
+#include "format.hpp"
+
 
 /*
  * place biome plains|tundra|grassland|...
@@ -91,6 +94,8 @@ namespace col {
 		Unit* sel_unit{nullptr};
 
 
+		void apply_inter(inter::Any const& a, Player & s);
+
 		bool is_selected(Terr * terr) {
 			if (terr) {
 				return sel_terrs.count(terr);
@@ -108,7 +113,7 @@ namespace col {
 
 		void select_next_unit() {
 			select_unit(
-				mem.get_next_unit(
+				mem.get_next_to_order(
 					env,
 					env.get_current_nation(),
 					get_sel_unit()
@@ -116,29 +121,47 @@ namespace col {
 			);
 		}
 
-		void do_unit_task(Unit::Id unit_id, char letter) {
+		inter::Any get_inter(Unit::Id unit_id, char letter, uint8 dx, uint8 dy) {
+			inter::Any a;
+
+			switch(letter) {
+				case 'R':
+					a = inter::improve(unit_id, PhysRoad);
+					break;
+				case 'P':
+					a = inter::improve(unit_id, PhysPlow);
+					break;
+				case 'O':
+					a = inter::destroy(unit_id, PhysForest);
+					break;
+				case 'B':
+					a = inter::build_colony(unit_id);
+					break;
+				case 'G':
+					assert(dx != 0 or dy != 0);
+					a = inter::move_unit(unit_id, dx, dy);
+					break;
+				default:
+					throw Error("unknown order code: %||", letter);
+			}
+			return a;
+		}
+
+		void order_unit(Unit::Id unit_id, char letter, int8 dx=0, int8 dy=0) {
 			// R,P,O,B - road,plow,clear-forest,build-colony
 			// 1,2,3,4,6,7,8,9 - move dir
 
+			inter::Any a = get_inter(unit_id, letter, dx, dy);
+
+			mem.set_order(unit_id, letter, dx, dy);
+
+			get_server().apply_inter(a);
+
+			select_next_unit();
+
 		}
 
-		struct Apply: boost::static_visitor<>{
-			Env & env;
 
-			Apply(Env & env): env(env) {}
-
-			template <class T>
-			void operator()(T const& a) const {
-				env.apply(a);
-			}
-		};
-
-		void apply_inter(inter::Any const& a) {
-			cout << format("console %|| apply_inter: %||\n", memtag, a);
-
-			env.apply_inter(a);
-			//return boost::apply_visitor(Apply(env), a);
-		}
 
 
 
@@ -214,6 +237,10 @@ namespace col {
 			return mem.get_order(env.get_id(u)).code;
 		}
 
+
+
+
+
 		Unit* get_sel_unit() const {
 			return sel_unit;
 		}
@@ -277,6 +304,48 @@ namespace col {
 
 		void click_map_tile(Terr const& terr) {
 			cout << "click_colony_field: " << env.get_coords(terr) << endl;
+		}
+
+		void repeat_all() {
+			bool stop = false;
+
+			// any user input except hover -> break
+			//on([&stop](){ stop = true; })
+
+			auto& n = env.get_current_nation();
+
+			while (not stop) {
+				Unit *unit = nullptr;
+				if ((unit = mem.get_next_to_repeat(env, n, unit))) {
+					// select unit
+					//select_unit(unit);
+
+					// wait
+					//std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+					// exec action
+					print("exec action %||\n", get_letter(*unit));
+
+					auto unit_id = unit->id;
+
+					auto o = mem.get_order(unit_id);
+
+					get_server().apply_inter(
+						get_inter(unit_id, o.code, o.dx, o.dy)
+					);
+
+
+					// wait
+					//std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+				}
+				else {
+					stop = true;
+				}
+			}
+
+
+
 		}
 
 		void load_cargo(Item const& item, Amount const& num);
@@ -498,8 +567,53 @@ namespace col {
 			return active;
 		}
 
+
+
+
+
+		// 1. Apply effect to AI
+		// 2. Apply effect to env
+		struct Apply: boost::static_visitor<>{
+			EnvGame & env;
+			Console & con;
+
+			Apply(EnvGame & env, Console & con): env(env), con(con) {}
+
+			template <class T>
+			void operator()(T const& a) const;
+
+		};
+
+
+
+
 	};
 
+	inline void Console::apply_inter(inter::Any const& a) {
+		print("console %|| apply_inter: %||\n", memtag, a);
+
+		boost::apply_visitor(Apply(env, *this), a);
+	}
+
+	template <class T> inline
+	void Console::Apply::operator()(T const& a) const {
+		env.apply(a);
+
+		if (Unit *u = con.get_sel_unit()) {
+			if (u->get_time_left() == 0) {
+				con.select_next_unit();
+			}
+		}
+	}
+
+	template <> inline
+	void Console::Apply::operator()<inter::error>(inter::error const& a) const {
+
+		if (a.unit_id) {
+			con.mem.set_order(a.unit_id);
+		}
+		print("inter::error recived: %||\n", a.text);
+	}
 
 	void run_console(EnvGame *ee, vector<std::thread> * tt, bool *running);
 

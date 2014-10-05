@@ -60,7 +60,7 @@ namespace col{
 		}
 		
 		
-		
+		/*
 		Unit const* get_next_to_move(Env const& env, Nation const& pl, Unit const* cur) {
 			if (cur and owned(*cur, pl) and to_move(*cur)) {
 				return cur;
@@ -75,17 +75,50 @@ namespace col{
 			
 			return nullptr;
 		}
+		*/
+		
+		Unit * Memory::get_next_to_order(Env & env, Nation const& p, Unit * cur) const {
+			return const_cast<Unit*>(
+				get_next_to_order(
+					static_cast<Env const&>(env), 
+					p, 
+					static_cast<Unit const*>(cur)
+				)
+			);
+		}
+		
+		Unit const* Memory::get_next_to_order(Env const& env, Nation const& p, Unit const* cur) const {
+			return find_unit(env, cur, [this,&p](Unit const& u) -> bool{
+				return owned(u, p) and to_move(u) and get_order(u.id).code == '-';
+			});
+		}
+
+		Unit * Memory::get_next_to_repeat(Env & env, Nation const& p, Unit * cur) const {
+			return const_cast<Unit*>(
+				get_next_to_repeat(
+					static_cast<Env const&>(env), 
+					p, 
+					static_cast<Unit const*>(cur)
+				)
+			);
+		}
+		
+		Unit const* Memory::get_next_to_repeat(Env const& env, Nation const& p, Unit const* cur) const {			
+			return find_unit(env, cur, [this,&p](Unit const& u) -> bool{
+				auto code = get_order(u.id).code;
+				return owned(u, p) and to_move(u) and code != '-' and code != ' ';
+			});
+		}
 
 		
 
-		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func) {
-		
+		Unit const* find_unit(Env const& env, Unit const* cur, function<bool(Unit const&)> func) {		
 			if (cur and func(*cur)) {
 				return cur;
 			}
 			
 			for (auto& p: env.get_cont<Unit>()) {
-				Unit & u = p.second;
+				Unit const& u = p.second;
 				
 				if (func(u)) {
 					return &u;
@@ -95,20 +128,15 @@ namespace col{
 			return nullptr;
 		}
 		
-		Unit * Memory::get_next_unit(Env & env, Nation const& p, Unit * cur) const {
-			return find_unit(env, cur, [this,&p](Unit const& u) -> bool{
-				return owned(u, p) and to_move(u) and get_order(u.id).code == '-';
-			});
+		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func) {
+			return const_cast<Unit*>(
+				find_unit(
+					static_cast<Env const&>(env), 
+					static_cast<Unit const*>(cur), 
+					func
+				)
+			);
 		}
-
-		bool Memory::has_next_unit(Env const& env, Nation const& p) const {
-			return find_unit(const_cast<Env&>(env), nullptr, [this,&p](Unit const& u) -> bool{
-				return owned(u, p) and to_move(u) and get_order(u.id).code == '-';
-			});
-		}
-		
-		
-
 
 
 		

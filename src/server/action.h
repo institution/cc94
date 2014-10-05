@@ -88,7 +88,7 @@ namespace col {
 				throw Error("no unit with this id");
 			}
 
-			/*game.move_board(
+			/*game.move_unit(
 				(*it).second,
 				dir,
 				exec

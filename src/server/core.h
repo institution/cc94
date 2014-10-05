@@ -72,6 +72,7 @@ namespace col {
 
 
 		Unit::Id get_id(Unit const& u) const { return u.id; }
+		Unit::Id get_id(Unit const* u) const { return (u) ? (u->id) : (Unit::Id(0)); }
 		UnitType::Id get_id(UnitType const& ut) const { return ut.id; }
 
 
