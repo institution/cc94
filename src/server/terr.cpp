@@ -29,6 +29,7 @@ namespace col{
 		*/
 		int ret = 0;
 		int forest = has_phys(PhysForest);
+		int plow = has_phys(PhysPlow) * 2;
 		switch(item) {
 			case ItemFish:
 				if (alt == AltSea) {
@@ -102,38 +103,38 @@ namespace col{
 				else if (alt == AltFlat) {
 					switch (biome) {
 						case BiomePlains:
-							ret = 5 - forest;
+							ret = 5 - forest + plow;
 							break;
 						case BiomeSavannah:
-							ret = 4 - forest;
+							ret = 4 - forest + plow;
 							break;
 						case BiomeTundra:
 						case BiomePrairie:
 						case BiomeGrassland:
 						case BiomeMarsh:
 						case BiomeSwamp:
-							ret = 3 - forest;
+							ret = 3 - forest + plow;
 							break;
 						case BiomeDesert:
-							ret = 2 - forest;
+							ret = 2 - forest + plow;
 							break;
 					}
 				}
 				else if (alt == AltHill) {
-					ret = 2;
+					ret = 2 + plow;
 				}
 				break;
 			case ItemCotton:
 				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomePrairie:
-							ret = 3 - forest;
+							ret = 3 - forest + plow;
 							break;
 						case BiomePlains:
-							ret = 2 - forest;
+							ret = 2 - forest + plow;
 							break;
 						case BiomeDesert:
-							ret = 1 - forest;
+							ret = 1 - forest + plow;
 							break;
 					}
 				}
@@ -142,10 +143,10 @@ namespace col{
 				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomeGrassland:
-							ret = 3 - forest;
+							ret = 3 - forest + plow;
 							break;
 						case BiomeMarsh:
-							ret = 2 - forest;
+							ret = 2 - forest + plow;
 							break;
 					}
 				}
@@ -154,10 +155,10 @@ namespace col{
 				if (alt == AltFlat) {
 					switch (biome) {
 						case BiomeSavannah:
-							ret = 3 - forest;
+							ret = 3 - forest + plow;
 							break;
 						case BiomeSwamp:
-							ret = 2 - forest;
+							ret = 2 - forest + plow;
 							break;
 					}
 				}

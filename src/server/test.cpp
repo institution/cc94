@@ -39,15 +39,14 @@ using roll::replay;
  * v0.1
  * colony screen transport *
  * load/unload cargo into transport * 
+ * orders -- keep trying *
  * clear forest O / plow P
- * orders -- keep trying
  * construction complete message
  * v0.2
- * colony production changes gui 
- * replace messages with effects (let clients use them for messages) 
- * specialists by experience
- * autosave
+ * colony production changes gui
  * build system rethink
+ * specialists by experience
+ * autosave 
  * build ships
  * travel to europe by sea - exit_map(ship, dest) order - trade
  * sell/buy in europe 

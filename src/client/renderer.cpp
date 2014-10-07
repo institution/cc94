@@ -21,9 +21,6 @@ namespace col {
 	
 	
 	
-	
-	
-	
 
 	Layout const ly(conf.screen_w, conf.screen_h);
 
@@ -1802,32 +1799,63 @@ namespace col {
 			calc_align(Box(pos, ly.terr_dim), get_dim(icon)), 
 			icon
 		);
+		
 
 		// selected unit keyboard shortcuts (numpad -> move)
 		con.on(Event::Press, Key::Numpad2,
-			[&con](){ con.command("move 0 1"); }
+			[&con,unit_id](){ con.command("move 0 1"); }
 		);
 		con.on(Event::Press, Key::Numpad8,
-			[&con](){ con.command("move 0 -1"); }
+			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
 		con.on(Event::Press, Key::Numpad6,
-			[&con](){ con.command("move 1 0"); }
+			[&con,unit_id](){ con.command("move 1 0"); }
 		);
 		con.on(Event::Press, Key::Numpad4,
-			[&con](){ con.command("move -1 0"); }
+			[&con,unit_id](){ con.command("move -1 0"); }
 		);
 		con.on(Event::Press, Key::Numpad3,
-			[&con](){ con.command("move 1 1"); }
+			[&con,unit_id](){ con.command("move 1 1"); }
 		);
 		con.on(Event::Press, Key::Numpad7,
-			[&con](){ con.command("move -1 -1"); }
+			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
 		con.on(Event::Press, Key::Numpad1,
-			[&con](){ con.command("move -1 1"); }
+			[&con,unit_id](){ con.command("move -1 1"); }
 		);
 		con.on(Event::Press, Key::Numpad9,
-			[&con](){ con.command("move 1 -1"); }
+			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
+
+		// move on nums
+		con.on(Event::Press, Key::Num2,
+			[&con,unit_id](){ con.command("move 0 1"); }
+		);
+		con.on(Event::Press, Key::Num8,
+			[&con,unit_id](){ con.command("move 0 -1"); }
+		);
+		con.on(Event::Press, Key::Num6,
+			[&con,unit_id](){ con.command("move 1 0"); }
+		);
+		con.on(Event::Press, Key::Num4,
+			[&con,unit_id](){ con.command("move -1 0"); }
+		);
+		con.on(Event::Press, Key::Num3,
+			[&con,unit_id](){ con.command("move 1 1"); }
+		);
+		con.on(Event::Press, Key::Num7,
+			[&con,unit_id](){ con.command("move -1 -1"); }
+		);
+		con.on(Event::Press, Key::Num1,
+			[&con,unit_id](){ con.command("move -1 1"); }
+		);
+		con.on(Event::Press, Key::Num9,
+			[&con,unit_id](){ con.command("move 1 -1"); }
+		);
+		
+
+
+
 		
 		// build colony
 		con.on(Event::Press, Key::B,
@@ -1841,7 +1869,7 @@ namespace col {
 		con.on(Event::Press, Key::P,
 			[&con,unit_id](){ con.order_unit(unit_id, 'P'); }
 		);
-		// plow fields
+		// clear forest
 		con.on(Event::Press, Key::O,
 			[&con,unit_id](){ con.order_unit(unit_id, 'O'); }
 		);

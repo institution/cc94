@@ -142,7 +142,7 @@ namespace col {
 					break;
 				case 'G':
 					assert(dx != 0 or dy != 0);
-					a = inter::move_unit(unit_id, dx, dy);
+					a = inter::move_unit(dx, dy, unit_id);
 					break;
 				default:
 					throw Error("unknown order code: %||", letter);
@@ -150,17 +150,31 @@ namespace col {
 			return a;
 		}
 
+
+		bool exec(inter::Any const& a) {
+			try {
+				get_server().apply_inter(a, auth);
+				return 1;
+			}
+			catch(InvalidAction const& e) {
+				put(e.what());
+				print("%||\n", e.what());
+				return 0;
+			}
+		}
+
+
 		void order_unit(Unit::Id unit_id, char letter, int8 dx=0, int8 dy=0) {
 			// R,P,O,B - road,plow,clear-forest,build-colony
 			// 1,2,3,4,6,7,8,9 - move dir
 
 			inter::Any a = get_inter(unit_id, letter, dx, dy);
 
-			mem.set_order(unit_id, letter, dx, dy);
+			if (exec(a)) {
+				mem.set_order(unit_id, letter, dx, dy);
+				select_next_unit();
+			}
 
-			get_server().apply_inter(a, auth);
-
-			select_next_unit();
 
 		}
 
@@ -310,42 +324,35 @@ namespace col {
 		}
 
 		void repeat_all() {
-			bool stop = false;
-
 			// any user input except hover -> break
 			//on([&stop](){ stop = true; })
 
 			auto& n = env.get_current_nation();
 
-			while (not stop) {
-				Unit *unit = nullptr;
-				if ((unit = mem.get_next_to_repeat(env, n, unit))) {
-					// select unit
-					//select_unit(unit);
+			while (Unit *unit = mem.get_next_to_repeat(env, n))
+			{
+				// exec action
+				print("exec action %||\n", get_letter(*unit));
 
-					// wait
-					//std::this_thread::sleep_for(std::chrono::milliseconds(500));
+				auto unit_id = unit->id;
 
-					// exec action
-					print("exec action %||\n", get_letter(*unit));
+				auto o = mem.get_order(unit_id);
 
-					auto unit_id = unit->id;
-
-					auto o = mem.get_order(unit_id);
-
+				try {
 					get_server().apply_inter(
 						get_inter(unit_id, o.code, o.dx, o.dy), auth
 					);
-
-
-					// wait
-					//std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
 				}
-				else {
-					stop = true;
+				catch (Error & e) {
+					mem.set_order(unit_id);
+					put(e.what());
+					print("%||\n", e.what());
 				}
+
+				// wait
+				//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			}
+			select_next_unit();
 
 
 
@@ -394,7 +401,7 @@ namespace col {
 
 
 		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
-			print("console: active");
+			//print("console: active\n");
 
 			mtx.lock();
 		}
@@ -528,8 +535,9 @@ namespace col {
 			unselect_terr();
 		}
 
-		void put(string const& s) {
-			output.push_back(s);
+		template <class... Args>
+		void put(string const& pat, Args const& ... args) {
+			output.push_back(format(pat, args...));
 		}
 
 

@@ -454,7 +454,7 @@ namespace col {
 				// buildings
 				for (auto& b: col.builds) {
 					auto build_type_id = read<BuildType::Id>(ar);
-					cerr << "load building type id = " << build_type_id << endl;
+					//cerr << "load building type id = " << build_type_id << endl;
 
 					b.type = & env.get<BuildType>( build_type_id );
 					ar >> b.free_slots;

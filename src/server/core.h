@@ -14,8 +14,18 @@
 #include "roll.h"
 #include "error.h"
 #include "field.h"
+#include "type_name.h"
 
 namespace col {
+
+	ENABLE_TYPENAME(Unit);
+	ENABLE_TYPENAME(UnitType);
+	ENABLE_TYPENAME(Build);
+	ENABLE_TYPENAME(BuildType);
+	ENABLE_TYPENAME(Nation);
+	ENABLE_TYPENAME(Colony);
+	ENABLE_TYPENAME(Terr);
+
 
 	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
 	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
@@ -226,10 +236,12 @@ namespace col {
 	template <typename T> inline
 	T const& Core::get(typename T::Id const& id) const {
 		auto it = get_cont<T>().find(id);
+
 		if (it == get_cont<T>().end()) {
-			throw Error("no such object with id=%||", id);
-			//assert(0);
+			print("ERROR: no %|| with id=%||\n", type_name<T>::get(), id);
+			assert(false);
 		}
+
 		return (*it).second;
 	}
 

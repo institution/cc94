@@ -24,21 +24,7 @@
 #include "roll.h"
 #include "error.h"
 #include "field.h"
-
-namespace col{
-	namespace inter{
-		template<class T>
-		struct type_name;
-	}
-}
-
-#define ENABLE_TYPENAME(A)                                                      \
-template<>                                                                      \
-struct type_name<A> {                                                           \
-	static std::string get() {                                                  \
-		return #A;                                                              \
-	}                                                                           \
-};                                                                              \
+#include "type_name.h"
 
 
 

@@ -252,7 +252,7 @@ namespace col {
 			do_command(line);
 		}
 		catch (Error const& e) {
-			put(string(e.what()));
+			put(e.what());
 		}
 		
 	}
@@ -275,30 +275,21 @@ namespace col {
 		
 		if (cmd == "list-nations") {
 			for (auto &item: env.nations) {
-				put(format("%||", item.second));
+				put("%||", item.second);
 			}
-		}
-		else if (cmd == "comment") {
-
 		}
 		else if (cmd == "print") {
 			put(buffer.substr(6));
-		}
-		else if (cmd == "list-orders") {
-			put("build-colony");
-			put("clear-forest");
-			put("build-road");
-			put("move");
 		}
 		else if (cmd == "help" or cmd == "?") {
 			// save/load
 			put("save");
 			put("load");
+			
 			// editor
 			put("list-nations");
 			put("list-units");
 			put("list-unit-types");
-			put("list-orders");
 			put("create-nation");
 			put("create-unit");
 			put("create-colony");
@@ -307,6 +298,7 @@ namespace col {
 			put("add-phys");
 			put("sub-phys");
 			put("set-alt");
+			
 			// orders
 			put("build-colony");
 			put("clear-forest");
@@ -319,30 +311,33 @@ namespace col {
 			put("prod-build");
 			put("prod-field");			
 			put("construct");
+			
 			// game turn sequence
 			put("start");
 			put("ready");
 			put("turn");
 			put("info");
+			
 			// ai
-			put("ai");
 			//put("create-ai");				
 			//put("exec-ai");
 			//put("list-ais");
+			
+			// gui
+			put("enter");
+			put("exit");
+			
 			// misc
 			put("score");
 			put("cls");
 			put("print");
-			put("comment");
-			put("enter");
-			put("exit");
 		}
 		else if (cmd == "add-phys") {
 			switch (es.size()) {
 				default:
-					put("Usage: add-phys <phys-name>");
+					put("Usage: add-phys <sealane|road|forest|minorriver|majorriver|plow>");
 					break;
-				case 2:
+				case 2:	
 					Phys p = get_phys_by_name(es.at(1));
 					for (auto tp: get_sel_terrs()) {
 						tp->add_phys(p);						
@@ -353,7 +348,7 @@ namespace col {
 		else if (cmd == "sub-phys") {
 			switch (es.size()) {
 				default:
-					put("Usage: sub-phys <phys-name>");
+					put("Usage: sub-phys <sealane|road|forest|minorriver|majorriver|plow>");
 					break;
 				case 2:
 					Phys p = get_phys_by_name(es.at(1));
@@ -715,10 +710,13 @@ namespace col {
 					break;
 				case 2: {
 					auto number = stoi(es.at(1));
-					auto unit_id = get_sel_unit_id();
-					auto& unit = env.get<Unit>(unit_id);
-					env.work_field(number, unit);
-					
+					if (auto unit_id = get_sel_unit_id()) {
+						auto& unit = env.get<Unit>(unit_id);
+						env.work_field(number, unit);
+					}
+					else {
+						print("WARNING: no selected unit on work-field command\n");
+					}
 					break;
 				}
 				
@@ -730,9 +728,13 @@ namespace col {
 					put("Usage: work-none");
 					break;
 				case 1: {
-					auto unit_id = get_sel_unit_id();
-					auto& unit = env.get<Unit>(unit_id);
-					env.work_none(unit);
+					if (auto unit_id = get_sel_unit_id()) {
+						auto& unit = env.get<Unit>(unit_id);
+						env.work_none(unit);
+					}
+					else {
+						print("WARNING: no selected unit on work-none command\n");
+					}					
 					break;
 				}
 				

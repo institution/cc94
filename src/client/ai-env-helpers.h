@@ -5,6 +5,7 @@
 
 namespace col{
 
+
 	namespace misc{
 
 		using UnitTypes = vector<UnitType const*>;

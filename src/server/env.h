@@ -17,18 +17,8 @@ namespace col{
 	using Auth = uint32;
 
 
-	struct InvalidAction {
-		Error e;
-		Unit::Id unit_id;
-		Terr::Id terr_id;
-
-		InvalidAction(Unit::Id const& unit_id, string const& text):
-			e(text), unit_id(unit_id), terr_id(Coords(-1,-1))
-		{}
-
-		string what() {
-			return e.what();
-		}
+	struct InvalidAction: Error {
+		using Error::Error;
 	};
 
 
@@ -390,7 +380,7 @@ namespace col{
 			// new colonists creation
 			if (p and st.get(ItemFood) >= 100) {
 				st.sub(ItemFood, 100);
-				auto& u = create<Unit>(get<UnitType>(101), *p);
+				auto& u = create<Unit>(get<UnitType>(1), *p);
 				init(t, u);
 
 			}
@@ -940,22 +930,22 @@ namespace col{
 		bool destroy(Unit & u, Phys const& feat) {
 			// unit checks
 			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
+				throw InvalidAction("not your unit");
 			}
 
 			if (!has_tools(u)) {
-				throw Error("need tools");
+				throw InvalidAction("need tools");
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
-				throw Error("can clear on land only");
+				throw InvalidAction("can clear on land only");
 			}
 
 			if (!t.has_phys(feat)) {
-				throw Error("no feat to clear");
+				throw InvalidAction("no feat to clear");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
@@ -973,27 +963,31 @@ namespace col{
 			auto unit_id = get_id(u);
 
 			if (!(feat & PhysAlterable)) {
-				throw InvalidAction(unit_id, "only road,plow and forest can be altered");
+				throw InvalidAction("only road,plow and forest can be altered");
 			}
 
 			// unit checks
 			if (u.get_nation() != get_current_nation()) {
-				throw InvalidAction(unit_id, "not your unit");
+				throw InvalidAction("not your unit");
 			}
 
 			if (!has_tools(u)) {
-				throw InvalidAction(unit_id, "need tools");
+				throw InvalidAction("need tools");
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), LAND)) {
-				throw InvalidAction(unit_id, "can build on land only");
+				throw InvalidAction("can build on land only");
 			}
 
 			if (t.has_phys(feat)) {
-				throw InvalidAction(unit_id, "feat already exists");
+				throw InvalidAction("improvment already exists");
+			}
+
+			if (feat == PhysPlow and t.has_phys(PhysForest)) {
+				throw InvalidAction("cannot plow forest; clear first");
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
