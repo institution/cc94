@@ -12,9 +12,9 @@ cc94 runs under GNU/Linux OS. You can start the following way:
 
 ```bash
 # download and unpack
-wget -O cc94.tar.gz http://gitorious.org/cc94/cc94/archive-tarball/master
-tar xzf cc94.tar.gz
-cd cc94-cc94/
+wget https://github.com/institution/cc94/archive/master.zip
+unzip master.zip
+cd cc94-master
 
 # install dependencies
 sudo bash install_deps.sh
@@ -73,7 +73,9 @@ load <filename.mp>
 ```
 
 
-
+Contact
+-------
+sta256+cc94@gmail.com
 
 
 
