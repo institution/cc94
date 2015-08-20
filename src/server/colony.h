@@ -39,7 +39,8 @@ namespace col {
 
 		Terr *terr{nullptr};
 
-		cont<Field>::type fields;
+		using Fields = cont<Field>::type;
+		Fields fields;
 
 		Colony & add_field(Field const& f) { fields.push_back(f); return *this; }
 		void sub_field(Field const& f) { fields.erase(find(fields.begin(), fields.end(), f)); }

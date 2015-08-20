@@ -1,15 +1,11 @@
 #include "console.h"
 
-#include <SFML/Window.hpp>
-
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 #include "serialize.h"
 #include "view_base.h"
 #include "renderer.h"
 #include "expert_ai.h"
 #include "null_ai.h"
+#include "backend/backend.h"
 
 namespace col {
 	using boost::str;
@@ -61,101 +57,104 @@ namespace col {
 
 	halo::Mod get_mod() {
 		halo::Mod mod = 0;
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+		
+		auto keys = backend::get_keyboard_state();
+		
+		if (keys[SDL_SCANCODE_LSHIFT] or keys[SDL_SCANCODE_RSHIFT]) {
 			mod = mod | halo::ModShift;
 		}
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RControl)) {
+		if (keys[SDL_SCANCODE_LCTRL] or keys[SDL_SCANCODE_RCTRL]) {
 			mod = mod | halo::ModCtrl;
 		}
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) || sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
+		
+		auto mouse = backend::get_mouse();
+		
+		if (mouse[backend::ButtonLeft] or mouse[backend::ButtonRight]) 
+		{
 			mod = mod | halo::ModButton;
 		}
 		return mod;	
 	}
 	
-	void Console::handle(sf::RenderWindow const& app, sf::Event const& event) {
+	void Console::handle(backend::Back const& app, backend::Event const& event) {
 		
+		if (verbose) print("Console.handle: {\n");
 		
 		auto type = event.type;
 
 		// prepare pattern
 		Pattern p;
 		
-		if (type == sf::Event::KeyPressed) {
+		if (type == backend::EventKeyDown) {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Press;
-			p.key = event.key.code;		
+			p.key = event.key.keysym.sym;
+			//print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
 		}
-		else if (type == sf::Event::TextEntered) {
+		else if (type == backend::EventTextInput) {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Char;
-			p.unicode = event.text.unicode;
+			p.unicode = event.text.text[0];
 		}
-		else if (type == sf::Event::MouseMoved)			
-		{			
-			sf::Vector2f mp = app.mapPixelToCoords(
-				sf::Vector2i(
-					event.mouseMove.x,
-					event.mouseMove.y
-				)
+		else if (type == backend::EventMouseMotion)			
+		{	
+			auto mp = get_logical_pos(app, 
+				{event.motion.x, event.motion.y}
 			);
 			
 			p.dev = Dev::Mouse;
 			p.event = Event::Hover;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+			p.area = Box2(v2i(mp), {0,0});
 		}		
-		else if (type == sf::Event::MouseButtonPressed)
+		else if (type == backend::EventMouseButtonDown)
 		{			
-			sf::Vector2f mp = app.mapPixelToCoords(
-				sf::Vector2i(
-					event.mouseButton.x,
-					event.mouseButton.y
-				)
+			auto mp = get_logical_pos(app, 
+				{event.button.x, event.button.y}
 			);
 			
 			p.dev = Dev::Mouse;
 			p.event = Event::Press;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+			p.area = Box2(v2i(mp), {0,0});
 			
 			
-			if (event.mouseButton.button == sf::Mouse::Left) {
+			if (event.button.button == backend::ButtonLeft) {
 				p.button = Button::Left;
 			}			
-			else if (event.mouseButton.button == sf::Mouse::Right) {
+			else if (event.button.button == backend::ButtonRight) {
 				p.button = Button::Right;
-			}			
+			}
 		}
-		else if (type == sf::Event::MouseButtonReleased)
+		else if (type == backend::EventMouseButtonUp)
 		{	
-			sf::Vector2f mp = app.mapPixelToCoords(
-				sf::Vector2i(
-					event.mouseButton.x,
-					event.mouseButton.y
-				)
+			auto mp = get_logical_pos(app, 
+				{event.button.x, event.button.y}
 			);
 			
 			p.dev = Dev::Mouse;
 			p.event = Event::Release;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp.x, mp.y), {0,0});
+			p.area = Box2(v2i(mp), {0,0});
 			
-			
-			if (event.mouseButton.button == sf::Mouse::Left) {
+			if (event.button.button == backend::ButtonLeft) {
 				p.button = Button::Left;
 			}			
-			else if (event.mouseButton.button == sf::Mouse::Right) {
+			else if (event.button.button == backend::ButtonRight) {
 				p.button = Button::Right;
-			}			
+			}
 		}
 		
 		
+		
+		if (verbose) print("Console.handle: halo\n");
 		
 		// handle
 		if (halo::handle_event(hts, p)) {
 			modified();
 		}
+		
+		if (verbose) print("Console.handle: }\n");
 	}
 
 	
@@ -178,7 +177,7 @@ namespace col {
 		}
 	}
 	
-	void Console::handle_char(uint16 code) {
+	void Console::handle_char(char16_t code) {
 		
 		if (!is_active()) {
 			throw Critical("console not active");
@@ -189,12 +188,13 @@ namespace col {
 		}
 
 		if (code == u'\b') {
+			// backspace
 			if (buffer.size()) {
 				buffer.pop_back();
 			}
 		}
 		else if (code == u'\r') {
-
+			// return
 			command(buffer);
 			
 			history.push_front(buffer);
@@ -401,17 +401,20 @@ namespace col {
 					put("Usage: set-biome <biome-name>");
 					break;
 				case 2:
-					Biome b = get_biome_by_name(es.at(1));					
+					Biome b = get_biome_by_name(es.at(1));
+					if (b == BiomeNone)
+						put("selected unknown biome");
+					
 					for (auto tp: con.get_sel_terrs()) {
 						tp->set_biome(b);	
-					}
+					}					
 					break;
 			}
 		}
 		else if (cmd == "set-alt") {
 			switch (es.size()) {
 				default:
-					put("Usage: set-alt <0,1,2,3>");
+					put("Usage: set-alt <0,1,2,3,4>");
 					break;
 				case 2:
 					for (auto tp: get_sel_terrs()) {
@@ -478,7 +481,6 @@ namespace col {
 					//exec(Ready(env.get_current_nation().id));
 					env.ready(env.get_current_nation());					
 					select_next_unit();
-					con.ready();
 					break;
 				}
 			}
@@ -585,7 +587,7 @@ namespace col {
 				}
 			}
 		}
-		else if (es[0] == "delp") {
+		else if (es[0] == "del-nation") {
 			env.del_nation(std::stoi(es[1]));
 		}
 		else if (cmd == "save") {
@@ -593,10 +595,8 @@ namespace col {
 				default:
 					put("Usage: save <filename>");
 					break;
-				case 2: {
-						ofstream f(es.at(1), std::ios::binary);
-						boost::archive::text_oarchive oa(f);
-						oa << env;
+				case 2: {						
+						write_file(es.at(1), env);
 					}
 					break;
 			}
@@ -607,9 +607,7 @@ namespace col {
 					put("Usage: load <filename>");
 					break;
 				case 2: {
-						ifstream f(es.at(1), std::ios::binary);
-						boost::archive::text_iarchive oa(f);
-						oa >> env;
+						read_file(es.at(1), env);
 					}
 					break;
 			}
@@ -893,54 +891,60 @@ namespace col {
 	}
 	
 	
-
 	
-	
-	void run_gui(Console * cc, Env * ee) {
-		Env & env = *ee;
-		Console & con = *cc;
+	void GUILoop::init(Console * cc, Env * ee) {
+		this->cp = cc;
+		this->ep = ee;
 		
-		preload_terrain();
-
-		sf::RenderWindow app(
-			sf::VideoMode(conf.screen_w * conf.global_scale, conf.screen_h * conf.global_scale, 32),
-			"cc14"
+		verbose = 1;
+		
+		if (verbose >= 1) print("GUILoop: app.init\n");
+		app.init(
+			"cc14",
+			v2i(conf.screen_w, conf.screen_h)
 		);
-
-		sf::View view(sf::FloatRect(0, 0, conf.screen_w, conf.screen_h));
-		app.setView(view);
-
-		auto last_env = con.env.mod - 1;
-		auto last_con = con.mod - 1;
-
-		sf::Clock clock;
-		auto last_t = clock.getElapsedTime().asSeconds();
-		while (app.isOpen())
-		{		
-			
-			if ((con.env.mod != last_env) || (con.mod != last_con) || (last_t + 0.1 > clock.getElapsedTime().asSeconds())) {
-				//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
-				con.time = clock.getElapsedTime().asSeconds();
-				last_t = con.time;
-
-				render(app, env, con);
-
-				last_env = con.env.mod;
-				last_con = con.mod;
-			}
-
-			con.handle_events(app);
-
-			if (!con.running) {
-				break;
-			}
-			
-		}
 		
-		con.running = false;
-		con.mtx.unlock();
-		con.gm.stop();
-		print("run_gui -- clean exit\n");		
+		if (verbose >= 1) print("GUILoop: preload_terrain\n");
+		preload_terrain(app);
+
+		if (verbose) print("GUILoop: set_logical_dim\n");
+		app.set_logical_dim(v2i(conf.screen_w, conf.screen_h));
+		
+		last_mod_env = cp->env.mod - 1;
+		last_mod_con = cp->mod - 1;
+
+		last_tick = app.get_ticks();
+		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
+	}
+	
+	bool GUILoop::step() {
+		
+		Console & con = *cp;
+		Env & env = *ep;
+		
+		if (verbose >= 2) print("GUILoop.step: {; app.done=%||\n", app.done);
+		
+		if ((con.env.mod != last_mod_env) || (con.mod != last_mod_con) || (last_tick + 100 > app.get_ticks())) {
+			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
+			con.time = app.get_ticks();
+			last_tick = con.time;
+
+			if (verbose >= 2) print("GUILoop.step: render; tick=%||\n", last_tick);
+			
+			render(app, env, con, verbose);
+
+			last_mod_env = con.env.mod;
+			last_mod_con = con.mod;
+		}
+
+		if (verbose >= 2) print("GUILoop.step: handle_events;\n");
+
+		con.handle_events(app);
+					
+		if (verbose >= 2) print("GUILoop.step: }\n");
+					
+		return !app.done;		
+		
 	}
 
 

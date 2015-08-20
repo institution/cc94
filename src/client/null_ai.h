@@ -1,8 +1,6 @@
 #ifndef NULL_AI_H
 #define NULL_AI_H
 
-#include <thread>
-#include <mutex>
 #include <chrono>
 #include <iostream>
 
@@ -23,9 +21,10 @@ namespace null_ai{
 
 	struct NullAi: Player {
 
-		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+		bool step(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
 			print("null_ai: ready\n");
 			env.apply_inter(inter::ready(nation_id), nation_auth);
+			return false;
 		}
 
 

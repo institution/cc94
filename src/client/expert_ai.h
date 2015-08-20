@@ -1,8 +1,6 @@
 #ifndef EXPERT_AI_H
 #define EXPERT_AI_H
 
-#include <thread>
-#include <mutex>
 #include <chrono>
 #include <iostream>
 
@@ -19,9 +17,10 @@ namespace expert_ai{
 
 	struct ExpertAi: Player {
 
-		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+		bool step(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
 			print("expert_ai: ready\n");
 			env.apply_inter(col::inter::ready(nation_id), nation_auth);
+			return false;
 		}
 
 

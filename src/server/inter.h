@@ -250,10 +250,10 @@ namespace col{
 			(BuildType::Id, build_type_id)
 		)
 
-		CC94_DEFINE_INTER(
-			load,
-			(string, data)
-		)
+		//CC94_DEFINE_INTER(
+		//	load,
+		//	(string, data)
+		//)
 
 		CC94_DEFINE_INTER(
 			start,

@@ -1,5 +1,5 @@
-#ifndef GAME_0873498576
-#define GAME_0873498576
+#ifndef GAME_H_0873498576
+#define GAME_H_0873498576
 
 
 #include "player.h"
@@ -32,20 +32,20 @@ namespace col{
 
 
 	struct Game {
+		
 		Players players;
-		Env & env;
+		Env env;
 
-		bool running;
-		map<Nation::Id, Player*> who;
+		using Who = std::vector< std::pair<Nation::Id, Player*> > ;
+		Who who;
 
-		Game(Env & env): env(env), running{true} {
+		int verbose{0};
+		
+		
+		void init(std::string const& fname, int verbose);
+		
 
-		}
-
-		void connect(Player * p, Nation::Id nation_id) {
-			who[nation_id] = p;
-			p->start();
-		}
+		void connect(Player * p, Nation::Id nation_id);
 
 		template <class T, class ...Args>
 		void add_player(Nation::Id nid, Args&... args) {
@@ -56,39 +56,8 @@ namespace col{
 			);
 		}
 
-		void stop() {
-			running = false;
-		}
-
-		void play() {
-
-			while (running and !env.in_progress()) {
-				Player & player = *players.first();
-				player.play(env, 0, 0);
-			}
-
-			while (running and env.in_progress()) {
-				auto nation_id = env.get_id(env.get_current_nation());
-
-				auto it = who.find(nation_id);
-				Player *player;
-				if (it != who.end()) {
-					player = (*it).second;
-				}
-				else {
-					player = players.first();
-				}
-
-				player->play(env, nation_id, env.get<Nation>(nation_id).auth);
-			}
-
-			for (Player* p: players.players) {
-				p->stop();
-			}
-
-
-		}
-
+		bool step();
+		
 
 	};
 

@@ -4,6 +4,12 @@
 namespace col {
 
 	
+	Env::State const 
+		Env::StateEdit = 0,
+		Env::StatePlay = 1,
+		Env::StateExit = 2;
+
+	
 	int Env::get_movement_cost(Terr const& dest, Terr const& orig, Travel const& travel) const {
 		
 		if (travel == TravelSea) {

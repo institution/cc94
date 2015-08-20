@@ -1,7 +1,7 @@
 #ifndef CONF340673_H
 #define CONF340673_H
 
-#include "col.hpp"
+#include "server/col.hpp"
 
 namespace col{
 
@@ -10,7 +10,7 @@ namespace col{
 		int screen_w;
 		int screen_h;
 		int tile_dim;
-		int global_scale;
+		int scale;
 
 		int terr_w;
 		int terr_h;
@@ -20,15 +20,12 @@ namespace col{
 		Path font_path;
 
 		Conf() {
-
-			screen_w = 320;
-			screen_h = 200;
-			tile_dim = 16;
-			terr_w = 16;
-			terr_h = 16;
-
-			global_scale = 3;
-
+			scale = 3;
+			
+			screen_w = 320 * scale;
+			screen_h = 200 * scale;
+			tile_dim = 16 * scale;
+			
 			res_path = "../COLONIZE/";
 			font_path = "../font/";
 

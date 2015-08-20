@@ -3,18 +3,20 @@
 //#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
-#include "lodepng/lodepng.h"
 #include "ai-env-helpers.h"
 #include "view_base.h"
 #include "conf.h"
 
+//namespace Key = backend::Key;
+
 namespace col {
+
 
 	using b2i = Box;
 	
 	using Event = Console::Event;
 	using Button = Console::Button;
-	using Key = Console::Key;
+	using Key = backend::Key;
 	using Dev = Console::Dev;
 	
 	
@@ -25,38 +27,17 @@ namespace col {
 	Layout const ly(conf.screen_w, conf.screen_h);
 
 
-	using Res = map<pair<string,uint>, sf::Texture>;
+	using Res = map<pair<string,uint>, backend::Texture>;
 	Res g_res;
 
-	using ResFont = map<string, sf::Font>;
-	ResFont g_fonts;
-
-	using ResPixFont = map<string, PixFont>;
+	using ResPixFont = map<string, backend::PixFont>;
 	ResPixFont g_pixfonts;
 	
 
-	ResFont::mapped_type const& res_font(string const& name, uint8 size) {
-		auto p = g_fonts.find(name);
-		if (p != g_fonts.end()) {
-			return (*p).second;
-		}
-		else {
-			auto &font = g_fonts[name];
-			Path path = conf.font_path / name;
-			if (!font.loadFromFile(path.c_str())) {
-				throw std::runtime_error("cannot load font");
-			}
-			// set size
-			return font;
-		}
-	}
-
-	v2i get_dim(sf::Texture const& t) {
-		auto const& s = t.getSize();
-		return v2i(s.x, s.y); 
-	}
-
-	ResPixFont::mapped_type const& res_pixfont(string const& name) {
+	// Texture get dim
+	using backend::get_dim;
+	
+	ResPixFont::mapped_type const& res_pixfont(backend::Back & back, string const& name) {
 		auto p = g_pixfonts.find(name);
 		if (p != g_pixfonts.end()) {
 			return (*p).second;
@@ -64,12 +45,26 @@ namespace col {
 		else {
 			auto &font = g_pixfonts[name];
 			auto path = conf.font_path / name;
-			font.load(path.c_str());
+			font.load(back, path.c_str(), {200,180,160});
 			return font;
 		}
 	}
+	
 
-	v2i get_text_dim(PixFont const& font, string const& text);
+	ResPixFont::mapped_type const& get_pixfont(string const& name) {
+		auto p = g_pixfonts.find(name);
+		if (p != g_pixfonts.end()) {
+			return (*p).second;
+		}
+		else {
+			backend::error("nofont");
+			throw std::runtime_error("nofont");
+		}
+	}
+
+
+
+	v2i get_text_dim(backend::PixFont const& font, string const& text);
 
 
 	int get_icon_id(Unit const& u) {
@@ -79,7 +74,7 @@ namespace col {
 	struct Text;
 	
 	v2i render_text(
-		sf::RenderWindow &win,
+		backend::Back &win,
 		v2i const& pos,
 		Text const& text		
 	);
@@ -122,39 +117,31 @@ namespace col {
 
 	
 	// Load png file to sfml texture
-	unsigned load_png(sf::Texture & tex, Path const& path) {
-
-		std::vector<uint8> pix; 
-		unsigned width, height;
-		
-		unsigned error = lodepng::decode(pix, width, height, path.c_str());
-
-		if (error) {
-			return error;			
-		}
-		
-		sf::Image img;
-		img.create(width, height, &pix[0]);
-		
-		tex.loadFromImage(img);
+	unsigned load_png(backend::Back & back, backend::Texture & tex, Path const& path) {
+		back.load(tex, path);
 		return 0;
+	}
+	
+	
+	Path get_res_path(string const& category, uint const& index) {
+		return conf.res_path / category / Path(format("%|03|.png", index));
 	}
 	
 	// Load resource file
 	// cat -- category (dir name)
 	// i -- frame num (file name)
-	void load_res(Res::mapped_type & tex, string const& cat, uint const& i) {
+	void load_res(backend::Back & back, Res::mapped_type & tex, string const& cat, uint const& i) {
 		
-		auto path = conf.res_path / cat / Path(format("%|03|.png", i));
+		auto path = get_res_path(cat, i);
 
-		if (auto err = load_png(tex, path)) {
+		if (auto err = load_png(back, tex, path)) {
 			print("WARNING: cannot load image file; path=%||; err=%||;\n", 
 				path.c_str(), lodepng_error_text(err)
 			);
 
 			// try default
 			auto def_path = conf.res_path / ICON / "065.png";
-			if (auto err = load_png(tex, def_path)) {
+			if (auto err = load_png(back, tex, def_path)) {
 				throw Critical("cannot load fallback image file; path=%||; err=%||;\n", 
 					def_path.c_str(),
 					lodepng_error_text(err)
@@ -162,11 +149,11 @@ namespace col {
 			}
 		}
 
-		tex.setSmooth(false);
+		// tex.setSmooth(false);
 	}
 	
 	// Get resource from global cache (load on demand)
-	Res::mapped_type const& res(string const& cat, uint const& i = 1) {
+	Res::mapped_type const& res(backend::Back & back, string const& cat, uint const& i = 1) {
 		auto key = Res::key_type(cat, i);
 		auto p = g_res.find(key);
 		if (p != g_res.end()) {
@@ -174,7 +161,7 @@ namespace col {
 		}
 		else {
 			auto &img = g_res[key];
-			load_res(img, cat, i);
+			load_res(back, img, cat, i);
 			return img;
 		}
 	}
@@ -182,26 +169,26 @@ namespace col {
 
 	
 	
-	sf::Color const ColorSelectedBG = sf::Color(0x3c,0x20,0x18,0xff);
-	sf::Color const ColorFont = sf::Color(0x55,0x96,0x34,0xff);
-	sf::Color const ColorNone = sf::Color(0,0,0,0);
-	sf::Color const ColorBlack = sf::Color(0,0,0,255);
-	sf::Color const ColorGreen = sf::Color(0,255,0,255);
-	sf::Color const ColorBlue = sf::Color(0,0,255,255);
-	sf::Color const ColorRed = sf::Color(255,0,0,255);
-	sf::Color const ColorDarkGreen = sf::Color(0,127,0,255);
-	sf::Color const ColorDarkBlue = sf::Color(0,0,127,255);
-	sf::Color const ColorDarkRed = sf::Color(127,0,0,255);
-	sf::Color const ColorWhite = sf::Color(255,255,255,255);
-	sf::Color const ColorGray = sf::Color(128,128,128,128);
+	backend::Color const ColorSelectedBG = backend::Color(0x3c,0x20,0x18,0xff);
+	backend::Color const ColorFont = backend::Color(0x55,0x96,0x34,0xff);
+	backend::Color const ColorNone = backend::Color(0,0,0,0);
+	backend::Color const ColorBlack = backend::Color(0,0,0,255);
+	backend::Color const ColorGreen = backend::Color(0,255,0,255);
+	backend::Color const ColorBlue = backend::Color(0,0,255,255);
+	backend::Color const ColorRed = backend::Color(255,0,0,255);
+	backend::Color const ColorDarkGreen = backend::Color(0,127,0,255);
+	backend::Color const ColorDarkBlue = backend::Color(0,0,127,255);
+	backend::Color const ColorDarkRed = backend::Color(127,0,0,255);
+	backend::Color const ColorWhite = backend::Color(255,255,255,255);
+	backend::Color const ColorGray = backend::Color(128,128,128,128);
 	
-	sf::Color const ColorDarkSkyBlue = sf::Color(76,100,172,255);
-	sf::Color const ColorSkyBlue = sf::Color(104,136,192,255);
-	sf::Color const ColorLightSkyBlue = sf::Color(156,184,220,255);
+	backend::Color const ColorDarkSkyBlue = backend::Color(76,100,172,255);
+	backend::Color const ColorSkyBlue = backend::Color(104,136,192,255);
+	backend::Color const ColorLightSkyBlue = backend::Color(156,184,220,255);
 
-	sf::Color const ColorDarkWoodBrown = sf::Color(84,68,44,255);
-	sf::Color const ColorWoodBrown = sf::Color(132,112,80,255);
-	sf::Color const ColorLightWoodBrown = sf::Color(152,128,92,255);
+	backend::Color const ColorDarkWoodBrown = backend::Color(84,68,44,255);
+	backend::Color const ColorWoodBrown = backend::Color(132,112,80,255);
+	backend::Color const ColorLightWoodBrown = backend::Color(152,128,92,255);
 
 
 
@@ -220,42 +207,50 @@ namespace col {
 		
 
 		
-	void preload(Path const& d, uint const& i, Res::mapped_type const& tex) {
-		auto key = Res::key_type(d.string(),i);
-		g_res[key] = tex;
+	void preload(Path const& d, uint const& i, Res::mapped_type && tex) {
+		auto key = Res::key_type(d,i);
+		g_res[key] = std::move(tex);
 	}
 
-	Res::mapped_type replace_black(Res::mapped_type const& inn_, Res::mapped_type const& tex_, v2i const& t) {
-		/* Create new texture
+	backend::Surface replace_black(backend::Surface const& inn, backend::Surface const& tex, v2i const& toff) {
+		/* Create new surface
 
 		mask colors meaning:
-		 transparent -> transparent
 		 black -> take from tex
 		 else -> take from mask
 
-		 t -- tex offset vector
+		 toff -- tex offset vector
 
 		*/
-
-		auto out = inn_.copyToImage();
-		auto inn = inn_.copyToImage();
-		auto tex = tex_.copyToImage();
-
-		for (uint j = 0; j < out.getSize().y; ++j) {
-			for (uint i = 0; i < out.getSize().x; ++i) {
-				if (inn.getPixel(i,j) == sf::Color(0,0,0,255)) {
-					out.setPixel(i,j, tex.getPixel(t[0] + i, t[1] + j));
+		
+		auto dim = inn.get_dim();
+		auto out = backend::Surface(dim);
+		
+		for (int j = 0; j < dim[1]; ++j) {
+			for (int i = 0; i < dim[0]; ++i) {
+				auto c = inn.get_pixel({i,j});
+				auto pos = v2i(i,j);
+				
+				//print("c = %||\n", c);
+				
+				if (c.a == 0) {
+					out.set_pixel(pos, backend::Color(0,0,0,0));
+				}					
+				else if (c == backend::Color(0,0,0,255)) {
+					
+					out.set_pixel(pos, tex.get_pixel(toff + pos));
 				}
+				else {
+					out.set_pixel(pos, inn.get_pixel(pos));
+				}
+				
 			}
 		}
-
-		auto ret = sf::Texture();
-		ret.loadFromImage(out);
-		ret.setSmooth(false);
-		return ret;
+		
+		return out;
 	}
 
-	//void render_fields(sf::RenderWindow &win, Env const& env, Console const& con,
+	//void render_fields(backend::Back &win, Env const& env, Console const& con,
 	//	v2i const& pix, Coords const& pos);
 
 
@@ -269,13 +264,39 @@ namespace col {
 		throw Critical("invalid 'l'");
 	}
 
-	void preload_coast(Biome bio, int start) {
+	using ResInd = std::pair<string, uint>;
+	
+	backend::Texture make_combined_texture(
+		backend::Back & back, 
+		ResInd p, 
+		ResInd b,
+		v2i const& off
+	) {
+		auto p_img = back.make_surface_from_png(
+			get_res_path(p.first, p.second)
+		);
+		
+		auto b_img = back.make_surface_from_png(
+			get_res_path(b.first, b.second)
+		);				
+		
+		auto surf = replace_black(p_img, b_img, off);
+		
+		return back.make_texture(surf);
+	}
+	
+				
+
+	void preload_coast(backend::Back & back, Biome bio, int start) {
 		for (int k = 0; k < 8; ++k) {
 			for (int l = 0; l < 4; ++l) {
 				int ind = (k<<2) + l;
-				preload(COAST, start + ind,
-					replace_black(
-						res(PHYS, 109+ind), res(TERR, bio), get_loffset(l)
+				
+				preload(COAST, start + ind, 
+					make_combined_texture(back, 
+						{PHYS, 109+ind}, 
+						{TERR, bio}, 
+						get_loffset(l)
 					)
 				);
 			}
@@ -285,108 +306,142 @@ namespace col {
 	int const TextureOceanId = 11;
 	int const TextureSeaLaneId = 11;
 	
-	void preload_coast() {
+	void preload_coast(backend::Back & back) {
 		// 109 - 140
 		
-		preload_coast(TextureOceanId, 0);
-		preload_coast(TextureSeaLaneId, 50);
+		preload_coast(back, TextureOceanId, 0);
+		preload_coast(back, TextureSeaLaneId, 50);
+	}
+	
+	void preload_fonts(backend::Back & back) {
+		res_pixfont(back, "tiny.png");
 	}
 
-	void preload_terrain() {
+
+	void preload_terrain(backend::Back & back) {
 		for (int i=1; i<13; ++i) {
-			preload(DIFFUSE,  0+i, replace_black(res(PHYS, 105), res(TERR, i), {0,0}));
-			preload(DIFFUSE, 50+i, replace_black(res(PHYS, 106), res(TERR, i), {0,0}));
-			preload(DIFFUSE, 100+i, replace_black(res(PHYS, 107), res(TERR, i), {0,0}));
-			preload(DIFFUSE, 150+i, replace_black(res(PHYS, 108), res(TERR, i), {0,0}));
+			preload(DIFFUSE,  0+i, 
+				make_combined_texture(back, {PHYS, 105}, {TERR, i}, {0,0})
+			);
+			preload(DIFFUSE, 50+i, 
+				make_combined_texture(back, {PHYS, 106}, {TERR, i}, {0,0})
+			);
+			preload(DIFFUSE, 100+i, 
+				make_combined_texture(back, {PHYS, 107}, {TERR, i}, {0,0})
+			);
+			preload(DIFFUSE, 150+i, 
+				make_combined_texture(back, {PHYS, 108}, {TERR, i}, {0,0})
+			);
 		}
 
-		preload_coast();
+		preload_coast(back);
 	}
 
 	
 	v2i render_text_line(
-		sf::RenderWindow &win,
+		backend::Back &win,
 
 		v2i const& pos,
 		v2i const& dim,
 		v2f const& align,
 
-		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,
+		backend::PixFont const& font,
+		backend::Color const& fgcol,
+		backend::Color const& bgcol,
 
 		string const& text
-	) ;
+	);
 	
-
-	sf::RectangleShape RectShape(
-			v2i const& pos,
+	
+	void render_fill(backend::Back & win,
+			v2i const& pos, 
 			v2i const& dim,
-			sf::Color const& fill_color,
-			int16 const& outline_thickness = 0,
-			sf::Color const& outline_color = {0,0,0,255}
+			backend::Color const& col
 	) {
-		sf::RectangleShape rectangle;
-		rectangle.setPosition(pos[0], pos[1]);
-		rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
-		rectangle.setFillColor(fill_color);
-		rectangle.setOutlineColor(outline_color);
-		rectangle.setOutlineThickness(outline_thickness);
-		return rectangle;
+		win.render_fill(pos, dim, col);
 	}
-
+	
+	void render_inline(backend::Back &win, v2i const& pos, v2i const& dim, backend::Color const& c, int t) {
+		/* Draw inside border of pos,dim box; t -- thickness
+		*/
+		int w,h;
+		(dim - v2i(t,t)).unpack(w,h);
+		
+		
+		// top
+		render_fill(win, pos + v2i{0,0}, {w,t}, c);
+		// right
+		render_fill(win, pos + v2i{w,0}, {t,h}, c);
+		// bottom
+		render_fill(win, pos + v2i{t,h}, {w,t}, c);
+		// left
+		render_fill(win, pos + v2i{0,t}, {t,h}, c);
+	}	
+		
+	void render_outline(backend::Back &win, v2i const& pos, v2i const& dim, backend::Color const& c, int t) {
+		/* Draw 1px thick outline border of pos,dim box 
+		*/
+		render_inline(win, pos - v2i(t,t), dim + v2i(t,t)*2, c, t);
+	}
 	
 	struct Text{
 		string text{""};
 		string font{"tiny.png"};
-		sf::Color fg{ColorWhite}, bg{ColorNone};
+		backend::Color fg{ColorWhite}, bg{ColorNone};
 		
 		string const& get_font() const { return font; }
 		Text & set_font(string const& font) { this->font = font; return *this; }
 		
-		sf::Color const& get_fg() const { return fg; }
-		Text & set_fg(sf::Color const& fg) { this->fg = fg; return *this; }
+		backend::Color const& get_fg() const { return fg; }
+		Text & set_fg(backend::Color const& fg) { this->fg = fg; return *this; }
 		
-		sf::Color const& get_bg() const { return bg; }
-		Text & set_bg(sf::Color const& bg) { this->bg = bg; return *this; }
+		backend::Color const& get_bg() const { return bg; }
+		Text & set_bg(backend::Color const& bg) { this->bg = bg; return *this; }
 
 		string const& get_text() const { return text; }
 		Text & set_text(string const& text) { this->text = text; return *this; }
 		
 		v2i get_dim() const { 
-			return get_text_dim(res_pixfont(font), text);		
+			return get_text_dim(get_pixfont(font), text);		
 		}
 		
 		Text(string const& text): text(text) {}
 	};
 
-	void render_terr(sf::RenderWindow &win,
+	void render_terr(backend::Back &win,
 			v2i const& pos,
 			Env const& env,
 			Terr const& terr);
 	
-	void render_shield(sf::RenderWindow &win, int16 x, int16 y, Color const& col, char letter) {
+	
+	
+	void render_shield(backend::Back &win, v2i const& pos, Color const& col, char letter) {
 		
 		auto t = Text(string() + letter).set_font("tiny.png").set_fg(ColorBlack);
 
-		win.draw(
-			RectShape(
-				v2i(x,y) + v2i(1,1),
-				{5, 7},
-				{col.r,col.g,col.b, 255},
-				1,
-				{0,0,0, 255}
-			)
+		auto inner_pos = pos + v2i(1,1) * ly.line;
+		auto inner_dim = v2i(ly.S(5), ly.font_tiny);
+
+		render_outline(win,
+			inner_pos, 
+			inner_dim, 
+			{0,0,0, 255},
+			ly.line
 		);
 		
-		render_text(
-			win,
-			v2i(x,y) + v2i(1,1),
+		render_fill(win,
+			inner_pos, 
+			inner_dim, 
+			{col.r,col.g,col.b, 255}
+		);
+		
+		render_text(win,
+			pos + v2i(1,1) * ly.line,
 			t
 		);
 	}
 
-	void render_unit(sf::RenderWindow &win,
+	void render_unit(backend::Back &win,
 			Console & con,
 			Coords const& pos,
 			Env const& env,
@@ -395,91 +450,28 @@ namespace col {
 			Coords const& delta);
 
 
-	void render_pixel(sf::RenderWindow &win, v2i pix, const Color &col) {
-		win.draw(
-			RectShape(
-				pix,
-				v2i(1, 1),
-				sf::Color(col.r,col.g,col.b, 255),
-				0,
-				sf::Color(0,0,0, 0)
-			)
+	void render_pixel(backend::Back &win, v2i pix, const Color &col) {		
+		render_fill(win,
+			pix,
+			v2i(1, 1),
+			backend::Color(col.r,col.g,col.b, 255)
 		);
 	}
 	
 
 	
-	void render_fill(sf::RenderWindow & win,
-			v2i const& pos, 
-			v2i const& dim,
-			sf::Color const& col
-	) {
-		sf::RectangleShape r;
-		r.setSize(sf::Vector2f(dim[0], dim[1]));
-		r.setFillColor(col);
-		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
-		//rectangle.setOutlineThickness(1);
-		r.setPosition(pos[0], pos[1]);
-		win.draw(r);
-	}
 	
-	void render_rect(sf::RenderWindow &win,
-			v2i const& pos, v2i const& dim,
-			sf::Color const& col)
-	{
-		sf::RectangleShape r;
-		r.setSize(sf::Vector2f(dim[0], dim[1]));
-		r.setFillColor(col);
-		//rectangle.setOutlineColor(sf::Color(0,50,0, 255));
-		//rectangle.setOutlineThickness(1);
-		r.setPosition(pos[0], pos[1]);
-		win.draw(r);
+
+	void render_sprite(backend::Back & win, int x, int y, backend::Texture const& img) {
+		win.render(img, {x,y});
 	}
 
-	void render_rect(
-			sf::RenderWindow &win,
-			b2i const& box,
-			sf::Color const& col
-	) {
-		render_rect(win, box.pos, box.dim, col);
-	}
-	
-	void render_outline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, sf::Color const& c) {
-		/* Draw 1px thick outline border of pos,dim box 
-		*/
-		win.draw(
-			RectShape(
-				pos,
-				dim,
-				sf::Color(0,0,0, 0),
-				1,
-				sf::Color(c.r, c.g, c.b, c.a)
-			)
-		);
-	}
-
-	void render_inline(sf::RenderWindow &win, v2i const& pos, v2i const& dim, sf::Color const& c) {
-		/* Draw 1px thick inside border of pos,dim box 
-		*/
-		render_outline(win, pos + v2i(1,1),	dim - v2i(2,2), c);		
-	}	
-	
-	void render_sprite(sf::RenderWindow &win, int x, int y, const sf::Texture &img) {
-		sf::Sprite s;
-		s.setPosition(x, y);
-		s.setTexture(img);
-		win.draw(s);
-	}
-
-	void render_sprite(sf::RenderWindow & win, v2i const& pix, sf::Texture const& img) {
-		sf::Sprite s;
-		s.setPosition(pix[0], pix[1]);
-		s.setTexture(img);
-		win.draw(s);
+	void render_sprite(backend::Back & win, v2i const& pix, backend::Texture const& img) {
+		win.render(img, pix);
 	}
 
 	
-	void render_terr(sf::RenderWindow &win,
+	void render_terr(backend::Back &win,
 		Coords const& pos,
 		Env const& env,
 		Terr const& terr,
@@ -489,16 +481,16 @@ namespace col {
 
 	
 	void render_area(
-		sf::RenderWindow & win,
+		backend::Back & win,
 		v2i const& area_pos,
 		v2i const& area_dim,
-		sf::Texture const& tex		
+		backend::Texture const& tex		
 	);
 
 
-	void render_sprite(sf::RenderWindow & win,
+	void render_sprite(backend::Back & win,
 		v2i const& pix, v2i const& dim,
-		sf::Texture const& img
+		backend::Texture const& img
 	) {
 		v2i tex_dim = get_dim(img);
 				
@@ -508,9 +500,9 @@ namespace col {
 		render_sprite(win, pix + voffset, img);
 	}
 	
-	void render_sprite2(sf::RenderWindow & win,
+	void render_sprite2(backend::Back & win,
 		v2i const& pix, v2i const& dim,
-		sf::Texture const& img
+		backend::Texture const& img
 	) {
 		render_sprite(win, pix, img);
 	}
@@ -518,10 +510,10 @@ namespace col {
 	using Texture = Res::mapped_type;
 	
 	struct Renderer{
-		sf::RenderWindow &win;
+		backend::Back &win;
 		Env const& env;
 
-		Renderer(sf::RenderWindow &win, Env const& env): win(win), env(env) {}
+		Renderer(backend::Back &win, Env const& env): win(win), env(env) {}
 
 		void operator()(Res::mapped_type const& res, v2i const& pos);
 		void operator()(Res::mapped_type const& res, v2i const& pos, v2i const& dim);
@@ -543,79 +535,66 @@ namespace col {
 	}
 
 	void Renderer::operator()(Unit const& unit, v2i const& pos, v2i const& dim) {
-		render_sprite(win, pos, dim, res(ICON, unit.get_type_id()));
+		render_sprite(win, pos, dim, res(win, ICON, unit.get_type_id()));
 	}
 
 	void Renderer::operator()(Unit const& unit, v2i const& pos) {
-		render_sprite(win, pos, res(ICON, unit.get_type_id()));
+		render_sprite(win, pos, res(win, ICON, unit.get_type_id()));
 	}
 
 	void Renderer::operator()(Item const& item, v2i const& pos) {
-		render_sprite(win, pos, res(ICON, item));
+		render_sprite(win, pos, res(win, ICON, item));
 	}
 
 
 	
-	void render_area(sf::RenderWindow & win, v2i const& pos, v2i const& dim, sf::Color const& color) {
-		win.draw(
-			RectShape(
-				pos,
-				dim,
-				sf::Color(color.r, color.g, color.b, color.a),
-				0,
-				{0,0,0,0}
-			)
-		);
+	void render_area(backend::Back & win, v2i const& pos, v2i const& dim, backend::Color const& color) {
+		render_fill(win, pos, dim, color);		
 	}
 		
 	v2i render_text2(
-		/*sf::RenderWindow &win,
+		/*backend::Back &win,
 
 		v2i const& pos,
 		v2i const& dim,
 		v2i const& align,
 
 		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,
+		backend::Color const& fgcol,
+		backend::Color const& bgcol,
 
 		string const& text*/
 
-		sf::RenderWindow &win,
+		backend::Back &win,
 		Vector2<int> const& pos,
-		PixFont const& font,
+		backend::PixFont const& font,
 		string const& text,
-		sf::Color const& bgcol,
+		backend::Color const& bgcol,
 		int width	
 	);
 
 	
 	void render_area(
-		sf::RenderWindow & win,
+		backend::Back & win,
 		v2i const& area_pos,
 		v2i const& area_dim,
-		sf::Texture const& tex
+		backend::Texture const& tex
 	) {
-		using sf::Sprite;
-		using sf::IntRect;
-		using sf::Vector2f;
-
-		auto tile_dim = Vector2<int>(tex.getSize().x, tex.getSize().y);
+		auto tile_dim = tex.get_dim();
 		auto area_end = area_pos + area_dim;
 
 		int ei,ej;
 
 		// center
 		{
-			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], tile_dim[1]));
 			int i,j;
 			j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
 				i = area_pos[0];
 				while (i < area_end[0] - tile_dim[0]) {
-					s.setPosition(Vector2f(i, j));
-					win.draw(s);
-					//cerr << i << endl;
+					
+					win.render(tex, {i,j});
+					
 					i += tile_dim[0];
 				}
 				j += tile_dim[1];
@@ -628,11 +607,11 @@ namespace col {
 		
 		// bottom
 		{
-			auto s = Sprite(tex, IntRect(0, 0, tile_dim[0], area_end[1] - ej));
+			auto src_box = backend::Box({0, 0}, {tile_dim[0], area_end[1] - ej});
+			
 			int i = area_pos[0], j = ej;
-			while (i < area_end[0] - tile_dim[0]) {
-				s.setPosition(Vector2f(i, j));
-				win.draw(s);
+			while (i < area_end[0] - tile_dim[0]) {				
+				win.render_clip(tex, {i, j}, src_box);	
 				i += tile_dim[0];
 			}
 			ei = i;
@@ -640,11 +619,10 @@ namespace col {
 
 		// right
 		{
-			auto s = Sprite(tex, IntRect(0, 0, area_end[0] - ei, tile_dim[1]));
+			auto src_box = backend::Box({0, 0}, {area_end[0] - ei, tile_dim[1]});
 			int i = ei, j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
-				s.setPosition(Vector2f(i, j));
-				win.draw(s);
+				win.render_clip(tex, {i, j}, src_box);
 				j += tile_dim[1];
 			}
 			ej = j;
@@ -652,26 +630,15 @@ namespace col {
 
 		// corner
 		{
-			auto s = Sprite(tex, sf::IntRect(0, 0, area_end[0] - ei, area_end[1] - ej));
-			int i = ei, j = ej;
-			s.setPosition(Vector2f(i, j));
-			win.draw(s);
+			auto src_box = backend::Box({0, 0}, {area_end[0] - ei, area_end[1] - ej});
+			int i = ei, j = ej;			
+			win.render_clip(tex, {i, j}, src_box);
 		}
-
-
-
-		// alt but problematic
-		//sf::RectangleShape rectangle;
-		//rectangle.setSize(sf::Vector2f(dim[0], dim[1]));
-		//rectangle.setTexture(&res("COLONIZE/WOODTILE_SS", 1));
-		//rectangle.setTextureRect(sf::IntRect(pos[0], pos[1], dim[0], dim[1]));
-		//win.draw(rectangle);
-
 
 	}
 
-	//sf::Color Black = {0,0,0,255};
-	//sf::Color Transparent = {0,0,0,0};
+	//backend::Color Black = {0,0,0,255};
+	//backend::Color Transparent = {0,0,0,0};
 	
 		
 	/*
@@ -684,7 +651,7 @@ namespace col {
 	
 	
 	template<typename K>
-	void render_select(sf::RenderWindow & win, Console & con,
+	void render_select(backend::Back & win, Console & con,
 		std::function<v2i(v2i const& dim)> cpos,
 		//Box const& par, v2f const& align, 
 		vector<pair<K, string>> const& kvs,
@@ -693,7 +660,7 @@ namespace col {
 		std::function<void()> oncancel
 	) {
 		
-		int const LINE_HEIGHT = 10;
+		int const LINE_HEIGHT = ly.S(10);
 		
 		v2i const dim = v2i(ly.scr.dim[0] * 0.3, (kvs.size()+1) * LINE_HEIGHT);
 		v2i pos = cpos(dim);
@@ -702,7 +669,7 @@ namespace col {
 		con.on(Event::Press, oncancel);
 		
 		// background
-		render_area(win, pos, dim, res("WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
 		
 		// click on dialog -- do nothing 
 		con.on(Event::Press, pos, dim, [](){});
@@ -717,7 +684,7 @@ namespace col {
 			
 			// selected bg
 			if (key == selected) {
-				render_rect(win, 
+				render_fill(win, 
 					p, d,
 					ColorSelectedBG
 				);
@@ -727,7 +694,7 @@ namespace col {
 			render_text_line(
 				win,
 				p, d, v2f(0.5, 0.5),
-				res_pixfont("tiny.png"), ColorFont, ColorNone,
+				res_pixfont(win, "tiny.png"), ColorFont, ColorNone,
 				kvs[i].second
 			);
 			
@@ -740,7 +707,7 @@ namespace col {
 	}
 	
 	
-	void render_unit_cargo(sf::RenderWindow &win, Console & con, v2i const& pos, v2i const& dim, Unit const& unit) {
+	void render_unit_cargo(backend::Back &win, Console & con, v2i const& pos, v2i const& dim, Unit const& unit) {
 		// render unit cargo
 		
 		/*
@@ -760,27 +727,27 @@ namespace col {
 			int num = unit.get(item);
 			
 			if (num) {
-				auto clones = (unit.used_space(num) / 10);
-				auto width = 10 + clones * 2;
+				auto clones = (unit.used_space(num) / ly.S(10));
+				auto width = ly.S(10) + clones * ly.S(2);
 				
 				auto tile_pos = pix;
 				auto tile_dim = v2i(width, dim[1]);
-				render_inline(win, tile_pos, tile_dim, ColorWoodBrown);
+				render_inline(win, tile_pos, tile_dim, ColorWoodBrown, ly.line);
 				
 				// left click on cargo -- start drag cargo unload
 				con.on(Event::Press, Button::Left, tile_pos, tile_dim, 
 					[item,num,&con](){ con.drag_cargo(item, num, -1); }
 				);
 				
-				auto & item_tex = res(ICON, get_item_icon_id(item));
+				auto & item_tex = res(win, ICON, get_item_icon_id(item));
 				
-				auto item_pos = calc_align(pix, v2i(12, dim[1]), get_dim(item_tex));
+				auto item_pos = calc_align(pix, v2i(ly.S(12), dim[1]), get_dim(item_tex));
 								
 				// render icons 
 				// clones
 				for (uint16 i = 0; i < clones; ++i) {
 					render_sprite(win,
-						item_pos + v2i(i * 2, 0),
+						item_pos + v2i(i * ly.S(2), 0),
 						item_tex						
 					);
 					
@@ -796,7 +763,7 @@ namespace col {
 			if (num) {
 				auto tile_pos = pix;
 				auto tile_dim = v2i(int16((num+19)/20)*4, dim[1]);
-				render_inline(win, tile_pos, tile_dim, ColorWoodBrown);
+				render_inline(win, tile_pos, tile_dim, ColorWoodBrown, ly.line);
 				
 				pix[0] += tile_dim[0];
 			}
@@ -821,7 +788,7 @@ namespace col {
 	
 	
 	
-	void render_city_store(sf::RenderWindow & win, Console & con, v2i const& pos, v2i const& dim, Terr const& terr) {
+	void render_city_store(backend::Back & win, Console & con, v2i const& pos, v2i const& dim, Terr const& terr) {
 		auto const& env = con.env; // get_render_env
 		
 		// render storage area
@@ -834,7 +801,7 @@ namespace col {
 			);
 		}
 		
-		int tile_width = 16;
+		int tile_width = ly.S(16);
 		auto & col_st = env.get_store(terr);
 		
 		auto pix = pos;
@@ -844,10 +811,10 @@ namespace col {
 			int num = col_st.get(item);
 		
 			auto tile_pos = pix;
-			auto tile_dim = v2i(tile_width,12);
+			auto tile_dim = v2i(tile_width, ly.S(12));
 			
 			// render item
-			render_sprite(win, tile_pos, tile_dim, res(ICON, get_item_icon_id(item)));
+			render_sprite(win, tile_pos, tile_dim, res(win, ICON, get_item_icon_id(item)));
 			
 			// left click on item -- start drag cargo load
 			con.on(Event::Press, Button::Left, tile_pos, tile_dim, 
@@ -858,7 +825,7 @@ namespace col {
 			auto txt = Text(std::to_string(num)).set_font("tiny.png");
 			render_text(
 				win,
-				calc_align(pix + v2i(0,13), v2i(tile_width,0), txt.get_dim(), v2f(0.5, 0)),
+				calc_align(pix + ly.S(v2i(0,13)), v2i(tile_width,0), txt.get_dim(), v2f(0.5, 0)),
 				txt				
 			);
 			
@@ -867,7 +834,7 @@ namespace col {
 	}
 	
 
-	void render_city(sf::RenderWindow &win, Env const& env, Console & con) {
+	void render_city(backend::Back &win, Env const& env, Console & con) {
 		/*
 			// panel right
 			render_panel(app, env, con,
@@ -884,28 +851,14 @@ namespace col {
 
 		auto render = Renderer{win,env};
 		
-		auto T1 = v2i(23,27);
-		auto T2 = v2i(44,22);
-		auto T3 = v2i(53,37);
-		auto T4 = v2i(75,48);
 			
 		
 		// render area
-		auto sand_tex = res(ARCH, 1);
+		auto & sand_tex = res(win, ARCH, 1);
 		render_area(win, ly.city_builds.pos, ly.city_builds.dim, sand_tex);
 		
-		// relative positions
-		vector<v2i> pixs({
-			v2i(6,6), v2i(56,5), v2i(87,3), v2i(145,7), v2i(173,10),
-			v2i(8,33), v2i(37,37), v2i(67,45), v2i(96,45), v2i(128,45),
-			v2i(10,68), v2i(15,94), v2i(66,79), v2i(123,47), v2i(123,98)
-		});
-		
-		vector<v2i> dims({
-			T2,T1,T3,T1,T1,
-			T1,T1,T1,T1,T2,
-			T2,T2,T3,T4,T2			
-		});
+		auto & pixs = ly.pixs;
+		auto & dims = ly.dims;
 
 
 		auto& terr = *con.get_sel_terr();
@@ -926,7 +879,7 @@ namespace col {
 				auto workplace_id = i;
 				
 				auto& b = col.builds.at(i);
-				auto& build_tex = res(BUILD, b.get_type_id());
+				auto& build_tex = res(win, BUILD, b.get_type_id());
 				auto build_pos = ly.city_builds.pos + pixs.at(i);
 				auto build_dim = get_dim(build_tex);
 				
@@ -942,7 +895,7 @@ namespace col {
 						build_dim,
 						{0.5, 0.5},
 		
-						res_pixfont("tiny.png"),
+						res_pixfont(win, "tiny.png"),
 						{255,255,255,255},
 						{0,0,0,255},
 							
@@ -961,7 +914,7 @@ namespace col {
 						build_dim,
 						{0.5,0.5},
 		
-						res_pixfont("tiny.png"),
+						res_pixfont(win, "tiny.png"),
 						{255,255,255,255},
 						{0,0,0,255},
 							
@@ -984,7 +937,7 @@ namespace col {
 				
 				// number of produced items
 				if (int y = misc::get_yield(env, b)) {
-					auto& item_tex = res(ICON, get_item_icon_id(b.get_proditem()));
+					auto& item_tex = res(win, ICON, get_item_icon_id(b.get_proditem()));
 					auto item_dim = get_dim(item_tex);
 					
 					// item icon
@@ -998,7 +951,7 @@ namespace col {
 						v2i(0, item_dim[1]),
 						{0, 0.5},
 		
-						res_pixfont("tiny.png"),
+						res_pixfont(win, "tiny.png"),
 						{255,255,255,255},
 						{0,0,0,255},
 							
@@ -1021,7 +974,7 @@ namespace col {
 				int i = 0;
 				for (auto& unit_ptr: b.units) {
 					auto& unit = *unit_ptr;
-					auto& unit_tex = res(ICON, get_icon_id(unit));
+					auto& unit_tex = res(win, ICON, get_icon_id(unit));
 
 					v2i unit_pos = calc_align(
 						Box(
@@ -1043,7 +996,7 @@ namespace col {
 
 					if (unit_id == con.get_sel_unit_id()) {
 						// render selection frame
-						render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+						render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line_sel);
 					}
 					else {
 						// left click on unit -- select this unit
@@ -1070,7 +1023,7 @@ namespace col {
 			
 			auto pix = ly.city_fields.pos;
 
-			auto& tex_wood = res(WOODBG, 1);
+			auto& tex_wood = res(win, WOODBG, 1);
 			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
 			
 			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, ly.terr_dim);
@@ -1086,7 +1039,7 @@ namespace col {
 				
 				auto& field_terr = field.get_terr();
 				
-				v2i relc = (env.get_coords(*field.terr) - env.get_coords(city_terr)).cast<int>();
+				v2i relc = v2i(env.get_coords(*field.terr) - env.get_coords(city_terr));
 				auto field_pos = city_terr_pos + vmul(relc, ly.terr_dim);
 				auto field_dim = ly.terr_dim;
 				
@@ -1115,12 +1068,12 @@ namespace col {
 						v2i sel_pos = field_pos;
 						v2i sel_dim = field_dim;
 
-						auto& unit_tex = res(ICON, get_icon_id(unit));
+						auto& unit_tex = res(win, ICON, get_icon_id(unit));
 
 						// field production
 						if (auto proditem = field.get_proditem()) {
 							// render produced item
-							auto& item_tex = res(ICON, get_item_icon_id(proditem));
+							auto& item_tex = res(win, ICON, get_item_icon_id(proditem));
 							render_sprite(win, 
 								calc_align(Box(item_pos, item_dim), get_dim(item_tex)),
 								item_tex
@@ -1142,7 +1095,7 @@ namespace col {
 
 						if (unit_id == con.get_sel_unit_id()) {
 							// render selection frame
-							render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+							render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
 
 							// left click on field with selected worker -- switch to next proditem
 							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
@@ -1205,7 +1158,8 @@ namespace col {
 
 		render_inline(win,
 			ly.city_units.pos, ly.city_units.dim,
-			ColorDarkGreen
+			ColorDarkGreen,
+			ly.line
 		);
 		
 		// left click on city terrain area with selected unit -- unwork that unit
@@ -1220,7 +1174,7 @@ namespace col {
 			
 			if (unit.in_game and !unit.is_working()) {
 
-				auto& unit_tex = res(ICON, get_icon_id(unit));
+				auto& unit_tex = res(win, ICON, get_icon_id(unit));
 				v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
 				v2i unit_dim = ly.terr_dim;
 
@@ -1237,7 +1191,7 @@ namespace col {
 
 				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
-					render_inline(win, sel_pos, sel_dim, {255,100,100,255});
+					render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
 					
 					// left click on selected unit (on terr) -- show equip select
 					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
@@ -1359,7 +1313,7 @@ namespace col {
 	}
 	
 	
-	void render_units(sf::RenderWindow &win, Console & con,
+	void render_units(backend::Back &win, Console & con,
 		Vector2<int> const& pos, 
 		Vector2<int> const& dim, 
 		Env const& env, 
@@ -1373,7 +1327,7 @@ namespace col {
 			auto& unit = *p;
 			if (unit.in_game and !unit.is_working()) {
 
-				auto& unit_tex = res(ICON, get_icon_id(unit));
+				auto& unit_tex = res(win, ICON, get_icon_id(unit));
 				v2i unit_pos = pos + vmul(unit_dim, v2i(i,j));
 				
 				v2i sel_pos = unit_pos;
@@ -1390,7 +1344,7 @@ namespace col {
 
 				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
-					render_inline(win, sel_pos, sel_dim, {255,100,100,255});					
+					render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);					
 				}
 				else {
 					// left click on unselected unit -- select unit
@@ -1520,7 +1474,7 @@ namespace col {
 		return b;
 	}*/
 
-	void render_diffuse_from(sf::RenderWindow &win,
+	void render_diffuse_from(backend::Back &win,
 		v2i const& pix,
 		LocalArea const& loc,
 		Dir::type d,
@@ -1528,7 +1482,7 @@ namespace col {
 	) {
 		auto b = get(loc, d).biome;
 		if (b != BiomeNone) {
-			render_sprite(win, pix, res(DIFFUSE, get_biome_icon_id(b) + offset) );
+			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );
 		}
 		else {
 			// no diffuse from unexplored terrain (looks as bad as diffuse on water from terrain)
@@ -1545,7 +1499,7 @@ namespace col {
 	
 
 	
-	void render_terr(sf::RenderWindow &win,
+	void render_terr(backend::Back &win,
 			v2i const& pos,
 			Env const& env,
 			Terr const& terr)			
@@ -1566,11 +1520,11 @@ namespace col {
 		
 		// render biome
 		if (biome == BiomeNone) {
-			render_sprite(win, pix, res(PHYS, 149));			
+			render_sprite(win, pix, res(win, PHYS, 149));			
 			return;  // unknown terrain - early return !!!
 		}
 		
-		render_sprite(win, pix, res(TERR, get_biome_icon_id(biome)));
+		render_sprite(win, pix, res(win, TERR, get_biome_icon_id(biome)));
 		
 		// render neighs pattern
 		render_diffuse_from(win, pix, loc, Dir::W, 0);
@@ -1597,19 +1551,19 @@ namespace col {
 			
 			uint8 const h = conf.tile_dim >> 1;
 
-			render_sprite(win, pix + v2i(0,0), res(COAST,
+			render_sprite(win, pix + v2i(0,0), res(win, COAST,
 				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
 			));
 
-			render_sprite(win, pix + v2i(h,0), res(COAST,
+			render_sprite(win, pix + v2i(h,0), res(win, COAST,
 				base + get_coast_index(1, get(loc,Dir::W), get(loc,Dir::E), get(loc,Dir::D))
 			));
 
-			render_sprite(win, pix + v2i(h,h), res(COAST,
+			render_sprite(win, pix + v2i(h,h), res(win, COAST,
 				base + get_coast_index(2, get(loc,Dir::D), get(loc,Dir::C), get(loc,Dir::X))
 			));
 
-			render_sprite(win, pix + v2i(0,h), res(COAST,
+			render_sprite(win, pix + v2i(0,h), res(win, COAST,
 				base + get_coast_index(3, get(loc,Dir::X), get(loc,Dir::Z), get(loc,Dir::A))
 			));
 
@@ -1618,36 +1572,36 @@ namespace col {
 		
 		// level
 		if (terr.get_alt() == AltMountain) {
-			render_sprite(win, pix, res(PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
+			render_sprite(win, pix, res(win, PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
 		}
 
 		if (terr.get_alt() == AltHill) {
-			render_sprite(win, pix, res(PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
+			render_sprite(win, pix, res(win, PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
 		}
 
 		// phys feats & improvments
 		if (terr.has_phys(PhysPlow)) {
-			render_sprite(win, pix, res(PHYS, 150));
+			render_sprite(win, pix, res(win, PHYS, 150));
 		}
 
 		if (terr.has_phys(PhysForest)) {
-			render_sprite(win, pix, res(PHYS, 65 + get_wxad_index(loc, PhysForest)));
+			render_sprite(win, pix, res(win, PHYS, 65 + get_wxad_index(loc, PhysForest)));
 		}
 
 		if (terr.has_phys(PhysMajorRiver)) {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
-					render_sprite(win, pix, res(PHYS, 1 + ind));
+					render_sprite(win, pix, res(win, PHYS, 1 + ind));
 				}
 				else {
-					render_sprite(win, pix, res(PHYS, 16));
+					render_sprite(win, pix, res(win, PHYS, 16));
 				}
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
 					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMajorRiver) ) {
-						render_sprite(win, pix, res(PHYS, 141 + (i >> 1)));
+						render_sprite(win, pix, res(win, PHYS, 141 + (i >> 1)));
 					}
 				}
 			}
@@ -1657,16 +1611,16 @@ namespace col {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
-					render_sprite(win, pix, res(PHYS, 17 + ind));
+					render_sprite(win, pix, res(win, PHYS, 17 + ind));
 				}
 				else {
-					render_sprite(win, pix, res(PHYS, 32));
+					render_sprite(win, pix, res(win, PHYS, 32));
 				}
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
 					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMinorRiver) ) {
-						render_sprite(win, pix, res(PHYS, 145 + (i >> 1)));
+						render_sprite(win, pix, res(win, PHYS, 145 + (i >> 1)));
 					}
 				}
 			}
@@ -1676,22 +1630,22 @@ namespace col {
 			bool r = false;
 			for (int i=0; i<8; ++i) {
 				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) ) {
-					render_sprite(win, pix, res(PHYS, 82 + i));
+					render_sprite(win, pix, res(win, PHYS, 82 + i));
 					r = true;
 				}
 			}
 			if (!r) {
-				render_sprite(win, pix, res(PHYS, 81));
+				render_sprite(win, pix, res(win, PHYS, 81));
 			}
 		}
 
 	}
 	
-	void render_selected_unit(sf::RenderWindow & win, Console & con, v2i const& pos, Unit & unit);
+	void render_selected_unit(backend::Back & win, Console & con, v2i const& pos, Unit & unit);
 
 	
 	
-	void render_terr(sf::RenderWindow &win,
+	void render_terr(backend::Back &win,
 			Coords const& pos,
 			Env const& env,
 			Terr const& terr,
@@ -1706,7 +1660,7 @@ namespace col {
 		
 	}
 
-	using sf::RenderWindow;
+	using backend::Back;
 
 
 	Color get_unit_color(Unit const& u) {
@@ -1717,7 +1671,7 @@ namespace col {
 		return Color(c.r, c.g, c.b, c.a);
 	}
 	
-	void render_stack(sf::RenderWindow &win,
+	void render_stack(backend::Back &win,
 			Console & con,
 			v2i const& pos,
 			Env const& env,
@@ -1735,7 +1689,7 @@ namespace col {
 		// first render colony icon
 		if (terr.has_colony()) {
 			// render colony
-			render_sprite(win, pos[0], pos[1], res(ICON, 4));
+			render_sprite(win, pos[0], pos[1], res(win, ICON, 4));
 						
 			// left click on colony (on map) -- enter colony screen
 			con.on(Event::Press, Button::Left, pos, v2i(conf.tile_dim, conf.tile_dim),
@@ -1748,17 +1702,17 @@ namespace col {
 			// colony flag
 			if (auto p = env.get_control(terr)) {
 				// render owner flag over colony (unit in garrison)
-				render_sprite(win, pos[0] + 5, pos[1], res(ICON, p->get_flag_id()));
+				render_sprite(win, pos[0] + ly.S(5), pos[1], res(win, ICON, p->get_flag_id()));
 			}
 			
 		}
 		else if (terr.has_units() and !sel_unit_here) {
 			// unit
-			auto& unit = env.get_defender(terr);
+			auto & unit = env.get_defender(terr);
 
-			auto icon = res(ICON, get_icon_id(unit));
+			auto & icon = res(win, ICON, get_icon_id(unit));
 			// render unit in field
-			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
+			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
 			render_sprite(win, 
 				calc_align(Box(pos, ly.terr_dim), get_dim(icon)), 
 				icon
@@ -1784,14 +1738,15 @@ namespace col {
 		
 	}
 
+	
 
-	void render_selected_unit(RenderWindow & win, Console & con, v2i const& pos, Unit & unit) {
-		auto icon = res(ICON, unit.get_icon());
+	void render_selected_unit(backend::Back & win, Console & con, v2i const& pos, Unit & unit) {
+		auto & icon = res(win, ICON, unit.get_icon());
 		auto unit_id = unit.id;
 		
 		// render blinking shield
-		if (int(con.time * 10.0) % 10 >= 5) {
-			render_shield(win, pos[0], pos[1], get_unit_color(unit), con.get_letter(unit));
+		if ((con.time % 1000) >= 500) {
+			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
 		}
 
 		// render unit in field
@@ -1883,7 +1838,7 @@ namespace col {
 	//void select_area()
 		
 	
-	void render_map(sf::RenderWindow &win, Env const& env, Console & con, v2i const& pos,
+	void render_map(backend::Back &win, Env const& env, Console & con, v2i const& pos,
 			Coords const& delta)
 	{
 		
@@ -1988,19 +1943,21 @@ namespace col {
 					render_inline(win, 
 						vmul(coords, ly.terr_dim) + pos,
 						ly.terr_dim, 
-						{128,128,128,255}
+						{128,128,128,255},
+						ly.line
 					);
 				}
 				
 				auto coords = env.get_coords(*tp);
 
 				// blink main terr
-				if (int(con.time * 10.0) % 10 >= 5) {
+				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
 					render_inline(win, 
 						vmul(coords, ly.terr_dim) + pos,
 						ly.terr_dim, 
-						{255,255,255,255}
+						{255,255,255,255},
+						ly.line
 					);
 				}
 				
@@ -2014,7 +1971,7 @@ namespace col {
 
 	
 
-	void render_bar(sf::RenderWindow &win,
+	void render_bar(backend::Back &win,
 			Env const& env,
 			Console const& con,
 			Vector2<int> const& pos,
@@ -2023,7 +1980,7 @@ namespace col {
 		// pos - left top pix
 		// dim - size
 
-		render_area(win, pos, dim, res("WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
 
 	}
 
@@ -2031,16 +1988,16 @@ namespace col {
 
 
 
-	void render_panel(RenderWindow & win,
+	void render_panel(backend::Back & win,
 			Env const& env,
 			Console & con,
 			v2i const& pos,
 			v2i const& dim
 		) {
 
-		//sf::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
+		//backend::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, pos, dim, res("WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
 
 		// terrain info
 		/*
@@ -2114,7 +2071,7 @@ namespace col {
 		
 		render_text2(win,
 			pos,
-			res_pixfont("tiny.png"),
+			res_pixfont(win, "tiny.png"),
 			info,
 			{0,0,0,0},
 			0
@@ -2130,11 +2087,11 @@ namespace col {
 		
 		
 		if (auto t = con.get_sel_terr()) {
-			v2i pos = ly.pan.pos + v2i(0,100);
+			v2i pos = ly.pan.pos + v2i(0,ly.S(100));
 			v2i dim = v2i(ly.pan.dim[0], ly.terr_dim[1]*3);
 			
 			render_fill(win, pos, dim, 
-				sf::Color(0,0,0,64)
+				backend::Color(0,0,0,64)
 			);
 			
 			render_units(win, con, pos, dim, 
@@ -2161,7 +2118,7 @@ namespace col {
 					col = ColorWhite;
 					
 					// Enter -> move all
-					con.on(Event::Press, Key::Return,
+					con.on(Event::Press, Key::Enter,
 						[&con](){ con.repeat_all(); }
 					);
 				}
@@ -2171,7 +2128,7 @@ namespace col {
 					col = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
 
 					// Enter -> end turn
-					con.on(Event::Press, Key::Return,
+					con.on(Event::Press, Key::Enter,
 						[&con](){ con.command("ready"); }
 					);
 				}
@@ -2250,15 +2207,15 @@ namespace col {
 	
 	/*
 	v2i render_line(
-		sf::RenderWindow &win,
+		backend::Back &win,
 				
 		v2i const& pos,
 		v2i const& dim,
 		v2i const& align,
 		
 		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,
+		backend::Color const& fgcol,
+		backend::Color const& bgcol,
 		
 		bool const& wrap,
 		
@@ -2276,23 +2233,20 @@ namespace col {
 	
 	
 	v2i calc_align(Box const& par, v2i const& dim, v2f const& align) {
-		return (par.pos.cast<float>() + vmul((par.dim - dim).cast<float>(), align)).cast<int>();
+		return v2i(v2f(par.pos) + vmul(v2f(par.dim - dim), align));
 	}
 
 	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2i const& dim, v2f const& align) {
-		return (p_pos.cast<float>() + vmul((p_dim - dim).cast<float>(), align)).cast<int>();
+		return v2i(v2f(p_pos) + vmul(v2f(p_dim - dim), align));
 	}
 
 	
-	v2i get_text_dim(PixFont const& font, string const& text) {
-		// font prop
-		int const FONT_HEIGHT = 6;
-		
+	v2i get_text_dim(backend::PixFont const& font, string const& text) {
 		// horizontal and vertical separation in px
-		v2i sep = {1,1};
+		v2i sep = {ly.S(1), ly.S(1)};
 				
 		// render dim
-		v2i r_dim = {0,FONT_HEIGHT};
+		v2i r_dim = {0, font.get_height()};
 		
 		// current substring [i:j>
 		size_t i = 0;
@@ -2301,7 +2255,7 @@ namespace col {
 		// calculate rendered text line dimension without margins		
 		while (j < text.size()) {
 			auto& g = font.glyphs.at(text.at(j));
-			r_dim[0] += g.rect.width;
+			r_dim[0] += g.rect.dim[0];
 			j += 1;
 		}
 		r_dim[0] += sep[0] * (j-i);   // horizontal letter separation
@@ -2315,22 +2269,22 @@ namespace col {
 	
 
 	v2i render_text_line_min(
-		sf::RenderWindow &win,
+		backend::Back &win,
 		v2i const& pos,		
-		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,		
+		backend::PixFont const& font,
+		backend::Color const& fgcol,
+		backend::Color const& bgcol,		
 		string const& text
 	) {
-		v2i sep = {1,1};
+		v2i sep = {ly.S(1), ly.S(1)};
 		v2i r_dim = get_text_dim(font, text);
 				
 		// calculate render position taking into account the alignment
 		v2i r_pos = pos;
 		
 		// render letters
-		auto trg = sf::Image();
-		trg.create(r_dim[0], r_dim[1], bgcol);
+		auto trg = backend::Surface(r_dim, bgcol);
+		
 		
 		size_t i = 0;
 		size_t j = text.size();
@@ -2344,35 +2298,29 @@ namespace col {
 			
 			font.render_glyph(trg, xy[0], xy[1], g, fgcol);
 			
-			dd[0] += g.rect.width;
-			dd[0] += 1;
-			
-			
+			dd[0] += g.rect.dim[0] + sep[0];
 			
 		}
 		
-		sf::Texture tex;
-		tex.loadFromImage(trg);
+		//print("%||\n", text);
 		
-		sf::Sprite s;
-		s.setPosition(r_pos[0], r_pos[1]);
-		s.setTexture(tex);
-		win.draw(s);
+		auto tex = win.make_texture(trg);
+		win.render(tex, r_pos);
 		
 		return {0,0};		
 	}
 	
 	
 	v2i render_text_line(
-		sf::RenderWindow &win,
+		backend::Back &win,
 
 		v2i const& pos,
 		v2i const& dim,
 		v2f const& align,
 
-		PixFont const& font,
-		sf::Color const& fgcol,
-		sf::Color const& bgcol,
+		backend::PixFont const& font,
+		backend::Color const& fgcol,
+		backend::Color const& bgcol,
 
 		string const& text
 	) {
@@ -2386,13 +2334,13 @@ namespace col {
 	}
 	
 	v2i render_text(
-		sf::RenderWindow &win,
+		backend::Back &win,
 		v2i const& pos,
 		Text const& text		
 	) {
 		return render_text_line_min(win,
 			pos,
-			res_pixfont(text.get_font()),
+			res_pixfont(win, text.get_font()),
 			text.get_fg(),
 			text.get_bg(),
 			text.get_text()
@@ -2402,30 +2350,30 @@ namespace col {
 	
 
 	v2i render_text2(
-			/*sf::RenderWindow &win,
+			/*backend::Back &win,
 			
 			v2i const& pos,
 			v2i const& dim,
 			v2i const& align,
 			
 			PixFont const& font,
-			sf::Color const& fgcol,
-			sf::Color const& bgcol,
+			backend::Color const& fgcol,
+			backend::Color const& bgcol,
 			
 			string const& text*/
 			
-			sf::RenderWindow &win,
+			backend::Back &win,
 			Vector2<int> const& pos,
-			PixFont const& font,
+			backend::PixFont const& font,
 			string const& text,
-			sf::Color const& bgcol,
+			backend::Color const& bgcol,
 			int width
 	
 			//bool wrap = 0
 		) {
 
 		// line height 7px (with sep)
-		int const FONT_HEIGHT = 6;
+		int const FONT_HEIGHT = ly.S(6);
 
 		// width
 
@@ -2434,9 +2382,6 @@ namespace col {
 
 		auto &img = font.tex;
 
-		sf::Sprite s;
-		s.setTexture(img);
-
 		//auto line_height = font.GetCharacterSize();
 		//cout << "char hh:" << hh << endl;
 
@@ -2444,51 +2389,53 @@ namespace col {
 		
 		//auto width = dim[0];
 		
-		y += 1; // horizontal separation
+		
+		v2i sep = ly.S(v2i(1,1));
+		
+		y += sep[1]; // horizontal separation
 		for (auto c: text) {
 			last_c = c;
 			// newline
 			if (c == '\r' or c =='\n') {
 				// nice 1px ending
 				if (bgcol.a != 0) {
-					render_rect(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
+					render_fill(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
 				}
 				x = pos[0];
 				y += FONT_HEIGHT;
-				y += 1; // horizontal separation
+				y += sep[1]; // horizontal separation
 				continue;
 			}
 
+			
 			auto &g = font.glyphs.at(c);
 			auto &rr = g.rect;
 
 			// out of space
-			if (width and x + rr.width >= width) {
+			if (width and x + rr.dim[0] >= width) {
 				x = pos[0];
 				y += FONT_HEIGHT;
-				y += 1; // horizontal separation
+				y += sep[1]; // horizontal separation
 			}
 
-			x += 1; // vertical separation
+			x += sep[0]; // vertical separation
 
 			// background
 			if (bgcol.a != 0) {
 				//cout << v2i(x-1,y-1) << v2i(rr.width+1, rr.height+1) << endl;
-				render_rect(win, v2i(x-1,y-1), v2i(rr.width+1, rr.height+1), bgcol);
+				render_fill(win, v2i(x-1,y-1), v2i(rr.dim[0]+1, rr.dim[1]+1), bgcol);
 			}
 
-			s.setPosition(x ,y);
-			s.setTextureRect(g.rect);
-			win.draw(s);
+			win.render_clip(img, {x,y}, g.rect);
 
 
-			x += rr.width;
+			x += rr.dim[0];
 		}
 		
 		// nice 1px ending
 		if (last_c != '\r' and last_c != '\n') {
 			if (bgcol.a != 0) {
-				render_rect(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
+				render_fill(win, v2i(x,y-1), v2i(1, FONT_HEIGHT+1), bgcol);
 			}
 		}
 		
@@ -2497,9 +2444,9 @@ namespace col {
 
 	/*
 	int16 render_text(
-			sf::RenderWindow &win,
+			backend::Back &win,
 			Vector2<int16> const& pos,
-			sf::Font const& font,
+			backend::Font const& font,
 			string const& text,
 			int16 width = 0
 		) {
@@ -2511,9 +2458,9 @@ namespace col {
 
 		auto &img = font.getTexture();
 
-		((sf::Image&)img).SetSmooth(false);
+		((backend::Image&)img).SetSmooth(false);
 
-		sf::Sprite s;
+		backend::Sprite s;
 		s.setTexture(img);
 
 		//auto line_height = font.GetCharacterSize();
@@ -2529,7 +2476,7 @@ namespace col {
 
 			auto dim = img.getSize();
 
-			s.setTextureRect(sf::Rect<int>(
+			s.setTextureRect(backend::Rect<int>(
 				(r.left * dim.x) +0.5,
 				(r.top * dim.y) +0.5,
 				(r.width * dim.x) +0.5,
@@ -2544,7 +2491,7 @@ namespace col {
 	}
 	*/
 
-	void render_cmd(sf::RenderWindow & app, col::Console & con) {
+	void render_cmd(backend::Back & app, col::Console & con) {
 		if (con.is_active()) {
 
 			auto ln = con.output.size();
@@ -2592,6 +2539,19 @@ namespace col {
 				con.history_down();
 			});
 			
+			// enter
+			con.on(Event::Press, Key::Return, [&con](){
+				con.handle_char(u'\r');
+			});
+			
+			// backspace
+			con.on(Event::Press, Key::Backspace, [&con](){
+				con.handle_char(u'\b');
+			});
+			
+			
+			
+			
 			
 		}
 		else {
@@ -2604,15 +2564,14 @@ namespace col {
 	}
 
 	
-	void render_cursor(sf::RenderWindow & win, Console const& con) {
+	void render_cursor(backend::Back & win, Console const& con) {
 		if (con.drag_item) {
 			
-			sf::Vector2f mp = win.mapPixelToCoords(sf::Mouse::getPosition(win));
-
-			auto pos = v2i(mp.x, mp.y);
+			auto mouse = backend::get_mouse();
+			auto pos = mouse.pos;
 			//print("cursor: %||, %||\n", mp.x, mp.y);
 
-			render_sprite(win, pos, res(ICON, get_item_icon_id(con.drag_item)));
+			render_sprite(win, pos, res(win, ICON, get_item_icon_id(con.drag_item)));
 		}
 	}
 
@@ -2628,39 +2587,56 @@ namespace col {
 	}
 	
 	
-	void render(sf::RenderWindow &app, col::Env & env, col::Console & con) {
+	
+	void render(backend::Back & app, col::Env & env, col::Console & con, int verbose) {
+		
+		if (verbose >= 2) print("render: {\n");
+		
 		app.clear();
+		
 		con.reset_hotspots();
 
-		int w = app.getSize().x / conf.global_scale;
-		int h = app.getSize().y / conf.global_scale;
+		int w = app.get_logical_dim()[0];
+		int h = app.get_logical_dim()[1];
 
+		
 		render_drag_clear(con);
 		
+		
 		// bar top
-		render_bar(app, env, con, {0,0}, {w,7});
+		render_bar(app, env, con, ly.bar.pos, ly.bar.dim);
+		
 		// hline under the bar
-		render_rect(app, {0,7}, {w,1}, {0,0,0,255});
+		render_fill(app, 			
+			{ly.bar.pos[0], ly.bar.end[1]}, 
+			{ly.bar.dim[0], ly.line}, 
+			{0,0,0,255}
+		);
 
 
 		if (con.mode == Console::Mode::COLONY) {
 			render_city(app, env, con);
 		}
 		else {
+			
+			if (verbose >= 2) print("render: render_map\n");
+					
 			// map
-			render_map(app, env, con, {0,8}, Coords(0,0));
+			render_map(app, env, con, ly.map.pos, Coords(0,0));
 
 			// panel right
 			render_panel(app, env, con,
 				ly.pan.pos,
 				ly.pan.dim
 			);
+			
 			// vline left of the panel
-			render_rect(app,
-				{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1},
-				{1, h-8},
+			render_fill(app,
+				{ly.pan.pos[0] - ly.line, ly.pan.pos[1]},
+				{ly.line, ly.pan.dim[1]},
 				{0,0,0,255}
 			);
+			
 		}
 
 		//if (env.curr_nation) {
@@ -2669,11 +2645,17 @@ namespace col {
 
 		// BACKGROUND
 
+		if (verbose >= 2) print("render: render_cmd\n");
+		
 		render_cmd(app, con);
 
 		render_cursor(app, con);
 		
-		app.display();
+		if (verbose >= 2) print("render: app.flip\n");
+		
+		app.flip();
+		
+		if (verbose >= 2) print("render: }\n");
 
 	}
 

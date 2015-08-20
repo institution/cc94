@@ -1,14 +1,11 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <SFML/System.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
 #include <deque>
 #include <functional>
-#include <thread>
-#include <mutex>
 #include <chrono>
+#include <set>
+
 
 #include "col.hpp"
 #include "env.h"
@@ -19,6 +16,8 @@
 #include "format.hpp"
 #include "player.h"
 #include "game.h"
+
+#include "backend/backend.h"
 
 
 /*
@@ -43,7 +42,29 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 	struct Console;
-	void run_gui(Console * con, Env * env);
+
+
+	struct GUILoop {
+		Console *cp{nullptr};
+		Env *ep{nullptr};
+		
+		// last modification time
+		uint32_t last_mod_env;
+		uint32_t last_mod_con;
+		
+		uint32_t last_tick;
+		
+		backend::Back app;
+		
+		int verbose{0};
+		
+		void init(Console * cc, Env * ee);
+		
+		bool step();
+		
+	};
+
+
 
 
 	// mouse events: normal, drag&drop
@@ -63,6 +84,18 @@ namespace col {
 
 
 
+	inline v2f get_logical_pos(backend::Back const& back, v2i p) {
+		auto l = back.get_logical_dim();
+		auto o = back.get_output_dim();
+		
+		auto rx = float(l[0])/float(o[0]);
+		auto ry = float(l[1])/float(o[1]);
+		
+		return v2f(
+			float(p[0]) * rx,
+			float(p[1]) * ry
+		);
+	}
 
 
 	struct Console: Player{
@@ -79,7 +112,7 @@ namespace col {
 
 		Auth auth{0};
 
-		float time{0.0f};
+		long time{0};  // miliseconds
 
 		int equip_to_unit_id{0};
 		int equip_to_unit_type_id{0};
@@ -96,6 +129,7 @@ namespace col {
 		Unit* sel_unit{nullptr};
 
 		Game & gm;
+		GUILoop gui_loop;
 
 		void apply_inter(inter::Any const& a, Player & s);
 
@@ -349,8 +383,6 @@ namespace col {
 					print("%||\n", e.what());
 				}
 
-				// wait
-				//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			}
 			select_next_unit();
 
@@ -384,28 +416,27 @@ namespace col {
 		}
 
 
-
-		std::thread gui_th;
-
-		std::mutex mtx;
-
 		void start() {
-			running = true;
-			gui_th = std::move(std::thread(run_gui, this, &env));
+			if (verbose >= 1) {
+				print("Console.start\n");
+			}
+	
+			gui_loop.init(this, &env);			
 		}
 
 		void stop() {
-			running = false;
-			gui_th.join();
 		}
 
 
-		void play(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
-			//print("console: active\n");
-
-			mtx.lock();
+		bool step(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
+			if (verbose >= 2) print("Console.step; {; nation_id=%||\n", nation_id);
+			this->nation_id = nation_id;			
+			auto r =  gui_loop.step();
+			if (verbose >= 2) print("Console.step; }; return=%||\n", r);
+			return r;
 		}
-
+		
+		
 
 
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
@@ -418,7 +449,7 @@ namespace col {
 
 		using Event = halo::Event;
 		using Button = halo::Button;
-		using Key = halo::Key;
+		using Key = backend::Keycode;
 		using Pattern = halo::Pattern;
 		using Dev = halo::Dev;
 
@@ -470,12 +501,12 @@ namespace col {
 		int sel_colony_slot_id{-1};
 
 		Mode mode;
-		vector<std::thread> * ths;
-		bool running{false};
-
+		
 		Nation::Id nation_id;
 
 		string memtag;
+		
+		int verbose{0};
 
 
 		Env *server{nullptr};
@@ -505,28 +536,42 @@ namespace col {
 		Console const& operator=(Console const&) = delete;
 
 
-		void handle_events(sf::RenderWindow &app) {
+		void handle_events(backend::Back & app) {
+			if (verbose >= 2) print("Console.handle_events: {\n");
+			
 			Console &con = *this;
-			sf::Event ev;
-			while (app.pollEvent(ev)) {
-				if (ev.type == sf::Event::KeyPressed) {
-					if (ev.key.code == sf::Keyboard::Escape) {
-						app.close();
-					}
+			backend::Event ev;
+			while (app.pool_event(ev)) {
+				if (verbose >= 2) print("Console.handle_events: some event;\n");
+				
+				switch (ev.type) {
+					case backend::EventKeyDown:
+						if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+							app.stop();
+						}
+						break;
+					case backend::EventQuit:
+						if (verbose >= 1) {
+							print("EventQuit\n");
+						}						
+						app.stop();
+						break;
+					case backend::EventWindowEvent:
+						if (verbose >= 1) {
+							backend::print_window_event(ev);
+						}
+						break;					
+					default:
+						break;
+						
 				}
-				else
-				if (ev.type == sf::Event::Closed) {
-					app.close();
-				}
-
+					
 				con.handle(app, ev);
 			}
+			
+			if (verbose >= 2) print("Console.handle_events: }\n");
 		}
 
-
-		void ready() {
-			mtx.unlock();
-		}
 
 		void clear() {
 			output.clear();
@@ -545,8 +590,9 @@ namespace col {
 			++mod;
 		}
 
-		void handle_char(uint16 code);
-		void handle(sf::RenderWindow const&, sf::Event const&);
+		void handle_char(char16_t code);
+
+		void handle(backend::Back const&, backend::Event const&);
 
 		void command(string const& line);
 		void do_command(string const& line);

@@ -156,15 +156,16 @@ namespace col {
 
 	};
 
-	template <class R>
+	/*template <class R>
 	aga2::Mv1<R> operator*(aga2::Mv1<R> const& x, R const& y) {
-		return x * aga2::Mv0<R>(y);
-	}
+		//return x * aga2::Mv0<R>(y);
+		return x * y;
+	}*/
 
-	template <class R>
+	/*template <class R>
 	aga2::Mv1<R> operator*(R const& x, aga2::Mv1<R> const& y) {
 		return aga2::Mv0<R>(x) * y;
-	}
+	}*/
 
 
 

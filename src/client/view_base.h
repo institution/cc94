@@ -2,14 +2,13 @@
 #define VIEW_BASE44_H
 // ^renderer base
 
-#include <boost/filesystem.hpp>
+
 #include <unordered_map>
 
 #include "base.h"
 #include "conf.h"
 
 
-namespace filesys = boost::filesystem;
 
 
 

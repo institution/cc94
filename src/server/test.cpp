@@ -40,7 +40,7 @@ using roll::replay;
  * colony screen transport *
  * load/unload cargo into transport * 
  * orders -- keep trying *
- * clear forest O / plow P
+ * clear forest O / plow P *
  * construction complete message
  * v0.2
  * colony production changes gui
@@ -64,8 +64,40 @@ using roll::replay;
  * fog of war
  *
  
+
+	Anyway you can:
+	* move ships and units
+	* build colony
+	* improve terrain: roads, fields, clearing forest
+	* produce items in colonies
+	* construct new buildings (but not ships, artillery)
+	* equip pioneers, soldiers
+	* edit map
+
+	Missing:
+	* europe
+	* specialists
+	* ship construction
+	* indians, foreign powers, AI
+	* map size is 15x12
+	* fog of war
+	* combat
  
- ~ on/off console
+ 
+ 
+ 
+ 
+ 
+ * ship construction
+ * europe
+ * specialists
+ 
+ * indians, foreign powers, AI
+ 
+ * map size is 15x12
+ * fog of war
+ * combat
+ 
  
  
  
@@ -345,7 +377,7 @@ TEST_CASE( "turn sequence", "" ) {
 TEST_CASE( "colony_field_prod", "" ) {
 	
 	Env env;
-	env.loads<BuildType>("../col94/builds.csv");
+	env.loads<BuildType>("res/csv/builds.csv");
 	env.resize({1,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	
@@ -403,7 +435,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 	env.init(t, u);
 	
 	
-	env.loads<BuildType>("../col94/builds.csv");
+	env.loads<BuildType>("res/csv/builds.csv");
 	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
 	
 	REQUIRE_NOTHROW(env.start());
@@ -549,17 +581,12 @@ TEST_CASE( "serialize", "" ) {
 
 		std::stringstream stream;
 
-		{
-			boost::archive::text_oarchive oa(stream);
-			oa << env;
-		}
-
+		write(stream, env);
+		
 		Env env2;
 		env2.uts = env.uts;
-		{
-			boost::archive::text_iarchive ia(stream);
-			ia >> env2;
-		}
+		read(stream, env2);
+		
 
 	}
 
@@ -569,17 +596,13 @@ TEST_CASE( "serialize", "" ) {
 
 		std::stringstream stream;
 
-		{
-			boost::archive::text_oarchive oa(stream);
-			oa << env;
-		}
-
+		write(stream, env);
+		
 		Env env2;
 		env2.uts = env.uts;
-		{
-			boost::archive::text_iarchive ia(stream);
-			ia >> env2;
-		}
+		
+		read(stream, env2);
+		
 
 	}
 

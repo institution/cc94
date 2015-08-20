@@ -59,16 +59,28 @@ namespace col{
 	string write_string(Env const& env, Unit const& x);
 	void read_string(Env & env, Unit & x, string const& data);
 
-
+	template<class Archive>
+    void write(Archive & ar, Env const& env);
+    
+    template<class Archive>
+    void read(Archive & ar, Env & env);
 
 
 	struct Env: Core {
 
+		using State = uint8_t;
+		
+		static
+		State const 
+			StateEdit,
+			StatePlay,
+			StateExit;
+
 		// turn system
-		uint8 state{0}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 		uint32 turn_no{0};
 		uint32 turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
 		Nation::Id cpid{0}; // current nation
+		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
 		// misc non game state
 		uint32 mod;
@@ -77,6 +89,16 @@ namespace col{
 		// opts
 		int verbose{0};
 		int action_count{0};
+		
+		State get_state() const {
+			return state;
+		}
+		
+		void set_state(State state) {
+			this->state = state;
+		}
+
+
 
 		void clear_all() {
 			clear_units();
@@ -87,33 +109,19 @@ namespace col{
 		void clear_misc() {
 			turn_no = 0;
 			turn_limit = 0;
-			state = 0;
+			state = StateEdit;
 			//cpid = -1;
 			mod++;
 		}
+
+		
 
 
 		int get_turn_no() const {
 			return turn_no;
 		}
 
-		/*
-		void connect(Id<Nation>::type pid, Player & u) {
-			// connect nation(game nation) with AI or Human
-			get<Nation>(pid).set_player(&u);
-
-			std::ostringstream ostr;
-			boost::archive::binary_oarchive ar(ostr);
-			ar << *this;
-
-			u.apply_inter(
-				inter::load(ostr.str()), *this
-			);
-
-		}
-		*/
-
-
+		
 
 
 
@@ -161,7 +169,7 @@ namespace col{
 			//	throw Error("need at least one nation to start game");
 			//}
 
-			state = 1;
+			state = StatePlay;
 
 
 			cpid = 0;
@@ -240,7 +248,7 @@ namespace col{
 
 
 		explicit
-		Env(int verbose = 0): Core(), verbose(verbose) {
+		Env(int verbose = 1): Core(), verbose(verbose) {
 			set_random_gen(roll::roll1);
 			clear_misc();
 		}
@@ -253,7 +261,7 @@ namespace col{
 
 
 		bool in_progress() const {
-			return state == 1;
+			return state == StatePlay;
 		}
 
 
@@ -435,7 +443,7 @@ namespace col{
 			}
 
 			if (turn_limit > 0 and turn_no >= turn_limit) {
-				state = 2;
+				state = StateExit;
 			}
 
 			++mod;
@@ -561,15 +569,14 @@ namespace col{
 
 		}
 
-		void apply(inter::load const& a) {
+		/*void apply(inter::load const& a) {
 
-			std::istringstream istr(a.data);
+			std::istringstream ar(a.data);
 
-			boost::archive::binary_iarchive ar(istr);
-			ar >> *this;
+			read(ar, *this);
 
 			//notify_effect(a);
-		}
+		}*/
 
 		Env & fill(Terr const& t) {
 
@@ -1697,15 +1704,7 @@ namespace col{
 		void apply_inter(inter::Any const& a, uint32 auth);
 
 
-
-		template<class Archive>
-		void save(Archive & ar, uint const& version) const;
-
-		template<class Archive>
-		void load(Archive & ar, uint const& version);
-
-		BOOST_SERIALIZATION_SPLIT_MEMBER()
-
+		
 
 	};
 

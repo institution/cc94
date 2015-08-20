@@ -1,3 +1,6 @@
+# Automatic Makefile 1.0.3
+#    written by institution
+#
 # $@ -- The file name of the target of the rule.
 # $* -- The stem with which an implicit rule matches
 # $< -- The name of the first prerequisite.
@@ -6,39 +9,58 @@
 
 #CC:=g++
 CC:=clang++
+#CC:=emcc
 
 # output files
-OUTS:=client/main server/test client/test test_format unmadspack
+OUTS:=client/main server/test client/test
 
-# temporary dont build following files
-IGNORE_SRC:=src/tree.cpp
+ifeq (${CC}, emcc)
+	OUT_EXT:=.html
+else
+	OUT_EXT:=
+endif
 
-WARNOPTS:=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null
-M4OPTS:=-E -P
-INCL:=-I./inc -I./src -I./src/server
-STD:=-std=c++11
-CCDEBUG:=-O0 -g
-CCRELEASE:=-O3
-	
-# -Wall -Wextra 
-# -g -O0
+# targets
+debug: client/main server/test client/test
+release: client/main server/test client/test
+
+COMMON_OPTS:= 
+COMMON_OPTS+=-s USE_SDL=2 
+COMMON_OPTS+=-s DISABLE_EXCEPTION_CATCHING=0 
+#COMMON_OPTS+=-s SAFE_HEAP=1 
+COMMON_OPTS+=-s ASSERTIONS=1 
+#COMMON_OPTS+=-s DEMANGLE_SUPPORT=1
 
 # compiler options
-CCOPTS_D:= ${INCL} ${STD} ${CCDEBUG} ${WARNOPTS} 
-CCOPTS_R:= ${INCL} ${STD} ${CCRELEASE} ${WARNOPTS} 
-CCOPTS:=${CCOPTS_D}
-
-release: CCOPTS := ${CCOPTS_R}
-release: client/main unmadspack server/test client/test
-
-all: client/main unmadspack server/test client/test
-
-
+CCOPTS:=
+CCOPTS+=-std=c++11
+CCOPTS+=-I./inc -I./src -I./src/server
+CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
+CCOPTS+=-ferror-limit=5 
+ifeq (${CC}, emcc)
+	CCOPTS+=${COMMON_OPTS}
+else
+	
+endif
 
 # linker options
-LLOPTS:=-lX11 -lpthread 
-LLOPTS+=-lboost_serialization -lboost_program_options -lboost_filesystem -lboost_system
-LLOPTS+=-lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
+LLOPTS:=
+ifeq (${CC}, emcc)	
+	LLOPTS+=${COMMON_OPTS}
+	LLOPTS+=--preload-file res
+else
+	LLOPTS+=-L./lib 
+	LLOPTS+=-lSDL2 
+endif
+
+
+debug:   CCOPTS+=-O3
+debug:   LLOPTS+=-O3
+release: CCOPTS+=-O3 
+release: LLOPTS+=-O3 
+
+
+
 
 
 # assert dirs
@@ -49,7 +71,6 @@ $(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p bin/{})
 
 # list of compiled source b/fname.cpp.obj
 OBJS:=$(shell find src -name '*.cpp')
-OBJS:=$(filter-out $(IGNORE_SRC),$(OBJS))
 OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
 
 -include $(OBJS:%.obj=%.d)
@@ -61,25 +82,9 @@ ${OBJS}: b/%.obj: src/%
 	
 # linker
 ${OUTS}: $(OBJS)
-	${CC} -o bin/$@ b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
+	${CC} -o bin/$@${OUT_EXT} b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
 
 
 clean:
 	rm -rf b/* bin/*
-	
-
-# test
-#TEST_D:=$(shell g++ -MM src/test.cpp -std=c++11 | ./deps.py)
-#TEST_D:=$(TEST_D:src/%.RRR=b/%.cpp.obj)
-
-#test: ${TEST_D}
-#	${CC} -o $@ $^ ${LLOPTS}
-	
-# main
-#MAIN_D:=$(shell g++ -MM src/main.cpp -std=c++11 | ./deps.py)
-#MAIN_D:=$(MAIN_D:src/%.RRR=b/%.cpp.obj)
-
-#main: ${MAIN_D}
-#	${CC} -o $@ $^ ${LLOPTS}
-	
 	

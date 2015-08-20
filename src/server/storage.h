@@ -9,7 +9,7 @@ namespace col {
 
 	struct Storage{
 
-		map<Item, Amount> cargos;     // lame map
+		std::unordered_map<Item, Amount> cargos;     // lame map
 
 		Storage() = default;
 

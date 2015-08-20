@@ -5,7 +5,6 @@
 
 #include <typeinfo>
 #include <iostream>
-#include <fstream>
 #include <memory>
 #include <cassert>
 #include <vector>
@@ -23,17 +22,34 @@
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/serialization/split_member.hpp>
-#include <boost/filesystem.hpp>
 #include "roll.h"
 #include "aga2.hpp"
 #include "format.hpp"
 
 
-namespace filesys = boost::filesystem;
+using Path = std::string;
+
+inline Path operator/(Path const& a, Path const& b) {
+	auto A = a.size();
+	auto B = b.size();
+	
+	if (A == 0) {
+		return b;
+	}
+	
+	if (B == 0) {
+		return a;
+	}
+	
+	if (a[A-1] != '/' and b[B-1] != '/') {
+		return a + std::string("/") + b;
+	}
+	
+	return a + b;	
+}
+
 
 namespace col{
-
-	using Path = filesys::path;
 
 	using std::ifstream;
 	using std::ofstream;

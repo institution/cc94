@@ -1,15 +1,14 @@
 #ifndef HALO_H
 #define HALO_H
 
-#include <SFML/System.hpp> // TODO: no need for this here
-#include <SFML/Window.hpp> // TODO: no need for this here
-
 #include <vector>
 #include <cstdint>
 #include <string>
 #include <functional>
 #include <boost/optional.hpp>
 #include "box.h"
+
+#include "backend/backend.h"
 
 // event subsystem
 
@@ -40,17 +39,17 @@ namespace halo{
 		None, Left, Right,
 	};
 
-	using Key = sf::Keyboard::Key;
+	
 
 
 	struct Pattern{
 		optional<Dev> dev;
 		optional<Event> event;
 		optional<Button> button;
-		optional<Key> key;
+		optional<backend::Keycode> key;
 		optional<uint8_t> mod;
 		optional<Box2> area;
-		optional<uint32_t> unicode;
+		optional<char16_t> unicode;
 		std::function<void()> callback;
 		std::function<void(Pattern const&)> callback2;
 
@@ -64,7 +63,7 @@ namespace halo{
 		}
 
 		// unicode entered
-		Pattern(Event event, uint32_t unicode, std::function<void()> callback) {
+		Pattern(Event event, char16_t unicode, std::function<void()> callback) {
 			this->event = event;
 			this->unicode = unicode;
 			this->callback = callback;
@@ -72,7 +71,7 @@ namespace halo{
 
 
 		// key press/release
-		Pattern(Event event, Key key, std::function<void()> callback) {
+		Pattern(Event event, backend::Keycode key, std::function<void()> callback) {
 			this->event = event;
 			this->key = key;
 			this->callback = callback;

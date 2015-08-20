@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "safe_cast.h"
+
 namespace aga2 {
 
 using uint = unsigned int;
@@ -26,13 +28,29 @@ public:
     using difference_type = typename Array::difference_type;
     using size_type = typename Array::size_type;
 
+    using scalar_type = R;
+
     Array arr;
 
+    // cast constructor from scalar type
     Mv0<R>(R const& a00) {
         arr[0] = a00;
     }
 
+    // unpack
+    void unpack(R & a00) const {
+        a00 = arr[0];
+    }
+
+    // null constructor
     Mv0<R>() {
+    }
+
+    // explicit cast constructor
+    template<class SrcType>
+    explicit
+    Mv0(Mv0<SrcType> const& other) {
+        arr[0] = R(other[0]);
     }
 
     operator R() const {
@@ -44,11 +62,6 @@ public:
         return arr[d];
     }
 
-    template<class F>
-    Mv0<F> cast() const {
-        return Mv0<F>(F(arr[0]));
-    }
-
     const R& operator[](uint const& d) const {
         assert(d < size());
         return arr[d];
@@ -58,11 +71,21 @@ public:
         return 1;
     }
 
+    // operator=
+    template <class A,
+              typename enable_if_safe_cast<A,R>::type* = nullptr>
+    void operator=(Mv0<A> const& x) {
+
+        (*this)[0] = x[0];
+    }
+
+
     R norm2() const {
 
         auto& x = *this;
         return pow(x[0], 2);
     }
+
 
 
     Mv0<R> rev() const {
@@ -72,11 +95,13 @@ public:
     }
 
 
+
     Mv0<R> inv() const {
 
         auto& x = *this;
         return Mv0<R>(pow(x[0], -1));
     }
+
 
 
     Mv0<R> operator-() const {
@@ -122,7 +147,6 @@ public:
     }
 };
 
-template<class R = float> class Mv0;
 
 template <class R>
 class Mv1 {
@@ -139,24 +163,37 @@ public:
     using difference_type = typename Array::difference_type;
     using size_type = typename Array::size_type;
 
+    using scalar_type = R;
+
     Array arr;
 
+    // cast constructor from scalar type
     Mv1<R>(R const& a10, R const& a11) {
         arr[0] = a10;
         arr[1] = a11;
     }
 
+    // unpack
+    void unpack(R & a10, R & a11) const {
+        a10 = arr[0];
+        a11 = arr[1];
+    }
+
+    // null constructor
     Mv1<R>() {
+    }
+
+    // explicit cast constructor
+    template<class SrcType>
+    explicit
+    Mv1(Mv1<SrcType> const& other) {
+        arr[0] = R(other[0]);
+        arr[1] = R(other[1]);
     }
 
     R& operator[](uint const& d) {
         assert(d < size());
         return arr[d];
-    }
-
-    template<class F>
-    Mv1<F> cast() const {
-        return Mv1<F>(F(arr[0]), F(arr[1]));
     }
 
     const R& operator[](uint const& d) const {
@@ -168,11 +205,21 @@ public:
         return 2;
     }
 
+    // operator=
+    template <class A,
+              typename enable_if_safe_cast<A,R>::type* = nullptr>
+    void operator=(Mv1<A> const& x) {
+
+        (*this)[0] = x[0];
+    }
+
+
     R norm2() const {
 
         auto& x = *this;
         return (pow(x[0], 2) + pow(x[1], 2));
     }
+
 
 
     Mv1<R> rev() const {
@@ -182,11 +229,13 @@ public:
     }
 
 
+
     Mv1<R> inv() const {
 
         auto& x = *this;
         return Mv1<R>((x[0] * pow((pow(x[0], 2) + pow(x[1], 2)), -1)), (x[1] * pow((pow(x[0], 2) + pow(x[1], 2)), -1)));
     }
+
 
 
     Mv1<R> operator-() const {
@@ -232,7 +281,6 @@ public:
     }
 };
 
-template<class R = float> class Mv1;
 
 template <class R>
 class Mv2 {
@@ -249,13 +297,29 @@ public:
     using difference_type = typename Array::difference_type;
     using size_type = typename Array::size_type;
 
+    using scalar_type = R;
+
     Array arr;
 
-    explicit Mv2<R>(R const& a20) {
+    // cast constructor from scalar type
+    explicit  Mv2<R>(R const& a20) {
         arr[0] = a20;
     }
 
+    // unpack
+    void unpack(R & a20) const {
+        a20 = arr[0];
+    }
+
+    // null constructor
     Mv2<R>() {
+    }
+
+    // explicit cast constructor
+    template<class SrcType>
+    explicit
+    Mv2(Mv2<SrcType> const& other) {
+        arr[0] = R(other[0]);
     }
 
     explicit operator R() const {
@@ -267,11 +331,6 @@ public:
         return arr[d];
     }
 
-    template<class F>
-    Mv2<F> cast() const {
-        return Mv2<F>(F(arr[0]));
-    }
-
     const R& operator[](uint const& d) const {
         assert(d < size());
         return arr[d];
@@ -281,11 +340,21 @@ public:
         return 1;
     }
 
+    // operator=
+    template <class A,
+              typename enable_if_safe_cast<A,R>::type* = nullptr>
+    void operator=(Mv2<A> const& x) {
+
+        (*this)[0] = x[0];
+    }
+
+
     R norm2() const {
 
         auto& x = *this;
         return pow(x[0], 2);
     }
+
 
 
     Mv2<R> rev() const {
@@ -295,11 +364,13 @@ public:
     }
 
 
+
     Mv2<R> inv() const {
 
         auto& x = *this;
         return Mv2<R>((-pow(x[0], -1)));
     }
+
 
 
     Mv2<R> operator-() const {
@@ -345,7 +416,6 @@ public:
     }
 };
 
-template<class R = float> class Mv2;
 
 template <class R>
 class Mv02 {
@@ -362,24 +432,37 @@ public:
     using difference_type = typename Array::difference_type;
     using size_type = typename Array::size_type;
 
+    using scalar_type = R;
+
     Array arr;
 
+    // cast constructor from scalar type
     Mv02<R>(R const& a00, R const& a20) {
         arr[0] = a00;
         arr[1] = a20;
     }
 
+    // unpack
+    void unpack(R & a00, R & a20) const {
+        a00 = arr[0];
+        a20 = arr[1];
+    }
+
+    // null constructor
     Mv02<R>() {
+    }
+
+    // explicit cast constructor
+    template<class SrcType>
+    explicit
+    Mv02(Mv02<SrcType> const& other) {
+        arr[0] = R(other[0]);
+        arr[1] = R(other[1]);
     }
 
     R& operator[](uint const& d) {
         assert(d < size());
         return arr[d];
-    }
-
-    template<class F>
-    Mv02<F> cast() const {
-        return Mv02<F>(F(arr[0]), F(arr[1]));
     }
 
     const R& operator[](uint const& d) const {
@@ -391,11 +474,22 @@ public:
         return 2;
     }
 
+    // operator=
+    template <class A,
+              typename enable_if_safe_cast<A,R>::type* = nullptr>
+    void operator=(Mv02<A> const& x) {
+
+        (*this)[0] = x[0];
+        (*this)[1] = x[1];
+    }
+
+
     R norm2() const {
 
         auto& x = *this;
         return (pow(x[0], 2) + pow(x[1], 2));
     }
+
 
 
     Mv02<R> rev() const {
@@ -405,11 +499,13 @@ public:
     }
 
 
+
     Mv02<R> inv() const {
 
         auto& x = *this;
         return Mv02<R>((x[0] * pow((pow(x[0], 2) + pow(x[1], 2)), -1)), (-1 * x[1] * pow((pow(x[0], 2) + pow(x[1], 2)), -1)));
     }
+
 
 
     Mv02<R> operator-() const {
@@ -455,7 +551,6 @@ public:
     }
 };
 
-template<class R = float> class Mv02;
 
 // eq
 template <class R>
@@ -508,244 +603,359 @@ bool operator!=(Mv02<R> const& x, Mv02<R> const& y) {
 }
 
 // mul
-template <class R>
-Mv0<R> operator*(Mv0<R> const& x, Mv0<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((x[0] * y[0]));
+Mv0<C> operator*(Mv0<A> const& x, Mv0<B> const& y) {
+
+    return Mv0<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator*(Mv0<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[0] * y[1]));
+Mv1<C> operator*(Mv0<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv2<R> operator*(Mv0<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator*(Mv0<A> const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator*(Mv0<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] * y[0]), (x[0] * y[1]));
+Mv02<C> operator*(Mv0<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] * y[0]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv1<R> operator*(Mv1<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[1] * y[0]));
+Mv1<C> operator*(Mv1<A> const& x, Mv0<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[1] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator*(Mv1<R> const& x, Mv1<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(((x[0] * y[0]) + (x[1] * y[1])), ((-1 * x[1] * y[0]) + (x[0] * y[1])));
+Mv02<C> operator*(Mv1<A> const& x, Mv1<B> const& y) {
+
+    return Mv02<C>(((x[0] * y[0]) + (x[1] * y[1])), ((x[0] * y[1]) + (-1 * x[1] * y[0])));
 }
 
-template <class R>
-Mv1<R> operator*(Mv1<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((-1 * x[1] * y[0]), (x[0] * y[0]));
+Mv1<C> operator*(Mv1<A> const& x, Mv2<B> const& y) {
+
+    return Mv1<C>((-1 * x[1] * y[0]), (x[0] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator*(Mv1<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>(((x[0] * y[0]) + (-1 * x[1] * y[1])), ((x[0] * y[1]) + (x[1] * y[0])));
+Mv1<C> operator*(Mv1<A> const& x, Mv02<B> const& y) {
+
+    return Mv1<C>(((x[0] * y[0]) + (-1 * x[1] * y[1])), ((x[0] * y[1]) + (x[1] * y[0])));
 }
 
-template <class R>
-Mv2<R> operator*(Mv2<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator*(Mv2<A> const& x, Mv0<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator*(Mv2<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[1]), (-1 * x[0] * y[0]));
+Mv1<C> operator*(Mv2<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] * y[1]), (-1 * x[0] * y[0]));
 }
 
-template <class R>
-Mv0<R> operator*(Mv2<R> const& x, Mv2<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((-1 * x[0] * y[0]));
+Mv0<C> operator*(Mv2<A> const& x, Mv2<B> const& y) {
+
+    return Mv0<C>((-1 * x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator*(Mv2<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((-1 * x[0] * y[1]), (x[0] * y[0]));
+Mv02<C> operator*(Mv2<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((-1 * x[0] * y[1]), (x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator*(Mv02<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] * y[0]), (x[1] * y[0]));
+Mv02<C> operator*(Mv02<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>((x[0] * y[0]), (x[1] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator*(Mv02<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>(((x[0] * y[0]) + (x[1] * y[1])), ((-1 * x[1] * y[0]) + (x[0] * y[1])));
+Mv1<C> operator*(Mv02<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>(((x[0] * y[0]) + (x[1] * y[1])), ((x[0] * y[1]) + (-1 * x[1] * y[0])));
 }
 
-template <class R>
-Mv02<R> operator*(Mv02<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((-1 * x[1] * y[0]), (x[0] * y[0]));
+Mv02<C> operator*(Mv02<A> const& x, Mv2<B> const& y) {
+
+    return Mv02<C>((-1 * x[1] * y[0]), (x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator*(Mv02<R> const& x, Mv02<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(((x[0] * y[0]) + (-1 * x[1] * y[1])), ((x[0] * y[1]) + (x[1] * y[0])));
+Mv02<C> operator*(Mv02<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>(((x[0] * y[0]) + (-1 * x[1] * y[1])), ((x[0] * y[1]) + (x[1] * y[0])));
+}
+
+// mul when one arg is Scalar
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv1<C> operator*(A const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x * y[0]), (x * y[1]));
+}
+
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv2<C> operator*(A const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x * y[0]));
+}
+
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv02<C> operator*(A const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x * y), (x * y[1]));
+}
+
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv1<C> operator*(Mv1<A> const& x, B const& y) {
+
+    return Mv1<C>((x[0] * y), (x[1] * y));
+}
+
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv2<C> operator*(Mv2<A> const& x, B const& y) {
+
+    return Mv2<C>((x[0] * y));
+}
+
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
+
+Mv02<C> operator*(Mv02<A> const& x, B const& y) {
+
+    return Mv02<C>((x * y), (x[1] * y));
 }
 
 // inner product
-template <class R>
-Mv0<R> operator|(Mv1<R> const& x, Mv1<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>(((x[0] * y[0]) + (x[1] * y[1])));
+Mv0<C> operator|(Mv1<A> const& x, Mv1<B> const& y) {
+
+    return Mv0<C>(((x[0] * y[0]) + (x[1] * y[1])));
 }
 
-template <class R>
-Mv1<R> operator|(Mv1<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((-1 * x[1] * y[0]), (x[0] * y[0]));
+Mv1<C> operator|(Mv1<A> const& x, Mv2<B> const& y) {
+
+    return Mv1<C>((-1 * x[1] * y[0]), (x[0] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator|(Mv1<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((-1 * x[1] * y[1]), (x[0] * y[1]));
+Mv1<C> operator|(Mv1<A> const& x, Mv02<B> const& y) {
+
+    return Mv1<C>((-1 * x[1] * y[1]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv1<R> operator|(Mv2<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[1]), (-1 * x[0] * y[0]));
+Mv1<C> operator|(Mv2<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] * y[1]), (-1 * x[0] * y[0]));
 }
 
-template <class R>
-Mv0<R> operator|(Mv2<R> const& x, Mv2<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((-1 * x[0] * y[0]));
+Mv0<C> operator|(Mv2<A> const& x, Mv2<B> const& y) {
+
+    return Mv0<C>((-1 * x[0] * y[0]));
 }
 
-template <class R>
-Mv0<R> operator|(Mv2<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((-1 * x[0] * y[1]));
+Mv0<C> operator|(Mv2<A> const& x, Mv02<B> const& y) {
+
+    return Mv0<C>((-1 * x[0] * y[1]));
 }
 
-template <class R>
-Mv1<R> operator|(Mv02<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[1] * y[1]), (-1 * x[1] * y[0]));
+Mv1<C> operator|(Mv02<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[1] * y[1]), (-1 * x[1] * y[0]));
 }
 
-template <class R>
-Mv0<R> operator|(Mv02<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((-1 * x[1] * y[0]));
+Mv0<C> operator|(Mv02<A> const& x, Mv2<B> const& y) {
+
+    return Mv0<C>((-1 * x[1] * y[0]));
 }
 
-template <class R>
-Mv0<R> operator|(Mv02<R> const& x, Mv02<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((-1 * x[1] * y[1]));
+Mv0<C> operator|(Mv02<A> const& x, Mv02<B> const& y) {
+
+    return Mv0<C>((-1 * x[1] * y[1]));
 }
 
 // outer product
-template <class R>
-Mv0<R> operator^(Mv0<R> const& x, Mv0<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((x[0] * y[0]));
+Mv0<C> operator^(Mv0<A> const& x, Mv0<B> const& y) {
+
+    return Mv0<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator^(Mv0<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[0] * y[1]));
+Mv1<C> operator^(Mv0<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv2<R> operator^(Mv0<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator^(Mv0<A> const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator^(Mv0<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] * y[0]), (x[0] * y[1]));
+Mv02<C> operator^(Mv0<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] * y[0]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv1<R> operator^(Mv1<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[1] * y[0]));
+Mv1<C> operator^(Mv1<A> const& x, Mv0<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[1] * y[0]));
 }
 
-template <class R>
-Mv2<R> operator^(Mv1<R> const& x, Mv1<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>(((-1 * x[1] * y[0]) + (x[0] * y[1])));
+Mv2<C> operator^(Mv1<A> const& x, Mv1<B> const& y) {
+
+    return Mv2<C>(((x[0] * y[1]) + (-1 * x[1] * y[0])));
 }
 
-template <class R>
-Mv1<R> operator^(Mv1<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[1] * y[0]));
+Mv1<C> operator^(Mv1<A> const& x, Mv02<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[1] * y[0]));
 }
 
-template <class R>
-Mv2<R> operator^(Mv2<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator^(Mv2<A> const& x, Mv0<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv2<R> operator^(Mv2<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator^(Mv2<A> const& x, Mv02<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator^(Mv02<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] * y[0]), (x[1] * y[0]));
+Mv02<C> operator^(Mv02<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>((x[0] * y[0]), (x[1] * y[0]));
 }
 
-template <class R>
-Mv1<R> operator^(Mv02<R> const& x, Mv1<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] * y[0]), (x[0] * y[1]));
+Mv1<C> operator^(Mv02<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] * y[0]), (x[0] * y[1]));
 }
 
-template <class R>
-Mv2<R> operator^(Mv02<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] * y[0]));
+Mv2<C> operator^(Mv02<A> const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x[0] * y[0]));
 }
 
-template <class R>
-Mv02<R> operator^(Mv02<R> const& x, Mv02<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] * y[0]), ((x[0] * y[1]) + (x[1] * y[0])));
+Mv02<C> operator^(Mv02<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] * y[0]), ((x[0] * y[1]) + (x[1] * y[0])));
 }
 
 // inn2
@@ -768,212 +978,258 @@ Mv0<R> inn2(Mv02<R> const& x) {
 }
 
 // add
-template <class R>
-Mv0<R> operator+(Mv0<R> const& x, Mv0<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>((x[0] + y[0]));
+Mv0<C> operator+(Mv0<A> const& x, Mv0<B> const& y) {
+
+    return Mv0<C>((x[0] + y[0]));
 }
 
-template <class R>
-void operator+=(Mv0<R> & x, Mv0<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv0<A> & x, Mv0<B> const& y) {
 
     x = x + y;
 }
 
-template <class R>
-Mv02<R> operator+(Mv0<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(x[0], y[0]);
+Mv02<C> operator+(Mv0<A> const& x, Mv2<B> const& y) {
+
+    return Mv02<C>(x[0], y[0]);
 }
 
-template <class R>
-Mv02<R> operator+(Mv0<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] + y[0]), y[1]);
+Mv02<C> operator+(Mv0<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] + y[0]), y[1]);
 }
 
-template <class R>
-Mv1<R> operator+(Mv1<R> const& x, Mv1<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>((x[0] + y[0]), (x[1] + y[1]));
+Mv1<C> operator+(Mv1<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] + y[0]), (x[1] + y[1]));
 }
 
-template <class R>
-void operator+=(Mv1<R> & x, Mv1<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv1<A> & x, Mv1<B> const& y) {
 
     x = x + y;
 }
 
-template <class R>
-Mv02<R> operator+(Mv2<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(y[0], x[0]);
+Mv02<C> operator+(Mv2<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>(y[0], x[0]);
 }
 
-template <class R>
-Mv2<R> operator+(Mv2<R> const& x, Mv2<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>((x[0] + y[0]));
+Mv2<C> operator+(Mv2<A> const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x[0] + y[0]));
 }
 
-template <class R>
-void operator+=(Mv2<R> & x, Mv2<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv2<A> & x, Mv2<B> const& y) {
 
     x = x + y;
 }
 
-template <class R>
-Mv02<R> operator+(Mv2<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(y[0], (x[0] + y[1]));
+Mv02<C> operator+(Mv2<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>(y[0], (x[0] + y[1]));
 }
 
-template <class R>
-Mv02<R> operator+(Mv02<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] + y[0]), x[1]);
+Mv02<C> operator+(Mv02<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>((x[0] + y[0]), x[1]);
 }
 
-template <class R>
-void operator+=(Mv02<R> & x, Mv0<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv02<A> & x, Mv0<B> const& y) {
 
     x = x + y;
 }
 
-template <class R>
-Mv02<R> operator+(Mv02<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(x[0], (x[1] + y[0]));
+Mv02<C> operator+(Mv02<A> const& x, Mv2<B> const& y) {
+
+    return Mv02<C>(x[0], (x[1] + y[0]));
 }
 
-template <class R>
-void operator+=(Mv02<R> & x, Mv2<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv02<A> & x, Mv2<B> const& y) {
 
     x = x + y;
 }
 
-template <class R>
-Mv02<R> operator+(Mv02<R> const& x, Mv02<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((x[0] + y[0]), (x[1] + y[1]));
+Mv02<C> operator+(Mv02<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] + y[0]), (x[1] + y[1]));
 }
 
-template <class R>
-void operator+=(Mv02<R> & x, Mv02<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator+=(Mv02<A> & x, Mv02<B> const& y) {
 
     x = x + y;
 }
 
 // sub
-template <class R>
-Mv0<R> operator-(Mv0<R> const& x, Mv0<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv0<R>(((-y[0]) + x[0]));
+Mv0<C> operator-(Mv0<A> const& x, Mv0<B> const& y) {
+
+    return Mv0<C>((x[0] + (-y[0])));
 }
 
-template <class R>
-void operator-=(Mv0<R> & x, Mv0<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv0<A> & x, Mv0<B> const& y) {
 
     x = x - y;
 }
 
-template <class R>
-Mv02<R> operator-(Mv0<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(x[0], (-y[0]));
+Mv02<C> operator-(Mv0<A> const& x, Mv2<B> const& y) {
+
+    return Mv02<C>(x[0], (-y[0]));
 }
 
-template <class R>
-Mv02<R> operator-(Mv0<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(((-y[0]) + x[0]), (-y[1]));
+Mv02<C> operator-(Mv0<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] + (-y[0])), (-y[1]));
 }
 
-template <class R>
-Mv1<R> operator-(Mv1<R> const& x, Mv1<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>(((-y[0]) + x[0]), (x[1] + (-y[1])));
+Mv1<C> operator-(Mv1<A> const& x, Mv1<B> const& y) {
+
+    return Mv1<C>((x[0] + (-y[0])), (x[1] + (-y[1])));
 }
 
-template <class R>
-void operator-=(Mv1<R> & x, Mv1<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv1<A> & x, Mv1<B> const& y) {
 
     x = x - y;
 }
 
-template <class R>
-Mv02<R> operator-(Mv2<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((-y[0]), x[0]);
+Mv02<C> operator-(Mv2<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>((-y[0]), x[0]);
 }
 
-template <class R>
-Mv2<R> operator-(Mv2<R> const& x, Mv2<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv2<R>(((-y[0]) + x[0]));
+Mv2<C> operator-(Mv2<A> const& x, Mv2<B> const& y) {
+
+    return Mv2<C>((x[0] + (-y[0])));
 }
 
-template <class R>
-void operator-=(Mv2<R> & x, Mv2<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv2<A> & x, Mv2<B> const& y) {
 
     x = x - y;
 }
 
-template <class R>
-Mv02<R> operator-(Mv2<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>((-y[0]), (x[0] + (-y[1])));
+Mv02<C> operator-(Mv2<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((-y[0]), (x[0] + (-y[1])));
 }
 
-template <class R>
-Mv02<R> operator-(Mv02<R> const& x, Mv0<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(((-y[0]) + x[0]), x[1]);
+Mv02<C> operator-(Mv02<A> const& x, Mv0<B> const& y) {
+
+    return Mv02<C>((x[0] + (-y[0])), x[1]);
 }
 
-template <class R>
-void operator-=(Mv02<R> & x, Mv0<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv02<A> & x, Mv0<B> const& y) {
 
     x = x - y;
 }
 
-template <class R>
-Mv02<R> operator-(Mv02<R> const& x, Mv2<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(x[0], ((-y[0]) + x[1]));
+Mv02<C> operator-(Mv02<A> const& x, Mv2<B> const& y) {
+
+    return Mv02<C>(x[0], (x[1] + (-y[0])));
 }
 
-template <class R>
-void operator-=(Mv02<R> & x, Mv2<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv02<A> & x, Mv2<B> const& y) {
 
     x = x - y;
 }
 
-template <class R>
-Mv02<R> operator-(Mv02<R> const& x, Mv02<R> const& y) {
-    assert(&x != &y);
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv02<R>(((-y[0]) + x[0]), (x[1] + (-y[1])));
+Mv02<C> operator-(Mv02<A> const& x, Mv02<B> const& y) {
+
+    return Mv02<C>((x[0] + (-y[0])), (x[1] + (-y[1])));
 }
 
-template <class R>
-void operator-=(Mv02<R> & x, Mv02<R> const& y) {
+template <class A, class B,
+          typename enable_if_safe_cast<B,A>::type* = nullptr>
+void operator-=(Mv02<A> & x, Mv02<B> const& y) {
 
     x = x - y;
 }
 
 // rotated
-template <class R>
-Mv1<R> rotated(Mv1<R> const& x, Mv02<R> const& y) {
+template<class A, class B,
+         class C = typename std::common_type<A, B>::type>
 
-    return Mv1<R>(((2 * x[1] * y[0] * y[1]) + (x[0] * pow(y[0], 2)) + (-1 * x[0] * pow(y[1], 2))), ((-2 * x[0] * y[0] * y[1]) + (x[1] * pow(y[0], 2)) + (-1 * x[1] * pow(y[1], 2))));
+Mv1<C> rotated(Mv1<A> const& x, Mv02<B> const& y) {
+
+    return Mv1<C>(((x[0] * pow(y[0], 2)) + (-1 * x[0] * pow(y[1], 2)) + (2 * x[1] * y[0] * y[1])), ((x[1] * pow(y[0], 2)) + (-1 * x[1] * pow(y[1], 2)) + (-2 * x[0] * y[0] * y[1])));
 }
 
 // ostream
@@ -1002,10 +1258,10 @@ std::ostream& operator<<(std::ostream& t, const Mv02<R>& x) {
 }
 
 // const
-auto const _1 = Mv0<>(1);
-auto const e0 = Mv1<>(1,0);
-auto const e1 = Mv1<>(0,1);
-auto const I = Mv2<>(1);
+auto const _1 = Mv0<float>(1);
+auto const e0 = Mv1<float>(1,0);
+auto const e1 = Mv1<float>(0,1);
+auto const I = Mv2<float>(1);
 
 // misc
 /*
