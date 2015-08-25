@@ -3,7 +3,6 @@
 #include "serialize.h"
 #include "view_base.h"
 #include "renderer.h"
-#include "expert_ai.h"
 #include "null_ai.h"
 #include "backend/backend.h"
 
@@ -89,7 +88,7 @@ namespace col {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Press;
 			p.key = event.key.keysym.sym;
-			//print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
+			print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
 		}
 		else if (type == backend::EventTextInput) {
 			p.dev = Dev::Keyboard;
@@ -374,16 +373,6 @@ namespace col {
 					break;
 			}
 		}		
-		else if (cmd == "connect") {
-			switch (es.size()) {
-				default:
-					put("Usage: connect <nation-id>");
-					break;
-				case 2:
-					gm.connect(this, stoi(es.at(1)));					
-					break;
-			}
-		}
 		else if (cmd == "score") {
 			switch (es.size()) {
 				default:
@@ -427,21 +416,6 @@ namespace col {
 			env.turn();
 			put(format("Turn %||", env.turn_no));
 		}
-		else if (cmd == "expert") {
-			switch (es.size()) {
-				default: {
-					output.push_back("Usage: expert <nation_id>\n");
-					break;
-				}
-				case 2: {
-					auto nation_id = std::stoi(es.at(1));
-					
-					gm.add_player<expert_ai::ExpertAi>(nation_id);
-										
-					break;
-				}
-			}
-		}
 		else if (cmd == "null") {
 			switch (es.size()) {
 				default: {
@@ -451,7 +425,7 @@ namespace col {
 				case 2: {
 					auto nation_id = std::stoi(es.at(1));
 					
-					gm.add_player<null_ai::NullAi>(nation_id);
+					runner.add_agent<null_ai::NullAi>(env, nation_id);
 										
 					break;
 				}
@@ -892,60 +866,6 @@ namespace col {
 	
 	
 	
-	void GUILoop::init(Console * cc, Env * ee) {
-		this->cp = cc;
-		this->ep = ee;
-		
-		verbose = 1;
-		
-		if (verbose >= 1) print("GUILoop: app.init\n");
-		app.init(
-			"cc14",
-			v2i(conf.screen_w, conf.screen_h)
-		);
-		
-		if (verbose >= 1) print("GUILoop: preload_terrain\n");
-		preload_terrain(app);
-
-		if (verbose) print("GUILoop: set_logical_dim\n");
-		app.set_logical_dim(v2i(conf.screen_w, conf.screen_h));
-		
-		last_mod_env = cp->env.mod - 1;
-		last_mod_con = cp->mod - 1;
-
-		last_tick = app.get_ticks();
-		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
-	}
-	
-	bool GUILoop::step() {
-		
-		Console & con = *cp;
-		Env & env = *ep;
-		
-		if (verbose >= 2) print("GUILoop.step: {; app.done=%||\n", app.done);
-		
-		if ((con.env.mod != last_mod_env) || (con.mod != last_mod_con) || (last_tick + 100 > app.get_ticks())) {
-			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
-			con.time = app.get_ticks();
-			last_tick = con.time;
-
-			if (verbose >= 2) print("GUILoop.step: render; tick=%||\n", last_tick);
-			
-			render(app, env, con, verbose);
-
-			last_mod_env = con.env.mod;
-			last_mod_con = con.mod;
-		}
-
-		if (verbose >= 2) print("GUILoop.step: handle_events;\n");
-
-		con.handle_events(app);
-					
-		if (verbose >= 2) print("GUILoop.step: }\n");
-					
-		return !app.done;		
-		
-	}
 
 
 	

@@ -35,7 +35,7 @@ namespace col {
 				cargos[key] -= num;
 			}
 			else {
-				throw Error("out of item");
+				error("storage.sub: out of item");				
 			}
 		}
 

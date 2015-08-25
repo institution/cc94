@@ -15,7 +15,7 @@
 #include "halo.h"
 #include "format.hpp"
 #include "player.h"
-#include "game.h"
+#include "runner.h"
 
 #include "backend/backend.h"
 
@@ -44,25 +44,7 @@ namespace col {
 	struct Console;
 
 
-	struct GUILoop {
-		Console *cp{nullptr};
-		Env *ep{nullptr};
-		
-		// last modification time
-		uint32_t last_mod_env;
-		uint32_t last_mod_con;
-		
-		uint32_t last_tick;
-		
-		backend::Back app;
-		
-		int verbose{0};
-		
-		void init(Console * cc, Env * ee);
-		
-		bool step();
-		
-	};
+
 
 
 
@@ -98,7 +80,7 @@ namespace col {
 	}
 
 
-	struct Console: Player{
+	struct Console{
 		vector<string> output;
 		string buffer;
 		std::deque<string> history;
@@ -128,10 +110,70 @@ namespace col {
 		// selected unit
 		Unit* sel_unit{nullptr};
 
-		Game & gm;
-		GUILoop gui_loop;
+		Runner & runner;
+		
+		
+		unordered_set<char16_t> charset;
 
-		void apply_inter(inter::Any const& a, Player & s);
+		
+
+		BuildType::Id select_build{0};
+		int sel_slot_num{-1};
+
+
+
+		using Event = halo::Event;
+		using Button = halo::Button;
+		using Key = backend::Keycode;
+		using Pattern = halo::Pattern;
+		using Dev = halo::Dev;
+
+
+		halo::Patterns hts;
+
+		// active screen
+		enum class Mode{
+			AMERICA, COLONY, EUROPE, REPORT
+		};
+
+
+
+		// is console active - keyboard focus
+		int active{false};
+
+		int sel_colony_slot_id{-1};
+
+		Mode mode;
+		
+		Nation::Id nation_id;
+
+		string memtag;
+		
+		int verbose{0};
+
+
+		Env *server{nullptr};   // wtf?
+
+
+
+
+		Console(Env & env, Runner & runner, bool verbose):
+			env(env), server(&env), runner(runner), verbose(verbose)
+		{
+
+			for (auto c: CHARSET) {
+				charset.insert(c);
+			}
+
+			chi = history.begin();
+			mod = 0;
+			mode = Mode::AMERICA;
+			clear();
+
+		}
+
+
+		void apply_inter(inter::Any const& a, Agent & s);
 
 		bool is_selected(Terr * terr) {
 			if (terr) {
@@ -329,17 +371,11 @@ namespace col {
 
 
 
-		unordered_set<char16_t> charset;
-
 		void skip_unit() {
 			mem.set_order(get_sel_unit()->id, ' ');
 			select_next_unit();
 		}
 
-		// active screen
-		enum class Mode{
-			AMERICA, COLONY, EUROPE, REPORT
-		};
 
 		void reset_hotspots() {
 			hts.clear();
@@ -416,45 +452,7 @@ namespace col {
 		}
 
 
-		void start() {
-			if (verbose >= 1) {
-				print("Console.start\n");
-			}
-	
-			gui_loop.init(this, &env);			
-		}
-
-		void stop() {
-		}
-
-
-		bool step(Env & env, Nation::Id nation_id, Nation::Auth nation_auth) {
-			if (verbose >= 2) print("Console.step; {; nation_id=%||\n", nation_id);
-			this->nation_id = nation_id;			
-			auto r =  gui_loop.step();
-			if (verbose >= 2) print("Console.step; }; return=%||\n", r);
-			return r;
-		}
-		
-		
-
-
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
-
-
-		BuildType::Id select_build{0};
-		int sel_slot_num{-1};
-
-
-
-		using Event = halo::Event;
-		using Button = halo::Button;
-		using Key = backend::Keycode;
-		using Pattern = halo::Pattern;
-		using Dev = halo::Dev;
-
-
-		halo::Patterns hts;
 
 		void trapall() {
 			hts.clear();
@@ -495,39 +493,10 @@ namespace col {
 
 
 
-		// is console active - keyboard focus
-		int active{false};
 
-		int sel_colony_slot_id{-1};
-
-		Mode mode;
-		
-		Nation::Id nation_id;
-
-		string memtag;
-		
-		int verbose{0};
-
-
-		Env *server{nullptr};
 
 		Env & get_server() { return *server; }
 		void set_server(Env & server) { this->server = &server; }
-
-		Console(Env & env, Game & gm):
-			env(env), server(&env), gm(gm)
-		{
-
-			for (auto c: CHARSET) {
-				charset.insert(c);
-			}
-
-			chi = history.begin();
-			mod = 0;
-			mode = Mode::AMERICA;
-			clear();
-
-		}
 
 
 

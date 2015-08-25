@@ -1,5 +1,5 @@
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef ERROR_H_8343675
+#define ERROR_H_8343675
 
 #include <stdexcept>
 #include <string>
@@ -28,6 +28,8 @@ struct Error: RuntimeError {
 	using RuntimeError::RuntimeError;
 };
 
+
+	
 
 
 #endif

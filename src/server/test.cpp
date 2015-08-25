@@ -141,6 +141,23 @@ TEST_CASE( "tree2", "" ) {
 
  */
 
+
+TEST_CASE( "serialize_base", "" ) {
+	SECTION("serialize_int16") {
+
+		std::stringstream s;
+
+		int16_t x = 12;
+		write(s, x);
+		int16_t y;
+		read(s, y);
+		
+		REQUIRE(x == y);
+
+	}	
+}
+
+
 TEST_CASE( "sys", "" ) {
 	SECTION("env_clean_units") {
 		Env env;		

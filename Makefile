@@ -8,8 +8,8 @@
 # $(VARS:%.cpp=%.o) -- pattern replace
 
 #CC:=g++
-CC:=clang++
-#CC:=emcc
+#CC:=clang++
+CC:=emcc
 
 # output files
 OUTS:=client/main server/test client/test
@@ -36,7 +36,7 @@ CCOPTS:=
 CCOPTS+=-std=c++11
 CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
-CCOPTS+=-ferror-limit=5 
+CCOPTS+=-ferror-limit=1
 ifeq (${CC}, emcc)
 	CCOPTS+=${COMMON_OPTS}
 else
@@ -85,6 +85,14 @@ ${OUTS}: $(OBJS)
 	${CC} -o bin/$@${OUT_EXT} b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
 
 
+publish:
+	cp bin/client/main.* ../institution.github.io/cc94/
+	
+
 clean:
 	rm -rf b/* bin/*
 	
+
+
+
+

@@ -2,27 +2,68 @@
 #define SERIALIZE_H_3264367
 
 #include <fstream>
-#include "env.h"
 
+#include "col.hpp"
+#include "env.h"
+#include "nation.h"
+#include "objs.h"
 
 
 namespace col {
 
-	uint const current_version = 1;
+	uint32_t const current_version = 1;
 	
-	template<typename T, typename A,
-		typename std::enable_if<!std::is_pointer<T>::value>::type* = nullptr
-	>
-	void read(A & ar, T & t) {
-		ar.read(reinterpret_cast<char*>(&t), sizeof(t));
+	
+	using Byte = uint8_t;
+	
+	template<typename A>
+	Byte read_byte(A & ar) {
+		Byte b;
+		ar.read((char *)&b, sizeof(Byte));
+		return b;
 	}
 
-	template<typename T, typename A,
-		typename std::enable_if<!std::is_pointer<T>::value>::type* = nullptr	
-	>
-	void write(A & ar, T const& t) {		
-		ar.write(reinterpret_cast<char const*>(&t), sizeof(t));
+	template<typename A>
+	void write_byte(A & ar, Byte const& t) {		
+		ar.write((char const*)&t, sizeof(Byte));
 	}
+	
+	
+	template<class T, typename A>
+	void read(A & ar, T & r) {
+		T t;
+		r = 0;
+		unsigned i = 0;
+		
+		// read size, int has diffrent size on diffrent platforms
+		auto size = read_byte(ar);  
+		
+		while (i < size*8) {
+			t = read_byte(ar);
+			r = r | (t << i);
+			i += 8;
+		}
+	}
+
+	template<class T, typename A>
+	void write(A & ar, T const& t) {		
+		unsigned i = 0;
+		
+		// write size, int has diffrent size on diffrent platforms
+		write_byte(ar, uint8_t(sizeof(T)));
+		
+		while (i < sizeof(T)*8) {
+			write_byte(ar, (t >> i) & 0xFF);
+			i += 8;
+		}
+		
+	}
+	
+		
+		
+		
+		
+		
 		
 	template<typename A>
 	void read(A & ar, std::string & t) {
@@ -72,7 +113,7 @@ namespace col {
 
 
 	template<typename A>
-	void read(A & ar, Color & c) {
+	void read(A & ar, col::Color & c) {
 		read(ar, c.r);
 		read(ar, c.g);
 		read(ar, c.b);
@@ -80,7 +121,7 @@ namespace col {
 	}
 
 	template<typename A>
-	void write(A & ar, Color const& c) {
+	void write(A & ar, col::Color const& c) {
 		write(ar, c.r);
 		write(ar, c.g);
 		write(ar, c.b);
@@ -120,7 +161,7 @@ namespace col {
 	
 
 	template<typename A>
-	void write(A & ar, Env const& env, Nation const& x) {
+	void write(A & ar, col::Env const& env, col::Nation const& x) {
 		write(ar, x.id);
 		write(ar, x.name);
 		write(ar, x.color);
@@ -128,7 +169,7 @@ namespace col {
 	}
 
 	template<typename A>
-	void write(A & ar, Env const& env, Unit const& x) {
+	void write(A & ar, col::Env const& env, col::Unit const& x) {
 		// unit
 		write(ar, x.id);
 		write(ar, x.type->id);
@@ -164,7 +205,7 @@ namespace col {
 
 
 	template<typename A>
-	void read(A & ar, Env & env, Nation & x) {
+	void read(A & ar, col::Env & env, col::Nation & x) {
 		read(ar, x.id);
 		read(ar, x.name);
 		read(ar, x.color);
@@ -174,16 +215,16 @@ namespace col {
 
 
 	template<typename A>
-	void read_unit(A & ar, Env & env, Unit & unit) {
+	void read_unit(A & ar, col::Env & env, col::Unit & unit) {
 
 		read(ar, unit.id);
-		unit.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
-		unit.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
+		unit.type = & env.get<UnitType> ( read<col::UnitType::Id> (ar) );
+		unit.nation = & env.get<Nation> ( read<col::Nation::Id> (ar) );
 		read(ar, unit.time_left);
 		read(ar, unit.transported);
 
 		// terr
-		env.init(env.get_terr(read<Coords>(ar)), unit);
+		env.init(env.get_terr(read<col::Coords>(ar)), unit);
 
 		auto build_id = read<int>(ar);
 		auto field_id = read<int>(ar);
@@ -284,6 +325,7 @@ namespace col {
 		// terrain		
 		{
 			if (verbose) print( "save terrain\n");
+			
 			
 			write(ar, env.w);
 			write(ar, env.h);
@@ -399,8 +441,11 @@ namespace col {
 		{
 			if (verbose) print("load terrain\n");
 			
+			print("offset = %||\n", ar.tellg());
 			read(ar, env.w);
 			read(ar, env.h);
+			
+			print("map dim = %||, %||\n", env.w, env.h);
 
 			env.resize({env.w, env.h});
 

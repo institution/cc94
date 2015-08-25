@@ -1,34 +1,10 @@
 cc94
 ====
 
-cc94 is a remake of the Colonization game from 1994. It's based on original graphic files so a copy of Colonization is required to play.
+cc94 is a remake of the Colonization game from 1994. It's based on original graphics files so a copy of Colonization is required to play.
 
-cc94 is currently in early version of 0.15
+cc94 is currently in early version of 0.2.0
 
-How to run cc94?
-----------------
-
-cc94 runs under GNU/Linux OS. You can start the following way:
-
-```bash
-# download and unpack
-wget https://github.com/institution/cc94/archive/master.zip
-unzip master.zip
-cd cc94-master
-
-# install dependencies
-sudo bash install_deps.sh
-
-# start compilation and go for a walk
-make
-
-# unpack original Colonization graphics
-# change the path with your COLONIZE location
-bin/unmadspack ~/dosbox/COLONIZE
-
-# run game
-bin/client/main aaa.mp
-```
 
 Interface
 ---------
@@ -72,6 +48,22 @@ load <filename.mp>
 * ctrl + hold-and-drag-left-click -- unselect multiple map squares
 ```
 
+License
+-------
+AGPLv3+
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the Affero GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Contact
 -------

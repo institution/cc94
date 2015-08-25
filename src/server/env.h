@@ -87,8 +87,8 @@ namespace col{
 		boost::function<int (int range)> roll;
 
 		// opts
-		int verbose{0};
-		int action_count{0};
+		int8_t verbose{0};
+		uint32_t action_count{0};
 		
 		State get_state() const {
 			return state;
@@ -148,7 +148,7 @@ namespace col{
 			}
 			return nations.at(cpid);
 		}
-
+		
 		Nation & get_current_nation() {
 			return const_cast<Nation&>(
 				static_cast<Env const*>	(this) -> get_current_nation() );

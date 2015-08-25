@@ -57,7 +57,7 @@ namespace col {
 			return (*p).second;
 		}
 		else {
-			backend::error("nofont");
+			error("nofont");
 			throw std::runtime_error("nofont");
 		}
 	}
@@ -1872,14 +1872,13 @@ namespace col {
 						}
 					);
 					
-					// right press on terr with shift -- sub select terr
+					// right press on terr with ctrl -- sub select terr
 					con.on(Event::Press, Button::Right, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim, 
 						[&con,coords](){
-							cout << "ctrel\n";
 							con.select_terr(coords, -1);
 						}
 					);
-					
+										
 					// hover with button down over terr -- select set
 					con.on(Event::Hover, halo::ModButton, pos, ly.terr_dim, 
 						[&con,coords](){
@@ -1894,7 +1893,7 @@ namespace col {
 						}
 					);
 					
-					// hover with button down with shift over terr -- select add
+					// hover with button down with ctrl over terr -- select sub
 					con.on(Event::Hover, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim, 
 						[&con,coords](){
 							con.select_terr(coords, -1);

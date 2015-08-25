@@ -21,7 +21,6 @@
 #include <vector>
 #include <map>
 
-
 #include "pre.h"
 
 //#include <boost/cstdint.hpp>
@@ -29,12 +28,10 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-
-
 #include "col.hpp"
 #include "env.h"
 #include "csv.h"
-#include "game.h"
+#include "runner.h"
 #include "console.h"
 #include "server/serialize.h"
 
@@ -42,35 +39,14 @@
 
 
 
-
-
-
-using std::unique_ptr;
-
-using std::string;
-using std::add_pointer;
-using std::to_string;
-
-using std::cout;
-using std::endl;
-
-using std::pair;
-using std::map;
-using std::vector;
-
-
-
-
-
-
 bool g_running = true;
 
 
-col::Game game;
+col::Runner runner;
 
-void loop_step(col::Game* game)
+void loop_step(col::Runner* runner)
 {
-	g_running = game->step();	
+	g_running = runner->step();	
 	#ifdef __EMSCRIPTEN__
 	if (!g_running) {
 		print("emscripten_cancel_main_loop\n");
@@ -80,27 +56,25 @@ void loop_step(col::Game* game)
 }
 
 
-
-
 int main(int argc, char* argv[])
 {
 	
 	#ifdef __EMSCRIPTEN__
 		// set main loop and continue main
-		emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &game, -1, 0);
+		emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &runner, -1, 0);
 	#endif
 	
 	
 	if (argc == 2) {
-		game.init(argv[1], 1);
+		runner.init(argv[1], 1);
 	}
 	else {
-		game.init("", 1);
+		runner.init("", 1);
 	}
 		
 	#ifndef __EMSCRIPTEN__
 		while (g_running) {
-			loop_step(&game);
+			loop_step(&runner);
 		}		
 	#endif
 	

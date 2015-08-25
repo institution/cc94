@@ -16,17 +16,9 @@
 
 namespace backend{
 	
-	inline void error() {
-		throw std::runtime_error("error");
-	}
-	
-	inline void error(std::string const& s) {
-		throw std::runtime_error(s);		
-	}
 	
 	inline void error_sdl() {
-		print("%||\n", SDL_GetError());
-		error();
+		error("%||\n", SDL_GetError());		
 	}
 	
 	
@@ -281,7 +273,7 @@ namespace backend{
 
 	void print_window_event(Event const& event);
 
-	using Ticks = int64_t;
+	using Tick = int64_t;
 
 	struct Back{
 		
@@ -481,7 +473,7 @@ namespace backend{
 			return SDL_PollEvent(&event);
 		}
 		
-		Ticks get_ticks() {
+		Tick get_ticks() {
 			#ifdef __EMSCRIPTEN__
 				return emscripten_get_now();
 			#else		
