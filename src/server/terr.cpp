@@ -4,7 +4,7 @@
 namespace col{
 
 
-	
+
 	
 	Travel Terr::get_travel() const {
 		if (alt == AltSea) {
@@ -21,7 +21,7 @@ namespace col{
 		throw Error("Terr: Unknown travel type");
 	}
 	
-	uint16 Terr::get_yield(Item const& item, bool const& is_expert) const {
+	Amount Terr::get_yield(Item const& item, bool const& is_expert) const {
 		/* 		 
 		    Why this is so complicated; games are supposed to have easy to understand rules
 		  ballance should be achieved otherwise (negative feedback possibly)

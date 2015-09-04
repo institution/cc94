@@ -3,7 +3,9 @@
 bin/*
 __/*
 COLONIZE*
-p48x48/*
+res/tile48*
+inc/SDL2*
+inc/boost*
 nbproject
 core
 dist/*

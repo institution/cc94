@@ -1,19 +1,16 @@
-#ifndef VIEW_BASE44_H
-#define VIEW_BASE44_H
-// ^renderer base
-
+#ifndef PROPS_H_4456352
+#define PROPS_H_4456352
 
 #include <unordered_map>
 
+#include "build.h"
+#include "unit.h"
 #include "base.h"
 #include "conf.h"
 
 
 
-
-
 namespace col {
-
 
 
 	v2i const tile_dim = v2i(conf.tile_dim, conf.tile_dim);
@@ -27,6 +24,15 @@ namespace col {
 	extern std::unordered_map<Item,string,Item::hash> ITEM_NAMES;
 	Item get_item_by_name(string const& name);
 
+	string const& get_item_name(Item const& item);
+
+	inline string const& get_name(Item const& item) { return get_item_name(item); }	
+	inline string const& get_name(BuildType const& x) { return x.get_name(); }
+	inline string const& get_name(UnitType const& x) { return x.get_name(); }
+	inline string const& get_name(Makeable const& x) { return x.get_name(); }
+		
+	
+	
 
 	array<Item, 16> const COLONY_ITEMS = {
 		ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,

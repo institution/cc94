@@ -11,7 +11,7 @@
 #include "env.h"
 #include "layout.h"
 #include "player.h"
-#include "ai-env-helpers.h"
+#include "logic.h"
 #include "halo.h"
 #include "format.hpp"
 #include "player.h"
@@ -86,7 +86,7 @@ namespace col {
 		std::deque<string> history;
 		std::deque<string>::iterator chi;
 
-		misc::Memory mem;
+		logic::Memory mem;
 
 		Env & env;
 
@@ -96,8 +96,18 @@ namespace col {
 
 		long time{0};  // miliseconds
 
+		/*struct SelectProductionOnBuild {
+			
+			build_id
+			selected_id
+			
+		};*/
+		
+		
 		int equip_to_unit_id{0};
 		int equip_to_unit_type_id{0};
+
+		Workplace *prod_to_workplace{nullptr};
 
 		int select_unit_popup{0};
 
@@ -116,11 +126,14 @@ namespace col {
 		unordered_set<char16_t> charset;
 
 		
-
-		BuildType::Id select_build{0};
-		int sel_slot_num{-1};
-
-
+		// currently selected popup entry
+		int selected_id{0};
+		
+		
+		
+		Build *selprod_build{nullptr};
+		Makeable const* selprod_makeable{nullptr};
+		
 
 		using Event = halo::Event;
 		using Button = halo::Button;
@@ -154,7 +167,7 @@ namespace col {
 
 		Env *server{nullptr};   // wtf?
 
-
+		
 
 
 		Console(Env & env, Runner & runner, bool verbose):
@@ -602,7 +615,9 @@ namespace col {
 			return active;
 		}
 
-
+		bool blink() const {
+			return ((this->time % 1000) >= 500);
+		}
 
 	};
 

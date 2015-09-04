@@ -1,7 +1,8 @@
-#ifndef BUILD2_H
-#define BUILD2_H
+#ifndef BUILD_H_86563543
+#define BUILD_H_86563543
 
 #include "objs.h"
+#include "makeable.h"
 #include "workplace.h"
 
 namespace col{
@@ -11,9 +12,10 @@ namespace col{
 
 
 
-	struct BuildType{
-		using Id = uint32;
+	struct BuildType: Makeable{
+		using Id = Makeable::Id;
 
+		// params
 		string name;
 		Id id;
 		int slots;
@@ -26,7 +28,8 @@ namespace col{
 		int prod;
 		int cons;
 		int icon;
-
+		
+		// constructors
 		BuildType() {}
 
 		BuildType(Id const& id, string const& name = ""):
@@ -51,8 +54,15 @@ namespace col{
 			icon = stoi0(xs[11]);
 		}
 
+		// getters
+		Id get_id() const { return id; }
 		string const& get_name() const { return name; }
 		Item const& get_proditem() const { return proditem; }
+		Id get_place_on_id() const { return place_on_id; }
+		
+		Amount get_cost() const { return cost_hammers; }
+		Class get_class() const { return Class::BuildType; }
+		
 		//BuildType & set_name(string const& name) { this->name = name; return *this; }
 
 
@@ -101,6 +111,7 @@ namespace col{
 
 	int const BuildCarpentersShop{35};
 	int const BuildLumberMill{36};
+	
 	int const BuildChurch{37};
 	int const BuildCathedral{38};
 	int const BuildBlacksmithsHouse{39};
@@ -114,17 +125,14 @@ namespace col{
 	int const BuildStableWarehouse{47};
 
 
-
-
+	
 
 	struct Build: Workplace {
 		using Id = int;
 
 		BuildType const* type;
 		int8 free_slots;
-		int hammers{0};
-		BuildType const* ctype{nullptr};
-
+				
 		BuildType const& get_type() { return *type; }
 
 		Build(BuildType const& type):
@@ -143,15 +151,9 @@ namespace col{
 		BuildType::Id get_type_id() const {
 			return type->id;
 		}
-
-		bool under_construction() const {
-			return ctype != nullptr;
-		}
-
-		void morph() {
-			type = ctype;
-			ctype = nullptr;
-			hammers = 0;
+		
+		void morph(BuildType const& bt) {
+			type = &bt;			
 		}
 
 		// Workplace
@@ -159,21 +161,43 @@ namespace col{
 		PlaceType::type place_type() {
 			return PlaceType::Build;
 		}
-
-		int const& get_hammers() const {
-			return this->hammers;
-		}
+		
+		virtual Class get_class() const { return Class::Build; }
 
 		string const& get_name() const {
 			return this->type->name;
 		}
-
+		
+		// getters
+		BuildType const& get_type() const { return *type; }
 		int get_slots() const { return type->slots; };
 		auto get_consitem() const -> decltype(type->itemcons) const& { return type->itemcons; };
 		auto get_min_colony() const -> decltype(type->min_colony) const& { return type->min_colony; };
 		auto get_place_on_type_id() const -> decltype(type->place_on_id) const& { return type->place_on_id; };
-		auto get_prod() const -> decltype(type->prod) const& { return type->prod; };
-		auto get_cons() const -> decltype(type->cons) const& { return type->cons; };
+		
+		
+		
+		
+
+		Amount get_prod(Item const& item, bool const& is_expert) const {
+			if (get_proditem() == item) {
+				if (is_expert) 
+					return type->prod * 2 * 3;
+				else
+					return type->prod * 3;
+			}
+			return 0;
+		};
+		
+		Amount get_cons(Item const& item, bool const& is_expert) const { 
+			if (get_proditem() == item) {
+				if (is_expert) 
+					return type->cons * 2;	
+				else
+					return type->cons;				
+			}
+			return 0;			
+		};
 
 
 		Build & set_type(BuildType const& type) {
@@ -184,26 +208,10 @@ namespace col{
 		}
 
 
-		int get_cost_hammers() const {
-			return this->ctype->cost_hammers;
-		}
-
-		int get_cost_tools() const {
-			return this->ctype->cost_tools;
-		}
-
-
 		Item const& get_proditem() const {
 			return type->proditem;
 		}
-
-		uint16 get_yield(Item const& item, bool const& is_expert) const {
-			if (get_proditem() == item) {
-				return get_prod();
-			}
-			return 0;
-		}
-
+		
 		bool assign(bool const& exec=1) {
 			if (!free_slots) {
 				return false;

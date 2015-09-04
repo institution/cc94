@@ -1,11 +1,10 @@
-#ifndef FIELD_H
-#define FIELD_H
+#ifndef FIELD_H_349068896
+#define FIELD_H_349068896
 
+#include "terr.h"
 #include "workplace.h"
 
 namespace col{
-
-	struct Terr;
 
 
 
@@ -22,17 +21,15 @@ namespace col{
 		Field() {}
 		Field(Terr & t): terr(&t) {}
 
-		uint16 get_yield(bool const& is_expert) const;
-
 		int get_slots() const { return 1; }
 
-
+	
+		virtual Amount get_prod(Item const& item, bool const& is_expert) const;
+		
 
 	};
 
-	inline bool operator==(Field const& self, Field const& other) {
-		return self.terr == other.terr;
-	}
+	bool operator==(Field const& self, Field const& other);
 
 }
 

@@ -41,10 +41,19 @@ using roll::replay;
  * load/unload cargo into transport * 
  * orders -- keep trying *
  * clear forest O / plow P *
+
  * construction complete message
  * v0.2
  * colony production changes gui
  * build system rethink
+ *  build building        hammers,tools
+ *  improve field         tools
+ *  construct ship/wagon/artillery    hammers,tools
+ *  produce itemcat          various
+ *  grow/plant itemcat
+ *  repair unit           ?
+ *  teach unit            ?
+ * 
  * specialists by experience
  * autosave 
  * build ships
@@ -62,9 +71,14 @@ using roll::replay;
  * silver -> coins conversion?
  * by name from csv ?
  * fog of war
- *
  
-
+  
+ * scoring, game goals
+ * allow land use outside of colony range
+ * play as natives
+ * play after independence
+ * game goals/scenarios for map editing
+ 
 	Anyway you can:
 	* move ships and units
 	* build colony
@@ -415,7 +429,7 @@ TEST_CASE( "colony_field_prod", "" ) {
 	REQUIRE(st.get(ItemFood) == 0);
 	
 	SECTION("produce") {
-		REQUIRE_NOTHROW( env.produce(st, f, u) );	
+		REQUIRE_NOTHROW( env.produce(st, f) );	
 		REQUIRE(st.get(ItemFood) > 0);
 	}
 	
@@ -433,6 +447,11 @@ TEST_CASE( "colony_field_prod", "" ) {
 	
 	
 }
+
+
+
+
+
 
 
 TEST_CASE( "colony_workplace_production", "" ) {
@@ -457,6 +476,25 @@ TEST_CASE( "colony_workplace_production", "" ) {
 	
 	REQUIRE_NOTHROW(env.start());
 	
+
+	SECTION("Build.get_prod") {
+		auto& u = env.create<Unit>(
+			env.create<UnitType>(),
+			env.create<Nation>()
+		);
+		
+		auto & bt = env.get<BuildType>(BuildFurTradersHouse);
+		auto b = Build(bt);
+		b.add(u);
+		
+		REQUIRE(b.get_prod(ItemCoats, false) == 3);
+		REQUIRE(b.get_cons(ItemCoats, false) == 3);
+		
+		REQUIRE(b.get_prod(ItemSilver, false) == 0);
+		REQUIRE(b.get_cons(ItemSilver, false) == 0);
+		
+	}	
+
 	
 	
 	SECTION("build") {
@@ -505,7 +543,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 			REQUIRE( env.get_build(t, 0).get_proditem() == ItemCoats );
 			REQUIRE_NOTHROW( env.work_build(0, u) );
 
-			SECTION("just enough") {
+			SECTION("just_enough") {
 				REQUIRE_NOTHROW(st.add(ItemFood, 2));
 				REQUIRE_NOTHROW(st.add(ItemFurs, 3));
 				REQUIRE_NOTHROW(env.turn());

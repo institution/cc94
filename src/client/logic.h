@@ -1,12 +1,12 @@
-#ifndef AI_ENV_HELPERS_H
-#define AI_ENV_HELPERS_H
+#ifndef LOGIC_H_39406754
+#define LOGIC_H_39406754
 
 #include "env.h"
 
 namespace col{
 
+	namespace logic{
 
-	namespace misc{
 
 		using UnitTypes = vector<UnitType const*>;
 		using Items = vector<Item>;
@@ -18,8 +18,6 @@ namespace col{
 
 		Unit const* get_unassigned_unit(Env const& env, Terr const& terr);
 
-		int get_yield(Env const& env, Build const& b);
-
 		inline
 		bool to_move(Unit const& u) {
 			return u.get_time_left() and !u.is_working();
@@ -29,6 +27,13 @@ namespace col{
 		bool owned(Unit const& u, Nation const& p) {
 			return u.get_nation() == p;
 		}
+
+
+		Amount get_nominal_prod(Workplace const& fact, Item const& item);
+		
+		
+
+
 
 		Unit const* get_next_to_move(Env const& env, Nation const& p, Unit const* cur=nullptr);
 		Unit::Id get_next_to_move_id(Env const& env, Nation const& pl, Unit::Id cur_id=0);

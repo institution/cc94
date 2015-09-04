@@ -11,6 +11,16 @@
 
 namespace col {
 
+	template <class E>
+	auto enum_to_integer(E e) -> typename std::underlying_type<E>::type {
+		return static_cast<typename std::underlying_type<E>::type>(e);
+	}
+	 
+	template <class E, class T>
+	auto integer_to_enum(T t) -> E {
+		return static_cast<E>(t);
+	}
+
 	uint32_t const current_version = 1;
 	
 	
@@ -27,6 +37,11 @@ namespace col {
 	void write_byte(A & ar, Byte const& t) {		
 		ar.write((char const*)&t, sizeof(Byte));
 	}
+	
+	
+	
+	
+		
 	
 	
 	template<class T, typename A>
@@ -62,8 +77,7 @@ namespace col {
 		
 		
 		
-		
-		
+	
 		
 	template<typename A>
 	void read(A & ar, std::string & t) {
@@ -95,6 +109,21 @@ namespace col {
 		write(ar, T(e));		
 	}
 
+
+	template<typename E, typename A>
+	void read_enum(A & ar, E & e) {
+		using Integer = typename std::underlying_type<E>::type;
+		Integer k;
+		read(ar, k);		
+		e = integer_to_enum<Class>(k);		
+	}
+
+	template<typename E, typename A>
+	void write_enum(A & ar, E const& e) {
+		write(ar, enum_to_integer(e));		
+	}
+
+
 	template <class T, class A>
 	void write(A & ar, aga2::Mv1<T> const& c)
 	{
@@ -110,6 +139,43 @@ namespace col {
 		read(ar, c[1]);
 	}
 
+
+	template<typename A>
+	void read(A & ar, Env const& env, col::Task & t) {
+		read(ar, t.progress);
+		
+		Class cls;       read_enum(ar, cls);
+		Makeable::Id id; read(ar, id);
+				
+		switch (cls) {
+			case Class::None:
+				t.what = nullptr;
+				break;
+			case Class::BuildType:
+				t.what = &env.get<BuildType>(id);
+				break;
+			case Class::UnitType:
+				t.what = &env.get<UnitType>(id);
+				break;
+			default:
+				assert(0);
+				break;
+		}		
+	}
+
+	template<typename A>
+	void write(A & ar, Env const& env, col::Task const& t) {
+		write(ar, t.progress);
+		if (t) {			
+			write_enum(ar, t.what->get_class());
+			write(ar, t.what->get_id());
+		}
+		else {
+			write_enum(ar, Class::None);
+			write(ar, Makeable::Id(0));
+		}
+	}
+				
 
 
 	template<typename A>
@@ -182,20 +248,22 @@ namespace col {
 		write(ar, env.get_coords(*x.terr));
 
 		// unit build
-		if (x.terr and x.build) {
-			write<int>(ar, x.terr->get_colony().get_build_index(*x.build) + 1);
+		auto wp = x.workplace;
+		if (x.terr and wp and wp->place_type() == PlaceType::Build) {
+			write<int>(ar, x.terr->get_colony().get_build_index(*(Build*)x.workplace) + 1);
 		}
 		else {
 			write<int>(ar, 0);
 		}
 
 		// unit field
-		if (x.terr and x.field) {
-			write<int>(ar, x.terr->get_colony().get_field_index(*x.field) + 1);
+		if (x.terr and wp and wp->place_type() == PlaceType::Field) {
+			write<int>(ar, x.terr->get_colony().get_field_index(*(Field*)x.workplace) + 1);
 		}
 		else {
 			write<int>(ar, 0);
 		}
+
 
 		// unit cargo
 		write_map(ar, x.get_cargos());
@@ -364,7 +432,9 @@ namespace col {
 					// build
 					write(ar, b.type->id);
 					write(ar, b.free_slots);
-					if (ver > 0) write(ar, b.hammers);
+					
+					// task
+					write(ar, env, b.task);
 
 				}
 
@@ -491,7 +561,10 @@ namespace col {
 
 					b.type = & env.get<BuildType>( build_type_id );
 					read(ar, b.free_slots);
-					if (ver > 0) read(ar, b.hammers);
+
+					// task
+					read(ar, env, b.task);
+					
 				}
 
 				// fields

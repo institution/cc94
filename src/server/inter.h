@@ -244,10 +244,18 @@ namespace col{
 
 		// action
 		CC94_DEFINE_INTER(
-			construct,
+			construct_build,
 			(Terr::Id, terr_id)
 			(Build::Id, build_id)
-			(BuildType::Id, build_type_id)
+			(BuildType::Id, buildtype_id)
+		)
+		
+		// action
+		CC94_DEFINE_INTER(
+			construct_unit,
+			(Terr::Id, terr_id)
+			(Build::Id, build_id)
+			(UnitType::Id, unittype_id)
 		)
 
 		//CC94_DEFINE_INTER(
@@ -286,7 +294,8 @@ namespace col{
 			prod_build,
 			prod_field,
 
-			construct
+			construct_build,
+			construct_unit
 
 		>;
 

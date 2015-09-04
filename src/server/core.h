@@ -15,6 +15,7 @@
 #include "error.h"
 #include "field.h"
 #include "type_name.h"
+#include "colony.h"
 
 namespace col {
 
@@ -272,13 +273,9 @@ namespace col {
 			u.terr->sub(u);
 			u.terr = nullptr;
 		}
-		if (u.build) {
-			u.build->sub(u);
-			u.build = nullptr;
-		}
-		if (u.field) {
-			u.field->sub(u);
-			u.field = nullptr;
+		if (u.workplace) {
+			u.workplace->sub(u);
+			u.workplace = nullptr;
 		}
 		u.type = nullptr;
 		u.nation = nullptr;

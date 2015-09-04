@@ -1,7 +1,7 @@
 #include "console.h"
 
 #include "serialize.h"
-#include "view_base.h"
+#include "props.h"
 #include "renderer.h"
 #include "null_ai.h"
 #include "backend/backend.h"
@@ -630,14 +630,15 @@ namespace col {
 				default:
 					put("Usage: construct <place-number> <building-id>");
 					break;
-				case 3: {
+				/*case 3: {
 					if (auto tp = get_sel_terr()) {
 						Build::Id place_id = stoi(es.at(1));
-						BuildType::Id buildtype_id = stoi(es.at(2));					
-						env.apply(inter::construct(env.get_id(*tp), place_id, buildtype_id));
+						BuildType::Id buildtype_id = stoi(es.at(2));
+						
+						env.apply(inter::construct_build(env.get_id(*tp), place_id, buildtype_id));
 					}
 					break;
-				}
+				}*/
 			}
 		}
 		else if (cmd == "work-build") {

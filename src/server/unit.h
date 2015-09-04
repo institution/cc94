@@ -1,9 +1,10 @@
-#ifndef UNIT2_H
-#define UNIT2_H
+#ifndef UNIT_H_86546532
+#define UNIT_H_86546532
 
 #include "objs.h"
 #include "error.h"
 #include "storage.h"
+#include "makeable.h"
 
 namespace col{
 
@@ -11,11 +12,12 @@ namespace col{
 	// frigate
 
 
+	struct Workplace;
 
+	struct UnitType: Makeable {
+		using Id = Makeable::Id;
 
-	struct UnitType {
-		using Id = uint32;
-
+		// data
 		string name{""};
 		Id id;
 		uint8 speed{0};  // flat tiles per 1t (TIME_UNIT)
@@ -25,13 +27,14 @@ namespace col{
 		uint8 size{0};
 		uint8 icon{0};
 		uint8 travel{0}; // travel flags LAND | SEA
-		int base{0};
+		Id base{0};
 		Item item1{ItemNone};
 		Amount num1{0};
 		Item item2{ItemNone};
 		Amount num2{0};
+		Amount cost{0};
 
-
+		// setters
 		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
 		UnitType& set_attack(uint8 const& a) { attack = a; return *this; }
 		UnitType& set_combat(uint8 const& c) { combat = c; return *this; }
@@ -42,9 +45,11 @@ namespace col{
 		UnitType& set_base(int const& t) { base = t; return *this; }
 		UnitType& set_equip1(Item const& it, Amount num) { item1 = it; num1 = num; return *this; }
 		UnitType& set_equip2(Item const& it, Amount num) { item2 = it; num2 = num; return *this; }
+		UnitType& set_cost(Amount num) { cost = num; return *this; }
 
-
+		// getters
 		string const& get_name() const { return name; }
+		Id get_id() const { return id; }
 		uint8 const& get_speed() const { return speed; }
 		float get_attack() const { return attack; }
 		float get_combat() const { return combat; }
@@ -52,14 +57,18 @@ namespace col{
 		uint8 const& get_size() const { return size; }
 		uint8 const& get_icon() const { return icon; }
 		uint8 const& get_travel() const { return travel; }
-		int const& get_base() const { return base; }
+		Id const& get_base() const { return base; }
 		Item const& get_item2() const { return item2; }
 		Amount const& get_num1() const { return num1; }
 		Item const& get_item1() const { return item1; }
 		Amount const& get_num2() const { return num2; }
+		Amount get_cost() const { return cost; }
 
+		// methods
 		Amount get_space() const { return Amount(slots) * 100; }
+		Class get_class() const { return Class::UnitType; }
 
+		// constructors
 		UnitType() {}
 
 		explicit UnitType(Id const& id): id(id) {}
@@ -81,9 +90,10 @@ namespace col{
 			num1 = stoi0(xs[11]);
 			item2 = stoi0(xs[12]);
 			num2 = stoi0(xs[13]);
+			cost = stoi0(xs[14]);
 		}
 
-	};
+	}; // UnitType
 
 	inline
 	bool operator==(UnitType const& t1, UnitType const& t2) {
@@ -120,9 +130,8 @@ namespace col{
 
 		// where am I
 		Terr *terr{nullptr};
-		Build *build{nullptr};
-		Field *field{nullptr};
-
+		Workplace *workplace{nullptr};
+		
 		// system - not part of unit, false means unit non-existant
 		bool in_game{true};
 
@@ -130,6 +139,9 @@ namespace col{
 
 		Amount space_left{0}; // [t]
 		uint8 extend{0}; // num of boarded units TODO: need this?
+		
+		Amount health{0};
+		
 
 
 		Amount get(Item item) const {
@@ -181,8 +193,7 @@ namespace col{
 			*this = w;
 
 			assert(w.terr == nullptr);
-			assert(w.build == nullptr);
-			assert(w.field == nullptr);
+			assert(w.workplace == nullptr);
 			w.type = nullptr;
 			w.nation = nullptr;
 		}
@@ -191,11 +202,12 @@ namespace col{
 
 		~Unit() {
 			assert(terr == nullptr);
-			assert(build == nullptr);
-			assert(field == nullptr);
+			assert(workplace == nullptr);
 			assert(type == nullptr);
 			assert(nation == nullptr);
 		}
+
+		bool is_expert(Item const& item) const { return false; }
 
 		auto get_cargos() const -> decltype(store.cargos) const& { return store.cargos; }
 		auto get_cargos() -> decltype(store.cargos) & { return store.cargos; }
@@ -224,7 +236,7 @@ namespace col{
 		Order::type const& get_order() const { return order; }
 		int get_icon() const { return type->icon; }
 
-		int const& get_base() const { return type->base; }
+		Id const& get_base() const { return type->base; }
 		Item const& get_item2() const { return type->item2; }
 		Amount const& get_num1() const { return type->num1; }
 		Item const& get_item1() const { return type->item1; }
@@ -239,21 +251,17 @@ namespace col{
 		}
 
 		bool is_working() const {
-			return field or build;
+			return workplace != nullptr;
 		}
 
-		template <typename T>
-		T& get_workplace();
 
-/*
-		Unit& set_speed(uint8 const& s) { type->speed = s; return *this; }
-		Unit& set_attack(uint8 const& a) { type->attack = a; return *this; }
-		Unit& set_combat(uint8 const& c) { type->combat = c; return *this; }
-		Unit& set_slots(uint8 const& c) { type->slots = c; return *this; }
-		Unit& set_size(uint8 const& c) { type->size = c; return *this; }
-		Unit& set_icon(uint8 const& c) { type->icon = c; return *this; }
-		Unit& set_travel(uint8 const& t) { type->travel = t; return *this; }
-*/
+		Workplace & get_workplace() {
+			return *(this->workplace);
+		}
+		
+		Workplace const& get_workplace() const {
+			return *(this->workplace);
+		}
 
 
 		// uint8 spec_id;
@@ -261,15 +269,7 @@ namespace col{
 
 	};
 
-	template <> inline
-	Build& Unit::get_workplace<Build>() {
-		return *(this->build);
-	}
 
-	template <> inline
-	Field& Unit::get_workplace<Field>() {
-		return *(this->field);
-	}
 
 	ostream& operator<<(ostream &out, Unit const& obj);
 

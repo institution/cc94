@@ -3,14 +3,15 @@
 //#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
-#include "ai-env-helpers.h"
-#include "view_base.h"
+#include "logic.h"
+#include "props.h"
 #include "conf.h"
 
 //namespace Key = backend::Key;
 
 namespace col {
-
+	
+	using namespace logic;
 
 	using b2i = Box;
 	
@@ -20,6 +21,7 @@ namespace col {
 	using Dev = Console::Dev;
 	
 	
+	bool NEW_STYLE = false;
 	
 	
 	
@@ -415,7 +417,7 @@ namespace col {
 	
 	
 	
-	void render_shield(backend::Back &win, v2i const& pos, Color const& col, char letter) {
+	void render_shield(backend::Back &win, v2i const& pos, backend::Color const& color, char letter) {
 		
 		auto t = Text(string() + letter).set_font("tiny.png").set_fg(ColorBlack);
 
@@ -432,7 +434,7 @@ namespace col {
 		render_fill(win,
 			inner_pos, 
 			inner_dim, 
-			{col.r,col.g,col.b, 255}
+			color
 		);
 		
 		render_text(win,
@@ -450,11 +452,11 @@ namespace col {
 			Coords const& delta);
 
 
-	void render_pixel(backend::Back &win, v2i pix, const Color &col) {		
+	void render_pixel(backend::Back &win, v2i pix, const backend::Color &colr) {
 		render_fill(win,
 			pix,
 			v2i(1, 1),
-			backend::Color(col.r,col.g,col.b, 255)
+			colr
 		);
 	}
 	
@@ -522,7 +524,7 @@ namespace col {
 		void operator()(Item const& item, v2i const& pos);
 		
 		void fill(Texture const& tex, v2i const& pos, v2i const& dim);
-		void fill(Color const& color, v2i const& pos, v2i const& dim);
+		void fill(backend::Color const& color, v2i const& pos, v2i const& dim);
 		
 	};
 
@@ -551,7 +553,14 @@ namespace col {
 	void render_area(backend::Back & win, v2i const& pos, v2i const& dim, backend::Color const& color) {
 		render_fill(win, pos, dim, color);		
 	}
-		
+
+
+	inline backend::Color get_nation_color(Nation const& n) {
+		auto c = n.color;
+		return {c.r,c.g,c.b,255};
+	}
+
+	
 	v2i render_text2(
 		/*backend::Back &win,
 
@@ -660,9 +669,9 @@ namespace col {
 		std::function<void()> oncancel
 	) {
 		
-		int const LINE_HEIGHT = ly.S(10);
+		int const LINE_HEIGHT = ly.font_tiny;
 		
-		v2i const dim = v2i(ly.scr.dim[0] * 0.3, (kvs.size()+1) * LINE_HEIGHT);
+		v2i const dim = v2i(ly.scr.dim[0] * 0.5, (kvs.size()+1) * LINE_HEIGHT);
 		v2i pos = cpos(dim);
 		
 		// click anywhere -- cancel
@@ -813,6 +822,8 @@ namespace col {
 			auto tile_pos = pix;
 			auto tile_dim = v2i(tile_width, ly.S(12));
 			
+			// calc item change
+			
 			// render item
 			render_sprite(win, tile_pos, tile_dim, res(win, ICON, get_item_icon_id(item)));
 			
@@ -832,7 +843,8 @@ namespace col {
 			pix[0] += tile_width;
 		}
 	}
-	
+
+				
 
 	void render_city(backend::Back &win, Env const& env, Console & con) {
 		/*
@@ -885,6 +897,62 @@ namespace col {
 				
 				render_sprite(win, build_pos, build_tex);
 				
+				int nominal_prod = logic::get_nominal_prod(b, b.get_proditem());
+				
+				// production button under the building				
+				if (b.get_proditem() == ItemHammers) 
+				{
+					
+					auto button_pos = build_pos + v2i(0, build_dim[1]);
+					auto button_dim = v2i(build_dim[0], ly.font_tiny + ly.line*2);
+					
+					backend::Color fg{255,255,255,255}, bg{0,0,0,0};
+					
+					string label("");
+					if (b.task) {
+						label += get_name(*b.task.what);						
+					}
+					else {
+						label += "No production";
+						
+						if ( nominal_prod and con.blink() ) {
+							std::swap(fg, bg);
+						}
+						
+					}
+					
+					render_text_line(
+						win,
+		
+						button_pos,
+						button_dim,
+						{0.5,0.5},
+		
+						res_pixfont(win, "tiny.png"),
+						fg,
+						bg,
+							
+						label
+					);
+					
+					// TODO: progress bar: b.task.get(), b.task.cap()
+					
+					
+					auto* makeable = b.task.what;
+					
+					// left click on button -- select production
+					con.on(Event::Press, Button::Left, button_pos, button_dim,
+						[&con, &b, makeable]() { 
+							con.selprod_build = &b;
+							con.selprod_makeable = makeable;
+						}	
+					);
+					
+					
+				}
+				
+				
+				
 				// render build name
 				if (con.sel_colony_slot_id == i) {
 											
@@ -903,40 +971,21 @@ namespace col {
 					);
 						
 				}
-				else 
-				if (b.under_construction()) 
-				{
-					// render_sprite(win, build_pos, res(ICON, get_item_icon_id(ItemHammers)));					
-					render_text_line(
-						win,
-		
-						build_pos,
-						build_dim,
-						{0.5,0.5},
-		
-						res_pixfont(win, "tiny.png"),
-						{255,255,255,255},
-						{0,0,0,255},
-							
-						std::to_string(b.get_hammers()) + '/' + std::to_string(b.get_cost_hammers())						
-					);				
-				}
 				
-				// left click on building -- assign worker or show construction popup
+				// left click on building -- assign worker or show construction popup or production selection popup
 				con.on(Event::Press, Button::Left, build_pos, build_dim,
 					[&con, workplace_id]() { 
 						if (con.get_sel_unit()) {
 							con.command(format("work-build %||", workplace_id));
 						}
 						else {
-							con.select_build = 1;  // todo slot_id blablabla
-							con.sel_slot_num = workplace_id;
+							// select building?
 						}
 					}	
 				);
 				
 				// number of produced items
-				if (int y = misc::get_yield(env, b)) {
+				if (int y = nominal_prod) {
 					auto& item_tex = res(win, ICON, get_item_icon_id(b.get_proditem()));
 					auto item_dim = get_dim(item_tex);
 					
@@ -1055,6 +1104,8 @@ namespace col {
 					);
 				}
 
+
+
 				// units on field
 				for (auto& unit_p: field.units) {
 					auto& unit = *unit_p;
@@ -1080,7 +1131,7 @@ namespace col {
 							);
 
 							// render produced item amount
-							auto text = Text(to_string(env.get_prodnum(field)));
+							auto text = Text(to_string(logic::get_nominal_prod(field, field.get_proditem())));
 							text.set_font("tiny.png").set_fg(ColorWhite).set_bg(ColorBlack);					
 							render_text(win, item_pos, text);
 						}
@@ -1098,11 +1149,24 @@ namespace col {
 							render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
 
 							// left click on field with selected worker -- switch to next proditem
-							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+							/*con.on(Event::Press, Button::Left, sel_pos, sel_dim,
 								[&con,field_id]() { 
 									con.command("prodnext-field " + to_string(field_id));
 								}
+							);*/
+							
+							
+							
+							// left click on field with selected worker -- show select proditem menu
+							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+								[&con, &field]() { 
+									con.prod_to_workplace = &field;
+									con.selected_id = get_id(field.get_proditem());
+								}
 							);
+				
+							
+							
 						}
 						else {
 							// left click on field with worker -- select this worker
@@ -1195,8 +1259,9 @@ namespace col {
 					
 					// left click on selected unit (on terr) -- show equip select
 					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
-						[&con,unit_id]() { 
-							con.equip_to_unit_id = unit_id;
+						[&con,&unit]() { 
+							con.equip_to_unit_id = unit.id;
+							con.selected_id = unit.get_type_id();							
 						}
 					);
 		
@@ -1244,43 +1309,82 @@ namespace col {
 		// render fields
 		//render_fields(win, env, con, ly.city_fields.pos, );
 
-		if (con.select_build > 0) {
+		
+		// pop-ups
+		if (con.selprod_build) {
 			
-			vector<pair<BuildType::Id, string>> kvs;
+			vector<pair<Makeable const*, string>> entries;
 			
-			auto& cb = con.get_sel_terr()->get_colony().get_build(con.sel_slot_num);
+			auto& b = *con.selprod_build;
 			
-			for (auto& item: *env.bts) {
-				auto const& b = item.second;
-				if (b.place_on_id == cb.get_type_id()) {				
-					kvs.emplace_back(
-						item.first,
-						b.get_name()
-					);
+			auto gen_label = [&con,&b](Makeable const& mk) -> string
+			{					
+				// xxxxxxxxxxxx xxx/xxx
+				// xxxxxxxxxxxx     xxx
+				// Shipyard         512
+				// Carpenter's    2/  8
+				
+				string lab = format("%|+12| ", get_name(mk));				
+				if (&mk == con.selprod_makeable) {
+					lab += format("%|+3|/%|+3|", b.task.get(), mk.get_cost());
+				}
+				else {
+					lab += format("    %|+3|", mk.get_cost());
+				}
+				return lab;
+			};
+			
+			
+			Colony &c = con.get_sel_terr()->get_colony();
+			
+			// construct building
+			for (auto& p: *env.bts) {
+				auto & mk = p.second;
+				
+				if (env.can_make(b, mk) and c.select_place_for(mk)) {
+					entries.push_back(pair<Makeable const*, string>(
+						&mk,
+						gen_label(mk)
+					));
 				}
 			}
 			
-			render_select<BuildType::Id>(win, con,
+			// construct unit
+			for (auto& p: *env.uts) {
+				auto & mk = p.second;
+				
+				if (env.can_make(b, mk)) {
+					entries.push_back(pair<Makeable const*, string>(
+						&mk,
+						gen_label(mk)
+					));
+				}
+			}
+			
+			
+			render_select(win, con,
 				[](v2i const& dim) {
 					return calc_align(Box(ly.scr), dim); 
 				},
-				kvs,
-				con.select_build,
-				[&con](){ 
-					con.command(format("construct %|| %||", con.sel_slot_num, con.select_build));
-					con.select_build = 0;
-					con.sel_slot_num = -1;
+				entries,
+				con.selprod_makeable,
+				[&con,&b](){ 
+					b.task.reset(con.selprod_makeable);					
+					con.selprod_build = nullptr;
+					con.selprod_makeable = nullptr;					
 				},  // onselect
-				[&con](){ con.select_build = 0; }   // oncancel
+				[&con](){ 
+					con.selprod_build = nullptr;
+					con.selprod_makeable = nullptr;			
+				}   // oncancel
 			);
+			
+			
+			
 		}
-
-
-		
-		// pop-ups
-		if (con.equip_to_unit_id) {
+		else if (con.equip_to_unit_id) {
 			vector<pair<int, string>> entries;
-			for (auto& t: misc::equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
+			for (auto& t: equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
 				entries.push_back(pair<int, string>{
 					t->id, 
 					format("%|| (%||) (%||)", t->get_name(), t->get_num1(), t->get_num2())
@@ -1293,19 +1397,55 @@ namespace col {
 					return calc_align(Box(ly.scr), dim); 
 				},
 				entries,
-				con.equip_to_unit_type_id,
+				con.selected_id,
 				[&con](){ 
-					con.command(string("equip ") + to_string(con.equip_to_unit_type_id));
+					con.command(string("equip ") + to_string(con.selected_id));
 					con.equip_to_unit_id = 0;
-					con.equip_to_unit_type_id = 0;
+					con.selected_id = 0;
 				},  // onselect
 				[&con](){ 
 					con.equip_to_unit_id = 0;
-					con.equip_to_unit_type_id = 0;
+					con.selected_id = 0;
 				}   // oncancel
 			);
 		}
 		
+		
+		if (con.prod_to_workplace != nullptr) {
+			auto & wp = *con.prod_to_workplace;
+			
+			vector<pair<int, string>> entries;
+			
+			for (auto& item: get_all_items(env)) {
+				
+				auto prod = logic::get_nominal_prod(wp, item);
+				
+				if (prod) {
+					entries.push_back(pair<int, string>{
+						get_id(item), 
+						format("%|| (%||)", get_name(item), prod)
+					});
+				}
+			}			
+
+			// onclick -> assign proditem to wp
+			render_select<int>(win, con,
+				[](v2i const& dim) {
+					return calc_align(Box(ly.scr), dim); 
+				},
+				entries,
+				con.selected_id,
+				[&con,&wp]() { 
+					wp.set_proditem(Item(con.selected_id));
+					con.prod_to_workplace = nullptr;
+					con.selected_id = 0;
+				},  // onselect
+				[&con](){ 
+					con.prod_to_workplace = nullptr;
+					con.selected_id = 0;
+				}   // oncancel
+			);
+		}
 		
 		
 
@@ -1663,12 +1803,12 @@ namespace col {
 	using backend::Back;
 
 
-	Color get_unit_color(Unit const& u) {
-		auto c = u.get_nation().get_color();
+	backend::Color get_unit_color(Unit const& u) {
+		auto c = get_nation_color(u.get_nation());
 		if (u.get_time_left() == 0) {
-			return Color(c.r/2, c.g/2, c.b/2, c.a/2);
+			return backend::Color(c.r/2, c.g/2, c.b/2, c.a/2);
 		}
-		return Color(c.r, c.g, c.b, c.a);
+		return {c.r, c.g, c.b, c.a};
 	}
 	
 	void render_stack(backend::Back &win,
@@ -1745,7 +1885,7 @@ namespace col {
 		auto unit_id = unit.id;
 		
 		// render blinking shield
-		if ((con.time % 1000) >= 500) {
+		if (con.blink()) {
 			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
 		}
 
@@ -1984,7 +2124,7 @@ namespace col {
 	}
 
 
-
+	
 
 
 	void render_panel(backend::Back & win,
@@ -2049,7 +2189,7 @@ namespace col {
 				int(TIME_UNIT)
 			);
 			
-			info += format("\nmoves: %||", misc::get_moves(*u));
+			info += format("\nmoves: %||", get_moves(*u));
 			
 			
 			info += format("\ntransported: %||", u->get_transported());
@@ -2078,7 +2218,7 @@ namespace col {
 		
 		// top right: nation indicator
 		if (env.in_progress()) {
-			render_pixel(win, pos + v2i(dim[0]-1,0), env.get_current_nation().color);
+			render_pixel(win, pos + v2i(dim[0]-1,0), get_nation_color(env.get_current_nation()));
 		}
 			
 		auto ren = Renderer(win, env);

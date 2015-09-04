@@ -1,0 +1,13 @@
+desc,,phys,food,cotton,tobacco,sugar,lumber,fur,ore,silver,fish
+arctic,,,,,,,,,2,,
+tundra,,,3,,,,4,3,1,,
+prairie,,,3,3,,,4,2,,,
+plains,,,5,2,,,6,3,,,
+grassland,,,3,,3,,4,2,,,
+marsh,,,3,,2,,4,2,1,,
+savannah,,,4,,,3,6,2,,,
+swamp,,,3,,,2,4,1,1,,
+desert,,,2,1,,,2,2,1,,
+hills,,1,2,,,,,,4,,
+mountains,,2,,,,,,,,1,
+ocean,,,,,,,,,,,4

@@ -2,7 +2,7 @@
 #define LAYOUT7_HPP
 
 #include "box.h"
-#include "view_base.h"
+#include "props.h"
 #include "conf.h"
 
 namespace col{
@@ -68,10 +68,16 @@ namespace col{
 
 			int res_height = line + S(12 + 1 + 5) + line; // line icon sep number line
 
+			
+
+			
 			city_resources = Box2(
 				scr.pos[0], scr.end[1] - res_height,
 				scr.dim[0] - res_height, res_height
 			);   // bottom bar with resources
+			
+			
+			
 
 			city_fields = Box2(
 				city_builds.end[0] + line, city_builds.pos[1],

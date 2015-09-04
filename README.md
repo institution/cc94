@@ -5,6 +5,11 @@ cc94 is a remake of the Colonization game from 1994. It's based on original grap
 
 cc94 is currently in early version of 0.2.0
 
+How to play
+-----------
+
+Multiplatform web browser version (development preview): http://institution.github.io/cc94/ 
+
 
 Interface
 ---------
@@ -48,6 +53,7 @@ load <filename.mp>
 * ctrl + hold-and-drag-left-click -- unselect multiple map squares
 ```
 
+
 License
 -------
 AGPLv3+
@@ -65,16 +71,10 @@ GNU Affero General Public License for more details.
 You should have received a copy of the Affero GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 Contact
 -------
 sta256+cc94@gmail.com
-
-
-
-
-
-
-
 
 
 

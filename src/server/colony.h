@@ -38,7 +38,7 @@ namespace col {
 		int get_max_storage() { return max_storage; }
 
 		Terr *terr{nullptr};
-
+		
 		using Fields = cont<Field>::type;
 		Fields fields;
 
@@ -48,21 +48,27 @@ namespace col {
 
 		cont<Build>::type builds;
 
-		Build& construct_building(BuildType const& type, int slot) {
-			builds.at(slot).ctype = &type;
-			return builds.at(slot);
+		Build * select_place_for(BuildType const& bt) 
+		{		
+			using SlotId = cont<Build>::type::size_type;
+			
+			for (SlotId i = 0; i < builds.size(); ++i) 
+			{
+				auto & b = builds.at(i);
+				if (b.get_type().id == bt.get_place_on_id()) 
+				{
+					return &b;
+				}
+			}			
+			return nullptr;
 		}
+		
 
 		int get_build_index(Build const& b) const {
 			return &b - &builds[0];
 		}
 
-		int get_field_index(Field const& f) const {
-			for (size_t i = 0; i < fields.size(); ++i) {
-				if (fields.at(i) == f) return i;
-			}
-			throw Error("no such field");
-		}
+		int get_field_index(Field const& f) const;
 
 
 		Build& get_build(int i) {

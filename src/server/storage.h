@@ -6,8 +6,16 @@
 #include "base.h"
 
 namespace col {
+	
+	/*
+	struct Slot {
+		virtual void add(Item const& item, Amount num) { assert(0); }
+		virtual void sub(Item const& item, Amount num) { assert(0); }
+		virtual void set(Item const& item, Amount num) { assert(0); }
+		virtual Amount get(Item const& item) const { assert(0); }
+	};*/
 
-	struct Storage{
+	struct Storage {
 
 		std::unordered_map<Item, Amount> cargos;     // lame map
 

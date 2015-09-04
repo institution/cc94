@@ -1,4 +1,4 @@
-#include "view_base.h"
+#include "props.h"
 
 
 
@@ -80,7 +80,15 @@ namespace col {
 		return ItemNone;
 	}
 	
+	string const NONE("none");
 	
+	string const& get_item_name(Item const& item) {
+		auto it = ITEM_NAMES.find(item);
+		if (it != ITEM_NAMES.end()) {
+			return it->second;
+		}
+		return NONE;		
+	}
 	
 	
 	

@@ -1,10 +1,10 @@
-#ifndef TERR34_H
-#define TERR34_H
+#ifndef TERR_H_34346
+#define TERR_H_34346
 
 #include "phys.h"
 #include "biome.h"
 #include "objs.h"
-#include "colony.h"
+#include "unit.h"
 
 
 namespace col{
@@ -19,7 +19,8 @@ namespace col{
 	Alt const AltHill = 3;
 	Alt const AltMountain = 4;
 
-
+	struct Colony;
+	struct Unit;
 
 	struct Terr {
 		using Id = Coords;
@@ -58,8 +59,8 @@ namespace col{
 			return PlaceType::Terr;
 		}
 
-		// Workplace
-		uint16 get_yield(Item const& item, bool const& is_expert) const;
+
+		Amount get_yield(Item const& item, bool const& is_expert) const;
 
 		vector<Item> get_proditems() const {
 			array<Item,9> field_items = {

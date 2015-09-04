@@ -109,6 +109,19 @@ namespace col {
 			Europe = 5,
 			Field = 6;
 	}
+	
+	enum struct Class: uint8_t {
+		None,
+		Terr,
+		Colony,
+		Unit,
+		Build,
+		Europe,
+		Field,
+		BuildType,
+		UnitType
+	};
+	
 
 	struct Placeable;
 

@@ -1,10 +1,7 @@
-#include "ai-env-helpers.h"
-
-
+#include "logic.h"
 
 namespace col{
-
-	namespace misc{
+	namespace logic{
 
 		UnitTypes equip_to_types(Env const& env, Unit const& u) {
 			UnitTypes rs;
@@ -16,6 +13,18 @@ namespace col{
 			}
 			return rs;
 		}
+		
+		
+		Amount get_nominal_prod(Workplace const& fact, Item const& item) {
+			Amount prod = 0;
+			for (auto* u: fact.get_units()) {				
+				prod += fact.get_prod(item, u->is_expert(item));				
+			}
+			return prod;
+		}
+
+		
+		
 
 		Items const ALL_ITEMS = {
 			ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
@@ -42,15 +51,6 @@ namespace col{
 			return rs;
 		}
 		
-		int get_yield(Env const& env, Build const& b) {
-			int num = 0;
-			for (auto& u: b.units) {				
-				int base = env.get_yield(*u, b.get_proditem());
-				int prodnum = b.get_prod() * base;
-				num += prodnum;
-			}
-			return num;			
-		}
 		
 		Unit const* get_unassigned_unit(Env const& env, Terr const& terr) {			
 			for (auto& u: terr.units) {
@@ -139,7 +139,7 @@ namespace col{
 		}
 
 
-		
+			
 	}
 	
 }

@@ -1,5 +1,5 @@
-#ifndef ENV_H
-#define ENV_H
+#ifndef ENV_H_356356
+#define ENV_H_356356
 
 
 #include <boost/archive/binary_oarchive.hpp>
@@ -279,45 +279,65 @@ namespace col{
 
 
 
-
-
-
-
-		void produce(Store & st, Field & wp, Unit & u) {
-			auto const& proditem = wp.get_proditem();
-
-			auto prodnum = get_terr(wp).get_yield(proditem, false);
-
-			if (proditem == ItemFish) {
-				st.add(ItemFood, prodnum);
+		
+		struct ProdCons{Amount prod{0}, cons{0};};
+		
+		ProdCons exec_prodcons(Workplace & fact, Item const& item) {		
+			ProdCons v;
+			for (auto* u: fact.get_units()) {				
+				if (u->time_left == TIME_UNIT) {
+					v.prod += fact.get_prod(item, u->is_expert(item));
+					v.cons += fact.get_cons(item, u->is_expert(item));
+				}
+				u->time_left = 0;
 			}
-			else {
-				st.add(proditem, prodnum);
-			}
-
-			u.time_left = 0;
+			return v;
 		}
-
-		void produce(Store & st, Build & wp, Unit & u) {
+		
+		
+		void produce(Store & st, Workplace & wp) {
 			auto const& proditem = wp.get_proditem();
 			auto const& consitem = wp.get_consitem();
 
-			int base = get_yield(u, proditem);
-			int prodnum = wp.get_prod() * base;
-			int consnum = wp.get_cons() * base;
-
-			int real_cons = std::min(consnum, int(st.get(consitem)));
-			int real_prod = float(float(prodnum) * float(real_cons) / float(consnum));
-
-			st.sub(consitem, real_cons);
-			add_prod(st, proditem, real_prod);
-
-			u.time_left = 0;
+			
+			auto t = exec_prodcons(wp, proditem);
+			
+			Amount real_prod, real_cons;			
+			if (t.cons != 0) {
+				real_cons = std::min(t.cons, st.get(consitem));
+				real_prod = float(float(t.prod) * float(real_cons) / float(t.cons));
+			}
+			else {
+				real_prod = t.prod;
+				real_cons = t.cons;
+			}
+			
+			if (real_cons != 0) {
+				st.sub(consitem, real_cons);
+			}
+			
+			if (wp.task) {
+				assert(proditem == ItemHammers);
+				
+				wp.task.add(real_prod);
+				
+			}
+			else {
+				if (proditem == ItemFish) {
+					st.add(ItemFood, real_prod);
+				}
+				else {
+					st.add(proditem, real_prod);
+				}
+			}
+						
 		}
-
+		
 		template<typename F, int i, int j>
 		void resolve(Colony & c) {
-			// sort fields by produced item
+			// resolve production of items inside [i,j) range
+			
+			// basket sort fields/builds by produced item
 			array<vector<F*>, j-i> ws;
 
 			for (auto& wp: c.get_cont<F>()) {
@@ -333,10 +353,8 @@ namespace col{
 			// produce items in order; items produced earlier can be used by produced later
 			// iterate by items
 			for (size_t item_id = i; item_id < j; ++item_id) {
-				for (F* wp: ws.at(item_id-i)) {
-					for (auto& u: wp->units) {
-						produce(get_store(c), *wp, *u);
-					}
+				for (F* wp: ws.at(item_id-i)) {					
+					produce(get_store(c), *wp);					
 				}
 			}
 		}
@@ -355,10 +373,16 @@ namespace col{
 			resolve<Field, 1, 10>(c);
 			resolve<Build, 10, 21>(c);
 
+			
+			
 			// construction
 			for (auto& b: c.builds) {
-				construction_consume(t, b);
+				resolve_construction(c, b);
 			}
+			for (auto& f: c.fields) {
+				resolve_construction(c, f);
+			}
+			
 
 			// food consumption/starvation
 			vector<Unit*> starve;
@@ -450,17 +474,6 @@ namespace col{
 		}
 
 
-		int get_yield(Unit const& u, Item const& item) const {
-			return 3;
-		}
-
-		void add_prod(Store & st, Item const& item, int num) {
-			st.add(item, num);
-		}
-
-		int get_prodnum(Field const& f) const {
-			return get_terr(f).get_yield(f.get_proditem(), false);
-		}
 
 		void equip(Unit & u, UnitType & ut) {
 			if (u.get_nation() != get_current_nation()) {
@@ -1130,11 +1143,74 @@ namespace col{
 		}
 
 
-		void apply(inter::construct const& a) {
+		bool can_make(Build const& build, BuildType const& bt) const {
+			if (bt.get_cost() > 0) {
+				auto facttype_id = build.get_type().id;
+				switch (facttype_id) {
+					case BuildCarpentersShop:
+					case BuildLumberMill:
+						return true;	
+				}
+			}
+			return false;
+		}
+
+
+		bool can_make(Build const& build, UnitType const& ut) const {
+			if (ut.get_cost() > 0) {
+				auto facttype_id = build.get_type().id;
+				switch (facttype_id) {
+					case BuildCarpentersShop:
+					case BuildLumberMill:
+						if (ut.get_travel() == TravelLand) {
+							return true;
+						}
+					case BuildShipyard:
+						if (ut.get_travel() == TravelSea) {						
+							return true;
+						}
+				}
+			}
+			return false;
+		}
+
+
+
+		void construct(Build & build, BuildType const& mk) {			
+			if (can_make(build, mk)) {
+				build.task.reset(&mk);
+			}
+			
+			// TODO: error
+			assert(0);
+		}
+			
+		void construct(Build & build, UnitType const& mk) {
+			if (can_make(build, mk)) {
+				build.task.reset(&mk);
+			}
+			
+			// TODO: error
+			assert(0);
+						
+		}
+		
+		void apply(inter::construct_build const& a) {
 			auto& t = get_terr(a.terr_id);
-			auto& type = get<BuildType>(a.build_type_id);
-			t.get_colony().construct_building(type, a.build_id);
-			//notify_effect(t, a);
+			
+			construct(
+				t.get_colony().get_build(a.build_id),
+				get<BuildType>(a.buildtype_id)
+			);			
+		}
+		
+		void apply(inter::construct_unit const& a) {
+			auto& t = get_terr(a.terr_id);
+			
+			construct(
+				t.get_colony().get_build(a.build_id),
+				get<UnitType>(a.unittype_id)
+			);			
 		}
 
 		void put_build(Terr & t, int slot, BuildType & btype) {
@@ -1222,27 +1298,48 @@ namespace col{
 		}
 
 
-		void construction_consume(Terr & t, Build & b) {
-			if (b.under_construction()) {
-				// add hammers return overflow
-				auto & st = get_store(t);
+		template <class F>
+		void resolve_construction(Colony & c, F & f) {
+			
+			if (f.task and f.task.get() >= f.task.cap()) {
+				
+				switch (f.task.what->get_class()) {
+					case Class::UnitType:
+						assert(0);
+						break;					
+					case Class::BuildType: 
+					{
+						BuildType const& bt = *static_cast<BuildType const*>(f.task.what);
+						auto *b = c.select_place_for(bt);
+						if (b) {
+							
+							// TODO: may need to equip with tools
+							
+							b->morph(bt);
+							
+							// TODO: add message info
+						
+							// special effects
+							// warehouse constructed
+							if (bt.id == 16) {
+								c.max_storage += 100;
+							}
 
-				b.hammers += consume_part(t, ItemHammers, b.get_cost_hammers() - b.hammers);
-
-				if (b.hammers == b.get_cost_hammers() ) {
-					if (consume_all(t, ItemTools, b.get_cost_tools())) {
-						b.morph();
-
-						// warehouse constructed
-						if (b.get_type().id == 16) {
-							t.get_colony().max_storage += 100;
+							
 						}
-
-						//add_message(*get_control(t), t, "building constructed");
+						else {
+							// TODO: cannot build - add message to user
+														
+						}				
+						break;
 					}
+					default:
+						assert(0);
+						break;
 				}
+				
 			}
-
+			
 
 		}
 
@@ -1304,14 +1401,10 @@ namespace col{
 		}
 
 		void work_none(Unit & u) {
-			if (u.build) {
-				u.build->sub(u);
-				u.build = nullptr;
-			}
-			else if (u.field) {
-				u.field->sub(u);
-				u.field = nullptr;
-			}
+			if (u.workplace) {
+				u.workplace->sub(u);
+				u.workplace = nullptr;
+			}			
 		}
 
 
@@ -1320,19 +1413,11 @@ namespace col{
 
 
 		// build - unit
-		void t_move(Build & b, Unit & u) {
+		void t_move(Workplace & b, Unit & u) {
 			work_none(u);
 
 			b.add(u);
-			u.build = &b;
-		}
-
-		// field - unit
-		void t_move(Field & b, Unit & u) {
-			work_none(u);
-
-			b.add(u);
-			u.field = &b;
+			u.workplace = &b;
 		}
 
 
@@ -1444,9 +1529,9 @@ namespace col{
 
 
 
-		template<typename T>
-		void work_workplace(T & wp, Unit & u) {
-			if (&u.get_workplace<T>() == &wp) {
+		
+		void work_workplace(Workplace & wp, Unit & u) {
+			if (&u.get_workplace() == &wp) {
 
 			}
 			if (wp.get_space_left() >= u.get_size()) {
@@ -1708,7 +1793,8 @@ namespace col{
 
 	};
 
-
+	
+	
 
 	struct Apply: boost::static_visitor<void>{
 		Env & env;
