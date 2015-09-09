@@ -11,11 +11,13 @@ namespace col{
 			v2i(conf.screen_w, conf.screen_h)
 		);
 		
-		if (verbose >= 1) print("GUILoop: preload_terrain\n");
-		preload_terrain(app);
+		if (verbose >= 1) print("GUILoop: preload renderer\n");
+		preload_renderer(app);
+		
 
 		if (verbose) print("GUILoop: set_logical_dim\n");
 		app.set_logical_dim(v2i(conf.screen_w, conf.screen_h));
+		
 		
 		last_mod_env = env.mod - 1;
 		last_mod_con = con.mod - 1;

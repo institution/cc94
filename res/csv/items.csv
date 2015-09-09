@@ -1,23 +1,23 @@
-name,id,icon,baseprod
-None,0,101,
-Food,1,30,
-Fish,2,128,
-Sugar,3,103,
-Tobacco,4,102,
-Cotton,5,106,
-Furs,6,105,
-Lumber,7,104,
-Ore,8,126,
-Silver,9,130,
-Horses,10,127,
-Rum,11,129,3
-Cigars,12,17,3
-Cloth,13,10,3
-Coats,14,9,3
-Trade Goods,15,6,
-Tools,16,7,3
-Muskets,17,8,3
-Cannons,18,66,1
-Hammers,19,15,3
-Cross,20,16,3
-Liberty Bells,21,110,3
+name,id,icon
+None,0,0
+Food,1,23
+Fish,2,58
+Sugar,3,24
+Tobacco,4,25
+Cotton,5,26
+Furs,6,27
+Lumber,7,28
+Ore,8,29
+Silver,9,30
+Horses,10,31
+Rum,11,32
+Cigars,12,33
+Cloth,13,34
+Coats,14,35
+Trade Goods,15,36
+Tools,16,37
+Muskets,17,38
+Cannons,18,66
+Hammers,19,55
+Cross,20,57
+Liberty Bells,21,63

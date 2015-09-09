@@ -62,7 +62,7 @@ namespace col {
 		boost::multi_array<Vi, 2> vis;
 
 		// detail
-		uint32 next_id{0};
+		uint32_t next_id{0};
 
 		explicit
 		Core():

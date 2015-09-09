@@ -1,14 +1,14 @@
-#ifndef LAYOUT7_HPP
-#define LAYOUT7_HPP
+#ifndef LAYOUT_HPP_776334
+#define LAYOUT_HPP_776334
 
-#include "box.h"
+#include "backend/box.hpp"
 #include "props.h"
 #include "conf.h"
 
 namespace col{
 
 
-
+	using backend::Box2;
 
 
 
@@ -18,6 +18,7 @@ namespace col{
 		int line;
 		int line_sel;   
 		int font_tiny;
+		int scale;
 
 		Box2 scr, bar, pan, map;
 		Box2 city_builds, city_resources, city_fields, city_exit, city_units, city_middle_bg, city_unit_cargo;
@@ -34,7 +35,7 @@ namespace col{
 		}
 
 		Layout(int const& w, int const& h) {
-			auto scale = conf.scale;
+			scale = conf.scale;
 			
 			pan_width = S(79);     // right panel
 			line = S(1);           // line separating gui panels

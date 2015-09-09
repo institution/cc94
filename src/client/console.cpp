@@ -269,7 +269,7 @@ namespace col {
 		
 		auto& cmd = es[0];
 
-		put(line);
+		// put(line);
 		auto& con = *this;
 		
 		if (cmd == "list-nations") {
@@ -857,8 +857,11 @@ namespace col {
 				}
 			}
 		}
+		else if (es.at(0) == "") {
+			
+		}
 		else {
-			put("ERROR: no such command");
+			put("No such command: %||", cmd);
 
 		}
 

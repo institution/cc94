@@ -15,20 +15,22 @@ namespace col{
 		int terr_w;
 		int terr_h;
 
-
-		Path res_path;
-		Path font_path;
-
+		Path tile_path;
+		Path csv_path;
+		Path defaultmap_path;
+		
 		Conf() {
-			scale = 3;
+			scale = 4;
 			
 			screen_w = 320 * scale;
 			screen_h = 200 * scale;
 			tile_dim = 16 * scale;
-			
-			res_path = "../COLONIZE/";
-			font_path = "../font/";
 
+
+			tile_path = "res/tile64/";
+			csv_path = "res/csv/";
+			defaultmap_path = "res/default.mp";
+		
 		}
 
 	};

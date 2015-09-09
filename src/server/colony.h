@@ -63,6 +63,25 @@ namespace col {
 			return nullptr;
 		}
 		
+		/*vector<Workplace&> && get_workplaces() {
+			
+		}*/
+		
+		vector<Workplace const*> get_workplaces() const {
+			vector<Workplace const*> fs;
+			
+			for (auto const& f: fields) {
+				fs.push_back(&f);
+			}
+			
+			for (auto const& f: builds) {
+				fs.push_back(&f);
+			}
+			
+			return fs;
+			
+		}
+
 
 		int get_build_index(Build const& b) const {
 			return &b - &builds[0];

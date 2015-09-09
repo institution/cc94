@@ -3,7 +3,8 @@
 bin/*
 __/*
 COLONIZE*
-res/tile48*
+res/tile*
+cc94*
 inc/SDL2*
 inc/boost*
 nbproject

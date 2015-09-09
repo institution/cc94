@@ -15,18 +15,14 @@ namespace col{
 	void Runner::init(std::string const& fname, int ver) {
 		this->verbose = ver;
 		
-		Path csv_path = "res/csv/";	
-		conf.res_path = "res/tile48";
-		conf.font_path = "res/font";
 		
 		if (verbose >= 1) {
-			print("csv_path=%||\n", csv_path);
-			print("res_path=%||\n", conf.res_path);
-			print("font_path=%||\n", conf.font_path);
+			print("csv_path=%||\n", conf.csv_path);
+			print("tile_path=%||\n", conf.tile_path);			
 		}
 
-		env.loads<col::BuildType>((csv_path/"builds.csv").c_str());
-		env.loads<col::UnitType>((csv_path/"units.csv").c_str());
+		env.loads<col::BuildType>((conf.csv_path/"builds.csv").c_str());
+		env.loads<col::UnitType>((conf.csv_path/"units.csv").c_str());
 
 		// load state from file
 		if (fname == "") {

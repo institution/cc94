@@ -44,11 +44,6 @@ namespace col {
 	struct Console;
 
 
-
-
-
-
-
 	// mouse events: normal, drag&drop
 
 	/*
@@ -68,16 +63,20 @@ namespace col {
 
 	inline v2f get_logical_pos(backend::Back const& back, v2i p) {
 		auto l = back.get_logical_dim();
-		auto o = back.get_output_dim();
+		auto o = back.get_physical_dim();
 		
 		auto rx = float(l[0])/float(o[0]);
 		auto ry = float(l[1])/float(o[1]);
 		
-		return v2f(
+		auto ret = v2f(
 			float(p[0]) * rx,
 			float(p[1]) * ry
 		);
+		
+		return ret;
 	}
+
+	
 
 
 	struct Console{

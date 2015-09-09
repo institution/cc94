@@ -1,5 +1,5 @@
-#ifndef RENDERER_H
-#define RENDERER_H
+#ifndef RENDERER_H_875487584
+#define RENDERER_H_875487584
 
 #include "col.hpp"
 #include "env.h"
@@ -11,8 +11,7 @@ namespace col {
 
 	void render(backend::Back &app, col::Env & env, col::Console & con, int verbose);
 
-	void preload_fonts(backend::Back & back);
-	void preload_terrain(backend::Back &app);
+	void preload_renderer(backend::Back &app);
 
 }
 

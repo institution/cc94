@@ -52,9 +52,13 @@ namespace backend{
 			pos(box.pos), dim(box.dim)
 		{}
 
+		v2i end() const {
+			return pos + dim;
+		}
 
 	};
 
+	using b2i = Box;
 
 }
 

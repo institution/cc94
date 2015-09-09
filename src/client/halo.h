@@ -6,7 +6,7 @@
 #include <string>
 #include <functional>
 #include <boost/optional.hpp>
-#include "box.h"
+#include "geo2D.h"
 
 #include "backend/backend.h"
 
@@ -14,8 +14,9 @@
 
 namespace halo{
 
-	using col::Box2;
-	using col::v2i;
+	using backend::Box2;
+	using backend::v2i;
+	
 	using boost::optional;
 
 	enum struct Dev {

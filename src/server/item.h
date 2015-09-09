@@ -49,6 +49,7 @@ namespace col {
 		ItemRags{23}    // horses: 50 rags -> Horse		
 		;
 		
+	int const ItemCount = 24; // total num of items
 	int const NITEMS = 24; // total num of items
 
 }

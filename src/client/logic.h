@@ -31,7 +31,8 @@ namespace col{
 
 		Amount get_nominal_prod(Workplace const& fact, Item const& item);
 		
-		
+		Storage get_colony_reg(Colony const& c);
+
 
 
 

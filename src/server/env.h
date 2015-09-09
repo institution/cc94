@@ -65,6 +65,7 @@ namespace col{
     template<class Archive>
     void read(Archive & ar, Env & env);
 
+	struct ProdCons{Amount prod{0}, cons{0};};
 
 	struct Env: Core {
 
@@ -280,7 +281,7 @@ namespace col{
 
 
 		
-		struct ProdCons{Amount prod{0}, cons{0};};
+		
 		
 		ProdCons exec_prodcons(Workplace & fact, Item const& item) {		
 			ProdCons v;
@@ -302,38 +303,42 @@ namespace col{
 			
 			auto t = exec_prodcons(wp, proditem);
 			
-			Amount real_prod, real_cons;			
-			if (t.cons != 0) {
-				real_cons = std::min(t.cons, st.get(consitem));
-				real_prod = float(float(t.prod) * float(real_cons) / float(t.cons));
-			}
-			else {
-				real_prod = t.prod;
-				real_cons = t.cons;
-			}
+			if (proditem != ItemNone) {
 			
-			if (real_cons != 0) {
-				st.sub(consitem, real_cons);
-			}
-			
-			if (wp.task) {
-				assert(proditem == ItemHammers);
-				
-				wp.task.add(real_prod);
-				
-			}
-			else {
-				if (proditem == ItemFish) {
-					st.add(ItemFood, real_prod);
+				Amount real_prod, real_cons;			
+				if (t.cons != 0) {
+					real_cons = std::min(t.cons, st.get(consitem));
+					real_prod = float(float(t.prod) * float(real_cons) / float(t.cons));
 				}
 				else {
-					st.add(proditem, real_prod);
+					real_prod = t.prod;
+					real_cons = t.cons;
+				}
+				
+				if (real_cons != 0) {
+					st.sub(consitem, real_cons);
+				}
+				
+				
+				if (wp.task) {  
+					assert(proditem == ItemHammers);
+					
+					wp.task.add(real_prod);
+					
+				}
+				else {
+					if (proditem == ItemFish) {
+						st.add(ItemFood, real_prod);
+					}
+					else {
+						st.add(proditem, real_prod);
+					}
 				}
 			}
 						
 		}
 		
-		template<typename F, int i, int j>
+		template <class F, int i, int j>
 		void resolve(Colony & c) {
 			// resolve production of items inside [i,j) range
 			
@@ -371,7 +376,7 @@ namespace col{
 
 			// resolve production
 			resolve<Field, 1, 10>(c);
-			resolve<Build, 10, 21>(c);
+			resolve<Build, 10, 22>(c);
 
 			
 			

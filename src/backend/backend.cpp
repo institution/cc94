@@ -3,6 +3,60 @@
 
 namespace backend{
 
+	
+	void Back::set_logical_dim(v2i const& dim) {
+		
+		target = boost::make_unique<Texture>(SDL_CreateTexture(ren,
+			SDL_PIXELFORMAT_RGBA8888,
+			SDL_TEXTUREACCESS_TARGET,
+			dim[0], dim[1]
+		));
+
+		if (SDL_SetRenderTarget(ren, target->sdl_tex())) {
+			error_sdl();
+		}
+			
+		clear();
+	}
+	
+	void Back::flip() {
+
+		//SDL_RenderPresent(ren);
+		if (target) {
+			
+			// texture target size
+			auto log = this->get_logical_dim();
+			auto log_rect = make_sdl_rect({0,0}, log);
+						
+			// switch to default target
+			SDL_SetRenderTarget(ren, nullptr);
+			phys_dim = get_output_dim();
+			
+			// default target size
+			auto out = phys_dim;
+			auto out_rect = make_sdl_rect({0,0}, out);
+			
+			// set viewport
+			SDL_RenderSetViewport(ren, &out_rect);
+			
+			
+			SDL_RenderCopy(ren, target->sdl_tex(), 
+				&log_rect, &out_rect
+			);
+			SDL_RenderPresent(ren);
+			
+			// switch back to texture target
+			SDL_SetRenderTarget(ren, target->sdl_tex());
+		}
+		else {
+			SDL_RenderPresent(ren);
+		}
+		
+
+		
+	}
+	
+
 	Keycode const
 		Key::Num0 = SDLK_0,
 		Key::Num1 = SDLK_1,
