@@ -1,7 +1,8 @@
 from PIL import Image
 from random import choice, randint
 
-TILE = (48,48)
+TILE = (64,64)
+HALF_TILE = (32,32)
 
 def add(p,q):
 	return p[0] + q[0], p[1] + q[1]
@@ -27,16 +28,16 @@ def get_pal(path):
 
 
 def gen_terrain():
-	saveas(1, random_texture(get_pal('tundra-pal.png'), (48,48)), 'TERRAIN_SS')
-	saveas(3, random_texture(get_pal('plains-pal.png'), (48,48)), 'TERRAIN_SS')
-	saveas(4, random_texture(get_pal('prairie-pal.png'), (48,48)), 'TERRAIN_SS')
-	saveas(7, random_texture(get_pal('march-pal.png'), (48,48)), 'TERRAIN_SS')
+	saveas(1, random_texture(get_pal('tundra-pal.png'), TILE), 'TERRAIN_SS')
+	saveas(3, random_texture(get_pal('plains-pal.png'), TILE), 'TERRAIN_SS')
+	saveas(4, random_texture(get_pal('prairie-pal.png'), TILE), 'TERRAIN_SS')
+	saveas(7, random_texture(get_pal('march-pal.png'), TILE), 'TERRAIN_SS')
 	
-	saveas(10, random_texture(get_pal('arctic-pal.png'), (48,48)), 'TERRAIN_SS')
-	saveas(8, random_texture(get_pal('swamp-pal.png'), (48,48)), 'TERRAIN_SS')
-	saveas(11, random_texture(get_pal('water-pal.png'), (48,48)), 'TERRAIN_SS')
+	saveas(10, random_texture(get_pal('arctic-pal.png'), TILE), 'TERRAIN_SS')
+	saveas(8, random_texture(get_pal('swamp-pal.png'), TILE), 'TERRAIN_SS')
+	saveas(11, random_texture(get_pal('water-pal.png'), TILE), 'TERRAIN_SS')
 	
-	saveas(2, random_texture(get_pal('desert-pal.png'), (48,48)), 'TERRAIN_SS')
+	saveas(2, random_texture(get_pal('desert-pal.png'), TILE), 'TERRAIN_SS')
 	
 	saveas(33, Image.open('mountain.png'))
 	
@@ -45,7 +46,7 @@ def gen_terrain():
 	
 
 def saveas(ind, img, cat='PHYS0_SS'):
-	path = '../res/tile48/{}/{:03}.png'.format(cat, ind)
+	path = '../res/tile64/{}/{:03}.png'.format(cat, ind)
 	img.save(path)	
 	print(path)
 	
@@ -59,17 +60,15 @@ def get_tile(img, posx, dim):
 def rot(img, n):
 	return img.rotate(-n * 90)
 
-	[123,  0,131,132,  0,136],
-	[134,  0,130,129,  0,121],
 
 def gen_coast(path):
 	img = Image.open(path)
 	
-	dim = (24,24)
+	dim = HALF_TILE
 		
-	a = get_tile(img, (1,1), dim)
-	b = get_tile(img, (2,1), dim)
-	c = get_tile(img, (3,1), dim)
+	a = get_tile(img, (0,0), dim)
+	b = get_tile(img, (1,0), dim)
+	c = get_tile(img, (2,0), dim)
 
 	saveas(119, rot(a, 1))
 	saveas(120, rot(a, 2))
@@ -242,7 +241,7 @@ def export_blend():
 	
 
 
-# coast tile size 24x24
+# coast tile size HALF TILE
 coast_map = [
 	[119,116,135,124,127,120],
 	[126,137,  0,  0,138,113],
@@ -254,7 +253,7 @@ coast_map = [
 
 
 
-# river tile size 48x48
+# river tile size TILE
 river_major_map = [
 	[  2,  4,  7,  5, 141],
 	[ 15,  6, 16, 12, 144],
@@ -270,7 +269,7 @@ river_minor_map = [
 ]
 
 
-# forest 48x48
+# forest size TILE
 forest_map = [
 	[  1,  1,  1,  1],
 	[  1,  0,  0,  0],
@@ -299,15 +298,14 @@ forest_neigh = [
 ]
 
 
-extract('coast.png', coast_map, (24,24))
+# extract('coast.png', coast_map, HALF_TILE)
 
-extract('river-major.png', river_major_map, (48,48))
-extract('river-minor.png', river_minor_map, (48,48))
+extract('river-major.png', river_major_map, TILE)
+extract('river-major.png', river_minor_map, TILE)
 
 export_blend()
 
-combine_forest('forest.png', forest_map, (48,48))
-
+combine_forest('forest.png', forest_map, TILE)
 
 gen_coast('coast-gen.png')
 gen_terrain()
