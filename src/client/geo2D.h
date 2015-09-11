@@ -46,6 +46,11 @@ namespace col{
 	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2i const& dim, v2f const& align = v2f(0.5, 0.5)) {
 		return v2i(v2f(p_pos) + vmul(v2f(p_dim - dim), align));
 	}
+	
+	inline
+	v2i calc_align(v2i const& p_pos, v2i const& p_dim, v2f const& align, v2i const& dim) {
+		return v2i(v2f(p_pos) + vmul(v2f(p_dim - dim), align));
+	}
 
 }
 

@@ -29,9 +29,20 @@ namespace col{
 		}
 
 
+
+
+
+
+
+
 		Amount get_nominal_prod(Workplace const& fact, Item const& item);
 		
-		Storage get_colony_reg(Colony const& c);
+		// Fill registers describing colony resources ballance
+		// lim -- limited delta (by supply)
+		// nom -- nominal delta
+		void fill_colony_regs(Terr const& terr, Register & lim, Register & nom);
+
+
 
 
 

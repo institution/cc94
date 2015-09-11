@@ -282,61 +282,14 @@ namespace col{
 
 		
 		
+		// Execute production on given storage and workplace
+		// * food consumed by workers are substracted from storage (no food = no production)
+		// * workers APs are used (time left <- zero)
+		// * produced items are added to store
+		// * consumed items are substracted from store
+		// * progress is increased on workplace task
+		void produce(Store & st, Workplace & wp);
 		
-		ProdCons exec_prodcons(Workplace & fact, Item const& item) {		
-			ProdCons v;
-			for (auto* u: fact.get_units()) {				
-				if (u->time_left == TIME_UNIT) {
-					v.prod += fact.get_prod(item, u->is_expert(item));
-					v.cons += fact.get_cons(item, u->is_expert(item));
-				}
-				u->time_left = 0;
-			}
-			return v;
-		}
-		
-		
-		void produce(Store & st, Workplace & wp) {
-			auto const& proditem = wp.get_proditem();
-			auto const& consitem = wp.get_consitem();
-
-			
-			auto t = exec_prodcons(wp, proditem);
-			
-			if (proditem != ItemNone) {
-			
-				Amount real_prod, real_cons;			
-				if (t.cons != 0) {
-					real_cons = std::min(t.cons, st.get(consitem));
-					real_prod = float(float(t.prod) * float(real_cons) / float(t.cons));
-				}
-				else {
-					real_prod = t.prod;
-					real_cons = t.cons;
-				}
-				
-				if (real_cons != 0) {
-					st.sub(consitem, real_cons);
-				}
-				
-				
-				if (wp.task) {  
-					assert(proditem == ItemHammers);
-					
-					wp.task.add(real_prod);
-					
-				}
-				else {
-					if (proditem == ItemFish) {
-						st.add(ItemFood, real_prod);
-					}
-					else {
-						st.add(proditem, real_prod);
-					}
-				}
-			}
-						
-		}
 		
 		template <class F, int i, int j>
 		void resolve(Colony & c) {
@@ -359,7 +312,7 @@ namespace col{
 			// iterate by items
 			for (size_t item_id = i; item_id < j; ++item_id) {
 				for (F* wp: ws.at(item_id-i)) {					
-					produce(get_store(c), *wp);					
+					produce(get_store(c), *wp);
 				}
 			}
 		}
@@ -382,43 +335,44 @@ namespace col{
 			
 			// construction
 			for (auto& b: c.builds) {
-				resolve_construction(c, b);
+				resolve_construction(t, b);
 			}
 			for (auto& f: c.fields) {
-				resolve_construction(c, f);
+				resolve_construction(t, f);
 			}
 			
 
 			// food consumption/starvation
-			vector<Unit*> starve;
-			size_t i = 0;
-			while (i < t.units.size()) {
-				Unit &u = *t.units.at(i);
-				if (u.is_working()) {
+			/*vector<Unit*> starve;
+			for (auto * u: t.units) {
+				if (u->is_working() and u.time_left == TIME_UNIT) {
 					// consume food
 					if (st.get(ItemFood) >= 2) {
 						st.sub(ItemFood, 2);
 					}
 					else {
 						// starvation
-						starve.push_back(&u);
+						starve.push_back(u);
 					}
+					
+					u.time_left = 0;
 				}
-				++i;
-			}
+			}*/
 
 			// destroy starved units
-			for (Unit* u: starve) {
+			/*for (Unit* u: starve) {
 				free(*u);
 				units.erase(get_id(*u));
 			}
 			starve.clear();
+			*/
 
 			// new colonists creation
 			if (p and st.get(ItemFood) >= 100) {
 				st.sub(ItemFood, 100);
-				auto& u = create<Unit>(get<UnitType>(1), *p);
-				init(t, u);
+				
+				init(get<UnitType>(1), t, *p);
+				
 
 			}
 
@@ -428,11 +382,9 @@ namespace col{
 			st.set(ItemCross, 0);
 
 			// decay resources above storage limit
-			for (auto& p: st.cargos) {
-				auto& item = p.first;
-				auto& value = p.second;
-				if (value > c.get_max_storage()) {
-					value = c.get_max_storage();
+			for (auto& e: st) {
+				if (e.amount > c.get_max_storage()) {
+					e.amount = c.get_max_storage();
 				}
 			}
 
@@ -480,44 +432,7 @@ namespace col{
 
 
 
-		void equip(Unit & u, UnitType & ut) {
-			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
-			}
-
-			Terr & t = get_terr(u);
-			Store & st = get_store(t);
-
-			if (u.get_base() != ut.get_base()) {
-				throw Error("incompatible types");
-			}
-
-			// recover
-			st.add(u.get_item1(), u.get_num1());
-			st.add(u.get_item2(), u.get_num2());
-
-			if (    st.get(ut.get_item1()) >= ut.get_num1()
-				and st.get(ut.get_item2()) >= ut.get_num2()   )
-			{
-
-				//notify_effect(t, inter::add_item(get_id(t), u.get_item1(), u.get_num1()));
-				//notify_effect(t, inter::add_item(get_id(t), u.get_item2(), u.get_num2()));
-
-				// consume
-				sub_item(t, ut.get_item1(), ut.get_num1());
-				sub_item(t, ut.get_item2(), ut.get_num2());
-
-				// change type
-				morph_unit(u, ut);
-			}
-			else {
-				// rollback
-				st.sub(u.get_item1(), u.get_num1());
-				st.sub(u.get_item2(), u.get_num2());
-
-				throw Error("not enough equipment");
-			}
-		}
+		void equip(Unit & u, UnitType & ut);
 
 
 		bool consume_food(Unit & u) {
@@ -540,38 +455,6 @@ namespace col{
 		bool has_vision(Nation const& p, Terr const& t) {
 			return 1;
 		}
-
-		/*
-		void send(Player & p, inter::Any const& a) {
-			p.apply_inter(a, *this);
-		}
-
-		void send(Nation const& p, inter::Any const& a) {
-			if (auto u = p.get_player()) {
-				send(*u, a);
-			}
-		}
-		*/
-
-		//void notify_effect(Nation const& p, inter::Any const& a) {
-		//	send(p, a);
-		//}
-
-		/*
-		void notify_effect(inter::Any const& a) {
-			for (auto& p: nations) {
-				send(p.second, a);
-			}
-		}
-
-		void notify_effect(Terr const& t, inter::Any const& a) {
-			for (auto& p: nations) {
-				if (has_vision(p.second, t)) {
-					send(p.second, a);
-				}
-			}
-		}
-		*/
 
 
 
@@ -611,26 +494,10 @@ namespace col{
 		}
 
 
-	/*
-		void produce(Unit const& unit, Item const& item, Dir::t const& dir) {
-
-
-		}
-
-
-		void construct(Unit const& unit) {
-
-		}
-
-		void move(Unit const& unit, Build const& build) {
-
-		}
-			*/
-
 		bool check(int L, int M) {
 			int r = roll(M); // 0, M-1
 			if (verbose) {
-				cerr << format("check %||/%|| -> %||\n", L, M, r + 1);
+				print("check %||/%|| -> %||\n", L, M, r + 1);
 			}
 			return r < L;
 
@@ -646,15 +513,16 @@ namespace col{
 				return check(time_left, time_cost);
 			}
 			else {
-				if (verbose)
-					cerr << "check no need" << endl;
+				if (verbose) {
+					print("check no need\n");
+				}
 				u.time_left -= time_cost;
 				return 1;
 			}
 		}
 
 
-		void order(){
+		void order() {
 			//
 
 		}
@@ -814,26 +682,7 @@ namespace col{
 
 		}
 
-		/*
-		void apply(inter::take_unit const& a) {
-			auto it = units.find(a.id);
-			if (it == units.end()) {
 
-			}
-			else {
-				Unit & u = (*it).second;
-				u.in_game = false;
-
-				take(u);
-			}
-
-		}
-
-		void apply(inter::set_unit const& a) {
-			read_string(*this, units[a.id], a.data);
-			units[a.id].in_game = true;
-		}
-		 */
 
 
 		bool has_defender(Coords const& pos) const {
@@ -925,10 +774,13 @@ namespace col{
 					auto combat = combat_base * (1.0 + get_defense_bonus(dest, defender.get_travel()));
 
 					if (verbose) {
-						cout << " -------- combat -------- \n";
-						cout << "attack = " << attack_base << " + " << attack_base * 0.5 << endl;
-						cout << "combat = " << combat_base << " + " << combat_base * get_defense_bonus(dest, defender.get_travel()) << endl;
-						cout << "odds   " << attack*10 << " : " << combat*10 << endl;
+						print(" -------- combat -------- \n");
+						print("attack = %|| + %||\n", attack_base, attack_base * 0.5);
+						print("combat = %|| + %||\n", 
+							combat_base, 
+							combat_base * get_defense_bonus(dest, defender.get_travel())
+						);
+						print("odds   %|| : %||\n", attack * 10, combat*10);
 					}
 
 					if (check(attack*10, (attack + combat)*10)) {
@@ -1148,55 +1000,27 @@ namespace col{
 		}
 
 
-		bool can_make(Build const& build, BuildType const& bt) const {
-			if (bt.get_cost() > 0) {
-				auto facttype_id = build.get_type().id;
-				switch (facttype_id) {
-					case BuildCarpentersShop:
-					case BuildLumberMill:
-						return true;	
-				}
-			}
-			return false;
-		}
-
-
-		bool can_make(Build const& build, UnitType const& ut) const {
-			if (ut.get_cost() > 0) {
-				auto facttype_id = build.get_type().id;
-				switch (facttype_id) {
-					case BuildCarpentersShop:
-					case BuildLumberMill:
-						if (ut.get_travel() == TravelLand) {
-							return true;
-						}
-					case BuildShipyard:
-						if (ut.get_travel() == TravelSea) {						
-							return true;
-						}
-				}
-			}
-			return false;
-		}
-
-
+		bool can_make(Build const& build, BuildType const& bt) const;
+		bool can_make(Build const& build, UnitType const& ut) const;
 
 		void construct(Build & build, BuildType const& mk) {			
 			if (can_make(build, mk)) {
 				build.task.reset(&mk);
 			}
-			
-			// TODO: error
-			assert(0);
+			else {
+				// TODO: error
+				assert(0);
+			}
 		}
 			
 		void construct(Build & build, UnitType const& mk) {
 			if (can_make(build, mk)) {
 				build.task.reset(&mk);
 			}
-			
-			// TODO: error
-			assert(0);
+			else {
+				// TODO: error
+				assert(0);
+			}
 						
 		}
 		
@@ -1303,51 +1127,8 @@ namespace col{
 		}
 
 
-		template <class F>
-		void resolve_construction(Colony & c, F & f) {
-			
-			if (f.task and f.task.get() >= f.task.cap()) {
-				
-				switch (f.task.what->get_class()) {
-					case Class::UnitType:
-						assert(0);
-						break;					
-					case Class::BuildType: 
-					{
-						BuildType const& bt = *static_cast<BuildType const*>(f.task.what);
-						auto *b = c.select_place_for(bt);
-						if (b) {
-							
-							// TODO: may need to equip with tools
-							
-							b->morph(bt);
-							
-							// TODO: add message info
-						
-							// special effects
-							// warehouse constructed
-							if (bt.id == 16) {
-								c.max_storage += 100;
-							}
-
-							
-						}
-						else {
-							// TODO: cannot build - add message to user
-														
-						}				
-						break;
-					}
-					default:
-						assert(0);
-						break;
-				}
-				
-			}
-			
-
-		}
-
+		
+		void resolve_construction(Terr & terr, Workplace & f);
 
 		bool has_control(Terr const& terr, Nation const& p) const {
 			Nation const* c = get_control(terr);
@@ -1460,6 +1241,11 @@ namespace col{
 			t.add(u);
 			u.terr = &t;
 		}
+		
+		void init(UnitType const& ut, Terr & t, Nation & nat) {
+			init(t, create<Unit>(ut, nat));			
+		}
+		
 
 
 		Build & get_build(Terr & terr, int build_id) {
@@ -1528,7 +1314,6 @@ namespace col{
 			set_proditem_build(n, t, a.build_id, a.item_id);
 			notify_effect(t, a);*/
 		}
-
 
 
 
@@ -1605,63 +1390,9 @@ namespace col{
 			}
 		}
 
-		void init_colony(Terr & t) {
-			auto& c = create<Colony>();
-			init(t, c);
+		void init_colony(Terr & t);
 
-			BuildType::Id const tree1 = 45;
-			BuildType::Id const tree2 = 44;
-			BuildType::Id const tree3 = 43;
-			BuildType::Id const coast = 46;
-			BuildType::Id const carpenters_shop = 36;
-			BuildType::Id const fence = 17;
-			BuildType::Id const church = 38;
-			BuildType::Id const town_hall = 10;
 
-			// init buildings
-			set_build(c, 0, carpenters_shop);
-			set_build(c, 1, tree1);
-			set_build(c, 2, tree3);
-			set_build(c, 3, tree1);
-			set_build(c, 4, tree1);
-
-			set_build(c, 5, tree1);
-			set_build(c, 6, tree1);
-			set_build(c, 7, tree1);
-			set_build(c, 8, tree1);
-			set_build(c, 9, tree2);
-
-			set_build(c, 10, tree2);
-			set_build(c, 11, tree2);
-			set_build(c, 12, town_hall);
-			set_build(c, 13, coast);
-			set_build(c, 14, fence);
-
-			// init fields
-			for (auto dir: ALL_DIRS) {
-				auto dest = get_coords(t) + vec4dir(dir);
-				if (in_bounds(dest)) {
-					c.add_field(Field(get_terr(dest)));
-				}
-			}
-
-			//notify_effect(t, inter::init_colony(get_id(t)));
-		}
-
-		/*
-		void apply(inter::init_colony const& a) {
-			auto& t = get<Terr>(a.terr_id);
-			init_colony(t);
-		}
-
-		void apply(inter::init_unit const& a) {
-			auto& t = get<Terr>(a.terr_id);
-			auto &u = create<Unit>();
-			init(t, u);
-			u.set_type(get<UnitType>(a.unit_type_id));
-			u.set_nation(get_current_nation());
-		}
-		*/
 
 
 		void set_turn(uint32 turn_no) {
@@ -1722,40 +1453,10 @@ namespace col{
 			//notify_effect(t, inter::set_item(get_id(t), item, st.get(item)));
 		}
 
-		/*
-		void apply(inter::sub_item const& a) {
-			sub_item(get<Terr>(a.terr_id), a.item, a.num);
-		}
-
-	 	void apply(inter::add_item const& a) {
-			Terr & t = get<Terr>(a.terr_id);
-			auto& st = get_store(t);
-			st.add(a.item, a.num);
-			//notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
-		}
-
-		void apply(inter::set_item const& a) {
-			Terr & t = get<Terr>(a.terr_id);
-			auto& st = get_store(t);
-			st.set(a.item, a.num);
-			//notify_effect(t, inter::set_item(a.terr_id, a.item, st.get(a.item)));
-		}
-		*/
-
 		void morph_unit(Unit & u, UnitType const& ut) {
 			u.set_type(ut);
 			//notify_effect(get_terr(u), inter::morph_unit(get_id(u), get_id(ut)));
 		}
-
-		/*
-		void apply(inter::morph_unit const& a) {
-			morph_unit(get<Unit>(a.unit_id), get<UnitType>(a.unit_type_id));
-		}
-
-		void apply(inter::morph_build const& a) {
-			//terr_id build_id build_type_id
-		}
-		*/
 
 
 

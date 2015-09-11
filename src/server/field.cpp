@@ -3,9 +3,9 @@
 
 namespace col {
 	
-	Amount Field::get_prod(Item const& item, bool const& is_expert) const {
+	Amount Field::get_prod(Item const& item, Amount const& base) const {
 		assert(terr != nullptr);
-		return terr->get_yield(item, is_expert);
+		return terr->get_yield(item, base);
 	};
 	
 	bool operator==(Field const& self, Field const& other) {

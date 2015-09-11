@@ -60,7 +60,7 @@ namespace col{
 		}
 
 
-		Amount get_yield(Item const& item, bool const& is_expert) const;
+		Amount get_yield(Item const& item, Amount const& base) const;
 
 		vector<Item> get_proditems() const {
 			array<Item,9> field_items = {

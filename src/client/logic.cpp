@@ -15,45 +15,6 @@ namespace col{
 		}
 
 
-
-
-		Amount get_nominal_prod(Workplace const& fact, Item const& item) {
-			Amount prod = 0;
-			for (auto* u: fact.get_units()) {
-				prod += fact.get_prod(item, u->is_expert(item));
-			}
-			return prod;
-		}
-
-		ProdCons get_nominal_prodcons(Workplace const& fact, Item const& item) {
-			ProdCons x;
-			x.prod = 0;
-			x.cons = 0;
-			for (auto* u: fact.get_units()) {
-				x.prod += fact.get_prod(item, u->is_expert(item));
-				x.cons += fact.get_cons(item, u->is_expert(item));
-			}
-			return x;
-		}
-
-		Storage get_colony_reg(Colony const& c) {
-
-			Storage reg;
-
-			for (auto const* f: c.get_workplaces()) {
-				auto& p = f->get_proditem();
-				auto& c = f->get_consitem();
-				auto x = get_nominal_prodcons(*f, p);
-
-				if (p != ItemNone) reg.add(p, x.prod);
-				if (c != ItemNone) reg.sub(c, x.cons);
-			}
-
-			return reg;
-		}
-
-
-
 		Items const ALL_ITEMS = {
 			ItemFood,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
 			ItemLumber,ItemOre,ItemSilver,ItemHorses,
@@ -66,6 +27,55 @@ namespace col{
 		Items const& get_all_items(Env const& env) {
 			return ALL_ITEMS;
 		}
+
+
+
+		
+		Amount get_nominal_prod(Workplace const& fact, Item const& item) {
+			Amount prod = 0;
+			for (auto* u: fact.get_units()) {
+				prod += fact.get_prod(item, u->get_prod(item));
+			}
+			return prod;
+		}
+		
+		ProdCons get_nominal_prodcons(Workplace const& fact, Item const& item) {
+			ProdCons nom;
+			for (auto* u: fact.get_units()) {
+				nom.prod += fact.get_prod(item, u->get_prod(item));
+				nom.cons += fact.get_prod(item, u->get_prod(item));
+			}
+			return nom;
+		}
+		
+
+		void sim_produce(Workplace const& wp, Register & p, Register & c) {
+			auto const& proditem = wp.get_proditem();
+			auto const& consitem = wp.get_consitem();
+
+			if (proditem != ItemNone) {
+				for (auto * u: wp.get_units()) {					
+					auto nprod = wp.get_prod(proditem, u->get_prod(proditem));
+					auto ncons = wp.get_cons(proditem, u->get_prod(proditem));
+						
+					p.add(proditem, nprod);
+					c.add(consitem, ncons);
+					c.add(ItemFood, 2);					
+				}
+			}
+		} 
+		
+		// Fill ballance registers
+		void fill_colony_regs(Terr const& terr, Register & p, Register & c) {
+			auto const& cc = terr.get_colony();
+						
+			for (auto const* f: cc.get_workplaces()) {
+				sim_produce(*f, p, c);
+			}
+		}
+		
+
+
 
 
 		Items get_proditems(Env const& env, Field const& f) {

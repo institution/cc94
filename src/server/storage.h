@@ -15,10 +15,91 @@ namespace col {
 		virtual Amount get(Item const& item) const { assert(0); }
 	};*/
 
-	struct Storage {
 
-		std::unordered_map<Item, Amount> cargos;     // lame map
+	struct Register {
+		struct Ca {
+			Item item;
+			Amount amount;
+			Ca() = default;
+			Ca(Item item, Amount amount): item(item), amount(amount) {}
+		};
+		
+		using Cas = vector<Ca>;
+		
+		Cas cas;		
+		
+		Amount & operator[](Item const& item) {
+			return find_mod(item).amount;
+		}
+		
+		Amount operator[](Item const& item) const {
+			return find_get(item).amount;
+		}
+		
+		Ca & find_mod(Item const& item) {
+			for (auto & ca: cas) {
+				if (ca.item == item) {
+					return ca;
+				}
+			}
+			cas.push_back(Ca(item, 0));
+			return cas[cas.size() - 1];
+		}
+		
+		void add(Item const& item, Amount num) {
+			find_mod(item).amount += num;
+		}
 
+		void sub(Item const& item, Amount num) {
+			find_mod(item).amount -= num;
+		}
+
+		void set(Item const& item, Amount num) {
+			find_mod(item).amount = num;
+		}
+
+		Ca find_get(Item const& item) const {
+			for (auto & ca: cas) {
+				if (ca.item == item) {
+					return ca;
+				}
+			}
+			return Ca(item, 0);
+		}
+
+		Amount get(Item const& item) const {
+			return find_get(item).amount;			
+		}
+		
+		Amount total() const {
+			Amount am = 0;
+			for (auto & ca: cas) {
+				am += ca.amount;
+			}
+			return am;
+		}
+		
+		void clear() {
+			cas.clear();
+		}
+		
+		Cas::iterator begin() {
+			return cas.begin();
+		}
+		
+		Cas::iterator end() {
+			return cas.end();
+		}
+		
+		Cas::size_type size() const {
+			return cas.size();
+		}
+		
+	};
+
+	struct Storage: Register {
+
+		
 		Storage() = default;
 
 		//Amount max_storage{0};
@@ -28,42 +109,17 @@ namespace col {
 
 
 		void add(Item const& item, Amount num) {
-			auto key = item;
-			if (cargos.count(key)) {
-				cargos[key] += num;
-			}
-			else {
-				cargos.insert({key, num});
-			}
+			Amount & has = (*this)[item];
+			has += num;			
 		}
 
 		void sub(Item const& item, Amount num) {
-			auto key = item;
-			if (num <= get(item)) {
-				cargos[key] -= num;
+			Amount & has = (*this)[item];			
+			if (num <= has) {
+				has -= num;
 			}
 			else {
 				error("storage.sub: out of item");				
-			}
-		}
-
-		void set(Item const& item, Amount num) {
-			if (num == 0) {
-				cargos.erase(item);
-			}
-			else {
-				cargos[item] = num;
-			}
-		}
-
-
-		Amount get(Item const& item) const {
-			auto key = item;
-			if (cargos.count(key)) {
-				return cargos.at(key);
-			}
-			else {
-				return 0;
 			}
 		}
 

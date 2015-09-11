@@ -20,6 +20,7 @@ namespace col {
 	constexpr
 	Item const
 		ItemNone{0},
+		
 		// Field items
 		ItemFood{1},
 		ItemFish{2},
@@ -30,6 +31,7 @@ namespace col {
 		ItemLumber{7},
 		ItemOre{8},
 		ItemSilver{9},
+		
 		// Build items
 		ItemHorses{10},
 		ItemRum{11},
@@ -40,16 +42,23 @@ namespace col {
 		ItemTools{16},
 		ItemMuskets{17},
 		ItemCannons{18},
+		
 		// Other
 		ItemHammers{19},
 		ItemCross{20},
 		ItemBell{21},
+		
 		// Pop growth
 		ItemToys{22},   // humans: 200 toys -> Colonist
 		ItemRags{23}    // horses: 50 rags -> Horse		
 		;
 		
 	int const ItemCount = 24; // total num of items
+	
+	int const ItemNoneCount = 1;
+	int const ItemFieldCount = 10;
+	int const ItemBuildCount = 22;
+	
 	int const NITEMS = 24; // total num of items
 
 }

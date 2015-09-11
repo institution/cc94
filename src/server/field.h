@@ -24,7 +24,7 @@ namespace col{
 		int get_slots() const { return 1; }
 
 	
-		virtual Amount get_prod(Item const& item, bool const& is_expert) const;
+		virtual Amount get_prod(Item const& item, Amount const& base) const override;
 		
 
 	};

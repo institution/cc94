@@ -86,43 +86,44 @@ namespace col{
 	int const BuildUniversity{15};
 	int const BuildWarehouse{16};
 	int const BuildFence{17};
-	int const BuildCustomHouse{18};
-	int const BuildPrintingPress{19};
-	int const BuildNewspaper{20};
+	int const BuildUnused18{18};
+	int const BuildCustomHouse{19};
+	int const BuildPrintingPress{20};
+	int const BuildNewspaper{21};
 
-	int const BuildWeaversHouse{21};
-	int const BuildWeaversShop{22};
-	int const BuildTextileMill{23};
+	int const BuildWeaversHouse{22};
+	int const BuildWeaversShop{23};
+	int const BuildTextileMill{24};
 
-	int const BuildTobacconistsHouse{24};
-	int const BuildTobacconistsShop{25};
-	int const BuildCigarFactory{26};
+	int const BuildTobacconistsHouse{25};
+	int const BuildTobacconistsShop{26};
+	int const BuildCigarFactory{27};
 
-	int const BuildRumDistillersHouse{27};
-	int const BuildRumDistillery{28};
-	int const BuildRumFactory{29};
+	int const BuildRumDistillersHouse{28};
+	int const BuildRumDistillery{29};
+	int const BuildRumFactory{30};
 
-	int const BuildCapitolunused1{30};
-	int const BuildCapitolExpansion2{31};
+	int const BuildCapitolunused1{31};
+	int const BuildCapitolExpansion2{32};
 
-	int const BuildFurTradersHouse{32};
-	int const BuildFurTradingPost{33};
-	int const BuildFurFactory{34};
+	int const BuildFurTradersHouse{33};
+	int const BuildFurTradingPost{34};
+	int const BuildFurFactory{35};
 
-	int const BuildCarpentersShop{35};
-	int const BuildLumberMill{36};
+	int const BuildCarpentersShop{36};
+	int const BuildLumberMill{37};
 	
-	int const BuildChurch{37};
-	int const BuildCathedral{38};
-	int const BuildBlacksmithsHouse{39};
-	int const BuildBlacksmithsShop{40};
-	int const BuildIronWorks{41};
-	int const BuildTrees3{42};
-	int const BuildTrees2{43};
-	int const BuildTrees1{44};
-	int const BuildCoast{45};
-	int const BuildStable{46};
-	int const BuildStableWarehouse{47};
+	int const BuildChurch{38};
+	int const BuildCathedral{39};
+	int const BuildBlacksmithsHouse{40};
+	int const BuildBlacksmithsShop{41};
+	int const BuildIronWorks{42};
+	int const BuildTrees3{43};
+	int const BuildTrees2{44};
+	int const BuildTrees1{45};
+	int const BuildCoast{46};
+	int const BuildStable{47};
+	int const BuildStableWarehouse{48};
 
 
 	
@@ -179,22 +180,16 @@ namespace col{
 		
 		
 
-		Amount get_prod(Item const& item, bool const& is_expert) const {
-			if (get_proditem() == item) {
-				if (is_expert) 
-					return type->prod * 2 * 3;
-				else
-					return type->prod * 3;
+		Amount get_prod(Item const& item, Amount const& base) const override {
+			if (get_proditem() == item) {  // buildings can only produce one kind of item
+				return type->prod * base;				
 			}
 			return 0;
 		};
 		
-		Amount get_cons(Item const& item, bool const& is_expert) const { 
-			if (get_proditem() == item) {
-				if (is_expert) 
-					return type->cons * 2;	
-				else
-					return type->cons;				
+		Amount get_cons(Item const& item, Amount const& base) const override { 
+			if (get_proditem() == item) {  // buildings can only produce one kind of item
+				return type->cons * base;
 			}
 			return 0;			
 		};
@@ -208,7 +203,7 @@ namespace col{
 		}
 
 
-		Item const& get_proditem() const {
+		Item const& get_proditem() const override {
 			return type->proditem;
 		}
 		

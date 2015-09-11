@@ -16,7 +16,7 @@ namespace col {
 
 	using namespace logic;
 
-	
+
 
 	using Event = Console::Event;
 	using Button = Console::Button;
@@ -35,8 +35,8 @@ namespace col {
 	using Res = map<pair<string,uint>, backend::Texture>;
 	Res g_res;
 
-	
-	
+
+
 
 	// Texture get dim
 	using backend::get_dim;
@@ -147,6 +147,7 @@ namespace col {
 	backend::Color const ColorDarkGreen = backend::Color(0,127,0,255);
 	backend::Color const ColorDarkBlue = backend::Color(0,0,127,255);
 	backend::Color const ColorDarkRed = backend::Color(127,0,0,255);
+	backend::Color const ColorYellow = backend::Color(255,255,0,255);
 	backend::Color const ColorWhite = backend::Color(255,255,255,255);
 	backend::Color const ColorGray = backend::Color(128,128,128,128);
 
@@ -430,6 +431,15 @@ namespace col {
 		win.render(img, pix);
 	}
 
+	void render_sprite(backend::Back & win, 
+		v2i const& pos, v2i const& dim, v2f const& align,
+		backend::Texture const& img
+	) {
+		win.render(img, 
+			calc_align(pos, dim, align, get_dim(img))
+		);
+	}
+
 
 	void render_terr(backend::Back &win,
 		Coords const& pos,
@@ -603,6 +613,8 @@ namespace col {
 		Col() = default;
 	};
 
+	using Row = vector<string>;
+
 	int get_elems_stretch(int nelem, int elem_space, int sep) {
 		return nelem * elem_space + (nelem + 2) * sep;
 	}
@@ -755,89 +767,105 @@ namespace col {
 	}
 
 
-	void render_unit_cargo(backend::Back &win, Console & con, v2i const& pos, v2i const& dim, Unit const& unit) {
+	void render_unit_cargo(backend::Back &win, Console & con, 
+		v2i const& pos, 
+		v2i const& dim, 
+		Unit const& unit
+	) {
 		// render unit cargo
-
-		/*
-		float b = 10;
-		float a = float(ly.city_unit_resources.dim[0] - b)/float(600);
-
-		auto calc_width = [a,b](float x) {
-			return a * x + b;
-		};*/
-
 
 
 		// render unit items
-		auto pix = pos;
-
-		for (auto item: COLONY_ITEMS) {
-			int num = unit.get(item);
-
-			if (num) {
-				auto clones = (unit.used_space(num) / ly.S(10));
-				auto width = ly.S(10) + clones * ly.S(2);
-
-				auto tile_pos = pix;
-				auto tile_dim = v2i(width, dim[1]);
-				render_inline(win, tile_pos, tile_dim, ColorWoodBrown, ly.line);
-
-				// left click on cargo -- start drag cargo unload
-				con.on(Event::Press, Button::Left, tile_pos, tile_dim,
-					[item,num,&con](){ con.drag_cargo(item, num, -1); }
-				);
-
-				auto & item_tex = res(win, ICON, get_item_icon_id(item));
-
-				auto item_pos = calc_align(pix, v2i(ly.S(12), dim[1]), get_dim(item_tex));
-
-				// render icons
-				// clones
-				for (uint16 i = 0; i < clones; ++i) {
-					render_sprite(win,
-						item_pos + v2i(i * ly.S(2), 0),
-						item_tex
-					);
-
-				}
-
-				pix[0] += width;
-			}
-		}
-
-		// reminder
+		auto cpos = pos;
+		auto item_dim = v2i(ly.S(12), dim[1]);		
+		auto text_dim = v2i(ly.S(4) * 3 + ly.S(2), dim[1]);
+		auto tile_dim = v2i(item_dim[0] + text_dim[0], dim[1]);
+		
+		auto & box_tex = res(win, ICON, 123);
+		
+		// empty space
 		{
 			int num = unit.get_space_left();
 			if (num) {
-				auto tile_pos = pix;
-				auto tile_dim = v2i(int16((num+19)/20)*4, dim[1]);
-				render_inline(win, tile_pos, tile_dim, ColorWoodBrown, ly.line);
+				
+				// frame
+				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
+				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
 
-				pix[0] += tile_dim[0];
+				render_sprite(win,
+					cpos, item_dim, v2f(0.5, 0.5),
+					box_tex
+				);
+
+				render_text(win,
+					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
+					FontTiny, ColorWhite, ColorNone,
+					to_string(num)				
+				);
+
+				cpos[0] += tile_dim[0] - ly.S(1);
+			}
+		}
+		
+		// items
+		for (auto item: COLONY_ITEMS) {
+			Amount num = unit.get(item);
+			
+			if (num) {
+				// frame
+				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
+				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
+
+				// left click on cargo -- start drag cargo unload
+				con.on(Event::Press, Button::Left, cpos, tile_dim,
+					[item,num,&con](){ con.drag_cargo(item, num, -1); }
+				);
+
+				render_sprite(win,
+					cpos, item_dim, v2f(0.5, 0.5),
+					box_tex
+				);
+
+				// item icon
+				auto & item_tex = res(win, ICON, get_item_icon_id(item));
+				
+				render_sprite(win,
+					cpos, item_dim, v2f(0.5, 0.5),
+					item_tex
+				);
+
+				// amount
+				render_text(win,
+					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
+					FontTiny, ColorWhite, ColorNone,
+					to_string(num)				
+				);
+
+				cpos[0] += tile_dim[0] - ly.S(1);;
 			}
 		}
 
-
-
+	
 
 		// unit cargo area frame
-		auto store_pos = pos;
-		auto store_dim = v2i(pix[0] - pos[0], dim[1]);
-		//render_inline(win, store_pos, store_dim, ColorDarkWoodBrown);
-
 		if (con.drag_item) {
 			// left release -- drop cargo
-			con.on(Event::Release, Button::Left, store_pos, store_dim,
+			con.on(Event::Release, Button::Left, pos, dim,
 				[&con](){ con.drop_cargo(+1); }
 			);
 		}
 
-	}
+	} // render_unit_cargo
 
 
 
 	void render_city_store(backend::Back & win, Console & con, v2i const& pos, v2i const& dim, Terr const& terr) {
 		auto const& env = con.env; // get_render_env
+
+		auto const& supp_reg = env.get_store(terr);
+
+		Register prod_reg, cons_reg;
+		fill_colony_regs(terr, prod_reg, cons_reg);
 
 		// render storage area
 		render_area(win, pos, dim, {76,100,172,255});
@@ -850,37 +878,87 @@ namespace col {
 		}
 
 		int tile_width = ly.S(16);
-		auto & col_st = env.get_store(terr);
+		int line_height = FontTiny.get_height();
 
-		auto pix = pos;
+		auto cpos = pos;
+		auto cell_dim = v2i(tile_width, line_height);
+		auto up = v2i(0, -line_height);
 		for (auto item: COLONY_ITEMS) {
 
-			// num of items
-			int num = col_st.get(item);
-
-			auto tile_pos = pix;
+			auto supp_num = supp_reg.get(item);
+			auto prod_num = prod_reg.get(item);
+			auto cons_num = cons_reg.get(item);			
+			auto delta = prod_num - cons_num;
+			
+			auto tile_pos = cpos;
 			auto tile_dim = v2i(tile_width, ly.S(12));
-
-			// calc item change
 
 			// render item
 			render_sprite(win, tile_pos, tile_dim, res(win, ICON, get_item_icon_id(item)));
 
 			// left click on item -- start drag cargo load
 			con.on(Event::Press, Button::Left, tile_pos, tile_dim,
-				[item,num,&con](){ con.drag_cargo(item, num, +1); }
+				[item,supp_num,&con](){ con.drag_cargo(item, supp_num, +1); }
 			);
 
-			// render number
-			render_text(win,
-				pix + ly.S(v2i(0,12)),
-				v2i(tile_width,0),
-				v2f(0.5, 0),
-				FontTiny, ColorWhite, ColorNone,
-				std::to_string(num)
-			);
+			// render supp num
+			{
+				auto pos = cpos + v2i(0, tile_dim[1]);
+				auto dim = v2i(tile_width, line_height);
+					
+				auto proj = supp_num - cons_num + prod_num;
+				if (proj < 0) {
+					render_text(win,
+						pos, cell_dim, v2f(0.5f, 0),
+						FontTiny, ColorYellow, ColorNone,
+						format("%||", supp_num)
+					);
+				}
+				else {
+					render_text(win,
+						pos, cell_dim, v2f(0.5f, 0),				
+						FontTiny, ColorWhite, ColorNone,
+						std::to_string(supp_num)
+					);
+				}
+			}
+		
+			// render prod num
+			if (prod_num) {
+				render_text(win,
+					cpos + up*3, cell_dim, v2f(1, 0),
+					FontTiny, ColorWhite, ColorNone,
+					format("+%||", prod_num)
+				);
+			}
 
-			pix[0] += tile_width;
+			// render cons num
+			if (cons_num) {
+				render_text(win,
+					cpos + up*2, cell_dim, v2f(1, 0),
+					FontTiny, ColorWhite, ColorNone,
+					format("-%||", cons_num)
+				);
+			}
+		
+			// render delta
+			if (delta > 0) {
+				render_text(win,
+					cpos + up, cell_dim, v2f(1, 0),
+					FontTiny, ColorGreen, ColorNone,
+					format("+%||", delta)
+				);
+			}
+			else if (delta < 0) {
+				render_text(win,
+					cpos + up, cell_dim, v2f(1, 0),
+					FontTiny, ColorYellow, ColorNone,
+					format("%||", delta)
+				);
+			}
+		
+			
+			cpos[0] += tile_width;
 		}
 	}
 
@@ -948,17 +1026,20 @@ namespace col {
 
 					backend::Color fg{255,255,255,255}, bg{0,0,0,0};
 
-					string label("");
+					string label, progress;
 					if (b.task) {
-						label += get_name(*b.task.what);
+						label = get_name(*b.task.what);
+						label = label.substr(0,11);
+
+						progress = format("%||/%||", b.task.get(), b.task.cap());
 					}
 					else {
-						label += "No production";
+						label = "(empty)";
 
 						if ( nominal_prod and con.blink() ) {
 							std::swap(fg, bg);
 						}
-
+						progress = "";
 					}
 
 					render_text(win,
@@ -966,12 +1047,17 @@ namespace col {
 						FontTiny, fg, bg,
 						label
 					);
-					
+
 					render_outline(win,
-						button_pos, button_dim, ColorWhite, ly.S(1)						
+						button_pos, button_dim, ColorWhite, ly.S(1)
 					);
 
-					// TODO: progress bar: b.task.get(), b.task.cap()
+					// progress ind
+					render_text(win,
+						build_pos, build_dim, {1, 0},
+						FontTiny, ColorWhite, ColorBlack,
+						progress
+					);
 
 
 					auto* makeable = b.task.what;
@@ -1214,7 +1300,7 @@ namespace col {
 		render_fill(win, ly.city_middle_bg.pos, ly.city_middle_bg.dim, ColorSkyBlue);
 
 
-		
+
 		//array<uint8,16> num_workers;
 		//array<int,16> prod;
 		//num_workers.fill(0);
@@ -1305,36 +1391,10 @@ namespace col {
 		}
 
 
+		
+
 		render_city_store(win, con, ly.city_resources.pos, ly.city_resources.dim, terr);
 
-		// total production/consumption of items
-		{
-			auto delta = get_colony_reg(terr.get_colony());
-			
-			auto pos = ly.city_resources.pos - v2i(0, ly.font_tiny);
-			auto dim = v2i(ly.S(16), ly.font_tiny);
-			
-			for (auto item: COLONY_ITEMS) {
-				auto num = delta.get(item);
-				
-				if (num < 0) {
-					render_text(win,
-						pos, dim, v2f(0.5f, 0.5f),
-						FontTiny, ColorRed, ColorNone,
-						"-" + to_string(num)
-					);
-				}
-				else if (num > 0) {
-					render_text(win,
-						pos, dim, v2f(0.5f, 0.5f),
-						FontTiny, ColorGreen, ColorNone,
-						"+" + to_string(num)
-					);
-				}
-				
-				pos[0] += dim[0];
-			}
-		}
 
 
 
@@ -1374,7 +1434,7 @@ namespace col {
 
 				string cost;
 				if (&mk == con.selprod_makeable) {
-					cost = format("%|3|/%|3|", b.task.get(), mk.get_cost());
+					cost = format("%||", mk.get_cost() - b.task.get());
 				}
 				else {
 					cost = format("%||", mk.get_cost());
@@ -1448,20 +1508,45 @@ namespace col {
 
 		}
 		else if (con.equip_to_unit_id) {
-			vector<pair<int, string>> entries;
-			for (auto& t: equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
-				entries.push_back(pair<int, string>{
-					t->id,
-					format("%|| (%||) (%||)", t->get_name(), t->get_num1(), t->get_num2())
-				});
+			vector<int> keys;
+			vector<vector<string>> rows;
+
+			for (auto const* ut: equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
+				auto item1 = ut->get_item1();
+				auto item2 = ut->get_item2();
+				auto num1 = ut->get_num1();
+				auto num2 = ut->get_num2();
+
+				keys.push_back(ut->id);
+
+				string req;
+				if (item1 != ItemNone) {
+					req += format("(%|| %||)", num1, get_name(item1));
+				}
+				if (item2 != ItemNone) {
+					req += format("(%|| %||)", num2, get_name(item2));
+				}
+
+				vector<string> row;
+				row.push_back(ut->get_name());
+				row.push_back(req);
+
+				rows.push_back(row);
 			}
 
+			// cols
+			vector<Col> cols;
+			cols.push_back({"Name", ly.S(1) * 16 * 4, 0.0f});
+			cols.push_back({"Equip", ly.S(1) * 24 * 4, 1.0f});
+
+
+
 			// onclick -> equip/orders menu
-			render_select<int>(win, con,
-				[](v2i const& dim) {
-					return calc_align(Box(ly.scr), dim);
-				},
-				entries,
+			render_select_f(win, con,
+				ly.scr.pos, ly.scr.dim, v2f(0.5, 0.5),
+
+				cols, keys, rows,
+
 				con.selected_id,
 				[&con](){
 					con.command(string("equip ") + to_string(con.selected_id));
@@ -1479,26 +1564,44 @@ namespace col {
 		if (con.prod_to_workplace != nullptr) {
 			auto & wp = *con.prod_to_workplace;
 
-			vector<pair<int, string>> entries;
+			vector<Col> cols;
+			vector<int> keys;
+			vector<Row> rows;
 
+
+			// no prod
+			keys.push_back(0);
+			Row row;
+			row.push_back("(empty)");
+			row.push_back("");
+			rows.push_back(row);
+
+			// prod items
 			for (auto& item: get_all_items(env)) {
 
 				auto prod = logic::get_nominal_prod(wp, item);
 
 				if (prod) {
-					entries.push_back(pair<int, string>{
-						get_id(item),
-						format("%|| (%||)", get_name(item), prod)
-					});
+					keys.push_back(get_id(item));
+
+					Row row;
+					row.push_back(get_name(item));
+					row.push_back(to_string(prod));
+
+					rows.push_back(row);
 				}
 			}
 
+			// cols
+			cols.push_back({"Item", 14 * 4 * ly.S(1), 0.0f});
+			cols.push_back({"Prod", 5 * 4 * ly.S(1), 1.0f});
+
 			// onclick -> assign proditem to wp
-			render_select<int>(win, con,
-				[](v2i const& dim) {
-					return calc_align(Box(ly.scr), dim);
-				},
-				entries,
+			render_select_f(win, con,
+				ly.scr.pos, ly.scr.dim, v2f(0.5, 0.5),
+
+				cols, keys, rows,
+
 				con.selected_id,
 				[&con,&wp]() {
 					wp.set_proditem(Item(con.selected_id));
@@ -2359,7 +2462,7 @@ namespace col {
 
 	}
 
-	
+
 
 
 

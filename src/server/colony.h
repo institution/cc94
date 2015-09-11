@@ -62,6 +62,9 @@ namespace col {
 			}			
 			return nullptr;
 		}
+
+		Store & get_store() { return store; }
+		Store const& get_store() const { return store; }
 		
 		/*vector<Workplace&> && get_workplaces() {
 			

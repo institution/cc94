@@ -33,6 +33,11 @@ namespace col{
 		
 		explicit operator bool() const { return what; }
 		
+		Task() = default;		
+		Task(Makeable const* m) { 
+			reset(m);
+		}
+		
 	};
 	
 
@@ -46,7 +51,7 @@ namespace col{
 				
 		vector<Unit*> units;
 
-		Item const& get_proditem() const { return proditem; }
+		virtual Item const& get_proditem() const { return proditem; }
 				
 		virtual Item const& get_consitem() const { return ItemNone; }
 			
@@ -62,9 +67,12 @@ namespace col{
 
 		Workplace & set_proditem(Item const& item) { proditem = item; return *this; }
 
+		void set_task(Makeable const& mk) { 
+			task.reset(&mk); 
+		}
 		
-		virtual Amount get_prod(Item const& item, bool const& is_expert) const { return 0; };
-		virtual Amount get_cons(Item const& item, bool const& is_expert) const { return 0; };
+		virtual Amount get_prod(Item const& item, Amount const& base) const { return 0; };
+		virtual Amount get_cons(Item const& item, Amount const& base) const { return 0; };
 
 	};
 

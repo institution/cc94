@@ -21,7 +21,7 @@ namespace col{
 		throw Error("Terr: Unknown travel type");
 	}
 	
-	Amount Terr::get_yield(Item const& item, bool const& is_expert) const {
+	Amount Terr::get_yield(Item const& item, Amount const& base) const {
 		/* 		 
 		    Why this is so complicated; games are supposed to have easy to understand rules
 		  ballance should be achieved otherwise (negative feedback possibly)
@@ -169,7 +169,7 @@ namespace col{
 				}
 				break;
 		}
-		return ret * (is_expert + 1);
+		return ret * base;
 	}
 
 

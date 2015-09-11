@@ -125,7 +125,7 @@ namespace col{
 		Nation * nation{nullptr};
 		uint8 time_left{TIME_UNIT};
 		bool transported{0};
-
+		
 		Storage store;
 
 		// where am I
@@ -207,10 +207,7 @@ namespace col{
 			assert(nation == nullptr);
 		}
 
-		bool is_expert(Item const& item) const { return false; }
-
-		auto get_cargos() const -> decltype(store.cargos) const& { return store.cargos; }
-		auto get_cargos() -> decltype(store.cargos) & { return store.cargos; }
+		//bool is_expert(Item const& item) const { return false; }
 
 		Nation & get_nation() const { return *nation; }
 		Unit & set_nation(Nation & nation) { this->nation = &nation; return *this; }
@@ -244,10 +241,20 @@ namespace col{
 
 		Unit& set_terr(Terr & t) { terr = &t; return *this; }
 		Unit& set_type(UnitType const& t) {
-			store.cargos.clear();
+			store.clear();
 			space_left = t.get_space();
 			type = &t;
 			return *this;
+		}
+		
+		Amount get_prod(Item const& item) const { 
+			// if expert in item return 6
+			
+			if (item < ItemNoneCount) return 0; 				
+			if (item < ItemFieldCount) return 1;			
+			if (item < ItemBuildCount) return 3;
+			
+			throw Error("unknown item");			
 		}
 
 		bool is_working() const {

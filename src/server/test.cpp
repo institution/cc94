@@ -8,14 +8,14 @@
 
 
 #include "env.h"
-#include "env.h"
+#include "build.h"
 #include "serialize.h"
 
 
 using namespace col;
 using roll::replay;
 
-
+// wc -l client/* server/* error.h backend/*
 /*
  * build road *
  * move *
@@ -36,82 +36,100 @@ using roll::replay;
  * colony screen: background on fields *
  *     uniform EVENT handling *
  * portable COLONIZE data import *
- * v0.1
+ v 0.1.0 *
+ 
  * colony screen transport *
  * load/unload cargo into transport * 
  * orders -- keep trying *
  * clear forest O / plow P *
-
- * construction complete message
- * v0.2
- * colony production changes gui
- * build system rethink
- *  build building        hammers,tools
- *  improve field         tools
- *  construct ship/wagon/artillery    hammers,tools
- *  produce itemcat          various
- *  grow/plant itemcat
- *  repair unit           ?
- *  teach unit            ?
- * 
- * specialists by experience
- * autosave 
- * build ships
- * travel to europe by sea - exit_map(ship, dest) order - trade
- * sell/buy in europe 
- * specialists by school
- * combat 
- * temporary fortification
- * loyality
- * immigration?
+ v 0.1.5 *
+ 
+ * emscripten compatible * 
+ * v0.2.0 *
+ 
+ * open graphics generator, terrain/textures * 
+ * unified construct building/unit framework * 
+ i 14722 LOC *
+ * equip pioneers, soldiers gui improv *
+ * select field production gui improv * 
+ * show colony resources ballance * 
+ 
+ * del tinyfont x 64 ?
+ * load/unload cargo into transport, gui rework - TODO
+   
+ * simple AI
+ 
+ v 0.2.4
+  
+ * construction complete message 
+ * unified construct building/unit framework, equip tools
+ 
+ * land combat 
  * artillery fire during enemy turn?
- * colony abandonment
+ * temporary fortification
+ * simple AI - combat
+ * v0.2.8
+ 
+ * fog of war 
+ * map size
+ * food as default field prod ?
+ * v0.3.0
+ 
+ * repair unit
+ * specialists framework
+ * teach unit (school)
+ * specialist by practice
+ * v0.4.0
+ 
+ * menu gui, orders
+ * trade framework
+ * sell/buy in europe  
  * trade with forein powers/indians
+ * travel to europe by sea - exit_map(ship, dest) order - trade
+ * europe screen
+ * simple AI, trade
+ * v0.5.0
+ 
+ * transport framework (routes) 
+ * simple AI, sea combat
+ * simple AI, blockade
+ * sea combat/blockade framework
+ * v0.6.0
+   
+ * natives  
+ v 0.7.0
+ 
+ * loyality     
+ v 0.7.3
+ 
+ * king
+ * taxes
+ * immigration?
+ v 0.8.6
+ 
+ * scoring
+ * war of independence
+ v 0.8.9
+ 
+ * autosave
+ * reports 
+ * founding fathers
+ * ...
+ v 0.9.0 BETA
+ 
+ v 1.0.0 
+  
+ * keyboard gui
+ * colony abandonment 
  * consumable items in colonies
  * silver -> coins conversion?
- * by name from csv ?
- * fog of war
- 
-  
- * scoring, game goals
- * allow land use outside of colony range
+ * map edit gui (modding)
+ * by name from csv (modding)
+ * animal husbandry
+ * allow land use outside of colony range (hunting?, no-colony buildings & improvments)
  * play as natives
  * play after independence
  * game goals/scenarios for map editing
- 
-	Anyway you can:
-	* move ships and units
-	* build colony
-	* improve terrain: roads, fields, clearing forest
-	* produce items in colonies
-	* construct new buildings (but not ships, artillery)
-	* equip pioneers, soldiers
-	* edit map
-
-	Missing:
-	* europe
-	* specialists
-	* ship construction
-	* indians, foreign powers, AI
-	* map size is 15x12
-	* fog of war
-	* combat
- 
- 
- 
- 
- 
- 
- * ship construction
- * europe
- * specialists
- 
- * indians, foreign powers, AI
- 
- * map size is 15x12
- * fog of war
- * combat
- 
  
  
  
@@ -238,12 +256,12 @@ TEST_CASE( "terr", "" ) {
 	}
 	
 	SECTION("yield food mixed forest no-expert == 4") {
-		REQUIRE(4 == t.get_yield(ItemFood, 0));
+		REQUIRE(4 == t.get_yield(ItemFood, 1));
 	}
 	
 	SECTION("yield food sea") {
 		Terr t(AltSea, BiomePlains);
-		REQUIRE(t.get_yield(ItemFood, 0) == 4);	
+		REQUIRE(t.get_yield(ItemFood, 1) == 4);	
 	}
 	
 			
@@ -405,12 +423,28 @@ TEST_CASE( "turn sequence", "" ) {
 }
 
 
-TEST_CASE( "colony_field_prod", "" ) {
+// regress
+TEST_CASE( "can_make", "" ) {
+	
+	Env env;
+	env.loads<BuildType>("res/csv/builds.csv");
+	env.loads<UnitType>("res/csv/units.csv");
+		
+	auto & lumber_mill = env.get<BuildType>(BuildLumberMill);
+	auto & caravel = env.get<UnitType>(18);
+	
+	auto r = env.can_make(Build(lumber_mill), caravel);
+	REQUIRE(r == false);
+}
+
+
+TEST_CASE( "food_prod", "" ) {
 	
 	Env env;
 	env.loads<BuildType>("res/csv/builds.csv");
 	env.resize({1,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	auto & terr = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(LAND),
@@ -427,13 +461,15 @@ TEST_CASE( "colony_field_prod", "" ) {
 	auto &  st = env.get_store(t);
 	
 	REQUIRE(st.get(ItemFood) == 0);
-	
+		
 	SECTION("produce") {
 		REQUIRE_NOTHROW( env.produce(st, f) );	
-		REQUIRE(st.get(ItemFood) > 0);
+		REQUIRE((terr.get_yield(ItemFood, 1) - 2) == st.get(ItemFood));
 	}
 	
-	SECTION("resolve") {
+	
+	
+	/*SECTION("resolve") {
 		env.resolve<Field, 1, 10>(c);
 		REQUIRE(st.get(ItemFood) > 0);
 	}
@@ -443,14 +479,51 @@ TEST_CASE( "colony_field_prod", "" ) {
 	SECTION("turn_terr") {
 		env.turn(t);
 		REQUIRE(st.get(ItemFood) > 0);
-	}
+	}*/
 	
 	
 }
 
 
 
-
+TEST_CASE("construct_build") {
+	Env env;
+	env.resize({1,1});
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	
+	auto& unit = env.create<Unit>(
+		env.create<UnitType>().set_travel(LAND),
+		env.create<Nation>()
+	);
+	auto& t = env.get_terr({0,0});	
+	env.init(t, unit);
+			
+	env.loads<BuildType>("res/csv/builds.csv");
+	
+	
+	
+	auto & bt = env.get<BuildType>(col::BuildCarpentersShop);
+	REQUIRE(bt.get_proditem() == ItemHammers);
+	
+	auto fact = Build(bt);
+	fact.add(unit);
+	
+	Store st;
+	st.set(ItemLumber, 100);
+	st.set(ItemFood, 100);
+	
+	auto & lumber_mill = env.get<BuildType>(col::BuildLumberMill);
+	fact.set_task(lumber_mill);	
+	
+	
+	REQUIRE( fact.task.get() == 0 );
+	env.produce(st, fact);	
+	REQUIRE( fact.task.get() > 0 );
+	
+	
+	
+	//REQUIRE_NOTHROW(env.start());
+}
 
 
 
@@ -469,13 +542,11 @@ TEST_CASE( "colony_workplace_production", "" ) {
 
 	auto& t = env.get_terr({0,0});	
 	env.init(t, u);
-	
-	
+		
 	env.loads<BuildType>("res/csv/builds.csv");
 	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
 	
 	REQUIRE_NOTHROW(env.start());
-	
 
 	SECTION("Build.get_prod") {
 		auto& u = env.create<Unit>(
@@ -487,11 +558,16 @@ TEST_CASE( "colony_workplace_production", "" ) {
 		auto b = Build(bt);
 		b.add(u);
 		
-		REQUIRE(b.get_prod(ItemCoats, false) == 3);
-		REQUIRE(b.get_cons(ItemCoats, false) == 3);
+		REQUIRE(b.get_proditem() == ItemCoats);
+		REQUIRE(b.get_consitem() == ItemFurs);
 		
-		REQUIRE(b.get_prod(ItemSilver, false) == 0);
-		REQUIRE(b.get_cons(ItemSilver, false) == 0);
+		Amount base = 3;
+		
+		REQUIRE(b.get_prod(ItemCoats, base) == 3);
+		REQUIRE(b.get_cons(ItemCoats, base) == 3);
+		
+		REQUIRE(b.get_prod(ItemSilver, base) == 0);
+		REQUIRE(b.get_cons(ItemSilver, base) == 0);
 		
 	}	
 
@@ -531,8 +607,10 @@ TEST_CASE( "colony_workplace_production", "" ) {
 			REQUIRE_NOTHROW(env.get_field(t, 0).set_proditem(ItemFood));
 			REQUIRE_NOTHROW(env.turn());
 			
+			Amount base = 1;
+			
 			// yield - consumption -> produced
-			REQUIRE( (t.get_yield(ItemFood, 0) - 2) == st.get(ItemFood) );
+			REQUIRE( (t.get_yield(ItemFood, base) - 2) == st.get(ItemFood) );
 			// unit used all time
 			REQUIRE(u.time_left == 0);
 		}

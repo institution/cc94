@@ -20,14 +20,14 @@ namespace col{
 		Path defaultmap_path;
 		
 		Conf() {
-			scale = 4;
+			scale = 1;
 			
 			screen_w = 320 * scale;
 			screen_h = 200 * scale;
 			tile_dim = 16 * scale;
 
 
-			tile_path = "res/tile64/";
+			tile_path = "res/tile16/";
 			csv_path = "res/csv/";
 			defaultmap_path = "res/default.mp";
 		

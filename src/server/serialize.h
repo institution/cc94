@@ -75,7 +75,10 @@ namespace col {
 	}
 	
 		
-		
+	
+	
+	
+	
 		
 	
 		
@@ -138,6 +141,9 @@ namespace col {
 		read(ar, c[0]);
 		read(ar, c[1]);
 	}
+
+
+	
 
 
 	template<typename A>
@@ -225,6 +231,32 @@ namespace col {
 		}
 	}
 	
+	
+	// Register/Storage
+	
+	template<typename T, typename Archive>
+	void write_reg(Archive & ar, T const& r) {
+		write(ar, r.cas.size());
+		for (auto & ca: r.cas) {
+			write(ar, ca.item);
+			write(ar, ca.amount);
+		}
+	}
+
+	template<typename T, typename Archive>
+	void read_reg(Archive & ar, T & r) {
+		using Size = decltype(r.size());
+				
+		auto size = read<Size>(ar);
+		for (Size i = 0; i < size; ++i) {
+			Item item;
+			Amount amount;
+			read(ar, item);
+			read(ar, amount);
+						
+			r.find_mod(item).amount = amount;			
+		}
+	}
 
 	template<typename A>
 	void write(A & ar, col::Env const& env, col::Nation const& x) {
@@ -266,7 +298,7 @@ namespace col {
 
 
 		// unit cargo
-		write_map(ar, x.get_cargos());
+		write_reg(ar, x.store);
 
 	}
 
@@ -306,15 +338,12 @@ namespace col {
 		}
 
 		// unit cargo
-		read_map(ar, unit.get_cargos());
+		read_reg(ar, unit.store);
 
 		assert(unit.type != nullptr);
 
-		unit.space_left = unit.get_space();
-		for (auto& p: unit.get_cargos()) {
-			unit.space_left -= p.second;
-		}
-
+		unit.space_left = unit.get_space();		
+		unit.space_left -= unit.store.total();		
 	}
 
 	template<typename A>
@@ -423,7 +452,7 @@ namespace col {
 				// colony
 				write(ar, x.id);
 				write(ar, x.name);
-				write_map(ar, x.store.cargos);
+				write_reg(ar, x.store);
 
 				// buildings
 				for (auto& b: x.builds) {
@@ -545,7 +574,7 @@ namespace col {
 				Colony x;
 				read(ar, x.id);
 				read(ar, x.name);
-				read_map(ar, x.store.cargos);
+				read_reg(ar, x.store);
 
 				auto key = x.id;
 				auto p = ps.emplace(key, std::move(x)).first;
