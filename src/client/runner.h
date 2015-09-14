@@ -23,7 +23,7 @@ namespace col{
 			agents.reserve(max_size);
 		}
 		
-		void init(std::string const& fname, int verbose);
+		void init(std::string const& fname, std::string const& tiledir, int verbose);
 
 
 		template <class T, class ... Args>

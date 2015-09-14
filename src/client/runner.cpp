@@ -12,9 +12,10 @@ namespace col{
 	
 	Runner::Agents::size_type const Runner::max_size = 16;
 	
-	void Runner::init(std::string const& fname, int ver) {
+	void Runner::init(std::string const& fname, std::string const& tiledir, int ver) {
 		this->verbose = ver;
 		
+		conf.tile_path = format("res/%||", tiledir);
 		
 		if (verbose >= 1) {
 			print("csv_path=%||\n", conf.csv_path);

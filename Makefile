@@ -7,9 +7,9 @@
 # $^ -- The names of all the prerequisites
 # $(VARS:%.cpp=%.o) -- pattern replace
 
-#CC:=g++
+CC:=g++
 #CC:=clang++
-CC:=emcc
+#CC:=emcc
 
 # output files
 OUTS:=client/main server/test client/test
@@ -36,28 +36,32 @@ CCOPTS:=
 CCOPTS+=-std=c++11
 CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
-CCOPTS+=-ferror-limit=1
+CCOPTS+=-ferror-limit=3
 ifeq (${CC}, emcc)
 	CCOPTS+=${COMMON_OPTS}
 else
 	
 endif
 
+
+
+
+
 # linker options
 LLOPTS:=
 ifeq (${CC}, emcc)	
 	LLOPTS+=${COMMON_OPTS}
-	LLOPTS+=--preload-file res
+	#LLOPTS+=--preload-file res	
 else
 	LLOPTS+=-L./lib 
 	LLOPTS+=-lSDL2 
 endif
 
-
-debug:   CCOPTS+=-O3
-debug:   LLOPTS+=-O3
+debug:   CCOPTS+=-O0 -g
+debug:   LLOPTS+=-O0 -g
 release: CCOPTS+=-O3 
 release: LLOPTS+=-O3 
+
 
 
 
@@ -83,11 +87,8 @@ ${OBJS}: b/%.obj: src/%
 # linker
 ${OUTS}: $(OBJS)
 	${CC} -o bin/$@${OUT_EXT} b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
-
-
-publish:
-	cp bin/client/main.* ../institution.github.io/cc94/
 	
+
 
 clean:
 	rm -rf b/* bin/*

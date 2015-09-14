@@ -54,6 +54,20 @@ load <filename.mp>
 ```
 
 
+Linux Native
+------------
+
+```
+	apt-get install libboost-serialization-dev libsdl2-dev
+	wget https://github.com/institution/cc94/archive/master.zip
+	unzip master.zip
+	cd cc94-master/
+	make
+	bin/server/test
+	bin/client/main
+```
+
+
 License
 -------
 AGPLv3+
