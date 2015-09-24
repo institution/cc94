@@ -7,8 +7,8 @@
 # $^ -- The names of all the prerequisites
 # $(VARS:%.cpp=%.o) -- pattern replace
 
-CC:=g++
-#CC:=clang++
+#CC:=g++
+CC:=clang++
 #CC:=emcc
 
 # output files

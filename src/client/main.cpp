@@ -66,13 +66,10 @@ int main(int argc, char* argv[])
 	
 	
 	if (argc == 2) {
-		runner.init(argv[1], "tile64", 1);
-	}
-	if (argc == 3) {
-		runner.init(argv[1], argv[2], 1);
+		runner.init(argv[1], 1);
 	}
 	else {
-		runner.init("", "tile64", 1);
+		runner.init("", 1);
 	}
 		
 	#ifndef __EMSCRIPTEN__
