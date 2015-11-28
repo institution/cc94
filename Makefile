@@ -1,6 +1,4 @@
-# Automatic Makefile 1.0.3
-#    written by institution
-#
+# Automatic Makefile E 15-10-23
 # $@ -- The file name of the target of the rule.
 # $* -- The stem with which an implicit rule matches
 # $< -- The name of the first prerequisite.
@@ -14,22 +12,18 @@ CC:=clang++
 # output files
 OUTS:=client/main server/test client/test
 
-ifeq (${CC}, emcc)
-	OUT_EXT:=.html
-else
-	OUT_EXT:=
-endif
-
 # targets
 debug: client/main server/test client/test
 release: client/main server/test client/test
 
-COMMON_OPTS:= 
-COMMON_OPTS+=-s USE_SDL=2 
-COMMON_OPTS+=-s DISABLE_EXCEPTION_CATCHING=0 
-#COMMON_OPTS+=-s SAFE_HEAP=1 
-COMMON_OPTS+=-s ASSERTIONS=1 
-#COMMON_OPTS+=-s DEMANGLE_SUPPORT=1
+# em opts
+EMOPTS:= 
+EMOPTS+=-s USE_SDL=2 
+EMOPTS+=-s DISABLE_EXCEPTION_CATCHING=0 
+#EMOPTS+=-s SAFE_HEAP=1 
+EMOPTS+=-s ASSERTIONS=1 
+#EMOPTS+=-s DEMANGLE_SUPPORT=1
+#EMOPTS+=-s EXCEPTION_DEBUG=1 
 
 # compiler options
 CCOPTS:=
@@ -37,28 +31,30 @@ CCOPTS+=-std=c++11
 CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
 CCOPTS+=-ferror-limit=3
-ifeq (${CC}, emcc)
-	CCOPTS+=${COMMON_OPTS}
-else
-	
-endif
-
-
 
 
 
 # linker options
 LLOPTS:=
+
+
+
+# emcc
 ifeq (${CC}, emcc)	
-	LLOPTS+=${COMMON_OPTS}
+	CCOPTS+=${EMOPTS}
+	LLOPTS+=${EMOPTS}
+	OUT_EXT:=.html	
 	#LLOPTS+=--preload-file res	
 else
 	LLOPTS+=-L./lib 
 	LLOPTS+=-lSDL2 
+	OUT_EXT:=
 endif
 
-debug:   CCOPTS+=-O0 -g
-debug:   LLOPTS+=-O0 -g
+
+
+debug:   CCOPTS+=-O2 -g
+debug:   LLOPTS+=-O2 -g
 release: CCOPTS+=-O3 
 release: LLOPTS+=-O3 
 
