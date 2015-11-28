@@ -55,9 +55,11 @@ namespace col{
 				
 		virtual Item const& get_consitem() const { return ItemNone; }
 			
-
+		
 		virtual int get_slots() const { return 1; }
 		int get_space_left() const { return get_slots() - units.size(); }
+		bool has_units() const { return units.size(); }
+
 
 		void add(Unit & u) { units.push_back(&u); }
 		void sub(Unit & u) { units.erase(find(units.begin(), units.end(), &u)); }

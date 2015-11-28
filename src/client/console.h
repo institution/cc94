@@ -294,6 +294,7 @@ namespace col {
 
 
 		void select_terr(Terr * terr = nullptr, int8 v = 0) {
+			// v -- mode: sub,set,add (-1,0,+1)
 			sel_unit = nullptr;
 			switch (v) {
 				case -1:

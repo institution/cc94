@@ -46,13 +46,23 @@ col::Runner runner;
 
 void loop_step(col::Runner* runner)
 {
-	g_running = runner->step();	
-	#ifdef __EMSCRIPTEN__
-	if (!g_running) {
-		print("emscripten_cancel_main_loop\n");
-		emscripten_cancel_main_loop();
+	
+	try {
+		
+		g_running = runner->step();	
+		#ifdef __EMSCRIPTEN__
+		if (!g_running) {
+			print("emscripten_cancel_main_loop\n");
+			emscripten_cancel_main_loop();
+		}
+		#endif
+    
+	} catch(const std::exception &e) {
+		std::cout << "Uncaught exception " << e.what() << "!\n";
+	} catch(...) {
+		std::cout << "Uncaught unknown exception!\n";
 	}
-	#endif
+	
 }
 
 

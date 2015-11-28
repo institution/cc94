@@ -29,8 +29,11 @@ namespace col{
 		}
 
 
+		Terr * get_idle_colony(Env const& env, Nation const& nation);
 
-
+		inline bool is_constructor(Build const& b) {
+			return b.get_proditem() == ItemHammers;			
+		}
 
 
 

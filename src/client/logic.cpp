@@ -28,7 +28,46 @@ namespace col{
 			return ALL_ITEMS;
 		}
 
-
+		
+		Terr * get_idle_colony(Env const& env, Nation const& nation) {
+			for (auto &p: env.get_cont<Colony>()) {
+				
+				auto& c = p.second;
+				
+				for (auto& b: c.builds) {
+					auto& terr = c.get_terr();
+					
+					if (is_constructor(b) and !b.task and b.has_units() 
+						and env.get_control(terr) == &nation
+					) {
+						// idle
+						return &terr;
+					}
+				}				
+			}
+			return nullptr;
+		}
+		
+		/*Terr * get_idle_unit(Env const& env, Nation const& nation) {
+			for (auto &p: env.get_cont<Unit>()) {
+				
+				auto& unit = p.second;
+				
+				if 
+				
+				for (auto& b: c.builds) {
+					auto& terr = *c.get_terr();
+					
+					if (is_constructor(b) and !b.task and b.has_units() 
+						and env.get_control(terr) == &nation
+					) {
+						// idle
+						return &terr;
+					}
+				}				
+			}
+			return nullptr;
+		}*/
 
 		
 		Amount get_nominal_prod(Workplace const& fact, Item const& item) {

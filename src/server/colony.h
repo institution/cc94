@@ -130,7 +130,10 @@ namespace col {
 		~Colony() {
 			assert(terr == nullptr);
 		}
-
+		
+		Terr & get_terr() const { return *terr; }
+		//Terr const& get_terr() const { return *terr; }
+			
 
 
 		template <typename T>

@@ -27,7 +27,7 @@ namespace col{
 			tile_dim = 16 * scale;
 
 
-			tile_path = "res/tile64/";
+			tile_path = "res/tile64open/";
 			csv_path = "res/csv/";
 			defaultmap_path = "res/default.mp";
 		

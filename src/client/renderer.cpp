@@ -2405,6 +2405,32 @@ namespace col {
 			);
 		}
 
+		
+		// Idle Unit		
+		// Idle Factory
+		{
+			if (env.in_progress()) {
+				auto& p = env.get_current_nation();
+			
+				auto* terr = logic::get_idle_colony(env, p);
+				
+				auto color = ColorGray;
+				
+				// show button
+				auto text_box = render_text(win,
+					ly.pan.pos, ly.pan.dim - v2i(0, ly.font_tiny), v2f(0.5, 1.0),
+					FontTiny, color, ColorNone,
+					"Idle Factory"
+				);
+
+
+				// left click -> select idle
+				con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
+					[&con,terr](){ con.select_terr(terr); }
+				);
+				
+			}
+		}
 		// End of turn/Start game
 		// nothing to move -> enter to ready turn
 		{
@@ -2414,6 +2440,10 @@ namespace col {
 
 			if (env.in_progress()) {
 				auto& p = env.get_current_nation();
+				
+				
+				
+				
 
 				auto & mem = con.mem;
 
