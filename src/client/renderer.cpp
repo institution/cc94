@@ -37,18 +37,14 @@ namespace col {
 
 
 
-
+	
 	// Texture get dim
 	using backend::get_dim;
 
-	void load_pixfont(backend::Back & back, backend::PixFont & font, string const& name) {
-		auto path = conf.tile_path / name / Path("001.png");
-		print("load pixfont; name=%||; path=%||\n", name, path);
-		font.load(back, path.c_str());
-	}
 
 
 	backend::PixFont FontTiny;
+	
 
 
 
@@ -105,7 +101,7 @@ namespace col {
 			// try default
 			auto def_path = get_res_path(ICON, 65);
 			if (auto err = load_png(back, tex, def_path)) {
-				throw Critical("cannot load fallback image file; path=%||; err=%||;\n",
+				throw Error("cannot load fallback image file; path=%||; err=%||;\n",
 					def_path.c_str(),
 					lodepng_error_text(err)
 				);
@@ -134,11 +130,10 @@ namespace col {
 
 	backend::Color const ColorSelectedBG = backend::Color(0x3c,0x20,0x18,0xff);
 
-	backend::Color const ColorFont = backend::Color(0x55,0x96,0x34,0xff);
 	backend::Color const ColorNone = backend::Color(0,0,0,0);
 
 	backend::Color const ColorFontSelected = backend::Color(0xc7,0xa2,0x20,0xff);
-
+	backend::Color const ColorFont = backend::Color(0x55,0x96,0x34,0xff);
 
 	backend::Color const ColorBlack = backend::Color(0,0,0,255);
 	backend::Color const ColorGreen = backend::Color(0,255,0,255);
@@ -169,8 +164,7 @@ namespace col {
 
 
 
-
-
+	
 
 
 
@@ -228,7 +222,7 @@ namespace col {
 			case 2: return v2i(8,8);
 			case 3: return v2i(0,8);
 		}
-		throw Critical("invalid 'l'");
+		throw Error("invalid 'l'");
 	}
 
 	using ResInd = std::pair<string, uint>;
@@ -302,10 +296,42 @@ namespace col {
 		preload_coast(back);
 	}
 
+
+	
+	backend::PixFont::ColorIndex const
+		ColIndNone = 0,
+		ColIndFontSelected = 1,
+		ColIndBlack = 2,
+		ColIndWhite = 3,
+		ColIndYellow = 4,
+		ColIndGreen = 5,
+		ColIndRed = 6,
+		ColIndGray = 7,
+		ColIndFont = 8;
+
+	
+	void load_pixfont(backend::Back & back, backend::PixFont & font, Path const& path) {
+		print("load font; path=%||;\n", path);
+		font.load(back, path.c_str(), 0);
+		
+		font.colorize(back, ColIndFont, ColorFont);
+		font.colorize(back, ColIndFontSelected, ColorFontSelected);
+		font.colorize(back, ColIndBlack, ColorBlack);
+		font.colorize(back, ColIndWhite, ColorWhite);
+		font.colorize(back, ColIndYellow, ColorYellow);
+		font.colorize(back, ColIndGreen, ColorGreen);
+		font.colorize(back, ColIndRed, ColorRed);
+		font.colorize(back, ColIndGray, ColorGray);
+		font.colorize(back, ColIndNone, ColorNone);
+		font.colorize(back, 9, ColorRed);
+		font.colorize(back, 10, ColorRed);
+		font.colorize(back, 11, ColorRed);
+	}
+		
+
 	void preload_renderer(backend::Back & back) {
 		preload_terrain(back);
-		load_pixfont(back, FontTiny, "FONTTINY_FF");
-		FontTiny.adv = ly.S(-1);
+		load_pixfont(back, FontTiny, conf.font_tiny_path);
 	}
 
 
@@ -397,7 +423,7 @@ namespace col {
 
 		render_text_at(win,
 			pos + v2i(1,1) * ly.line,
-			FontTiny, ColorBlack, ColorNone,
+			FontTiny, ColIndBlack, ColorNone,
 			string() + letter
 		);
 	}
@@ -671,12 +697,12 @@ namespace col {
 			auto cpos = row_pos;
 
 			// selected bg and font fg
-			backend::Color fg = ColorFont;
+			auto fgind = ColIndFont;
 			if (key == selected) {
 				render_fill(win,
 					row_pos, row_dim, ColorSelectedBG
 				);
-				fg = ColorFontSelected;
+				fgind = ColIndFontSelected;
 			}
 
 			// left click on row -- select
@@ -693,7 +719,7 @@ namespace col {
 
 				render_text(win,
 					cpos, cdim, v2f(col.align, 0.5),
-					FontTiny, fg, ColorNone,
+					FontTiny, fgind, ColorNone,
 					cell
 				);
 
@@ -739,7 +765,7 @@ namespace col {
 
 			auto& key = kvs[i].first;
 
-			backend::Color fg = ColorFont;
+			auto fg = ColIndFont;
 
 			// selected bg
 			if (key == selected) {
@@ -748,7 +774,7 @@ namespace col {
 					ColorSelectedBG
 				);
 
-				fg = ColorFontSelected;
+				fg = ColIndFontSelected;
 			}
 
 			// label
@@ -799,7 +825,7 @@ namespace col {
 
 				render_text(win,
 					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColorWhite, ColorNone,
+					FontTiny, ColIndWhite, ColorNone,
 					to_string(num)				
 				);
 
@@ -837,7 +863,7 @@ namespace col {
 				// amount
 				render_text(win,
 					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColorWhite, ColorNone,
+					FontTiny, ColIndWhite, ColorNone,
 					to_string(num)				
 				);
 
@@ -910,14 +936,14 @@ namespace col {
 				if (proj < 0) {
 					render_text(win,
 						pos, cell_dim, v2f(0.5f, 0),
-						FontTiny, ColorYellow, ColorNone,
+						FontTiny, ColIndYellow, ColorNone,
 						format("%||", supp_num)
 					);
 				}
 				else {
 					render_text(win,
 						pos, cell_dim, v2f(0.5f, 0),				
-						FontTiny, ColorWhite, ColorNone,
+						FontTiny, ColIndWhite, ColorNone,
 						std::to_string(supp_num)
 					);
 				}
@@ -927,7 +953,7 @@ namespace col {
 			if (prod_num) {
 				render_text(win,
 					cpos + up*3, cell_dim, v2f(1, 0),
-					FontTiny, ColorWhite, ColorNone,
+					FontTiny, ColIndWhite, ColorNone,
 					format("+%||", prod_num)
 				);
 			}
@@ -936,7 +962,7 @@ namespace col {
 			if (cons_num) {
 				render_text(win,
 					cpos + up*2, cell_dim, v2f(1, 0),
-					FontTiny, ColorWhite, ColorNone,
+					FontTiny, ColIndWhite, ColorNone,
 					format("-%||", cons_num)
 				);
 			}
@@ -945,14 +971,14 @@ namespace col {
 			if (delta > 0) {
 				render_text(win,
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColorGreen, ColorNone,
+					FontTiny, ColIndGreen, ColorNone,
 					format("+%||", delta)
 				);
 			}
 			else if (delta < 0) {
 				render_text(win,
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColorYellow, ColorNone,
+					FontTiny, ColIndYellow, ColorNone,
 					format("%||", delta)
 				);
 			}
@@ -1024,8 +1050,8 @@ namespace col {
 					auto button_pos = build_pos + v2i(0, build_dim[1]);
 					auto button_dim = v2i(build_dim[0], ly.font_tiny);
 
-					backend::Color fg{255,255,255,255}, bg{0,0,0,0};
-
+					
+					int blink = 0;
 					string label, progress;
 					if (b.task) {
 						label = get_name(*b.task.what);
@@ -1037,16 +1063,25 @@ namespace col {
 						label = "(empty)";
 
 						if ( nominal_prod and con.blink() ) {
-							std::swap(fg, bg);
+							blink = 1;
 						}
 						progress = "";
 					}
-
-					render_text(win,
-						button_pos, button_dim, {0.5,0.5},
-						FontTiny, fg, bg,
-						label
-					);
+					
+					if (blink) {
+						render_text(win,
+							button_pos, button_dim, {0.5,0.5},
+							FontTiny, ColIndGray, ColorWhite,
+							label
+						);
+					}
+					else {
+						render_text(win,
+							button_pos, button_dim, {0.5,0.5},
+							FontTiny, ColIndWhite, ColorNone,
+							label
+						);
+					}
 
 					render_outline(win,
 						button_pos, button_dim, ColorWhite, ly.S(1)
@@ -1055,7 +1090,7 @@ namespace col {
 					// progress ind
 					render_text(win,
 						build_pos, build_dim, {1, 0},
-						FontTiny, ColorWhite, ColorBlack,
+						FontTiny, ColIndWhite, ColorBlack,
 						progress
 					);
 
@@ -1080,7 +1115,7 @@ namespace col {
 
 					render_text(win,
 						build_pos, build_dim, {0.5, 0.5},
-						FontTiny, ColorWhite, ColorBlack,
+						FontTiny, ColIndWhite, ColorBlack,
 						b.get_name()
 					);
 
@@ -1110,7 +1145,7 @@ namespace col {
 						v2i(0, item_dim[1]),
 						{0, 0.5},
 
-						FontTiny, ColorWhite, ColorBlack,
+						FontTiny, ColIndWhite, ColorBlack,
 						std::to_string(y)
 					);
 				}
@@ -1240,7 +1275,7 @@ namespace col {
 
 							render_text_at(win,
 								item_pos,
-								FontTiny, ColorWhite, ColorBlack,
+								FontTiny, ColIndWhite, ColorBlack,
 								text
 							);
 						}
@@ -1407,7 +1442,7 @@ namespace col {
 		render_text(win,
 			ly.city_exit.pos + v2i(1,1),
 			{0,0}, {0,0},
-			FontTiny, ColorFont, ColorNone,
+			FontTiny, ColIndFont, ColorNone,
 			"RET"
 		);
 
@@ -2375,10 +2410,10 @@ namespace col {
 		// biome
 		// feats
 
-
+		//print("-->%||<--", info);
 		render_text_at2(win,
 			pos,
-			FontTiny, ColorFont, ColorNone,
+			FontTiny, ColIndFont, ColorNone,
 			info
 		);
 
@@ -2414,12 +2449,12 @@ namespace col {
 			
 				auto* terr = logic::get_idle_colony(env, p);
 				
-				auto color = ColorGray;
+				auto colind = ColIndGray;
 				
 				// show button
 				auto text_box = render_text(win,
 					ly.pan.pos, ly.pan.dim - v2i(0, ly.font_tiny), v2f(0.5, 1.0),
-					FontTiny, color, ColorNone,
+					FontTiny, colind, ColorNone,
 					"Idle Factory"
 				);
 
@@ -2436,21 +2471,17 @@ namespace col {
 		{
 			auto lab = string();
 			auto cmd = string();
-			auto col = ColorNone;
+			auto colind = ColIndRed;
 
 			if (env.in_progress()) {
 				auto& p = env.get_current_nation();
 				
-				
-				
-				
-
 				auto & mem = con.mem;
 
 				if (mem.get_next_to_repeat(env, p)) {
 					lab = "Move all";
 					cmd = "move-all";
-					col = ColorWhite;
+					colind = ColIndWhite;
 
 					// Enter -> move all
 					con.on(Event::Press, Key::Enter,
@@ -2460,7 +2491,7 @@ namespace col {
 				else {
 					lab = "End of turn";
 					cmd = "ready";
-					col = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
+					colind = (mem.get_next_to_order(env, p)) ? ColIndGray : ColIndWhite;
 
 					// Enter -> end turn
 					con.on(Event::Press, Key::Enter,
@@ -2470,14 +2501,16 @@ namespace col {
 			}
 			else {
 				lab = "Start game";
-				cmd = "start";
-				col = (env.nations.size() < 1) ? ColorGray : ColorWhite;
+				cmd = "start";				
+				colind = (env.nations.size() < 1) ? ColIndGray : ColIndWhite;
 			}
+			
+			
 
 			// label
 			auto text_box = render_text(win,
 				ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0),
-				FontTiny, col, ColorNone,
+				FontTiny, colind, ColorNone,
 				lab
 			);
 
@@ -2511,7 +2544,7 @@ namespace col {
 
 				auto text_box = render_text(app,
 					pos, {0,0}, {0,0},
-					FontTiny, ColorFont, {0,0,0,128},
+					FontTiny, ColIndFont, {0,0,0,128},
 					line
 				);
 
@@ -2521,7 +2554,7 @@ namespace col {
 			// command line with cursor
 			render_text(app,
 				ly.scr.pos, {0,0}, {0,0},
-				FontTiny, ColorFont, ColorNone,
+				FontTiny, ColIndFont, ColorNone,
 				con.buffer + "_"
 			);
 

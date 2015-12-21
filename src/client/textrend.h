@@ -1,13 +1,16 @@
 #ifndef TEXTREND_H_697655
 #define TEXTREND_H_697655
 
-#include "col.hpp"
-#include "backend/pixfont.h"
+#include <string>
+#include <backend/pixfont.h>
 #include "geo2D.h"
 
 namespace col{
 
+	using std::string;
+
 	v2i get_text_dim(backend::PixFont const& font, string const& text, size_t & i);
+
 
 	
 	/** Return render dim of text line (trimmed by '\n')
@@ -22,8 +25,8 @@ namespace col{
 	b2i render_text_at(
 		backend::Back &win,
 		v2i const& pos,
-		backend::PixFont const& font,
-		backend::Color const& fgcol,
+		backend::PixFont & font,
+		backend::PixFont::ColorIndex const& fgcol,
 		backend::Color const& bgcol,
 		string const& text
 	);
@@ -37,8 +40,8 @@ namespace col{
 		v2i const& dim,
 		v2f const& align,
 
-		backend::PixFont const& font,
-		backend::Color const& fgcol,
+		backend::PixFont & font,
+		backend::PixFont::ColorIndex const& fgcol,
 		backend::Color const& bgcol,
 
 		string const& text
@@ -64,8 +67,8 @@ namespace col{
 
 		v2i const& r_pos,
 
-		backend::PixFont const& font,
-		backend::Color const& fgcol,
+		backend::PixFont & font,
+		backend::PixFont::ColorIndex const& fgcol,
 		backend::Color const& bgcol,
 
 		string const& text

@@ -15,8 +15,6 @@ namespace backend {
 
 		v2i const None{-1,-1};
 
-		Color fg, bg, nt;
-
 		bool is_glyph(Surface const& img, v2i const& p);
 		bool is_first(Surface const& img, v2i const& pos);
 
@@ -31,10 +29,7 @@ namespace backend {
 	inline
 	bool PixFontLoader::is_glyph(Surface const& img, v2i const& p) {
 		auto c = img.get_pixel(p);
-		if (c != fg and c != bg and c != nt) {
-			throw Error("invalid color; pos=%||; col=%||", p, c);
-		}
-		return c != nt;
+		return c.r == 0 and c.g == 0 and c.b == 0;
 	}
 
 	inline
@@ -45,39 +40,51 @@ namespace backend {
 			!is_glyph(img, pos - v2i(0,1));
 	}
 
-	struct PixFont{
+	
 
+	struct PixFont{
+		
+		using ColorIndex = size_t;
+		
 		struct PixGlyph{
 			backend::Box rect;
 		};
 
 		std::map<uint16_t, PixGlyph> glyphs;
-		Texture tex;
+		
 		Surface img;
 		int height{-1};
-		Color bg;
-
 		int adv{0};
+		
+		std::array<Texture, 12> textures;
+		
+		void colorize(Back & back, ColorIndex index, Color const& fg);
+		
+
+		PixFont() = default;
+		
+		PixFont(backend::Back & back, std::string const& path_png, int adv) {
+			load(back, path_png, adv);
+		}
+
+		
 
 
+		void render_glyph(
+			Back &back,
+			v2i const& r_pos,
+			PixGlyph const& g,
+			ColorIndex fgcol
+		) const {
+			back.render_clip(textures.at(fgcol), r_pos, g.rect);			
+		}
+		
 		void render_glyph(
 			Surface &trg,
 			v2i const& r_pos,
 			PixGlyph const& g,
 			backend::Color const& fgcol
-		) const {
-
-			auto g_pos = g.rect.pos;
-
-			for (int i = 0; i < g.rect.dim[0]; ++i) {
-				for (int j = 0; j < g.rect.dim[1]; ++j) {
-					auto c = this->img.get_pixel(g_pos + v2i(i,j));
-					if (c != bg) {
-						trg.set_pixel(r_pos + v2i(i,j), fgcol);
-					}
-				}
-			}
-		}
+		) const;
 
 		PixGlyph const& get_glyph(uint16_t c) const {
 			return glyphs.at(c);
@@ -92,9 +99,10 @@ namespace backend {
 			return height; 
 		}
 
-		void load(backend::Back & back, std::string const& path_png) {
+		void load(backend::Back & back, std::string const& path_png, int adv) {
 			PixFontLoader x;
 			x.load(back, *this, path_png);
+			this->adv = adv;
 		}
 
 

@@ -4,14 +4,26 @@
 #include <array>
 #include <cmath>
 #include <iostream>
-
-#include "safe_cast.h"
+#include <type_traits>
 
 namespace aga2 {
 
 using uint = unsigned int;
 
 uint const n = 2;
+
+// safe casting...
+template<class From, class To>
+using is_safe_cast = std::is_same<
+                     typename std::common_type<From, To>::type,
+                     To
+                     >;
+
+template<class From, class To>
+using enable_if_safe_cast = std::enable_if<
+                            is_safe_cast<From, To>::value
+                            >;
+
 
 template <class R>
 class Mv0 {

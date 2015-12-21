@@ -106,7 +106,7 @@ namespace col{
 					throw Error("no worker to leave this place");
 				}
 				else {
-					throw Critical("no worker to leave this place");
+					throw Error("no worker to leave this place");
 				}
 			}
 			if (exec) {

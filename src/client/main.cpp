@@ -47,7 +47,7 @@ col::Runner runner;
 void loop_step(col::Runner* runner)
 {
 	
-	try {
+	/*try {*/
 		
 		g_running = runner->step();	
 		#ifdef __EMSCRIPTEN__
@@ -57,11 +57,13 @@ void loop_step(col::Runner* runner)
 		}
 		#endif
     
-	} catch(const std::exception &e) {
-		std::cout << "Uncaught exception " << e.what() << "!\n";
+	/*} catch(std::exception const& e) {
+		std::cerr << "main.cpp:loop_step: exception: " << e.what();
+		g_running = false;
 	} catch(...) {
-		std::cout << "Uncaught unknown exception!\n";
-	}
+		std::cerr << "main.cpp:loop_step: unknown exception!\n";
+		g_running = false;
+	}*/
 	
 }
 

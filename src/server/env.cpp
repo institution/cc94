@@ -40,7 +40,7 @@ namespace col {
 			}
 		}
 		else {
-			throw Critical("Unknown travel type");
+			throw Error("Unknown travel type");
 		}
 	}
 

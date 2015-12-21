@@ -179,7 +179,7 @@ namespace col {
 	void Console::handle_char(char16_t code) {
 		
 		if (!is_active()) {
-			throw Critical("console not active");
+			throw Error("console not active");
 		}
 		
 		if (charset.find(code) == charset.end()) {

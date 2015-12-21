@@ -1,11 +1,9 @@
-#ifndef FORMAT_HPP_97856623
-#define FORMAT_HPP_97856623
+#ifndef FORMAT_H_458096748
+#define FORMAT_H_458096748
 
 #include <string>
 #include <iostream>
 #include <boost/format.hpp>
-#include <stdexcept>
-
 
 
 inline
@@ -24,36 +22,21 @@ std::string format(std::string pattern, T&&... rest) {
 }
 
 template <class ... Args>
-void print(Args ... args) {
-	std::cout << format(args...);
+void print(std::string const& s, Args ... args) {
+	std::cout << format(s, args...);
 }
 
 template <class ... Args>
-void print_out(Args ... args) {
-	std::cout << format(args...);
+void print(char const* s, Args ... args) {
+	std::cout << format(s, args...);
 }
 
 template <class ... Args>
-void print_err(Args ... args) {
-	std::cerr << format(args...);
+void print(std::ostream & o, Args ... args) {
+	o << format(args...);
 }
 
 
-
-
-template <class ...Args>
-void error(Args ... args) {
-	print_err("ERROR: ");
-	print_err(args...);
-	print_err("\n");		
-	throw std::runtime_error(format(args...));
-}
-
-inline
-void error() {
-	print_err("ERROR: \n");
-	throw std::runtime_error("");
-}
 
 
 #endif

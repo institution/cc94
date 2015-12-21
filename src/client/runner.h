@@ -32,7 +32,7 @@ namespace col{
 				agents.push_back(new T(args...));
 			}
 			else {
-				error("cannot add agent: agents.size() >= max_size");
+				throw Error("cannot add agent: agents.size() >= max_size");
 			}
 		}
 

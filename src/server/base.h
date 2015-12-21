@@ -1,7 +1,8 @@
-#ifndef BASE2_H
-#define BASE2_H
+#ifndef BASE_H_4576124
+#define BASE_H_4576124
 
 #include <array>
+#include <error.hpp>
 #include "distinct.hpp"
 #include "col.hpp"
 #include "phys.h"

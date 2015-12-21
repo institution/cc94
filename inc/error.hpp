@@ -23,10 +23,6 @@ struct RuntimeError: std::runtime_error {
 		std::runtime_error(format(what_arg, args...)) {}
 };
 
-struct Critical: RuntimeError {
-	using RuntimeError::RuntimeError;
-};
-
 struct Error: RuntimeError {
 	using RuntimeError::RuntimeError;
 };

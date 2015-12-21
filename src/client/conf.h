@@ -16,22 +16,11 @@ namespace col{
 		int terr_h;
 
 		Path tile_path;
+		Path font_tiny_path;
 		Path csv_path;
 		Path defaultmap_path;
 		
-		Conf() {
-			scale = 4;
-			
-			screen_w = 320 * scale;
-			screen_h = 200 * scale;
-			tile_dim = 16 * scale;
-
-
-			tile_path = "res/tile64open/";
-			csv_path = "res/csv/";
-			defaultmap_path = "res/default.mp";
-		
-		}
+		Conf();
 
 	};
 

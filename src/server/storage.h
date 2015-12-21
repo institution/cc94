@@ -2,7 +2,7 @@
 #define STORAGE2934854_H
 
 
-#include "error.h"
+
 #include "base.h"
 
 namespace col {
@@ -119,7 +119,7 @@ namespace col {
 				has -= num;
 			}
 			else {
-				error("storage.sub: out of item");				
+				throw Error("storage.sub: out of item");				
 			}
 		}
 

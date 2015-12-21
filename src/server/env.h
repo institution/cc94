@@ -176,7 +176,7 @@ namespace col{
 			cpid = 0;
 			while (nations.find(cpid) == nations.end()) {
 				if (cpid > 100) {   // TODO: pfff...
-					throw Critical("UNEXPECTED ERROR: cannot find nation");
+					throw Error("UNEXPECTED ERROR: cannot find nation");
 				}
 				++cpid;
 			}
@@ -211,7 +211,7 @@ namespace col{
 			Amount free_num = u.get_space_left();
 
 			if (free_num < 0) {
-				throw Critical("ykhm; free_space=%||", free_num);
+				throw Error("ykhm; free_space=%||", free_num);
 			}
 
 			auto mod_num = std::min({terr_num, free_num, want_num});
@@ -302,7 +302,7 @@ namespace col{
 				int v = wp.get_proditem().get_value();
 				if (v) { // may produce None
 					if (v < i or j <= v) {
-						throw Critical("produced item out of range");
+						throw Error("produced item out of range");
 					}
 					ws.at(v-i).push_back(&wp);
 				}
@@ -632,7 +632,7 @@ namespace col{
 			}
 
 			if (time_cost <= 0) {
-				throw Critical("time_cost == 0???");
+				throw Error("time_cost == 0???");
 			}
 
 
@@ -1308,7 +1308,7 @@ namespace col{
 		}
 
 		void apply(inter::prod_build const& a) {
-			throw Critical("not yet used");
+			throw Error("not yet used");
 			/*auto & n = get_current_nation();
 			auto & t = get_terr(a.terr_id);
 			set_proditem_build(n, t, a.build_id, a.item_id);
@@ -1373,11 +1373,11 @@ namespace col{
 		Workplace const& get_workplace_by_index(Unit const& unit, int num) const {
 			auto const& terr = get_terr(unit);
 			if (num < 0) {
-				throw Critical("invalid place index");
+				throw Error("invalid place index");
 			}
 			else if (num < 16) {
 				if (!terr.has_colony()) {
-					throw Critical("no colony");
+					throw Error("no colony");
 				}
 				auto const& col = terr.get_colony();
 				return col.builds.at(num);
@@ -1386,7 +1386,7 @@ namespace col{
 				return get_field(terr, num - 16);
 			}
 			else {
-				throw Critical("invalid place index");
+				throw Error("invalid place index");
 			}
 		}
 

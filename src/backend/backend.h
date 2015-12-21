@@ -7,6 +7,7 @@
 #include <format.hpp>
 #include <filesys.hpp>
 #include <aga2.hpp>
+#include <error.hpp>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten/emscripten.h"
@@ -19,10 +20,15 @@
 namespace backend{
 
 
+	// dep
 	inline void error_sdl() {
-		error("%||\n", SDL_GetError());
+		throw Error("%||\n", SDL_GetError());
 	}
 
+	// new
+	inline void fail_sdl() {
+		throw Error("%||\n", SDL_GetError());
+	}
 
 	inline SDL_Rect make_sdl_rect(v2i const& pos, v2i const& dim) {
 		SDL_Rect dst;
@@ -89,6 +95,22 @@ namespace backend{
 		}
 
 
+		void set_color_mod(Color const& c) {		
+			auto r = SDL_SetTextureColorMod(tex, c.r, c.g, c.b);				
+			if (!r) {
+				fail_sdl();
+			}
+		}
+		
+		void set_blend_mod(SDL_BlendMode blend_mode) {
+			auto r = SDL_SetTextureBlendMode(tex, blend_mode);
+			if (!r) {
+				fail_sdl();
+			}
+		}
+		
+
+
 
 	};
 
@@ -134,7 +156,9 @@ namespace backend{
 		}
 
 		Surface & init(v2i const& dim) {
-			if (s) error("surface already exists");
+			if (s) {
+				throw Error("surface already exists");
+			}
 
 			uint32_t rmask, gmask, bmask, amask;
 			#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -172,8 +196,7 @@ namespace backend{
 			unsigned width, height;
 			unsigned err = lodepng::decode(pixels, width, height, path);
 			if (err) {
-				print_err("ERROR: lodepng: %||: %||\n", lodepng_error_text(err), path);
-				error();
+				throw Error("ERROR: lodepng: %||: %||\n", lodepng_error_text(err), path);				
 			}
 
 			init(v2i(width, height));
@@ -338,7 +361,7 @@ namespace backend{
 			//SDL_CreateWindowAndRenderer(width, height, SDL_WINDOW_OPENGL, &win, &ren);
 
 		}
-
+		
 		void clear() {
 			// clear screen
 			SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
@@ -469,6 +492,7 @@ namespace backend{
 			SDL_Rect src = make_sdl_rect(clip.pos, clip.dim);
 			SDL_RenderCopy(ren, t.tex, &src, &dst);
 		}
+		
 
 
 		v2i get_dim() {
