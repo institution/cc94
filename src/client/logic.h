@@ -62,6 +62,9 @@ namespace col{
 			return u.get_time_left() / unit_cost;
 		}
 
+		
+		
+
 		struct Memory{
 			// remember and repeat orders
 
@@ -101,6 +104,11 @@ namespace col{
 
 
 		};
+
+
+		/*struct Routes
+		
+		struct Supply*/
 
 
 	}

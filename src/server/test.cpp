@@ -54,14 +54,19 @@ using roll::replay;
  * select field production gui improv * 
  * show colony resources ballance * 
  
- * del tinyfont x 64 ?
- * load/unload cargo into transport, gui rework - TODO
+ * AA font 64 base *
+ * load/unload cargo into transport, gui rework
+ *  arbitrary number of items
+ *  drop cargo on transport icon
+ 
+ * idle factory button 
    
  * simple AI
  
+ * AA font - use font_height in layout
+ 
  v 0.2.4
   
- * construction complete message 
  * unified construct building/unit framework, equip tools
  
  * land combat 

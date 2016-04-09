@@ -55,9 +55,9 @@ namespace col{
 			Agent *agent = agents[i];
 			
 			auto r = agent->step();			
-			if (!r and i == 0) {				
+			if (!r and i == 0) {
 				cont = false;
-			}			
+			}
 		} 
 			
 		cont = (cont and (env.get_state() != Env::StateExit));

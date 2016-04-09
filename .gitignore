@@ -3,11 +3,7 @@
 bin/*
 __/*
 COLONIZE*
-res/tile16*
-res/tile64/BUILDING_SS  
-res/tile64/COLONY_PIK   
-res/tile64/ICONS_SS     
-res/tile64/PHYS0_SS  
+res/*
 cc94*
 inc/SDL2*
 inc/boost*

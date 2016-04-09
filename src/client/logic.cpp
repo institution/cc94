@@ -48,6 +48,19 @@ namespace col{
 			return nullptr;
 		}
 		
+		/*Unit * get_idle_unit(Env const& env, Nation const& nation) {
+			for (auto &p: env.get_cont<Unit>()) {
+				
+				auto& u = p.second;
+				
+				if (env.get_control(u) and u.get_time_left() > 0) {
+					return &u;
+				}
+							
+			}
+			return nullptr;
+		}*/
+		
 		/*Terr * get_idle_unit(Env const& env, Nation const& nation) {
 			for (auto &p: env.get_cont<Unit>()) {
 				

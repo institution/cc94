@@ -14,6 +14,8 @@
 
 namespace col {
 
+	using Color = frontend::Color;
+
 	using namespace logic;
 
 
@@ -128,35 +130,36 @@ namespace col {
 
 
 
-	backend::Color const ColorSelectedBG = backend::Color(0x3c,0x20,0x18,0xff);
 
-	backend::Color const ColorNone = backend::Color(0,0,0,0);
+	Color const ColorSelectedBG = Color(0x3c,0x20,0x18,0xff);
 
-	backend::Color const ColorFontSelected = backend::Color(0xc7,0xa2,0x20,0xff);
-	backend::Color const ColorFont = backend::Color(0x55,0x96,0x34,0xff);
+	Color const ColorNone = Color(0,0,0,0);
 
-	backend::Color const ColorBlack = backend::Color(0,0,0,255);
-	backend::Color const ColorGreen = backend::Color(0,255,0,255);
-	backend::Color const ColorBlue = backend::Color(0,0,255,255);
-	backend::Color const ColorRed = backend::Color(255,0,0,255);
-	backend::Color const ColorDarkGreen = backend::Color(0,127,0,255);
-	backend::Color const ColorDarkBlue = backend::Color(0,0,127,255);
-	backend::Color const ColorDarkRed = backend::Color(127,0,0,255);
-	backend::Color const ColorYellow = backend::Color(255,255,0,255);
-	backend::Color const ColorWhite = backend::Color(255,255,255,255);
-	backend::Color const ColorGray = backend::Color(128,128,128,128);
+	Color const ColorFontSelected = Color(0xc7,0xa2,0x20,0xff);
+	Color const ColorFont = Color(0x55,0x96,0x34,0xff);
 
-	backend::Color const ColorDarkSkyBlue = backend::Color(76,100,172,255);
-	backend::Color const ColorSkyBlue = backend::Color(104,136,192,255);
-	backend::Color const ColorLightSkyBlue = backend::Color(156,184,220,255);
+	Color const ColorBlack = Color(0,0,0,255);
+	Color const ColorGreen = Color(0,255,0,255);
+	Color const ColorBlue = Color(0,0,255,255);
+	Color const ColorRed = Color(255,0,0,255);
+	Color const ColorDarkGreen = Color(0,127,0,255);
+	Color const ColorDarkBlue = Color(0,0,127,255);
+	Color const ColorDarkRed = Color(127,0,0,255);
+	Color const ColorYellow = Color(255,255,0,255);
+	Color const ColorWhite = Color(255,255,255,255);
+	Color const ColorGray = Color(128,128,128,128);
+
+	Color const ColorDarkSkyBlue = Color(76,100,172,255);
+	Color const ColorSkyBlue = Color(104,136,192,255);
+	Color const ColorLightSkyBlue = Color(156,184,220,255);
 
 
-	backend::Color const ColorDarkBrown = backend::Color(60,32,24);
-	backend::Color const ColorLightBrown = backend::Color(121,73,52);
+	Color const ColorDarkBrown = Color(60,32,24);
+	Color const ColorLightBrown = Color(121,73,52);
 
-	backend::Color const ColorDarkWoodBrown = backend::Color(84,68,44,255);
-	backend::Color const ColorWoodBrown = backend::Color(132,112,80,255);
-	backend::Color const ColorLightWoodBrown = backend::Color(152,128,92,255);
+	Color const ColorDarkWoodBrown = Color(84,68,44,255);
+	Color const ColorWoodBrown = Color(132,112,80,255);
+	Color const ColorLightWoodBrown = Color(152,128,92,255);
 
 
 
@@ -173,7 +176,7 @@ namespace col {
 		g_res[key] = std::move(tex);
 	}
 
-	backend::Surface replace_black(backend::Surface const& inn, backend::Surface const& tex, v2i const& toff) {
+	Image replace_black(Image const& inn, Image const& tex, v2s const& toff) {
 		/* Create new surface
 
 		mask colors meaning:
@@ -185,24 +188,24 @@ namespace col {
 		*/
 
 		auto dim = inn.get_dim();
-		auto out = backend::Surface(dim);
+		auto out = Image(dim);
 
 		for (int j = 0; j < dim[1]; ++j) {
 			for (int i = 0; i < dim[0]; ++i) {
-				auto c = inn.get_pixel({i,j});
-				auto pos = v2i(i,j);
+				auto c = inn({i,j});
+				auto pos = v2s(i,j);
 
 				//print("c = %||\n", c);
 
 				if (c.a == 0) {
-					out.set_pixel(pos, backend::Color(0,0,0,0));
+					out(pos) = Color(0,0,0,0);
 				}
-				else if (c == backend::Color(0,0,0,255)) {
+				else if (c == Color(0,0,0,255)) {
 
-					out.set_pixel(pos, tex.get_pixel(toff + pos));
+					out(pos) = tex(toff + pos);
 				}
 				else {
-					out.set_pixel(pos, inn.get_pixel(pos));
+					out(pos) = inn(pos);
 				}
 
 			}
@@ -296,36 +299,12 @@ namespace col {
 		preload_coast(back);
 	}
 
-
 	
-	backend::PixFont::ColorIndex const
-		ColIndNone = 0,
-		ColIndFontSelected = 1,
-		ColIndBlack = 2,
-		ColIndWhite = 3,
-		ColIndYellow = 4,
-		ColIndGreen = 5,
-		ColIndRed = 6,
-		ColIndGray = 7,
-		ColIndFont = 8;
-
 	
 	void load_pixfont(backend::Back & back, backend::PixFont & font, Path const& path) {
 		print("load font; path=%||;\n", path);
 		font.load(back, path.c_str(), 0);
 		
-		font.colorize(back, ColIndFont, ColorFont);
-		font.colorize(back, ColIndFontSelected, ColorFontSelected);
-		font.colorize(back, ColIndBlack, ColorBlack);
-		font.colorize(back, ColIndWhite, ColorWhite);
-		font.colorize(back, ColIndYellow, ColorYellow);
-		font.colorize(back, ColIndGreen, ColorGreen);
-		font.colorize(back, ColIndRed, ColorRed);
-		font.colorize(back, ColIndGray, ColorGray);
-		font.colorize(back, ColIndNone, ColorNone);
-		font.colorize(back, 9, ColorRed);
-		font.colorize(back, 10, ColorRed);
-		font.colorize(back, 11, ColorRed);
 	}
 		
 
@@ -338,12 +317,12 @@ namespace col {
 	void render_fill(backend::Back & win,
 			v2i const& pos,
 			v2i const& dim,
-			backend::Color const& col
+			Color const& col
 	) {
 		win.render_fill(pos, dim, col);
 	}
 
-	void render_inline(backend::Back &win, v2i const& pos, v2i const& dim, backend::Color const& c, int t) {
+	void render_inline(backend::Back &win, v2i const& pos, v2i const& dim, Color const& c, int t) {
 		/* Draw inside border of pos,dim box; t -- thickness
 		*/
 		int w,h;
@@ -360,7 +339,7 @@ namespace col {
 		render_fill(win, pos + v2i{0,t}, {t,h}, c);
 	}
 
-	void render_outline(backend::Back &win, v2i const& pos, v2i const& dim, backend::Color const& c, int t) {
+	void render_outline(backend::Back &win, v2i const& pos, v2i const& dim, Color const& c, int t) {
 		/* Draw 1px thick outline border of pos,dim box
 		*/
 		render_inline(win, pos - v2i(t,t), dim + v2i(t,t)*2, c, t);
@@ -375,7 +354,7 @@ namespace col {
 		v2f align{0.5f, 0.5f};
 
 		string font{"tiny.png"};
-		backend::Color fg{ColorWhite}, bg{ColorNone};
+		Color fg{ColorWhite}, bg{ColorNone};
 
 		string text{""};
 
@@ -384,7 +363,7 @@ namespace col {
 			v2i pos, v2i dim,
 			v2f align,
 			string font,
-			backend::Color fg, backend::Color bg,
+			Color fg, Color bg,
 			string text
 		):
 			win(win), pos(pos), dim(dim), align(align),
@@ -403,7 +382,7 @@ namespace col {
 
 
 
-	void render_shield(backend::Back &win, v2i const& pos, backend::Color const& color, char letter) {
+	void render_shield(backend::Back &win, v2i const& pos, Color const& color, char letter) {
 
 		auto inner_pos = pos + v2i(1,1) * ly.line;
 		auto inner_dim = v2i(ly.S(5), ly.font_tiny);
@@ -423,7 +402,7 @@ namespace col {
 
 		render_text_at(win,
 			pos + v2i(1,1) * ly.line,
-			FontTiny, ColIndBlack, ColorNone,
+			FontTiny, ColorBlack, ColorNone,
 			string() + letter
 		);
 	}
@@ -437,7 +416,7 @@ namespace col {
 			Coords const& delta);
 
 
-	void render_pixel(backend::Back &win, v2i pix, const backend::Color &colr) {
+	void render_pixel(backend::Back &win, v2i pix, const Color &colr) {
 		render_fill(win,
 			pix,
 			v2i(1, 1),
@@ -518,7 +497,7 @@ namespace col {
 		void operator()(Item const& item, v2i const& pos);
 
 		void fill(Texture const& tex, v2i const& pos, v2i const& dim);
-		void fill(backend::Color const& color, v2i const& pos, v2i const& dim);
+		void fill(Color const& color, v2i const& pos, v2i const& dim);
 
 	};
 
@@ -544,12 +523,12 @@ namespace col {
 
 
 
-	void render_area(backend::Back & win, v2i const& pos, v2i const& dim, backend::Color const& color) {
+	void render_area(backend::Back & win, v2i const& pos, v2i const& dim, Color const& color) {
 		render_fill(win, pos, dim, color);
 	}
 
 
-	inline backend::Color get_nation_color(Nation const& n) {
+	inline Color get_nation_color(Nation const& n) {
 		auto c = n.color;
 		return {c.r,c.g,c.b,255};
 	}
@@ -618,8 +597,8 @@ namespace col {
 
 	}
 
-	//backend::Color Black = {0,0,0,255};
-	//backend::Color Transparent = {0,0,0,0};
+	//Color Black = {0,0,0,255};
+	//Color Transparent = {0,0,0,0};
 
 
 	/*
@@ -645,6 +624,20 @@ namespace col {
 		return nelem * elem_space + (nelem + 2) * sep;
 	}
 
+	struct SelectInteger{
+	
+		string buf;
+		int min{0};
+		int max{100};
+		
+		
+	};
+	
+
+	void render(backend::Back & win, Console & con, SelectInteger & w) {
+		
+	}
+	
 	template<class Key>
 	void render_select_f(backend::Back & win, Console & con,
 		v2i const& g_pos,
@@ -697,12 +690,12 @@ namespace col {
 			auto cpos = row_pos;
 
 			// selected bg and font fg
-			auto fgind = ColIndFont;
+			auto fgind = ColorFont;
 			if (key == selected) {
 				render_fill(win,
 					row_pos, row_dim, ColorSelectedBG
 				);
-				fgind = ColIndFontSelected;
+				fgind = ColorFontSelected;
 			}
 
 			// left click on row -- select
@@ -765,7 +758,7 @@ namespace col {
 
 			auto& key = kvs[i].first;
 
-			auto fg = ColIndFont;
+			auto fg = ColorFont;
 
 			// selected bg
 			if (key == selected) {
@@ -774,7 +767,7 @@ namespace col {
 					ColorSelectedBG
 				);
 
-				fg = ColIndFontSelected;
+				fg = ColorFontSelected;
 			}
 
 			// label
@@ -825,7 +818,7 @@ namespace col {
 
 				render_text(win,
 					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColIndWhite, ColorNone,
+					FontTiny, ColorWhite, ColorNone,
 					to_string(num)				
 				);
 
@@ -863,7 +856,7 @@ namespace col {
 				// amount
 				render_text(win,
 					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColIndWhite, ColorNone,
+					FontTiny, ColorWhite, ColorNone,
 					to_string(num)				
 				);
 
@@ -936,14 +929,14 @@ namespace col {
 				if (proj < 0) {
 					render_text(win,
 						pos, cell_dim, v2f(0.5f, 0),
-						FontTiny, ColIndYellow, ColorNone,
+						FontTiny, ColorYellow, ColorNone,
 						format("%||", supp_num)
 					);
 				}
 				else {
 					render_text(win,
 						pos, cell_dim, v2f(0.5f, 0),				
-						FontTiny, ColIndWhite, ColorNone,
+						FontTiny, ColorWhite, ColorNone,
 						std::to_string(supp_num)
 					);
 				}
@@ -953,7 +946,7 @@ namespace col {
 			if (prod_num) {
 				render_text(win,
 					cpos + up*3, cell_dim, v2f(1, 0),
-					FontTiny, ColIndWhite, ColorNone,
+					FontTiny, ColorWhite, ColorNone,
 					format("+%||", prod_num)
 				);
 			}
@@ -962,7 +955,7 @@ namespace col {
 			if (cons_num) {
 				render_text(win,
 					cpos + up*2, cell_dim, v2f(1, 0),
-					FontTiny, ColIndWhite, ColorNone,
+					FontTiny, ColorWhite, ColorNone,
 					format("-%||", cons_num)
 				);
 			}
@@ -971,14 +964,14 @@ namespace col {
 			if (delta > 0) {
 				render_text(win,
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColIndGreen, ColorNone,
+					FontTiny, ColorGreen, ColorNone,
 					format("+%||", delta)
 				);
 			}
 			else if (delta < 0) {
 				render_text(win,
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColIndYellow, ColorNone,
+					FontTiny, ColorYellow, ColorNone,
 					format("%||", delta)
 				);
 			}
@@ -1071,14 +1064,14 @@ namespace col {
 					if (blink) {
 						render_text(win,
 							button_pos, button_dim, {0.5,0.5},
-							FontTiny, ColIndGray, ColorWhite,
+							FontTiny, ColorGray, ColorWhite,
 							label
 						);
 					}
 					else {
 						render_text(win,
 							button_pos, button_dim, {0.5,0.5},
-							FontTiny, ColIndWhite, ColorNone,
+							FontTiny, ColorWhite, ColorNone,
 							label
 						);
 					}
@@ -1090,7 +1083,7 @@ namespace col {
 					// progress ind
 					render_text(win,
 						build_pos, build_dim, {1, 0},
-						FontTiny, ColIndWhite, ColorBlack,
+						FontTiny, ColorWhite, ColorBlack,
 						progress
 					);
 
@@ -1115,7 +1108,7 @@ namespace col {
 
 					render_text(win,
 						build_pos, build_dim, {0.5, 0.5},
-						FontTiny, ColIndWhite, ColorBlack,
+						FontTiny, ColorWhite, ColorBlack,
 						b.get_name()
 					);
 
@@ -1145,7 +1138,7 @@ namespace col {
 						v2i(0, item_dim[1]),
 						{0, 0.5},
 
-						FontTiny, ColIndWhite, ColorBlack,
+						FontTiny, ColorWhite, ColorBlack,
 						std::to_string(y)
 					);
 				}
@@ -1275,7 +1268,7 @@ namespace col {
 
 							render_text_at(win,
 								item_pos,
-								FontTiny, ColIndWhite, ColorBlack,
+								FontTiny, ColorWhite, ColorBlack,
 								text
 							);
 						}
@@ -1442,7 +1435,7 @@ namespace col {
 		render_text(win,
 			ly.city_exit.pos + v2i(1,1),
 			{0,0}, {0,0},
-			FontTiny, ColIndFont, ColorNone,
+			FontTiny, ColorFont, ColorNone,
 			"RET"
 		);
 
@@ -2006,10 +1999,10 @@ namespace col {
 	using backend::Back;
 
 
-	backend::Color get_unit_color(Unit const& u) {
+	Color get_unit_color(Unit const& u) {
 		auto c = get_nation_color(u.get_nation());
 		if (u.get_time_left() == 0) {
-			return backend::Color(c.r/2, c.g/2, c.b/2, c.a/2);
+			return Color(c.r/2, c.g/2, c.b/2, c.a/2);
 		}
 		return {c.r, c.g, c.b, c.a};
 	}
@@ -2413,7 +2406,7 @@ namespace col {
 		//print("-->%||<--", info);
 		render_text_at2(win,
 			pos,
-			FontTiny, ColIndFont, ColorNone,
+			FontTiny, ColorFont, ColorNone,
 			info
 		);
 
@@ -2431,7 +2424,7 @@ namespace col {
 			v2i dim = v2i(ly.pan.dim[0], ly.terr_dim[1]*3);
 
 			render_fill(win, pos, dim,
-				backend::Color(0,0,0,64)
+				Color(0,0,0,64)
 			);
 
 			render_units(win, con, pos, dim,
@@ -2441,15 +2434,42 @@ namespace col {
 		}
 
 		
-		// Idle Unit		
+		// Idle Unit
+		{
+			if (env.in_progress()) {
+				
+				auto& p = env.get_current_nation();
+				
+				auto colind = (con.mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
+				
+				// show button
+				auto text_box = render_text(win,
+					ly.pan.pos, ly.pan.dim - v2i(0, ly.font_tiny * 2), v2f(0.5, 1.0),
+					FontTiny, colind, ColorNone,
+					"Idle Unit"
+				);
+
+				// left click -> select next idle
+				con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
+					[&con](){ con.select_next_unit(); }
+				);
+				
+			}
+		}
+		
+		
 		// Idle Factory
 		{
 			if (env.in_progress()) {
+				
 				auto& p = env.get_current_nation();
 			
+				auto colind = ColorGray;
+			
 				auto* terr = logic::get_idle_colony(env, p);
-				
-				auto colind = ColIndGray;
+				if (terr) {
+					colind = ColorWhite;
+				}
 				
 				// show button
 				auto text_box = render_text(win,
@@ -2466,12 +2486,13 @@ namespace col {
 				
 			}
 		}
+		
 		// End of turn/Start game
 		// nothing to move -> enter to ready turn
 		{
 			auto lab = string();
 			auto cmd = string();
-			auto colind = ColIndRed;
+			auto colind = ColorRed;
 
 			if (env.in_progress()) {
 				auto& p = env.get_current_nation();
@@ -2481,7 +2502,7 @@ namespace col {
 				if (mem.get_next_to_repeat(env, p)) {
 					lab = "Move all";
 					cmd = "move-all";
-					colind = ColIndWhite;
+					colind = ColorWhite;
 
 					// Enter -> move all
 					con.on(Event::Press, Key::Enter,
@@ -2491,7 +2512,7 @@ namespace col {
 				else {
 					lab = "End of turn";
 					cmd = "ready";
-					colind = (mem.get_next_to_order(env, p)) ? ColIndGray : ColIndWhite;
+					colind = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
 
 					// Enter -> end turn
 					con.on(Event::Press, Key::Enter,
@@ -2502,7 +2523,7 @@ namespace col {
 			else {
 				lab = "Start game";
 				cmd = "start";				
-				colind = (env.nations.size() < 1) ? ColIndGray : ColIndWhite;
+				colind = (env.nations.size() < 1) ? ColorGray : ColorWhite;
 			}
 			
 			
@@ -2544,7 +2565,7 @@ namespace col {
 
 				auto text_box = render_text(app,
 					pos, {0,0}, {0,0},
-					FontTiny, ColIndFont, {0,0,0,128},
+					FontTiny, ColorFont, {0,0,0,128},
 					line
 				);
 
@@ -2554,7 +2575,7 @@ namespace col {
 			// command line with cursor
 			render_text(app,
 				ly.scr.pos, {0,0}, {0,0},
-				FontTiny, ColIndFont, ColorNone,
+				FontTiny, ColorFont, ColorNone,
 				con.buffer + "_"
 			);
 
