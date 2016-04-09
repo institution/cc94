@@ -1,5 +1,5 @@
-#include "gui.h"
-#include "renderer.h"
+#include "gui.hpp"
+#include "renderer.hpp"
 
 namespace col{
 	
@@ -8,7 +8,7 @@ namespace col{
 		if (verbose >= 1) print("GUILoop: app.init\n");
 		app.init(
 			"cc94",
-			v2i(conf.screen_w, conf.screen_h)
+			{conf.screen_w, conf.screen_h}
 		);
 		
 		if (verbose >= 1) print("GUILoop: preload renderer\n");
@@ -16,7 +16,7 @@ namespace col{
 		
 
 		if (verbose) print("GUILoop: set_logical_dim\n");
-		app.set_logical_dim(v2i(conf.screen_w, conf.screen_h));
+		app.set_logical_dim({conf.screen_w, conf.screen_h});
 		
 		
 		last_mod_env = env.mod - 1;

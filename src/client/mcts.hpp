@@ -1,5 +1,4 @@
-#ifndef AI_H
-#define AI_H
+#pragma once
 
 #include <cmath>
 #include <memory>
@@ -7,7 +6,7 @@
 #include <iostream>
 #include "aga2.hpp"
 #include "col.hpp"
-#include "env.h"
+#include "env.hpp"
 
 
 namespace tree {
@@ -334,11 +333,6 @@ namespace mcts {
 
 
 }
-
-#endif
-
-
-
 
 
 

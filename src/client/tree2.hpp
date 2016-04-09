@@ -1,5 +1,4 @@
-#ifndef TREE2_H
-#define TREE2_H
+#pragma once
 
 #include <iostream>
 
@@ -236,5 +235,3 @@ namespace tree2 {
 
 
 } // namespace
-
-#endif

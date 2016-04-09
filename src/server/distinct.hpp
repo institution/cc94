@@ -1,11 +1,9 @@
-#ifndef DISTINCT2_H
-#define DISTINCT2_H
+#pragma once
 
 #include <limits>
 #include <memory>
 #include <functional>
 #include <iostream>
-#include "format.hpp"
 
 namespace distinct {
 
@@ -113,4 +111,3 @@ namespace std {
 }
 
 
-#endif

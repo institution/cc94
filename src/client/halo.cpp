@@ -1,4 +1,4 @@
-#include "halo.h"
+#include "halo.hpp"
 
 
 namespace halo{
@@ -35,7 +35,7 @@ namespace halo{
 			t = t and (!p.key or (q.key and *p.key == *q.key));
 			t = t and (!p.mod or (q.mod and (*p.mod == *q.mod)));
 			t = t and (!p.unicode or (q.unicode and *p.unicode == *q.unicode));
-			t = t and (!p.area or (q.area and backend::overlap(*p.area, (*q.area).pos)));
+			t = t and (!p.area or (q.area and geo2::overlap(*p.area, (*q.area).pos)));
 			
 			/*if (verbose and q.event and *q.event != Event::Hover) {
 				print("halo event: %||: %||\n", p, t);

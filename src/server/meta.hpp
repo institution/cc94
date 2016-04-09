@@ -1,5 +1,4 @@
-#ifndef META213_H
-#define META213_H
+#pragma once
 
 namespace col{
 	template <class T>
@@ -8,4 +7,3 @@ namespace col{
 }
 
 
-#endif

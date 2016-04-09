@@ -1,4 +1,4 @@
-#include "textrend.h"
+#include "textrend.hpp"
 
 
 namespace col{
@@ -10,10 +10,10 @@ namespace col{
 	return -- render dim of text line (from i to first '\n' or end of string)
 	effect -- i will point to '\n' or after last char 
 	*/
-	v2i get_text_dim(backend::PixFont const& font, string const& text, size_t & i) {
+	v2s get_text_dim(PixFont const& font, string const& text, size_t & i) {
 		
 		// render dim
-		v2i r_dim = {0, font.get_height()};
+		v2s r_dim = {0, font.get_height()};
 
 		// current substring [i:j>
 		size_t j = i;
@@ -40,11 +40,9 @@ namespace col{
 	}
 
 
-	v2i get_text_dim2(backend::PixFont const& font, string const& text) {
+	v2s get_text_dim2(PixFont const& font, string const& text) {
 		
-		
-		
-		v2i r_dim = {0, 0};    // render dim
+		v2s r_dim = {0, 0};    // render dim
 		size_t i = 0;
 		while (i < text.size()) {
 
@@ -68,11 +66,11 @@ namespace col{
 
 
 	/*b2i render_text_at(
-		backend::Back &win,
+		Back &win,
 		v2i const& pos,
-		backend::PixFont const& font,
-		backend::Color const& fgcol,
-		backend::Color const& bgcol,
+		PixFont const& font,
+		Color const& fgcol,
+		Color const& bgcol,
 		string const& text
 	) {
 		v2i r_dim = get_text_dim(font, text);
@@ -86,7 +84,7 @@ namespace col{
 		if (r_dim[0] > 0 and r_dim[1] > 0)
 		{
 			// render letters
-			auto trg = backend::Surface(r_dim, bgcol);
+			auto trg = Surface(r_dim, bgcol);
 
 			size_t i = 0;
 			size_t j = text.size();
@@ -122,22 +120,22 @@ namespace col{
 		
 	}*/
 
-	b2i render_text_at(
-		backend::Back &win,
-		v2i const& pos,
-		backend::PixFont & font,
-		backend::PixFont::ColorIndex const& fgcol,
-		backend::Color const& bgcol,
+	b2s render_text_at(
+		Front & win,
+		v2s pos,
+		PixFont const& font,
+		Color fg,
+		Color bg,
 		string const& text
 	) {
-		v2i r_dim = get_text_dim(font, text);
+		auto r_dim = get_text_dim(font, text);
 
 		// render position
-		v2i g_pos = pos;
+		auto g_pos = pos;
 		
 		// render background
-		if (bgcol.a != 0) {
-			win.render_fill(pos, r_dim, bgcol);			
+		if (bg.a != 0) {
+			win.render_fill({pos, r_dim}, bg);			
 		}
 
 		// assert(fgcol == font.color);
@@ -155,32 +153,32 @@ namespace col{
 				
 				//print(std::cerr, "render_text_at: g_pos=%||; r_dim=%||; char=%||;\n", g_pos, r_dim, text.at(k));
 				
-				font.render_glyph(win, g_pos, g, fgcol);
+				font.render_glyph(win, g_pos, g, fg);
 
 				g_pos[0] += g.rect.dim[0] + font.adv;
 
 			}
 		}
 		
-		return b2i(pos, r_dim);
+		return b2s{pos, r_dim};
 	}
 
 
 
 
 
-	b2i render_text_at2(
-		backend::Back &win,
+	b2s render_text_at2(
+		Front & win,
 
-		v2i const& r_pos,
+		v2s r_pos,
 
-		backend::PixFont & font,
-		backend::PixFont::ColorIndex const& fgcol,
-		backend::Color const& bgcol,
+		PixFont & font,
+		Color fg,
+		Color bg,
 
 		string const& text
 	) {
-		v2i r_dim = get_text_dim2(font, text);
+		v2s r_dim = get_text_dim2(font, text);
 		//print("text dim = %||\n", r_dim);
 
 		if (r_dim[0] > 0 and r_dim[1] > 0) {
@@ -190,7 +188,7 @@ namespace col{
 			size_t i = 0;
 			size_t j = text.size();
 
-			v2i g_pos = r_pos;
+			v2s g_pos = r_pos;
 			for (auto k = i; k < j; ++k) {
 
 				auto c = text.at(k);
@@ -203,12 +201,12 @@ namespace col{
 				auto& g = font.glyphs.at(c);
 				
 				//print("render_text_at2 pos=%|| char=%||\n", g_pos, c);
-				font.render_glyph(win, g_pos, g, fgcol);
+				font.render_glyph(win, g_pos, g, fg);
 
 				g_pos[0] += g.rect.dim[0] + font.adv;
 			}
 		}
-		return b2i(r_pos, r_dim);
+		return b2s{r_pos, r_dim};
 	}
 
 	

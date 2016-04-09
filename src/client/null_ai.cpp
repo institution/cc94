@@ -1,4 +1,4 @@
-#include "null_ai.h"
+#include "null_ai.hpp"
 
 #include <exception>
 

@@ -1,21 +1,32 @@
-#include "runner.h"
+#include "runner.hpp"
 
 #include "col.hpp"
-#include "env.h"
-#include "csv.h"
-#include "console.h"
-#include "server/serialize.h"
-#include "format.hpp"
-#include "gui.h"
+#include "env.hpp"
+#include "csv.hpp"
+#include "console.hpp"
+#include "server/serialize.hpp"
+#include "../ext/format.hpp"
+#include "gui.hpp"
 
 namespace col{
 	
 	Runner::Agents::size_type const Runner::max_size = 16;
-	
-	void Runner::init(std::string const& fname, int ver) {
+
+
+
+	void Runner::init(std::string const& file_map, std::string const& dir_tile, int ver) {
 		this->verbose = ver;
-		
-		
+
+		// read client conf
+		if (dir_tile == "") {
+			conf.read("res/tile64");
+		}
+		else {
+			conf.read(dir_tile);
+		}
+
+		// recalc layout
+		ly.recalc(conf.screen_w, conf.screen_h);
 		
 		if (verbose >= 1) {
 			print("csv_path=%||\n", conf.csv_path);
@@ -26,17 +37,18 @@ namespace col{
 		env.loads<col::UnitType>((conf.csv_path/"units.csv").c_str());
 
 		// load state from file
-		if (fname == "") {
+		if (file_map == "") {
 			read_file("res/default.mp", env);
 		}
-		else if (fname == "-") {
+		else if (file_map == "-") {
 			env.resize({15,12});
 			//env.fill(Terr{AltSea, BiomeDesert});
 			env.fill(col::Terr{col::AltSea, col::BiomeDesert});
 		}
 		else {
-			read_file(fname, env);
+			read_file(file_map, env);
 		}
+
 		
 		(*this).add_agent<col::Gui>(env, *this);	
 				

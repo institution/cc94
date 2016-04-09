@@ -1,51 +1,51 @@
-#include "renderer.h"
+#include "renderer.hpp"
 
 //#include <functional>
 #include <boost/range/adaptor/reversed.hpp>
 
-#include "logic.h"
-#include "props.h"
-#include "conf.h"
-#include "geo2D.h"
-#include "textrend.h"
+#include "base.hpp"
+#include "logic.hpp"
+#include "props.hpp"
+#include "conf.hpp"
+#include "align.hpp"
+#include "textrend.hpp"
+#include "layout.hpp"
 
 
-//namespace Key = backend::Key;
+//namespace Key = front::Key;
 
 namespace col {
 
-	using Color = frontend::Color;
 
 	using namespace logic;
-
+	using namespace front::keys;
 
 
 	using Event = Console::Event;
 	using Button = Console::Button;
-	using Key = backend::Key;
+	using Key = front::Key;
 	using Dev = Console::Dev;
 
 
 	bool NEW_STYLE = false;
 
 
-
-
-	Layout const ly(conf.screen_w, conf.screen_h);
-
-
-	using Res = map<pair<string,uint>, backend::Texture>;
-	Res g_res;
-
+	// frequent short literals lol :D
+	int16_t const
+		_0 = 0,
+		_1 = 1,
+		_2 = 2,
+		_3 = 3,
+		_4 = 4;
 
 
 	
 	// Texture get dim
-	using backend::get_dim;
+	v2s get_dim(Texture const& t) { return t.dim; }
 
 
 
-	backend::PixFont FontTiny;
+	PixFont FontTiny;
 	
 
 
@@ -64,65 +64,74 @@ namespace col {
 
 
 
-	// categories, *xxx* -- generated to memory image
-	string const
-		TERR = "TERRAIN_SS",
-		ICON = "ICONS_SS",
-		PHYS = "PHYS0_SS",
-		ARCH = "PARCH_SS",
-		COLONY = "COLONY_PIK",
-		BUILD = "BUILDING_SS",
-		WOODBG = "WOODTILE_SS",
-		DIFFUSE = "*DIFFUSE*",
-		COAST = "*COAST*";
+	using ResKey = uint32_t;
+	using ResCat = uint16_t;
+	using ResNum = uint16_t;
 
+	using ResMap = unordered_map<ResKey, Texture>;
 
-	// Load png file to sfml texture
-	unsigned load_png(backend::Back & back, backend::Texture & tex, Path const& path) {
-		back.load(tex, path);
-		return 0;
+	ResMap res_map;
+	
+	ResKey make_reskey(ResCat cat, ResNum num) {
+		return (ResKey(cat) << 16) | ResKey(num);
 	}
 
-
-	Path get_res_path(string const& category, uint const& index) {
-		return conf.tile_path / category / Path(format("%|03|.png", index));
+	ResCat get_rescat(ResKey k) {
+		return k >> 16;
 	}
 
-	// Load resource file
-	// cat -- category (dir name)
-	// i -- frame num (file name)
-	void load_res(backend::Back & back, Res::mapped_type & tex, string const& cat, uint const& i) {
+	ResNum get_resnum(ResKey k) {
+		return (k << 16) >> 16;
+	}
 
-		auto path = get_res_path(cat, i);
+	ResCat const
+		TERR = 0,
+		ICON = 1,
+		PHYS = 2,
+		ARCH = 3,
+		COLONY = 4,
+		BUILD = 5,
+		WOODTILE = 6,
+		DIFFUSE = 7,
+		COAST = 8;
 
-		if (auto err = load_png(back, tex, path)) {
-			print("WARNING: cannot load image file; path=%||; err=%||;\n",
-				path.c_str(), lodepng_error_text(err)
-			);
-
-			// try default
-			auto def_path = get_res_path(ICON, 65);
-			if (auto err = load_png(back, tex, def_path)) {
-				throw Error("cannot load fallback image file; path=%||; err=%||;\n",
-					def_path.c_str(),
-					lodepng_error_text(err)
-				);
-			}
+	Path get_res_dir(ResCat cat) {
+		// categories, *xxx* -- generated to memory image
+		switch (cat) {
+			case TERR: return "TERRAIN_SS";
+			case ICON: return "ICONS_SS";
+			case PHYS: return "PHYS0_SS";
+			case ARCH: return "PARCH_SS";
+			case COLONY: return "COLONY_PIK";
+			case BUILD: return "BUILDING_SS";
+			case WOODTILE: return "WOODTILE_SS";
+			case DIFFUSE: return "*DIFFUSE*";
+			case COAST: return "*COAST*";			
 		}
-
-		// tex.setSmooth(false);
+		fail("unknown resource category: %||\n", cat);
 	}
+
+	Path get_res_path(ResCat cat, ResNum num) {
+		return conf.tile_path / get_res_dir(cat) / format("%|03|.png", num);
+	}
+
+	Path get_res_path_key(ResKey key) {		
+		return get_res_path(get_rescat(key), get_resnum(key));
+	}
+
 
 	// Get resource from global cache (load on demand)
-	Res::mapped_type const& res(backend::Back & back, string const& cat, uint const& i = 1) {
-		auto key = Res::key_type(cat, i);
-		auto p = g_res.find(key);
-		if (p != g_res.end()) {
+	Texture const& res(Front & fr, ResCat cat, ResNum num)
+	{
+		auto key = make_reskey(cat, num);		
+		auto p = res_map.find(key);		
+		if (p != res_map.end()) {
 			return (*p).second;
 		}
 		else {
-			auto &img = g_res[key];
-			load_res(back, img, cat, i);
+			auto path = get_res_path(cat, num);
+			auto & img = res_map[key];
+			img = fr.make_texture(path);
 			return img;
 		}
 	}
@@ -171,12 +180,12 @@ namespace col {
 
 
 
-	void preload(Path const& d, uint const& i, Res::mapped_type && tex) {
-		auto key = Res::key_type(d,i);
-		g_res[key] = std::move(tex);
+	void preload(ResCat cat, ResNum num, Texture && tex) {
+		auto key = make_reskey(cat, num);		
+		res_map[key] = std::move(tex);
 	}
 
-	Image replace_black(Image const& inn, Image const& tex, v2s const& toff) {
+	Image replace_black(Image const& inn, Image const& tex, v2s toff) {
 		/* Create new surface
 
 		mask colors meaning:
@@ -186,6 +195,8 @@ namespace col {
 		 toff -- tex offset vector
 
 		*/
+
+		//print("replace_black: %|| + %|| <- %||\n", inn.dim, toff, tex.dim);
 
 		auto dim = inn.get_dim();
 		auto out = Image(dim);
@@ -214,50 +225,50 @@ namespace col {
 		return out;
 	}
 
-	//void render_fields(backend::Back &win, Env const& env, Console const& con,
-	//	v2i const& pix, Coords const& pos);
+	//void render_fields(Front &win, Env const& env, Console const& con,
+	//	v2s pix, Coords const& pos);
 
 
-	v2i get_loffset(int l) {
+	v2s get_loffset(int l) {
 		switch(l){
-			case 0: return v2i(0,0);
-			case 1: return v2i(8,0);
-			case 2: return v2i(8,8);
-			case 3: return v2i(0,8);
+			case 0: return v2s(0,0) * ly.scale;
+			case 1: return v2s(8,0) * ly.scale;
+			case 2: return v2s(8,8) * ly.scale;
+			case 3: return v2s(0,8) * ly.scale;
 		}
-		throw Error("invalid 'l'");
+		fail("invalid 'l'");
 	}
 
-	using ResInd = std::pair<string, uint>;
+	
 
-	backend::Texture make_combined_texture(
-		backend::Back & back,
-		ResInd p,
-		ResInd b,
-		v2i const& off
+	Texture make_combined_texture(
+		Front & fr,
+		std::pair<ResCat, ResNum> p,
+		std::pair<ResCat, ResNum> b,
+		v2s off
 	) {
-		auto p_img = back.make_surface_from_png(
+		auto p_img = front::load_png(
 			get_res_path(p.first, p.second)
 		);
 
-		auto b_img = back.make_surface_from_png(
+		auto b_img = front::load_png(
 			get_res_path(b.first, b.second)
 		);
 
 		auto surf = replace_black(p_img, b_img, off);
 
-		return back.make_texture(surf);
+		return fr.make_texture(surf);
 	}
 
 
 
-	void preload_coast(backend::Back & back, Biome bio, int start) {
+	void preload_coast(Front & fr, Biome bio, int start) {
 		for (int k = 0; k < 8; ++k) {
 			for (int l = 0; l < 4; ++l) {
 				int ind = (k<<2) + l;
 
 				preload(COAST, start + ind,
-					make_combined_texture(back,
+					make_combined_texture(fr,
 						{PHYS, 109+ind},
 						{TERR, bio},
 						get_loffset(l)
@@ -270,7 +281,7 @@ namespace col {
 	int const TextureOceanId = 11;
 	int const TextureSeaLaneId = 11;
 
-	void preload_coast(backend::Back & back) {
+	void preload_coast(Front & back) {
 		// 109 - 140
 
 		preload_coast(back, TextureOceanId, 0);
@@ -280,77 +291,71 @@ namespace col {
 
 
 
-	void preload_terrain(backend::Back & back) {
+	void preload_terrain(Front & fr) {
 		for (int i=1; i<13; ++i) {
 			preload(DIFFUSE,  0+i,
-				make_combined_texture(back, {PHYS, 105}, {TERR, i}, {0,0})
+				make_combined_texture(fr, {PHYS, 105}, {TERR, i}, {0,0})
 			);
 			preload(DIFFUSE, 50+i,
-				make_combined_texture(back, {PHYS, 106}, {TERR, i}, {0,0})
+				make_combined_texture(fr, {PHYS, 106}, {TERR, i}, {0,0})
 			);
 			preload(DIFFUSE, 100+i,
-				make_combined_texture(back, {PHYS, 107}, {TERR, i}, {0,0})
+				make_combined_texture(fr, {PHYS, 107}, {TERR, i}, {0,0})
 			);
 			preload(DIFFUSE, 150+i,
-				make_combined_texture(back, {PHYS, 108}, {TERR, i}, {0,0})
+				make_combined_texture(fr, {PHYS, 108}, {TERR, i}, {0,0})
 			);
 		}
 
-		preload_coast(back);
+		preload_coast(fr);
 	}
 
 	
 	
-	void load_pixfont(backend::Back & back, backend::PixFont & font, Path const& path) {
-		print("load font; path=%||;\n", path);
-		font.load(back, path.c_str(), 0);
-		
-	}
-		
-
-	void preload_renderer(backend::Back & back) {
-		preload_terrain(back);
-		load_pixfont(back, FontTiny, conf.font_tiny_path);
+	void preload_renderer(Front & fr) {
+		preload_terrain(fr);
+		FontTiny.load(fr, conf.font_tiny_path, -1);		
 	}
 
 
-	void render_fill(backend::Back & win,
-			v2i const& pos,
-			v2i const& dim,
-			Color const& col
+	void render_fill(Front & fr,
+			v2s pos,
+			v2s dim,
+			Color c
 	) {
-		win.render_fill(pos, dim, col);
+		fr.render_fill({pos, dim}, c);
 	}
 
-	void render_inline(backend::Back &win, v2i const& pos, v2i const& dim, Color const& c, int t) {
+	void render_inline(Front & win, v2s pos, v2s dim, Color c, int8_t t) {
 		/* Draw inside border of pos,dim box; t -- thickness
 		*/
-		int w,h;
-		(dim - v2i(t,t)).unpack(w,h);
-
-
+		
+		auto wh = dim - v2s(t,t);
+		auto w = wh[0];
+		auto h = wh[1];
+		
 		// top
-		render_fill(win, pos + v2i{0,0}, {w,t}, c);
+		render_fill(win, pos + v2s{0,0}, {w,t}, c);
 		// right
-		render_fill(win, pos + v2i{w,0}, {t,h}, c);
+		render_fill(win, pos + v2s{w,0}, {t,h}, c);
 		// bottom
-		render_fill(win, pos + v2i{t,h}, {w,t}, c);
+		render_fill(win, pos + v2s{t,h}, {w,t}, c);
 		// left
-		render_fill(win, pos + v2i{0,t}, {t,h}, c);
+		render_fill(win, pos + v2s{0,t}, {t,h}, c);
 	}
 
-	void render_outline(backend::Back &win, v2i const& pos, v2i const& dim, Color const& c, int t) {
+	void render_outline(Front &win, v2s pos, v2s dim, Color c, int8_t t) {
 		/* Draw 1px thick outline border of pos,dim box
 		*/
-		render_inline(win, pos - v2i(t,t), dim + v2i(t,t)*2, c, t);
+		render_inline(win, pos - v2s(t,t), dim + v2s(t,t) * _2, c, t);
 	}
 
 
 
 	/*struct RenderText{
-		backend::Back &win;
+		Front &win;
 
-		v2i pos{0,0}; v2i dim{0,0};
+		v2s pos{0,0}; v2s dim{0,0};
 		v2f align{0.5f, 0.5f};
 
 		string font{"tiny.png"};
@@ -359,8 +364,8 @@ namespace col {
 		string text{""};
 
 		RenderText(
-			backend::Back &win,
-			v2i pos, v2i dim,
+			Front &win,
+			v2s pos, v2s dim,
 			v2f align,
 			string font,
 			Color fg, Color bg,
@@ -375,17 +380,17 @@ namespace col {
 		}
 	};*/
 
-	void render_terr(backend::Back &win,
-			v2i const& pos,
+	void render_terr(Front &win,
+			v2s pos,
 			Env const& env,
 			Terr const& terr);
 
 
 
-	void render_shield(backend::Back &win, v2i const& pos, Color const& color, char letter) {
+	void render_shield(Front &win, v2s pos, Color const& color, char letter) {
 
-		auto inner_pos = pos + v2i(1,1) * ly.line;
-		auto inner_dim = v2i(ly.S(5), ly.font_tiny);
+		auto inner_pos = pos + v2s(1,1) * ly.line;
+		auto inner_dim = v2s(ly.S(5), ly.font_tiny);
 
 		render_outline(win,
 			inner_pos,
@@ -401,13 +406,13 @@ namespace col {
 		);
 
 		render_text_at(win,
-			pos + v2i(1,1) * ly.line,
+			pos + v2s(1,1) * ly.line,
 			FontTiny, ColorBlack, ColorNone,
 			string() + letter
 		);
 	}
 
-	void render_unit(backend::Back &win,
+	void render_unit(Front &win,
 			Console & con,
 			Coords const& pos,
 			Env const& env,
@@ -416,10 +421,10 @@ namespace col {
 			Coords const& delta);
 
 
-	void render_pixel(backend::Back &win, v2i pix, const Color &colr) {
+	void render_pixel(Front &win, v2s pix, const Color &colr) {
 		render_fill(win,
 			pix,
-			v2i(1, 1),
+			v2s(1, 1),
 			colr
 		);
 	}
@@ -428,17 +433,17 @@ namespace col {
 
 
 
-	void render_sprite(backend::Back & win, int x, int y, backend::Texture const& img) {
+	void render_sprite(Front & win, int x, int y, front::Texture const& img) {
 		win.render(img, {x,y});
 	}
 
-	void render_sprite(backend::Back & win, v2i const& pix, backend::Texture const& img) {
+	void render_sprite(Front & win, v2s pix, front::Texture const& img) {
 		win.render(img, pix);
 	}
 
-	void render_sprite(backend::Back & win, 
-		v2i const& pos, v2i const& dim, v2f const& align,
-		backend::Texture const& img
+	void render_sprite(Front & win, 
+		v2s pos, v2s dim, v2f const& align,
+		front::Texture const& img
 	) {
 		win.render(img, 
 			calc_align(pos, dim, align, get_dim(img))
@@ -446,7 +451,7 @@ namespace col {
 	}
 
 
-	void render_terr(backend::Back &win,
+	void render_terr(Front &win,
 		Coords const& pos,
 		Env const& env,
 		Terr const& terr,
@@ -456,74 +461,73 @@ namespace col {
 
 
 	void render_area(
-		backend::Back & win,
-		v2i const& area_pos,
-		v2i const& area_dim,
-		backend::Texture const& tex
+		Front & win,
+		v2s area_pos,
+		v2s area_dim,
+		front::Texture const& tex
 	);
 
 
-	void render_sprite(backend::Back & win,
-		v2i const& pix, v2i const& dim,
-		backend::Texture const& img
+	void render_sprite(Front & win,
+		v2s pix, v2s dim,
+		front::Texture const& img
 	) {
-		v2i tex_dim = get_dim(img);
+		v2s tex_dim = get_dim(img);
 
 		auto free = dim - tex_dim;
-		v2i voffset(free[0]/2, free[1]/2);
+		v2s voffset(free[0]/2, free[1]/2);
 
 		render_sprite(win, pix + voffset, img);
 	}
 
-	void render_sprite2(backend::Back & win,
-		v2i const& pix, v2i const& dim,
-		backend::Texture const& img
+	void render_sprite2(Front & win,
+		v2s pix, v2s dim,
+		front::Texture const& img
 	) {
 		render_sprite(win, pix, img);
 	}
 
-	using Texture = Res::mapped_type;
-
+/*
 	struct Renderer{
-		backend::Back &win;
+		Front &win;
 		Env const& env;
 
-		Renderer(backend::Back &win, Env const& env): win(win), env(env) {}
+		Renderer(Front &win, Env const& env): win(win), env(env) {}
 
-		void operator()(Res::mapped_type const& res, v2i const& pos);
-		void operator()(Res::mapped_type const& res, v2i const& pos, v2i const& dim);
-		void operator()(Unit const& unit, v2i const& pos);
-		void operator()(Unit const& unit, v2i const& pos, v2i const& dim);
-		void operator()(Item const& item, v2i const& pos);
+		void operator()(Res::mapped_type const& res, v2s pos);
+		void operator()(Res::mapped_type const& res, v2s pos, v2s dim);
+		void operator()(Unit const& unit, v2s pos);
+		void operator()(Unit const& unit, v2s pos, v2s dim);
+		void operator()(Item const& item, v2s pos);
 
-		void fill(Texture const& tex, v2i const& pos, v2i const& dim);
-		void fill(Color const& color, v2i const& pos, v2i const& dim);
+		void fill(Texture const& tex, v2s pos, v2s dim);
+		void fill(Color const& color, v2s pos, v2s dim);
 
 	};
 
-	void Renderer::operator()(Res::mapped_type const& res, v2i const& pos) {
+	void Renderer::operator()(Res::mapped_type const& res, v2s pos) {
 		render_sprite(win, pos, res);
 	}
 
-	void Renderer::operator()(Res::mapped_type const& res, v2i const& pos, v2i const& dim) {
+	void Renderer::operator()(Res::mapped_type const& res, v2s pos, v2s dim) {
 		render_sprite(win, pos, dim, res);
 	}
 
-	void Renderer::operator()(Unit const& unit, v2i const& pos, v2i const& dim) {
+	void Renderer::operator()(Unit const& unit, v2s pos, v2s dim) {
 		render_sprite(win, pos, dim, res(win, ICON, unit.get_type_id()));
 	}
 
-	void Renderer::operator()(Unit const& unit, v2i const& pos) {
+	void Renderer::operator()(Unit const& unit, v2s pos) {
 		render_sprite(win, pos, res(win, ICON, unit.get_type_id()));
 	}
 
-	void Renderer::operator()(Item const& item, v2i const& pos) {
+	void Renderer::operator()(Item const& item, v2s pos) {
 		render_sprite(win, pos, res(win, ICON, item));
 	}
+*/
 
 
-
-	void render_area(backend::Back & win, v2i const& pos, v2i const& dim, Color const& color) {
+	void render_area(Front & win, v2s pos, v2s dim, Color const& color) {
 		render_fill(win, pos, dim, color);
 	}
 
@@ -535,10 +539,10 @@ namespace col {
 
 
 	void render_area(
-		backend::Back & win,
-		v2i const& area_pos,
-		v2i const& area_dim,
-		backend::Texture const& tex
+		Front & win,
+		v2s area_pos,
+		v2s area_dim,
+		front::Texture const& tex
 	) {
 		auto tile_dim = tex.get_dim();
 		auto area_end = area_pos + area_dim;
@@ -567,11 +571,11 @@ namespace col {
 
 		// bottom
 		{
-			auto src_box = backend::Box({0, 0}, {tile_dim[0], area_end[1] - ej});
+			auto src_box = b2s({0, 0}, {tile_dim[0], area_end[1] - ej});
 
 			int i = area_pos[0], j = ej;
 			while (i < area_end[0] - tile_dim[0]) {
-				win.render_clip(tex, {i, j}, src_box);
+				win.render(tex, {i, j}, src_box);
 				i += tile_dim[0];
 			}
 			ei = i;
@@ -579,10 +583,10 @@ namespace col {
 
 		// right
 		{
-			auto src_box = backend::Box({0, 0}, {area_end[0] - ei, tile_dim[1]});
+			auto src_box = b2s({0, 0}, {area_end[0] - ei, tile_dim[1]});
 			int i = ei, j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
-				win.render_clip(tex, {i, j}, src_box);
+				win.render(tex, {i, j}, src_box);
 				j += tile_dim[1];
 			}
 			ej = j;
@@ -590,9 +594,9 @@ namespace col {
 
 		// corner
 		{
-			auto src_box = backend::Box({0, 0}, {area_end[0] - ei, area_end[1] - ej});
+			auto src_box = b2s({0, 0}, {area_end[0] - ei, area_end[1] - ej});
 			int i = ei, j = ej;
-			win.render_clip(tex, {i, j}, src_box);
+			win.render(tex, {i, j}, src_box);
 		}
 
 	}
@@ -634,14 +638,14 @@ namespace col {
 	};
 	
 
-	void render(backend::Back & win, Console & con, SelectInteger & w) {
+	void render(Front & win, Console & con, SelectInteger & w) {
 		
 	}
 	
 	template<class Key>
-	void render_select_f(backend::Back & win, Console & con,
-		v2i const& g_pos,
-		v2i const& g_dim,
+	void render_select_f(Front & win, Console & con,
+		v2s g_pos,
+		v2s g_dim,
 		v2f const& align,
 
 		vector<Col> const& cols,
@@ -654,7 +658,7 @@ namespace col {
 	) {
 
 		auto line_height = ly.font_tiny;
-		auto sep = v2i(ly.S(1), ly.S(1));   // cell sep
+		auto sep = v2s(ly.S(1), ly.S(1));   // cell sep
 
 		int width = 0;
 		for (auto& col: cols) {
@@ -665,22 +669,22 @@ namespace col {
 		int height = get_elems_stretch(rows.size(), line_height, sep[1]);
 
 
-		v2i dim = v2i(width, height);
-		auto pos = calc_align(Box(g_pos, g_dim), dim, align);
+		v2s dim = v2s(width, height);
+		auto pos = calc_align({g_pos, g_dim}, dim, align);
 
 
 		// click anywhere -- cancel
 		con.on(Event::Press, oncancel);
 
 		// background & outline border
-		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
 
 		// click on dialog -- do nothing
 		con.on(Event::Press, pos, dim, [](){});
 
 
-		auto row_dim = v2i(dim[0] - sep[0]*2, line_height);
+		auto row_dim = v2s(dim[0] - sep[0]*2, line_height);
 		auto row_pos = pos + sep;
 
 		for (size_t j = 0; j < rows.size(); ++j) {
@@ -708,7 +712,7 @@ namespace col {
 				auto & col = cols[i];
 				auto & cell = row[i];
 
-				auto cdim = v2i(col.width, line_height);
+				auto cdim = v2s(col.width, line_height);
 
 				render_text(win,
 					cpos, cdim, v2f(col.align, 0.5),
@@ -725,8 +729,8 @@ namespace col {
 	}
 
 	template<typename K>
-	void render_select(backend::Back & win, Console & con,
-		std::function<v2i(v2i const& dim)> cpos,
+	void render_select(Front & win, Console & con,
+		std::function<v2s(v2s dim)> cpos,
 		//Box const& par, v2f const& align,
 		vector<pair<K, string>> const& kvs,
 		K & selected,
@@ -736,14 +740,14 @@ namespace col {
 
 		int const LINE_HEIGHT = ly.font_tiny;
 
-		v2i const dim = v2i(ly.scr.dim[0] * 0.5, (kvs.size()+1) * LINE_HEIGHT);
-		v2i pos = cpos(dim);
+		v2s const dim = v2s(ly.scr.dim[0] * 0.5, (kvs.size()+1) * LINE_HEIGHT);
+		v2s pos = cpos(dim);
 
 		// click anywhere -- cancel
 		con.on(Event::Press, oncancel);
 
 		// background
-		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
 
 
@@ -753,8 +757,8 @@ namespace col {
 		// entries
 		for (size_t i = 0; i < kvs.size(); ++i) {
 
-			auto p = pos + v2i(0, i * LINE_HEIGHT);
-			auto d = v2i(dim[0], LINE_HEIGHT);
+			auto p = pos + v2s(0, i * LINE_HEIGHT);
+			auto d = v2s(dim[0], LINE_HEIGHT);
 
 			auto& key = kvs[i].first;
 
@@ -786,9 +790,9 @@ namespace col {
 	}
 
 
-	void render_unit_cargo(backend::Back &win, Console & con, 
-		v2i const& pos, 
-		v2i const& dim, 
+	void render_unit_cargo(Front &win, Console & con, 
+		v2s pos, 
+		v2s dim, 
 		Unit const& unit
 	) {
 		// render unit cargo
@@ -796,9 +800,9 @@ namespace col {
 
 		// render unit items
 		auto cpos = pos;
-		auto item_dim = v2i(ly.S(12), dim[1]);		
-		auto text_dim = v2i(ly.S(4) * 3 + ly.S(2), dim[1]);
-		auto tile_dim = v2i(item_dim[0] + text_dim[0], dim[1]);
+		auto item_dim = v2s(ly.S(12), dim[1]);		
+		auto text_dim = v2s(ly.S(4) * 3 + ly.S(2), dim[1]);
+		auto tile_dim = v2s(item_dim[0] + text_dim[0], dim[1]);
 		
 		auto & box_tex = res(win, ICON, 123);
 		
@@ -817,7 +821,7 @@ namespace col {
 				);
 
 				render_text(win,
-					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
+					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
 					FontTiny, ColorWhite, ColorNone,
 					to_string(num)				
 				);
@@ -855,7 +859,7 @@ namespace col {
 
 				// amount
 				render_text(win,
-					cpos + v2i(item_dim[0], 0), text_dim, v2f(0, 0.5),
+					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
 					FontTiny, ColorWhite, ColorNone,
 					to_string(num)				
 				);
@@ -878,7 +882,7 @@ namespace col {
 
 
 
-	void render_city_store(backend::Back & win, Console & con, v2i const& pos, v2i const& dim, Terr const& terr) {
+	void render_city_store(Front & win, Console & con, v2s pos, v2s dim, Terr const& terr) {
 		auto const& env = con.env; // get_render_env
 
 		auto const& supp_reg = env.get_store(terr);
@@ -900,8 +904,8 @@ namespace col {
 		int line_height = FontTiny.get_height();
 
 		auto cpos = pos;
-		auto cell_dim = v2i(tile_width, line_height);
-		auto up = v2i(0, -line_height);
+		auto cell_dim = v2s(tile_width, line_height);
+		auto up = v2s(0, -line_height);
 		for (auto item: COLONY_ITEMS) {
 
 			auto supp_num = supp_reg.get(item);
@@ -910,7 +914,7 @@ namespace col {
 			auto delta = prod_num - cons_num;
 			
 			auto tile_pos = cpos;
-			auto tile_dim = v2i(tile_width, ly.S(12));
+			auto tile_dim = v2s(tile_width, ly.S(12));
 
 			// render item
 			render_sprite(win, tile_pos, tile_dim, res(win, ICON, get_item_icon_id(item)));
@@ -922,8 +926,8 @@ namespace col {
 
 			// render supp num
 			{
-				auto pos = cpos + v2i(0, tile_dim[1]);
-				auto dim = v2i(tile_width, line_height);
+				auto pos = cpos + v2s(0, tile_dim[1]);
+				auto dim = v2s(tile_width, line_height);
 					
 				auto proj = supp_num - cons_num + prod_num;
 				if (proj < 0) {
@@ -945,7 +949,7 @@ namespace col {
 			// render prod num
 			if (prod_num) {
 				render_text(win,
-					cpos + up*3, cell_dim, v2f(1, 0),
+					cpos + up * _3, cell_dim, v2f(1, 0),
 					FontTiny, ColorWhite, ColorNone,
 					format("+%||", prod_num)
 				);
@@ -954,7 +958,7 @@ namespace col {
 			// render cons num
 			if (cons_num) {
 				render_text(win,
-					cpos + up*2, cell_dim, v2f(1, 0),
+					cpos + up * _2, cell_dim, v2f(1, 0),
 					FontTiny, ColorWhite, ColorNone,
 					format("-%||", cons_num)
 				);
@@ -983,7 +987,7 @@ namespace col {
 
 
 
-	void render_city(backend::Back &win, Env const& env, Console & con) {
+	void render_city(Front &win, Env const& env, Console & con) {
 		/*
 			// panel right
 			render_panel(app, env, con,
@@ -998,7 +1002,7 @@ namespace col {
 			);
 		*/
 
-		auto render = Renderer{win,env};
+		//auto render = Renderer{win,env};
 
 
 
@@ -1040,8 +1044,8 @@ namespace col {
 				if (b.get_proditem() == ItemHammers)
 				{
 
-					auto button_pos = build_pos + v2i(0, build_dim[1]);
-					auto button_dim = v2i(build_dim[0], ly.font_tiny);
+					auto button_pos = build_pos + v2s(0, build_dim[1]);
+					auto button_dim = v2s(build_dim[0], ly.font_tiny);
 
 					
 					int blink = 0;
@@ -1134,8 +1138,8 @@ namespace col {
 					// number
 					render_text(win,
 
-						build_pos + v2i(item_dim[0], 0),
-						v2i(0, item_dim[1]),
+						build_pos + v2s(item_dim[0], 0),
+						v2s(0, item_dim[1]),
 						{0, 0.5},
 
 						FontTiny, ColorWhite, ColorBlack,
@@ -1149,7 +1153,7 @@ namespace col {
 					[&con, i]() { con.sel_colony_slot_id = i; }
 				);
 
-				v2i units_frame = {ly.S(25), ly.S(16)};
+				v2s units_frame = {ly.S(25), ly.S(16)};
 
 				// units on build
 				int n = b.units.size();
@@ -1158,18 +1162,18 @@ namespace col {
 					auto& unit = *unit_ptr;
 					auto& unit_tex = res(win, ICON, get_icon_id(unit));
 
-					v2i unit_pos = calc_align(
-						Box(
-							build_pos + build_dim - units_frame + v2i(1,2), units_frame
-						),
+					v2s unit_pos = calc_align(
+						{
+							build_pos + build_dim - units_frame + v2s(1,2), units_frame
+						},
 						get_dim(unit_tex),
 						v2f(float(i+1)/float(n+1), 1)
 					);
 
-					v2i unit_dim = get_dim(unit_tex);
+					v2s unit_dim = get_dim(unit_tex);
 
-					v2i sel_pos = unit_pos;
-					v2i sel_dim = unit_dim;
+					v2s sel_pos = unit_pos;
+					v2s sel_dim = unit_dim;
 
 					// render unit on build
 					render_sprite(win, unit_pos, unit_tex);
@@ -1205,7 +1209,7 @@ namespace col {
 
 			auto pix = ly.city_fields.pos;
 
-			auto& tex_wood = res(win, WOODBG, 1);
+			auto& tex_wood = res(win, WOODTILE, 1);
 			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
 
 			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, ly.terr_dim);
@@ -1221,7 +1225,7 @@ namespace col {
 
 				auto& field_terr = field.get_terr();
 
-				v2i relc = v2i(env.get_coords(*field.terr) - env.get_coords(city_terr));
+				v2s relc = v2s(env.get_coords(*field.terr) - env.get_coords(city_terr));
 				auto field_pos = city_terr_pos + vmul(relc, ly.terr_dim);
 				auto field_dim = ly.terr_dim;
 
@@ -1243,14 +1247,14 @@ namespace col {
 				for (auto& unit_p: field.units) {
 					auto& unit = *unit_p;
 					if (unit.in_game) {
-						v2i unit_dim = v2i(field_dim[0]/2, field_dim[1]);
-						v2i unit_pos = field_pos + v2i(field_dim[0]/2, 0);
+						v2s unit_dim = v2s(field_dim[0]/2, field_dim[1]);
+						v2s unit_pos = field_pos + v2s(field_dim[0]/2, 0);
 
-						v2i item_dim = field_dim; //v2i(field_dim[0]/2, field_dim[1]);
-						v2i item_pos = field_pos;
+						v2s item_dim = field_dim; //v2s(field_dim[0]/2, field_dim[1]);
+						v2s item_pos = field_pos;
 
-						v2i sel_pos = field_pos;
-						v2i sel_dim = field_dim;
+						v2s sel_pos = field_pos;
+						v2s sel_dim = field_dim;
 
 						auto& unit_tex = res(win, ICON, get_icon_id(unit));
 
@@ -1259,7 +1263,7 @@ namespace col {
 							// render produced item
 							auto& item_tex = res(win, ICON, get_item_icon_id(proditem));
 							render_sprite(win,
-								calc_align(Box(item_pos, item_dim), get_dim(item_tex)),
+								calc_align({item_pos, item_dim}, get_dim(item_tex)),
 								item_tex
 							);
 
@@ -1275,7 +1279,7 @@ namespace col {
 
 						// render unit on field
 						render_sprite(win,
-							calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
+							calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
 							unit_tex
 						);
 
@@ -1374,15 +1378,15 @@ namespace col {
 			if (unit.in_game and !unit.is_working()) {
 
 				auto& unit_tex = res(win, ICON, get_icon_id(unit));
-				v2i unit_pos = ly.city_units.pos + v2i(ly.terr_dim[0] * i, 0);
-				v2i unit_dim = ly.terr_dim;
+				v2s unit_pos = ly.city_units.pos + v2s(ly.terr_dim[0] * i, 0);
+				v2s unit_dim = ly.terr_dim;
 
-				v2i sel_pos = unit_pos;
-				v2i sel_dim = unit_dim;
+				v2s sel_pos = unit_pos;
+				v2s sel_dim = unit_dim;
 
 				// render unit
 				render_sprite(win,
-					calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
+					calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
 					unit_tex
 				);
 
@@ -1433,7 +1437,7 @@ namespace col {
 		render_area(win, ly.city_exit.pos, ly.city_exit.dim, {140,0,140,255});
 
 		render_text(win,
-			ly.city_exit.pos + v2i(1,1),
+			ly.city_exit.pos + v2s(1,1),
 			{0,0}, {0,0},
 			FontTiny, ColorFont, ColorNone,
 			"RET"
@@ -1649,29 +1653,29 @@ namespace col {
 	}
 
 
-	void render_units(backend::Back &win, Console & con,
-		Vector2<int> const& pos,
-		Vector2<int> const& dim,
+	void render_units(Front &win, Console & con,
+		v2s pos,
+		v2s dim,
 		Env const& env,
 		Terr const& terr)
 	{
 		int i = 0;
 		int j = 0;
-		v2i unit_dim = ly.terr_dim;
+		v2s unit_dim = ly.terr_dim;
 
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 			if (unit.in_game and !unit.is_working()) {
 
 				auto& unit_tex = res(win, ICON, get_icon_id(unit));
-				v2i unit_pos = pos + vmul(unit_dim, v2i(i,j));
+				v2s unit_pos = pos + vmul(unit_dim, v2s(i,j));
 
-				v2i sel_pos = unit_pos;
-				v2i sel_dim = unit_dim;
+				v2s sel_pos = unit_pos;
+				v2s sel_dim = unit_dim;
 
 				// render unit
 				render_sprite(win,
-					calc_align(Box(unit_pos, unit_dim), get_dim(unit_tex)),
+					calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
 					unit_tex
 				);
 
@@ -1810,8 +1814,8 @@ namespace col {
 		return b;
 	}*/
 
-	void render_diffuse_from(backend::Back &win,
-		v2i const& pix,
+	void render_diffuse_from(Front &win,
+		v2s pix,
 		LocalArea const& loc,
 		Dir::type d,
 		int offset
@@ -1835,8 +1839,8 @@ namespace col {
 
 
 
-	void render_terr(backend::Back &win,
-			v2i const& pos,
+	void render_terr(Front &win,
+			v2s pos,
 			Env const& env,
 			Terr const& terr)
 	{
@@ -1887,19 +1891,19 @@ namespace col {
 
 			uint8 const h = conf.tile_dim >> 1;
 
-			render_sprite(win, pix + v2i(0,0), res(win, COAST,
+			render_sprite(win, pix + v2s(0,0), res(win, COAST,
 				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
 			));
 
-			render_sprite(win, pix + v2i(h,0), res(win, COAST,
+			render_sprite(win, pix + v2s(h,0), res(win, COAST,
 				base + get_coast_index(1, get(loc,Dir::W), get(loc,Dir::E), get(loc,Dir::D))
 			));
 
-			render_sprite(win, pix + v2i(h,h), res(win, COAST,
+			render_sprite(win, pix + v2s(h,h), res(win, COAST,
 				base + get_coast_index(2, get(loc,Dir::D), get(loc,Dir::C), get(loc,Dir::X))
 			));
 
-			render_sprite(win, pix + v2i(0,h), res(win, COAST,
+			render_sprite(win, pix + v2s(0,h), res(win, COAST,
 				base + get_coast_index(3, get(loc,Dir::X), get(loc,Dir::Z), get(loc,Dir::A))
 			));
 
@@ -1977,11 +1981,11 @@ namespace col {
 
 	}
 
-	void render_selected_unit(backend::Back & win, Console & con, v2i const& pos, Unit & unit);
+	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit);
 
 
 
-	void render_terr(backend::Back &win,
+	void render_terr(Front &win,
 			Coords const& pos,
 			Env const& env,
 			Terr const& terr,
@@ -1992,11 +1996,10 @@ namespace col {
 		int x = (pos[0] - delta[0]) * conf.terr_w + map_pix[0];
 		int y = (pos[1] - delta[1]) * conf.terr_h + map_pix[1];
 
-		render_terr(win, v2i(x,y), env, terr);
+		render_terr(win, v2s(x,y), env, terr);
 
 	}
 
-	using backend::Back;
 
 
 	Color get_unit_color(Unit const& u) {
@@ -2007,9 +2010,9 @@ namespace col {
 		return {c.r, c.g, c.b, c.a};
 	}
 
-	void render_stack(backend::Back &win,
+	void render_stack(Front &win,
 			Console & con,
-			v2i const& pos,
+			v2s pos,
 			Env const& env,
 			Terr const& terr)
 	{
@@ -2028,7 +2031,7 @@ namespace col {
 			render_sprite(win, pos[0], pos[1], res(win, ICON, 4));
 
 			// left click on colony (on map) -- enter colony screen
-			con.on(Event::Press, Button::Left, pos, v2i(conf.tile_dim, conf.tile_dim),
+			con.on(Event::Press, Button::Left, pos, v2s(conf.tile_dim, conf.tile_dim),
 				[&con, coords](){
 					con.select_terr(coords);
 					con.command("enter");
@@ -2050,7 +2053,7 @@ namespace col {
 			// render unit in field
 			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
 			render_sprite(win,
-				calc_align(Box(pos, ly.terr_dim), get_dim(icon)),
+				calc_align({pos, ly.terr_dim}, get_dim(icon)),
 				icon
 			);
 
@@ -2076,7 +2079,7 @@ namespace col {
 
 
 
-	void render_selected_unit(backend::Back & win, Console & con, v2i const& pos, Unit & unit) {
+	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit) {
 		auto & icon = res(win, ICON, unit.get_icon());
 		auto unit_id = unit.id;
 
@@ -2087,60 +2090,60 @@ namespace col {
 
 		// render unit in field
 		render_sprite(win,
-			calc_align(Box(pos, ly.terr_dim), get_dim(icon)),
+			calc_align({pos, ly.terr_dim}, get_dim(icon)),
 			icon
 		);
 
 
 		// selected unit keyboard shortcuts (numpad -> move)
-		con.on(Event::Press, Key::Numpad2,
+		con.on(Event::Press, KeyNumpad2,
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
-		con.on(Event::Press, Key::Numpad8,
+		con.on(Event::Press, KeyNumpad8,
 			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
-		con.on(Event::Press, Key::Numpad6,
+		con.on(Event::Press, KeyNumpad6,
 			[&con,unit_id](){ con.command("move 1 0"); }
 		);
-		con.on(Event::Press, Key::Numpad4,
+		con.on(Event::Press, KeyNumpad4,
 			[&con,unit_id](){ con.command("move -1 0"); }
 		);
-		con.on(Event::Press, Key::Numpad3,
+		con.on(Event::Press, KeyNumpad3,
 			[&con,unit_id](){ con.command("move 1 1"); }
 		);
-		con.on(Event::Press, Key::Numpad7,
+		con.on(Event::Press, KeyNumpad7,
 			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
-		con.on(Event::Press, Key::Numpad1,
+		con.on(Event::Press, KeyNumpad1,
 			[&con,unit_id](){ con.command("move -1 1"); }
 		);
-		con.on(Event::Press, Key::Numpad9,
+		con.on(Event::Press, KeyNumpad9,
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
 
 		// move on nums
-		con.on(Event::Press, Key::Num2,
+		con.on(Event::Press, KeyNum2,
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
-		con.on(Event::Press, Key::Num8,
+		con.on(Event::Press, KeyNum8,
 			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
-		con.on(Event::Press, Key::Num6,
+		con.on(Event::Press, KeyNum6,
 			[&con,unit_id](){ con.command("move 1 0"); }
 		);
-		con.on(Event::Press, Key::Num4,
+		con.on(Event::Press, KeyNum4,
 			[&con,unit_id](){ con.command("move -1 0"); }
 		);
-		con.on(Event::Press, Key::Num3,
+		con.on(Event::Press, KeyNum3,
 			[&con,unit_id](){ con.command("move 1 1"); }
 		);
-		con.on(Event::Press, Key::Num7,
+		con.on(Event::Press, KeyNum7,
 			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
-		con.on(Event::Press, Key::Num1,
+		con.on(Event::Press, KeyNum1,
 			[&con,unit_id](){ con.command("move -1 1"); }
 		);
-		con.on(Event::Press, Key::Num9,
+		con.on(Event::Press, KeyNum9,
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
 
@@ -2149,23 +2152,23 @@ namespace col {
 
 
 		// build colony
-		con.on(Event::Press, Key::B,
+		con.on(Event::Press, KeyB,
 			[&con](){ con.command("build-colony Unnamed"); }
 		);
 		// build road
-		con.on(Event::Press, Key::R,
+		con.on(Event::Press, KeyR,
 			[&con,unit_id](){ con.order_unit(unit_id, 'R'); }
 		);
 		// plow fields
-		con.on(Event::Press, Key::P,
+		con.on(Event::Press, KeyP,
 			[&con,unit_id](){ con.order_unit(unit_id, 'P'); }
 		);
 		// clear forest
-		con.on(Event::Press, Key::O,
+		con.on(Event::Press, KeyO,
 			[&con,unit_id](){ con.order_unit(unit_id, 'O'); }
 		);
 		// space - skip unit
-		con.on(Event::Press, Key::Space,
+		con.on(Event::Press, KeySpace,
 			[&con](){ con.skip_unit(); }
 		);
 
@@ -2174,7 +2177,7 @@ namespace col {
 	//void select_area()
 
 
-	void render_map(backend::Back &win, Env const& env, Console & con, v2i const& pos,
+	void render_map(Front &win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
 	{
 
@@ -2188,7 +2191,7 @@ namespace col {
 
 				if (env.in_bounds(coords)) {
 
-					auto pos = ly.map.pos + vmul(ly.terr_dim, v2i(i,j));
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 
 					auto& terr = env.get_terr(coords);
 					render_terr(win, pos, env, terr);
@@ -2254,7 +2257,7 @@ namespace col {
 				auto coords = Coords(i,j);
 				if (env.in_bounds(coords)) {
 
-					auto pos = ly.map.pos + vmul(ly.terr_dim, v2i(i,j));
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 
 					auto& terr = env.get_terr(coords);
 
@@ -2306,16 +2309,16 @@ namespace col {
 
 
 
-	void render_bar(backend::Back &win,
+	void render_bar(Front &win,
 			Env const& env,
 			Console const& con,
-			Vector2<int> const& pos,
-			Vector2<int> const& dim
+			v2s pos,
+			v2s dim
 		) {
 		// pos - left top pix
 		// dim - size
 
-		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, WOODTILE, 1));
 
 	}
 
@@ -2323,16 +2326,16 @@ namespace col {
 
 
 
-	void render_panel(backend::Back & win,
+	void render_panel(Front & win,
 			Env const& env,
 			Console & con,
-			v2i const& pos,
-			v2i const& dim
+			v2s pos,
+			v2s dim
 		) {
 
-		//backend::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
+		//front::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, pos, dim, res(win, "WOODTILE_SS", 1));
+		render_area(win, pos, dim, res(win, WOODTILE, 1));
 
 		// terrain info
 		/*
@@ -2412,16 +2415,16 @@ namespace col {
 
 		// top right: nation indicator
 		if (env.in_progress()) {
-			render_pixel(win, pos + v2i(dim[0]-1,0), get_nation_color(env.get_current_nation()));
+			render_pixel(win, pos + v2s(dim[0]-1,0), get_nation_color(env.get_current_nation()));
 		}
 
-		auto ren = Renderer(win, env);
+		//auto ren = Renderer(win, env);
 
 
 
 		if (auto t = con.get_sel_terr()) {
-			v2i pos = ly.pan.pos + v2i(0,ly.S(100));
-			v2i dim = v2i(ly.pan.dim[0], ly.terr_dim[1]*3);
+			v2s pos = ly.pan.pos + v2s(0,ly.S(100));
+			v2s dim = v2s(ly.pan.dim[0], ly.terr_dim[1]*3);
 
 			render_fill(win, pos, dim,
 				Color(0,0,0,64)
@@ -2444,7 +2447,7 @@ namespace col {
 				
 				// show button
 				auto text_box = render_text(win,
-					ly.pan.pos, ly.pan.dim - v2i(0, ly.font_tiny * 2), v2f(0.5, 1.0),
+					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny * 2), v2f(0.5, 1.0),
 					FontTiny, colind, ColorNone,
 					"Idle Unit"
 				);
@@ -2473,7 +2476,7 @@ namespace col {
 				
 				// show button
 				auto text_box = render_text(win,
-					ly.pan.pos, ly.pan.dim - v2i(0, ly.font_tiny), v2f(0.5, 1.0),
+					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny), v2f(0.5, 1.0),
 					FontTiny, colind, ColorNone,
 					"Idle Factory"
 				);
@@ -2505,7 +2508,7 @@ namespace col {
 					colind = ColorWhite;
 
 					// Enter -> move all
-					con.on(Event::Press, Key::Enter,
+					con.on(Event::Press, KeyEnter,
 						[&con](){ con.repeat_all(); }
 					);
 				}
@@ -2515,7 +2518,7 @@ namespace col {
 					colind = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
 
 					// Enter -> end turn
-					con.on(Event::Press, Key::Enter,
+					con.on(Event::Press, KeyEnter,
 						[&con](){ con.command("ready"); }
 					);
 				}
@@ -2554,11 +2557,11 @@ namespace col {
 
 
 
-	void render_cmd(backend::Back & app, col::Console & con) {
+	void render_cmd(Front & app, col::Console & con) {
 		if (con.is_active()) {
 
 			auto ln = con.output.size();
-			v2i pos = v2i(ly.map.pos[0], ly.map.pos[1]);
+			v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
 
 			for (auto& line: boost::adaptors::reverse(con.output)) {
 
@@ -2593,22 +2596,22 @@ namespace col {
 			});
 
 			// history up
-			con.on(Event::Press, Key::Up, [&con](){
+			con.on(Event::Press, KeyUp, [&con](){
 				con.history_up();
 			});
 
 			// history down
-			con.on(Event::Press, Key::Down, [&con](){
+			con.on(Event::Press, KeyDown, [&con](){
 				con.history_down();
 			});
 
 			// enter
-			con.on(Event::Press, Key::Return, [&con](){
+			con.on(Event::Press, KeyReturn, [&con](){
 				con.handle_char(u'\r');
 			});
 
 			// backspace
-			con.on(Event::Press, Key::Backspace, [&con](){
+			con.on(Event::Press, KeyBackspace, [&con](){
 				con.handle_char(u'\b');
 			});
 
@@ -2627,11 +2630,11 @@ namespace col {
 	}
 
 
-	void render_cursor(backend::Back & win, Console const& con) {
+	void render_cursor(Front & win, Console const& con) {
 		if (con.drag_item) {
 
-			auto mouse = backend::get_mouse();
-			auto pos = v2i(get_logical_pos(win, mouse.pos));
+			auto mouse = front::get_mouse();
+			auto pos = v2s(get_logical_pos(win, mouse.pos));
 			//print("cursor: %||, %||\n", mp.x, mp.y);
 
 			render_sprite(win, pos, res(win, ICON, get_item_icon_id(con.drag_item)));
@@ -2651,7 +2654,7 @@ namespace col {
 
 
 
-	void render(backend::Back & app, col::Env & env, col::Console & con, int verbose) {
+	void render(Front & app, col::Env & env, col::Console & con, int verbose) {
 
 		if (verbose >= 2) print("render: {\n");
 

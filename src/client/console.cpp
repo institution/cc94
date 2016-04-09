@@ -1,31 +1,30 @@
-#include "console.h"
+#include "console.hpp"
 
-#include "serialize.h"
-#include "props.h"
-#include "renderer.h"
-#include "null_ai.h"
-#include "backend/backend.h"
+#include "serialize.hpp"
+#include "props.hpp"
+#include "renderer.hpp"
+#include "null_ai.hpp"
+#include "../front/front.hpp"
 
 namespace col {
 	using boost::str;
 
-	Layout const ly(conf.screen_w, conf.screen_h);
 
 
-	Color make_color_by_name(const string &s) {
+	NationColor make_color_by_name(const string &s) {
 		if (s == "red") {
-			return Color(255,0,0);
+			return NationColor(255,0,0);
 		}
 		else
 		if (s == "green") {
-			return Color(0,255,0);
+			return NationColor(0,255,0);
 		}
 		else
 		if (s == "blue") {
-			return Color(0,0,255);
+			return NationColor(0,0,255);
 		}
 		else {
-			return Color(0,0,0);
+			return NationColor(0,0,0);
 		}
 	}
 
@@ -57,7 +56,7 @@ namespace col {
 	halo::Mod get_mod() {
 		halo::Mod mod = 0;
 		
-		auto keys = backend::get_keyboard_state();
+		auto keys = front::get_keyboard_state();
 		
 		if (keys[SDL_SCANCODE_LSHIFT] or keys[SDL_SCANCODE_RSHIFT]) {
 			mod = mod | halo::ModShift;
@@ -66,16 +65,16 @@ namespace col {
 			mod = mod | halo::ModCtrl;
 		}
 		
-		auto mouse = backend::get_mouse();
+		auto mouse = front::get_mouse();
 		
-		if (mouse[backend::ButtonLeft] or mouse[backend::ButtonRight]) 
+		if (mouse[front::ButtonLeft] or mouse[front::ButtonRight]) 
 		{
 			mod = mod | halo::ModButton;
 		}
 		return mod;	
 	}
 	
-	void Console::handle(backend::Back const& app, backend::Event const& event) {
+	void Console::handle(Front const& app, front::Event const& event) {
 		
 		if (verbose) print("Console.handle: {\n");
 		
@@ -84,18 +83,18 @@ namespace col {
 		// prepare pattern
 		Pattern p;
 		
-		if (type == backend::EventKeyDown) {
+		if (type == front::EventKeyDown) {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Press;
 			p.key = event.key.keysym.sym;
 			print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
 		}
-		else if (type == backend::EventTextInput) {
+		else if (type == front::EventTextInput) {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Char;
 			p.unicode = event.text.text[0];
 		}
-		else if (type == backend::EventMouseMotion)			
+		else if (type == front::EventMouseMotion)			
 		{	
 			auto mp = get_logical_pos(app, 
 				{event.motion.x, event.motion.y}
@@ -104,9 +103,9 @@ namespace col {
 			p.dev = Dev::Mouse;
 			p.event = Event::Hover;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp), {0,0});
+			p.area = b2s(v2s(mp), {0,0});
 		}		
-		else if (type == backend::EventMouseButtonDown)
+		else if (type == front::EventMouseButtonDown)
 		{			
 			auto mp = get_logical_pos(app, 
 				{event.button.x, event.button.y}
@@ -115,17 +114,17 @@ namespace col {
 			p.dev = Dev::Mouse;
 			p.event = Event::Press;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp), {0,0});
+			p.area = b2s(v2s(mp), {0,0});
 			
 			
-			if (event.button.button == backend::ButtonLeft) {
+			if (event.button.button == front::ButtonLeft) {
 				p.button = Button::Left;
 			}			
-			else if (event.button.button == backend::ButtonRight) {
+			else if (event.button.button == front::ButtonRight) {
 				p.button = Button::Right;
 			}
 		}
-		else if (type == backend::EventMouseButtonUp)
+		else if (type == front::EventMouseButtonUp)
 		{	
 			auto mp = get_logical_pos(app, 
 				{event.button.x, event.button.y}
@@ -134,12 +133,12 @@ namespace col {
 			p.dev = Dev::Mouse;
 			p.event = Event::Release;
 			p.mod = get_mod();
-			p.area = Box2(v2i(mp), {0,0});
+			p.area = b2s(v2s(mp), {0,0});
 			
-			if (event.button.button == backend::ButtonLeft) {
+			if (event.button.button == front::ButtonLeft) {
 				p.button = Button::Left;
 			}			
-			else if (event.button.button == backend::ButtonRight) {
+			else if (event.button.button == front::ButtonRight) {
 				p.button = Button::Right;
 			}
 		}

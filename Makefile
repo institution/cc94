@@ -29,14 +29,13 @@ EMOPTS+=-s ASSERTIONS=1
 CCOPTS:=
 CCOPTS+=-std=c++11
 CCOPTS+=-I./inc -I./src -I./src/server
-CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
-CCOPTS+=-ferror-limit=3
+CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null -Wno-vla-extension
+#CCOPTS+=-ferror-limit=3
 
 
 
 # linker options
 LLOPTS:=
-
 
 
 # emcc
@@ -47,14 +46,15 @@ ifeq (${CC}, emcc)
 	#LLOPTS+=--preload-file res	
 else
 	LLOPTS+=-L./lib 
-	LLOPTS+=-lSDL2 
+	LLOPTS+=-lSDL2
+	LLOPTS+=-lGL -lGLEW 
 	OUT_EXT:=
 endif
 
 
 
-debug:   CCOPTS+=-O2 -g
-debug:   LLOPTS+=-O2 -g
+debug:   CCOPTS+=-O0 -g
+debug:   LLOPTS+=-O0 -g
 release: CCOPTS+=-O3 
 release: LLOPTS+=-O3 
 

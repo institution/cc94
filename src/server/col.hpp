@@ -1,7 +1,6 @@
-#ifndef COL_H
-#define COL_H
+#pragma once
 
-#include "pre.h"
+#include "pre.hpp"
 
 #include <typeinfo>
 #include <iostream>
@@ -22,10 +21,20 @@
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/serialization/split_member.hpp>
-#include "roll.h"
-#include "aga2.hpp"
-#include "format.hpp"
+#include "roll.hpp"
+#include "error.hpp"
+#include "../ext/ext.hpp"
 
+
+template <class... Args>
+void _fail(char const* fname, int line, char const* fmt, Args... args) {
+	print(std::cerr, "ERROR[%||:%||] ", fname, line);
+	ext::fail(fmt, args...);
+}
+
+#define GFAIL(...) \
+	_fail(__FILE__, __LINE__, __VA_ARGS__)
+	
 
 using Path = std::string;
 
@@ -118,5 +127,3 @@ namespace col{
 
 
 
-
-#endif

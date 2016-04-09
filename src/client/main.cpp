@@ -21,7 +21,7 @@
 #include <vector>
 #include <map>
 
-#include "pre.h"
+#include "pre.hpp"
 
 //#include <boost/cstdint.hpp>
 #include <boost/multi_array.hpp>
@@ -29,13 +29,13 @@
 #include <boost/algorithm/string.hpp>
 
 #include "col.hpp"
-#include "env.h"
-#include "csv.h"
-#include "runner.h"
-#include "console.h"
-#include "server/serialize.h"
+#include "env.hpp"
+#include "csv.hpp"
+#include "runner.hpp"
+#include "console.hpp"
+#include "server/serialize.hpp"
 
-#include "format.hpp"
+#include "../ext/format.hpp"
 
 
 
@@ -76,12 +76,15 @@ int main(int argc, char* argv[])
 		emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &runner, -1, 0);
 	#endif
 	
-	
-	if (argc == 2) {
-		runner.init(argv[1], 1);
+
+	if (argc == 3) {
+		runner.init(argv[1], argv[2], 1);
+	}
+	else if (argc == 2) {
+		runner.init(argv[1], "", 1);
 	}
 	else {
-		runner.init("", 1);
+		runner.init("", "", 1);
 	}
 		
 	#ifndef __EMSCRIPTEN__

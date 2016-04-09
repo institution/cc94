@@ -1,27 +1,35 @@
-#include "conf.h"
+#include "conf.hpp"
+#include "../ext/filesys.hpp"
 
 
 namespace col {
-	
+
+	using filesys::operator/;
+
 	Conf conf;
+	
+	void Conf::read(Path const& tile_path) {
+		Image img = front::load_png(tile_path / "TERRAIN_SS" / "001.png");
+		auto dim = img.get_dim();
 
-	Conf::Conf() {
-		scale = 4;
-
-		screen_w = 320 * scale;
-		screen_h = 200 * scale;
-		tile_dim = 16 * scale;
-
-
-		tile_path = "res/tile64/";
-		//font_tiny_path = "res/Liberation Sans-Regular-16.png";
-		font_tiny_path = "res/tile64/FONTTINY_FF/001.png";
+		assert(dim[0] % 16 == 0);
 		
-		csv_path = "res/csv/";
-		defaultmap_path = "res/default.mp";
+		this->scale = dim[0] / 16;
+		this->tile_path = tile_path;
+		this->font_tiny_path = tile_path / "FONTTINY_FF" / "001.png";
 
+		this->screen_w = 320 * scale;
+		this->screen_h = 200 * scale;
+		this->tile_dim = 16 * scale;
 
-
+		this->csv_path = "res/csv/";		
+		this->defaultmap_path = "res/default.mp";
+		
 	}
-
+	
+	
 }
+
+
+
+

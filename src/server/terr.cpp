@@ -1,5 +1,5 @@
-#include "terr.h"
-#include "item.h"
+#include "terr.hpp"
+#include "item.hpp"
 
 namespace col{
 

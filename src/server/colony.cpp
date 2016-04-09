@@ -1,4 +1,4 @@
-#include "colony.h"
+#include "colony.hpp"
 
 namespace col {
 	

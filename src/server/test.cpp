@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_MAIN
-#include "catch.hpp"
+#include "../catch/catch.hpp"
 
 
 #include <sstream>
@@ -7,9 +7,9 @@
 #include <boost/archive/text_iarchive.hpp>
 
 
-#include "env.h"
-#include "build.h"
-#include "serialize.h"
+#include "env.hpp"
+#include "build.hpp"
+#include "serialize.hpp"
 
 
 using namespace col;

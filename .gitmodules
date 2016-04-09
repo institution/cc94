@@ -1,0 +1,3 @@
+[submodule "src/ext"]
+	path = src/ext
+	url = git+ssh://git@github.com/institution/ext.git
