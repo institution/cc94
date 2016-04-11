@@ -27,9 +27,7 @@ namespace col {
 	using Dev = Console::Dev;
 
 
-	bool NEW_STYLE = false;
-
-
+	
 	// frequent short literals lol :D
 	int16_t const
 		_0 = 0,
@@ -94,6 +92,7 @@ namespace col {
 		WOODTILE = 6,
 		DIFFUSE = 7,
 		COAST = 8;
+		
 
 	Path get_res_dir(ResCat cat) {
 		// categories, *xxx* -- generated to memory image
@@ -106,7 +105,7 @@ namespace col {
 			case BUILD: return "BUILDING_SS";
 			case WOODTILE: return "WOODTILE_SS";
 			case DIFFUSE: return "*DIFFUSE*";
-			case COAST: return "*COAST*";			
+			case COAST: return "*COAST*";
 		}
 		fail("unknown resource category: %||\n", cat);
 	}
@@ -164,7 +163,9 @@ namespace col {
 
 
 	Color const ColorDarkBrown = Color(60,32,24);
-	Color const ColorLightBrown = Color(121,73,52);
+	Color const ColorBrown = Color(121,73,52);
+	Color const ColorLightBrown = Color(152,128,92);
+		
 
 	Color const ColorDarkWoodBrown = Color(84,68,44,255);
 	Color const ColorWoodBrown = Color(132,112,80,255);
@@ -314,7 +315,7 @@ namespace col {
 	
 	void preload_renderer(Front & fr) {
 		preload_terrain(fr);
-		FontTiny.load(fr, conf.font_tiny_path, -1);		
+		FontTiny.load(fr, conf.font_tiny_path, -1 * ly.scale);
 	}
 
 
@@ -352,33 +353,6 @@ namespace col {
 
 
 
-	/*struct RenderText{
-		Front &win;
-
-		v2s pos{0,0}; v2s dim{0,0};
-		v2f align{0.5f, 0.5f};
-
-		string font{"tiny.png"};
-		Color fg{ColorWhite}, bg{ColorNone};
-
-		string text{""};
-
-		RenderText(
-			Front &win,
-			v2s pos, v2s dim,
-			v2f align,
-			string font,
-			Color fg, Color bg,
-			string text
-		):
-			win(win), pos(pos), dim(dim), align(align),
-			font(font), fg(fg), bg(bg), text(text)
-		{}
-
-		void operator()() {
-			render_text(win,pos,dim,align,font,fg,bg,text);
-		}
-	};*/
 
 	void render_terr(Front &win,
 			v2s pos,
@@ -424,30 +398,29 @@ namespace col {
 	void render_pixel(Front &win, v2s pix, const Color &colr) {
 		render_fill(win,
 			pix,
-			v2s(1, 1),
+			v2s(ly.S(1), ly.S(1)),
 			colr
 		);
 	}
 
 
 
-
-
-	void render_sprite(Front & win, int x, int y, front::Texture const& img) {
-		win.render(img, {x,y});
-	}
-
-	void render_sprite(Front & win, v2s pix, front::Texture const& img) {
+	void render_sprite(Front & win, v2s pix, Texture const& img) {
 		win.render(img, pix);
 	}
 
 	void render_sprite(Front & win, 
-		v2s pos, v2s dim, v2f const& align,
-		front::Texture const& img
+		b2s box, v2f const& align,
+		Texture const& img
 	) {
-		win.render(img, 
-			calc_align(pos, dim, align, get_dim(img))
-		);
+		win.render(img, calc_align(box, align, get_dim(img)));
+	}
+
+	void render_sprite(Front & win, 
+		v2s pos, v2s dim, v2f const& align,
+		Texture const& img
+	) {
+		render_sprite(win, {pos, dim}, align, img);
 	}
 
 
@@ -464,67 +437,10 @@ namespace col {
 		Front & win,
 		v2s area_pos,
 		v2s area_dim,
-		front::Texture const& tex
+		Texture const& tex
 	);
 
 
-	void render_sprite(Front & win,
-		v2s pix, v2s dim,
-		front::Texture const& img
-	) {
-		v2s tex_dim = get_dim(img);
-
-		auto free = dim - tex_dim;
-		v2s voffset(free[0]/2, free[1]/2);
-
-		render_sprite(win, pix + voffset, img);
-	}
-
-	void render_sprite2(Front & win,
-		v2s pix, v2s dim,
-		front::Texture const& img
-	) {
-		render_sprite(win, pix, img);
-	}
-
-/*
-	struct Renderer{
-		Front &win;
-		Env const& env;
-
-		Renderer(Front &win, Env const& env): win(win), env(env) {}
-
-		void operator()(Res::mapped_type const& res, v2s pos);
-		void operator()(Res::mapped_type const& res, v2s pos, v2s dim);
-		void operator()(Unit const& unit, v2s pos);
-		void operator()(Unit const& unit, v2s pos, v2s dim);
-		void operator()(Item const& item, v2s pos);
-
-		void fill(Texture const& tex, v2s pos, v2s dim);
-		void fill(Color const& color, v2s pos, v2s dim);
-
-	};
-
-	void Renderer::operator()(Res::mapped_type const& res, v2s pos) {
-		render_sprite(win, pos, res);
-	}
-
-	void Renderer::operator()(Res::mapped_type const& res, v2s pos, v2s dim) {
-		render_sprite(win, pos, dim, res);
-	}
-
-	void Renderer::operator()(Unit const& unit, v2s pos, v2s dim) {
-		render_sprite(win, pos, dim, res(win, ICON, unit.get_type_id()));
-	}
-
-	void Renderer::operator()(Unit const& unit, v2s pos) {
-		render_sprite(win, pos, res(win, ICON, unit.get_type_id()));
-	}
-
-	void Renderer::operator()(Item const& item, v2s pos) {
-		render_sprite(win, pos, res(win, ICON, item));
-	}
-*/
 
 
 	void render_area(Front & win, v2s pos, v2s dim, Color const& color) {
@@ -890,6 +806,12 @@ namespace col {
 		Register prod_reg, cons_reg;
 		fill_colony_regs(terr, prod_reg, cons_reg);
 
+		// render supply nums bg
+		render_area(win,
+			ly.city_supply_nums.pos, ly.city_supply_nums.dim,
+			{76,100,172,255}
+		);
+
 		// render storage area
 		render_area(win, pos, dim, {76,100,172,255});
 
@@ -917,7 +839,9 @@ namespace col {
 			auto tile_dim = v2s(tile_width, ly.S(12));
 
 			// render item
-			render_sprite(win, tile_pos, tile_dim, res(win, ICON, get_item_icon_id(item)));
+			render_sprite(win, {tile_pos, tile_dim}, {0.5f, 0.5f},
+				res(win, ICON, get_item_icon_id(item))
+			);
 
 			// left click on item -- start drag cargo load
 			con.on(Event::Press, Button::Left, tile_pos, tile_dim,
@@ -985,7 +909,35 @@ namespace col {
 		}
 	}
 
+	
+	void render_unit_tile(Front & win, b2s box, Unit const& unit)
+	{		
+		/// Render unit icon with terrain icon in background
+		
+		auto & unit_tex = res(win, ICON, get_icon_id(unit));
+		auto & bgs_tex = res(win, COLONY, 1);
 
+		// determine terrain icon: land or water
+		b2s src_box;
+		if (unit.get_travel() == TravelSea) {
+			// water src box			
+			src_box = b2s({141, 29}, {16, 3}) * ly.scale;
+		}
+		else {
+			// land src box
+			src_box = b2s({66, 27}, {16, 3}) * ly.scale;
+		}
+		// TODO: transported unit
+
+		// render terrain icon
+		win.render(bgs_tex,
+			calc_align(box, {0.5f, 1.0f}, src_box.dim),
+			src_box
+		);
+		
+		// render unit
+		render_sprite(win, box, {0.5f, 0.5f}, unit_tex);
+	}
 
 	void render_city(Front &win, Env const& env, Console & con) {
 		/*
@@ -1328,27 +1280,7 @@ namespace col {
 
 
 
-		// render middle background
-		render_fill(win, ly.city_middle_bg.pos, ly.city_middle_bg.dim, ColorSkyBlue);
-
-
-
-		//array<uint8,16> num_workers;
-		//array<int,16> prod;
-		//num_workers.fill(0);
-		//prod.fill(0);
-
-		/*
-		for (auto& p: terr.units) {
-			auto& unit = *p;
-			if (unit.workplace != nullptr) {
-				if (unit.workplace->place_type() == PlaceType::Build) {
-
-				}
-			}
-		}*/
-
-		// render terr units
+		// render city terr units
 
 		// right click anywhere - unselect selected unit
 		if (con.get_sel_unit()) {
@@ -1359,37 +1291,41 @@ namespace col {
 			);
 		}
 
-		render_inline(win,
-			ly.city_units.pos, ly.city_units.dim,
-			ColorDarkGreen,
-			ly.line
-		);
-
+		
 		// left click on city terrain area with selected unit -- unwork that unit
 		if (con.get_sel_unit()) {
 			con.on2(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
 				"work-none"
 			);
 		}
+
+		// render city terr units area bg
+		render_fill(win,
+			ly.city_units.pos, ly.city_units.dim,
+			ColorSkyBlue
+		);
+
+		// render unit cargo area bg
+		render_fill(win,
+			ly.city_unit_cargo.pos, ly.city_unit_cargo.dim,
+			ColorLightBrown
+		);
+		
+		// render standing units
 		int i = 0;
 		for (auto& p: terr.units) {
 			auto& unit = *p;
 
 			if (unit.in_game and !unit.is_working()) {
 
-				auto& unit_tex = res(win, ICON, get_icon_id(unit));
 				v2s unit_pos = ly.city_units.pos + v2s(ly.terr_dim[0] * i, 0);
 				v2s unit_dim = ly.terr_dim;
 
 				v2s sel_pos = unit_pos;
 				v2s sel_dim = unit_dim;
 
-				// render unit
-				render_sprite(win,
-					calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
-					unit_tex
-				);
-
+				render_unit_tile(win, {unit_pos, unit_dim}, unit);
+				
 				auto unit_id = unit.id;
 
 				if (unit_id == con.get_sel_unit_id()) {
@@ -1404,6 +1340,7 @@ namespace col {
 						}
 					);
 
+					// unit cargo
 					render_unit_cargo(win, con, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
 
 				}
@@ -1674,10 +1611,8 @@ namespace col {
 				v2s sel_dim = unit_dim;
 
 				// render unit
-				render_sprite(win,
-					calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
-					unit_tex
-				);
+				render_unit_tile(win, {unit_pos, unit_dim}, unit);
+
 
 				// select
 				auto unit_id = unit.id;
@@ -2028,7 +1963,7 @@ namespace col {
 		// first render colony icon
 		if (terr.has_colony()) {
 			// render colony
-			render_sprite(win, pos[0], pos[1], res(win, ICON, 4));
+			render_sprite(win, pos, res(win, ICON, 4));
 
 			// left click on colony (on map) -- enter colony screen
 			con.on(Event::Press, Button::Left, pos, v2s(conf.tile_dim, conf.tile_dim),
@@ -2041,7 +1976,7 @@ namespace col {
 			// colony flag
 			if (auto p = env.get_control(terr)) {
 				// render owner flag over colony (unit in garrison)
-				render_sprite(win, pos[0] + ly.S(5), pos[1], res(win, ICON, p->get_flag_id()));
+				render_sprite(win, {pos[0] + ly.S(5), pos[1]}, res(win, ICON, p->get_flag_id()));
 			}
 
 		}
@@ -2183,11 +2118,48 @@ namespace col {
 
 		auto w = 15;
 		auto h = 12;
+		
 
+
+		// left arrow -- scroll map
+		con.on(Event::Press, KeyLeft, 
+			[&con](){
+				con.move_view({-1,0});
+			}
+		);
+
+		// right arrow -- scroll map
+		con.on(Event::Press, KeyRight, 
+			[&con](){
+				con.move_view({+1,0});
+			}
+		);
+
+		// up arrow -- scroll map
+		con.on(Event::Press, KeyUp, 
+			[&con](){
+				con.move_view({0,-1});
+			}
+		);
+
+		// down arrow -- scroll map
+		con.on(Event::Press, KeyDown, 
+			[&con](){
+				con.move_view({0,+1});
+			}
+		);
+
+		auto vpos = con.view_pos;
+		auto vdim = v2s(w,h);
+
+		// TODO: clamp view -- prevent black margins to appear
+			
+		
+		
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-
-				auto coords = Coords(i,j);
+		
+				auto coords = Coords(i,j) + vpos;
 
 				if (env.in_bounds(coords)) {
 
@@ -2254,7 +2226,7 @@ namespace col {
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-				auto coords = Coords(i,j);
+				auto coords = Coords(i,j) + vpos;
 				if (env.in_bounds(coords)) {
 
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
@@ -2279,7 +2251,7 @@ namespace col {
 					auto coords = env.get_coords(*tp);
 
 					render_inline(win,
-						vmul(coords, ly.terr_dim) + pos,
+						vmul(coords - vpos, ly.terr_dim) + pos,
 						ly.terr_dim,
 						{128,128,128,255},
 						ly.line
@@ -2292,7 +2264,7 @@ namespace col {
 				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
 					render_inline(win,
-						vmul(coords, ly.terr_dim) + pos,
+						vmul(coords - vpos, ly.terr_dim) + pos,
 						ly.terr_dim,
 						{255,255,255,255},
 						ly.line
@@ -2415,7 +2387,12 @@ namespace col {
 
 		// top right: nation indicator
 		if (env.in_progress()) {
-			render_pixel(win, pos + v2s(dim[0]-1,0), get_nation_color(env.get_current_nation()));
+			
+			render_fill(win,
+				pos + v2s(dim[0]-ly.S(1),0),
+				v2s(ly.S(1), ly.S(1)),
+				get_nation_color(env.get_current_nation())
+			);
 		}
 
 		//auto ren = Renderer(win, env);

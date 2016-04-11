@@ -106,6 +106,14 @@ namespace front {
 		
 		font.height = line_height;
 
+		// prep image		
+		for (size_t i=0; i<img.size(); ++i) {
+			auto & c = img[i];
+			c.r = c.a;
+			c.g = c.a;
+			c.b = c.a;			
+		}	
+
 		font.img = front.make_texture(img);
 	}
 

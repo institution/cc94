@@ -117,6 +117,7 @@ namespace front {
 
 	private:
 		void set_blend_font(Color c);
+		void set_blend_fill(Color c);
 		void set_blend_norm();
 		void render_subtexture(Texture const& t, v2s trg, b2s src);
 		void _render_call_GL(GLenum tex_id, GLfloat * data, size_t size);

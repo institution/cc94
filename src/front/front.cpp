@@ -170,6 +170,14 @@ namespace front {
 		glEnable(GL_BLEND);
 	}
 
+	void Front::set_blend_fill(Color c) {
+		auto v = ColorFloat(c);
+		glBlendColor(v.r, v.g, v.b, v.a);
+		glBlendFuncSeparate(GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_ALPHA);
+		glBlendEquation(GL_FUNC_ADD);
+		glEnable(GL_BLEND);
+	}
+
 	void Front::set_blend_norm() {
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
@@ -184,7 +192,7 @@ namespace front {
 	}*/
 
 	void Front::render_fill(b2s box, Color c) {
-		set_blend_font(c);
+		set_blend_fill(c);
 
 		auto t_pos = v2f(box.pos);
 		auto t_end = v2f(box.pos + box.dim);
@@ -262,23 +270,7 @@ namespace front {
 			end[0], pos[1],  1.0f, 0.0f,
 		};
 
-		// set texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, t.id);
-		CHECK_GL();
-
-		// update array
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
-		CHECK_GL();
-
-		glBindVertexArray(vao[0]);
-		CHECK_GL();
-		
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-		CHECK_GL();		
-		
-		
+		_render_call_GL(t.id, data, sizeof(data));		
 	}
 
 	void Front::destroy_GL() {

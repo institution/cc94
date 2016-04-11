@@ -42,10 +42,6 @@ namespace col{
 		
 
 		
-		city_resources = Cell(
-			scr.pos[0], scr.end[1] - res_height,
-			scr.dim[0] - res_height, res_height
-		);   // bottom bar with resources
 		
 		
 		
@@ -55,28 +51,33 @@ namespace col{
 			scr.dim[0] - city_builds.dim[0] - line, city_builds.dim[1]
 		);   // big area with fields around city
 
-		auto b_width = int(res_height * 1.618);
-		city_exit = Cell(
-			scr.end[0] - b_width, scr.end[1] - res_height,
-			b_width, res_height
-		);   // exit button (bottom-right)
-
+		
 		city_units = Cell(
-			scr.pos[0], city_builds.end[1] + 1,
-			city_resources.dim[0], S(16)
+			scr.pos[0], city_builds.end[1] + line,
+			S(16) * 20, S(16)
 		);   // unit bar
 
 		city_unit_cargo = Cell(
 			city_units.pos[0], city_units.end[1],
 			city_units.dim[0], S(12)
 		);   // unit cargo bar
-
 		
-		city_middle_bg = Cell(
-			scr.pos[0], city_builds.end[1],
-			city_resources.dim[0], city_resources.pos[1] - city_builds.end[1]
-		);   // horizontal area beetween (builds and fields) and (resources and exit)
+		city_resources = Cell(
+			scr.pos[0], scr.end[1] - res_height,
+			S(16) * 20, res_height
+		);   // bottom bar with resources
 
+		auto supply_nums_height = font_tiny * 3;
+		city_supply_nums = Cell(
+			city_resources.pos[0], city_resources.pos[1] - supply_nums_height,
+			city_resources.dim[0], supply_nums_height
+		);   // resources ballance table
+		
+		auto b_width = int(res_height * 1.618);
+		city_exit = Cell(
+			scr.end[0] - b_width, scr.end[1] - res_height,
+			b_width, res_height
+		);   // exit button (bottom-right)
 
 
 		auto T1 = S(v2s(23,27));

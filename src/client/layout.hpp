@@ -40,7 +40,7 @@ namespace col{
 		int16_t scale;
 
 		Cell scr, bar, pan, map;
-		Cell city_builds, city_resources, city_fields, city_exit, city_units, city_middle_bg, city_unit_cargo;
+		Cell city_builds, city_fields, city_units, city_unit_cargo, city_supply_nums, city_resources, city_exit;
 		v2s terr_dim;
 		
 		vector<v2s> pixs, dims;

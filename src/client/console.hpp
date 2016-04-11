@@ -112,6 +112,10 @@ namespace col {
 		// selected unit
 		Unit* sel_unit{nullptr};
 
+		v2s view_pos{0,0};
+
+		
+
 		Runner & runner;
 		
 		
@@ -177,6 +181,9 @@ namespace col {
 
 		}
 
+		void move_view(v2s delta) {
+			view_pos += delta;
+		}
 
 		void apply_inter(inter::Any const& a, Agent & s);
 
