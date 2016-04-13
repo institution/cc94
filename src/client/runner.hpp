@@ -30,7 +30,7 @@ namespace col{
 				agents.push_back(new T(args...));
 			}
 			else {
-				throw Error("cannot add agent: agents.size() >= max_size");
+				ext::fail("cannot add agent: agents.size() >= max_size");
 			}
 		}
 

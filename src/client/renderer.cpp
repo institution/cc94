@@ -386,14 +386,6 @@ namespace col {
 		);
 	}
 
-	void render_unit(Front &win,
-			Console & con,
-			Coords const& pos,
-			Env const& env,
-			Terr const& terr,
-			Vector2<int> const& map_pix,
-			Coords const& delta);
-
 
 	void render_pixel(Front &win, v2s pix, const Color &colr) {
 		render_fill(win,
@@ -423,14 +415,6 @@ namespace col {
 		render_sprite(win, {pos, dim}, align, img);
 	}
 
-
-	void render_terr(Front &win,
-		Coords const& pos,
-		Env const& env,
-		Terr const& terr,
-		Vector2<int> const& map_pix,
-		Coords const& delta
-	);
 
 
 	void render_area(
@@ -1116,7 +1100,7 @@ namespace col {
 
 					v2s unit_pos = calc_align(
 						{
-							build_pos + build_dim - units_frame + v2s(1,2), units_frame
+							build_pos + build_dim - units_frame + ly.S(v2s(1,1)), units_frame
 						},
 						get_dim(unit_tex),
 						v2f(float(i+1)/float(n+1), 1)
@@ -1940,7 +1924,7 @@ namespace col {
 	Color get_unit_color(Unit const& u) {
 		auto c = get_nation_color(u.get_nation());
 		if (u.get_time_left() == 0) {
-			return Color(c.r/2, c.g/2, c.b/2, c.a/2);
+			return Color(c.r/2, c.g/2, c.b/2, c.a);
 		}
 		return {c.r, c.g, c.b, c.a};
 	}

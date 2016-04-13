@@ -7,14 +7,14 @@ namespace col {
 
 
 	struct Nation {
-		using Id = uint32;
-		using Auth = uint32;
+		using Id = uint8_t;
+		using Auth = uint32_t;
 
 		Id id;
 		string name;
 		NationColor color;
-		uint8 flag_id;
-		uint32 auth;
+		uint8_t flag_id;
+		uint32_t auth;
 
 		//Player *player{nullptr};
 

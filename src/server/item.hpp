@@ -10,14 +10,15 @@ namespace col {
 		struct Item;
 	}
 
-	using Item = distinct::Enum<detail::Item, uint8>;
+	using Item = distinct::Enum<detail::Item, uint8_t>;
 
 	inline int get_id(Item const& item) {
 		return item.get_value();
 	}
 
-	constexpr
-	Item const
+
+
+	constexpr Item const
 		ItemNone{0},
 		
 		// Field items
@@ -46,18 +47,30 @@ namespace col {
 		ItemHammers{19},
 		ItemCross{20},
 		ItemBell{21},
-		
+
 		// Pop growth
 		ItemToys{22},   // humans: 200 toys -> Colonist
-		ItemRags{23}    // horses: 50 rags -> Horse		
+		ItemRags{23},    // horses: 50 rags -> Horse
+
+
+		
+		
+		ItemEnd{25}    // keep this at the end
 		;
 		
-	int const ItemCount = 24; // total num of items
+	int const ItemCount = ItemEnd; // total num of items
 	
 	int const ItemNoneCount = 1;
 	int const ItemFieldCount = 10;
 	int const ItemBuildCount = 22;
 	
 	int const NITEMS = 24; // total num of items
+
+
+
+
+
+
+
 
 }

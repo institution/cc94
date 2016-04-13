@@ -3,6 +3,7 @@
 #include "objs.hpp"
 #include "storage.hpp"
 #include "makeable.hpp"
+#include "prof.hpp"
 
 namespace col{
 
@@ -115,6 +116,8 @@ namespace col{
 	struct Build;
 	struct Field;
 
+	
+
 	struct Unit{
 		using Id = uint32;
 
@@ -140,8 +143,28 @@ namespace col{
 		
 		Amount health{0};
 		
+		Prof prof_dir{ProfNone};
+		int8_t prof_num{0};
 
+		Prof get_prof() const {
+			return (prof_num >= 8) ? prof_dir : ProfNone;
+		}
 
+		void set_prof(Prof p) {
+			prof_dir = p;
+			prof_num = 8;			
+		}
+
+		void learn(Prof p, int8_t num) {
+			if (prof_dir == p) {
+				prof_num += num;
+			}
+			else {
+				prof_dir = p;
+				prof_num = num;
+			}
+		}
+		
 		Amount get(Item item) const {
 			return store.get(item);
 		}

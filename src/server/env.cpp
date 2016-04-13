@@ -9,6 +9,57 @@ namespace col {
 		Env::StatePlay = 1,
 		Env::StateExit = 2;
 
+	Prof get_prof_by_item(Item item)
+	{
+		switch (item) {
+			ItemNone: return ProfNone;
+			ItemFood: return ProfFarmer;
+			ItemFish: return ProfFisherman;
+			ItemSugar: return ProfSugarPlanter;
+			ItemTobacco: return ProfTobaccoPlanter;
+			ItemCotton: return ProfCottonPlanter;
+			ItemFurs: return ProfFurTrapper;
+			ItemLumber: return ProfLumberjack;
+			ItemOre: return ProfOreMiner;
+			ItemSilver: return ProfSilverMiner;
+			ItemHorses: return ProfNone;
+			ItemRum: return ProfDistiller;
+			ItemCigars: return ProfTobaconist;
+			ItemCloth: return ProfWeaver;
+			ItemCoats: return ProfFurTrader;
+			ItemTradeGoods: return ProfNone;
+			ItemTools: return ProfBlacksmith;
+			ItemMuskets: return ProfGunsmith;
+			ItemCannons: return ProfGunsmith;
+			ItemHammers: return ProfCarpenter;
+			ItemCross: return ProfPreacher;
+			ItemBell: return ProfStatesman;
+		}
+		return ProfNone;
+	}
+
+	Prof get_unit_occupation(Unit const& u)
+	{
+		if (u.is_working()) {
+			return get_prof_by_item(u.get_workplace().get_proditem());
+		}
+		else {
+			if (u.get_travel() == TravelLand) {
+				auto const& t = u.get_type();
+				if (t.get_item1() == ItemTools) {
+					return ProfPioneer;
+				}
+				else if (t.get_item1() == ItemMuskets) {
+					return ProfSoldier;
+				}
+				else if (t.get_item2() == ItemHorses) {
+					return ProfScout;
+				}
+			}
+		}
+		return ProfNone;
+	}
+
 
 	int Env::get_movement_cost(Terr const& dest, Terr const& orig, Travel const& travel) const {
 
@@ -64,6 +115,60 @@ namespace col {
 
 	}
 
+
+	void Env::resolve_builds(Terr & terr) {
+
+		assert(terr.has_colony());
+		
+		auto & c = terr.get_colony();
+
+		for (auto & b: c.builds) {				
+			switch (b.get_type_id()) {
+				case BuildSchoolhouse:						
+				case BuildCollege:						
+				case BuildUniversity:
+					resolve_teaching(get_store(c), b, terr);
+					break;						
+			}
+		}
+	}
+
+
+	void Env::resolve_teaching(Store & st, Workplace & b, Terr & t)
+	{
+		auto food_sup = st.get(ItemFood);
+		
+		for (auto * teacher: b.units) {
+			auto tprof = teacher->get_prof();
+
+			// may teach?
+			if (tprof != ProfNone
+			and food_sup >= 2
+			and teacher->time_left == TIME_UNIT)
+			{
+				// search for student, TODO: look for most advanced student and teach him
+				for (auto * student: t.units) {
+
+					// may learn?
+					if (student->get_prof() == ProfNone
+					and get_unit_occupation(*student) == tprof)
+					{
+						// teaching cost time and food
+						teacher->time_left = 0;
+						food_sup -= 2;
+						
+						student->learn(tprof, 2);
+						// done, next teacher
+						break;
+					}			
+				}
+			}		
+		}
+		
+		st.set(ItemFood, food_sup);
+	}
+	
+
 	void Env::produce(Store & st, Workplace & wp) {
 		auto const& proditem = wp.get_proditem();
 		auto const& consitem = wp.get_consitem();
@@ -86,7 +191,8 @@ namespace col {
 					if (food_sup >= 2) {
 						nom.prod += uprod;
 						nom.cons += ucons;
-							
+
+						// working cost time and food
 						u->time_left = 0;
 						food_sup -= 2;
 					}

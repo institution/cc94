@@ -8,7 +8,7 @@
 
 #include "core.hpp"
 #include "inter.hpp"
-
+#include "prof.hpp"
 
 namespace col{
 
@@ -64,6 +64,8 @@ namespace col{
     void read(Archive & ar, Env & env);
 
 	struct ProdCons{Amount prod{0}, cons{0};};
+
+	Prof get_unit_occupation(Unit const& u);
 
 	struct Env: Core {
 
@@ -132,6 +134,8 @@ namespace col{
 		void apply(inter::activate a) {
 
 		}
+
+		
 
 
 		Nation const* get_current_nation_p() const {
@@ -288,7 +292,13 @@ namespace col{
 		// * progress is increased on workplace task
 		void produce(Store & st, Workplace & wp);
 		
+
 		
+		void resolve_builds(Terr & terr);
+		void resolve_teaching(Store & st, Workplace & b, Terr & t);
+
+
+
 		template <class F, int i, int j>
 		void resolve(Colony & c) {
 			// resolve production of items inside [i,j) range
@@ -313,7 +323,15 @@ namespace col{
 					produce(get_store(c), *wp);
 				}
 			}
+
+
+			// teaching
+			resolve_builds(c.get_terr());
+			
 		}
+
+		
+		
 
 		void turn(Terr & t) {
 

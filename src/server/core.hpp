@@ -39,7 +39,7 @@ namespace col {
 
 
 
-	using Vi = std::bitset<32>;
+	
 
 
 	struct Core {
@@ -57,16 +57,12 @@ namespace col {
 		Coord h{0};
 		Terrs terrs;
 
-		// visibility
-		boost::multi_array<Vi, 2> vis;
-
 		// detail
 		uint32_t next_id{0};
 
 		explicit
 		Core():
-			terrs(Coords(0,0), boost::fortran_storage_order()),
-			vis(Coords(0,0), boost::fortran_storage_order())
+			terrs(Coords(0,0), boost::fortran_storage_order())			
 		{
 			bts = make_shared<BuildTypes>();
 			uts = make_shared<UnitTypes>();
@@ -87,6 +83,7 @@ namespace col {
 		Nation::Id get_id(Nation const& n) { return n.id; }
 
 
+		
 		template<class Type>
 		void loads(string const& fn);
 
@@ -128,6 +125,9 @@ namespace col {
 
 		template <typename T>
 		Terr const& get_terr(T const& u) const;
+
+		
+
 
 
 		void resize(Coords const& dim);
@@ -262,7 +262,6 @@ namespace col {
 		//terrs.resize(boost::extents[dim[1]][dim[0]]);
 		w = dim[0]; h = dim[1];
 		terrs.resize(Coords(w,h));
-		vis.resize(Coords(w,h));
 	}
 
 

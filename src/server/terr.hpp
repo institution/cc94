@@ -1,10 +1,11 @@
 #pragma once
 
+#include <bitset>
 #include "phys.hpp"
 #include "biome.hpp"
 #include "objs.hpp"
 #include "unit.hpp"
-
+#include "nation.hpp"
 
 namespace col{
 
@@ -21,6 +22,8 @@ namespace col{
 	struct Colony;
 	struct Unit;
 
+	using Vision = std::bitset<32>;
+
 	struct Terr {
 		using Id = Coords;
 
@@ -31,6 +34,7 @@ namespace col{
 		vector<Unit*> units;
 		Colony* colony{nullptr};
 
+		Vision vision;
 
 		// Constructors
 		//Terr(): biome(BiomePlains), phys(PhysNone), alt(SEA_LEVEL), colony(nullptr) {}
@@ -42,6 +46,14 @@ namespace col{
 		~Terr() {
 			assert(colony == nullptr);
 			assert(units.size() == 0);
+		}
+
+		void set_vision(Nation::Id id, bool val) {
+			vision.set(id, val);
+		}
+
+		bool get_vision(Nation::Id id) const {
+			return vision[id];
 		}
 
 		/*

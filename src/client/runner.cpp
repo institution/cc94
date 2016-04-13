@@ -10,7 +10,7 @@
 
 namespace col{
 	
-	Runner::Agents::size_type const Runner::max_size = 16;
+	Runner::Agents::size_type const Runner::max_size = 32;
 
 
 

@@ -1,31 +1,7 @@
-*~
-*.pyc
-bin/*
-__/*
-COLONIZE*
-res/*
-cc94*
-inc/SDL2*
-inc/boost*
-nbproject
+bin/
+res/
+cc94/
+art/
+b/
 core
-dist/*
-art/*
-
-# Dependencies
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
+*~

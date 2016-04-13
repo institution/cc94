@@ -15,6 +15,7 @@ namespace col{
 
 	// make unit/build
 	// TODO: can be used to implement grazing animals
+	// TODO: can be used to implement teaching
 	struct Task {
 		Amount progress{0};
 		Makeable const* what{nullptr};
