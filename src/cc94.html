@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
+    <title>cc94</title>
+    
+    <style>
+      body {
+        margin: 0;
+        padding: none;
+      }
+
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas { border: 0px none; }
+
+    </style>
+</head>
+
+
+<body>
+	<canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault(); event.stopPropagation(); return false;"></canvas>
+	
+	<!--<input type="button" value="Fullscreen" onclick="Module.requestFullScreen(0,1)">-->
+
+	
+
+    <script type='text/javascript'>
+      var Module = {
+        print: (function() {
+          return function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.log(text);            
+          };
+        })(),
+        printErr: function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.error(text);          
+        },
+        canvas: (function() {
+          var canvas = document.getElementById('canvas');
+
+          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+          // application robust, you may want to override this behavior before shipping!
+          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+          return canvas;
+        })(),
+      };      
+    </script>
+        
+    
+    <script async type="text/javascript" src="preload.js"></script>
+    
+    <script async type="text/javascript" src="main.js"></script>
+    
+</body>
+</html>

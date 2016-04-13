@@ -112,7 +112,6 @@ def gen_coast(path):
 
 	
 	
-	
 
 
 
@@ -214,8 +213,22 @@ def combine_forest(name, img_map, unit):
 		saveas(ind, out)
 		
 	
+"""	
+def extract_buildings():
 	
-				
+	# build_id column-wise
+	cols = [
+		[1,2,3,17],    # col1
+		[4,13,44,16],  # col2...
+		[5,14,36,48],
+		[6,15,37,47],
+		[19,22,25,28,33,40,45],
+		[20,23,26,29,34,41],
+		[21,24,27,30,35,42],
+		[7,8,9,46]
+		[10,38,39,43]
+	]
+"""			
 				
 
 def extract(name, img_map, unit):
