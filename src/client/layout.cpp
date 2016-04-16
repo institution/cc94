@@ -11,6 +11,7 @@ namespace col{
 		line = S(1);           // line separating gui panels
 		line_sel = S(1);       // line used to draw selection boxes
 		font_tiny = S(7);      // font tiny height
+		sep = v2s(S(1), S(1));
 
 		terr_dim = v2s(conf.tile_dim, conf.tile_dim);   // map tile
 
@@ -23,12 +24,12 @@ namespace col{
 		);   // top menu bar 
 
 		pan = Cell(
-			scr.end[0] - pan_width, bar.end[1] + line,
+			scr.end()[0] - pan_width, bar.end()[1] + line,
 			pan_width, scr.dim[1] - bar.dim[1] - line
 		);   // right panel
 
 		map = Cell(
-			scr.pos[0], bar.end[1] + line,
+			scr.pos[0], bar.end()[1] + line,
 			scr.dim[0] - pan.dim[0] - line, scr.dim[1] - bar.dim[1] - line
 		);   // map panel
 
@@ -47,23 +48,23 @@ namespace col{
 		
 
 		city_fields = Cell(
-			city_builds.end[0] + line, city_builds.pos[1],
+			city_builds.end()[0] + line, city_builds.pos[1],
 			scr.dim[0] - city_builds.dim[0] - line, city_builds.dim[1]
 		);   // big area with fields around city
 
 		
 		city_units = Cell(
-			scr.pos[0], city_builds.end[1] + line,
+			scr.pos[0], city_builds.end()[1] + line,
 			S(16) * 20, S(16)
 		);   // unit bar
 
 		city_unit_cargo = Cell(
-			city_units.pos[0], city_units.end[1],
+			city_units.pos[0], city_units.end()[1],
 			city_units.dim[0], S(12)
 		);   // unit cargo bar
 		
 		city_resources = Cell(
-			scr.pos[0], scr.end[1] - res_height,
+			scr.pos[0], scr.end()[1] - res_height,
 			S(16) * 20, res_height
 		);   // bottom bar with resources
 
@@ -75,7 +76,7 @@ namespace col{
 		
 		auto b_width = int(res_height * 1.618);
 		city_exit = Cell(
-			scr.end[0] - b_width, scr.end[1] - res_height,
+			scr.end()[0] - b_width, scr.end()[1] - res_height,
 			b_width, res_height
 		);   // exit button (bottom-right)
 

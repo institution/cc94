@@ -14,22 +14,23 @@ namespace col {
 
 	v2i const tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 
-	extern std::unordered_map<Biome,string,Biome::hash> BIOME_NAMES;
+	extern std::unordered_map<Biome,string> BIOME_NAMES;
 	Biome get_biome_by_name(string const& name);
 
-	extern std::unordered_map<Phys,string,Phys::hash> PHYS_NAMES;
+	extern std::unordered_map<Phys,string> PHYS_NAMES;
 	Phys get_phys_by_name(string const& name);
 
-	extern std::unordered_map<Item,string,Item::hash> ITEM_NAMES;
-	Item get_item_by_name(string const& name);
+	/*extern std::unordered_map<Item,string> ITEM_NAMES;
+	Item get_item_by_name(string const& name);*/
 
-	string const& get_item_name(Item const& item);
+	//string const& get_item_name(Item const& item);
 
-	inline string const& get_name(Item const& item) { return get_item_name(item); }	
+	inline char const* get_name(Item const& item) { return get_item_name(item); }	
 	inline string const& get_name(BuildType const& x) { return x.get_name(); }
 	inline string const& get_name(UnitType const& x) { return x.get_name(); }
 	inline string const& get_name(Makeable const& x) { return x.get_name(); }
 		
+	
 	
 	
 
@@ -46,7 +47,7 @@ namespace col {
 
 	inline
 	int get_biome_icon_id(Biome const& b) {
-		return biome_icons_ids.at(b.get_value());
+		return biome_icons_ids.at(b);
 	}
 
 
@@ -76,8 +77,8 @@ namespace col {
 	});
 
 	inline
-	int get_item_icon_id(Item const& b) {
-		return item_icons_ids.at(b.get_value());
+	int get_item_icon_id(Item b) {
+		return item_icons_ids.at(b);
 	}
 
 

@@ -1,16 +1,15 @@
 #pragma once
 
 #include "col.hpp"
-#include "distinct.hpp"
-
-
 
 namespace col {
 
-	namespace detail { struct Biome; }
-	using Biome = distinct::Enum<detail::Biome, uint8>;
+	//namespace detail { struct Biome; }
+	//using Biome = distinct::Enum<detail::Biome, uint8>;
 
-	constexpr
+	
+	using Biome = int8_t;
+	
 	Biome const
 		BiomeNone{0},
 		BiomeTundra{1}, //boreal forest
@@ -21,7 +20,8 @@ namespace col {
 		BiomeGrassland{6}, //confier itemforest
 		BiomeMarsh{7}, //wetland forest
 		BiomeSwamp{8}, //rain forest
-		BiomeArctic{9};
+		BiomeArctic{9},
+		BiomeEnd{10};
 
 
 }

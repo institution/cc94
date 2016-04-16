@@ -67,6 +67,11 @@ namespace col{
 
 	Prof get_unit_occupation(Unit const& u);
 
+
+	Prof get_prof_by_item(Item item);
+	bool is_expert(Unit const& unit, Item const& item);
+
+
 	struct Env: Core {
 
 		using State = uint8_t;
@@ -255,6 +260,15 @@ namespace col{
 			set_random_gen(roll::roll1);
 			clear_misc();
 		}
+		
+		explicit
+		Env(Coords dim, Terr const& def): Core(), verbose(1) {
+			set_random_gen(roll::roll1);
+			clear_misc();
+			resize(dim);
+			fill(def);
+		}
+
 
 		Env& set_random_gen(boost::function<int (int range)> const& func) {
 			roll = func;
@@ -307,7 +321,7 @@ namespace col{
 			array<vector<F*>, j-i> ws;
 
 			for (auto& wp: c.get_cont<F>()) {
-				int v = wp.get_proditem().get_value();
+				auto v = wp.get_proditem();
 				if (v) { // may produce None
 					if (v < i or j <= v) {
 						throw Error("produced item out of range");
@@ -833,7 +847,7 @@ namespace col{
 			auto& t = get_terr(u);
 
 			// terrain checks
-			if (!compatible(t.get_travel(), LAND)) {
+			if (!compatible(t.get_travel(), TravelLand)) {
 				throw InvalidAction("can clear on land only");
 			}
 
@@ -871,7 +885,7 @@ namespace col{
 			auto& t = get_terr(u);
 
 			// terrain checks
-			if (!compatible(t.get_travel(), LAND)) {
+			if (!compatible(t.get_travel(), TravelLand)) {
 				throw InvalidAction("can build on land only");
 			}
 
@@ -910,7 +924,7 @@ namespace col{
 			auto& t = get_terr(u);
 
 			// terrain checks
-			if (!compatible(t.get_travel(), LAND)) {
+			if (!compatible(t.get_travel(), TravelLand)) {
 				throw Error("not on land");
 			}
 
@@ -980,8 +994,14 @@ namespace col{
 		}
 		 */
 
+		/// How much of 'item can be produced by 'unit in 'build
+		Amount get_prod(Build const& build, Unit const& unit, Item const& item) const;
+		
+		/// How much of raw materials needed to produce 'item will be consumed by 'unit in 'build
+		Amount get_cons(Build const& build, Unit const& unit, Item const& item) const;
 
-
+		/// How much of 'item can be produced by 'unit on 'terr
+		Amount get_prod(Terr const& terr, Unit const& unit, Item const& item) const;
 
 
 
@@ -991,7 +1011,7 @@ namespace col{
 				throw Error("not your unit");
 			}
 
-			if (!compatible(u.get_travel(), LAND)) {
+			if (!compatible(u.get_travel(), TravelLand)) {
 				throw Error("not land-based unit");
 			}
 
@@ -1074,10 +1094,10 @@ namespace col{
 
 
 		float get_defense_bonus(Terr const& terr, Travel const& trav) {
-			if (trav == LAND) {
+			if (trav == TravelLand) {
 				return get_land_defense_bonus(terr);
 			}
-			else if (trav == SEA) {
+			else if (trav == TravelSea) {
 				return get_sea_defense_bonus(terr);
 			}
 			else {

@@ -178,20 +178,17 @@ namespace col{
 		
 		
 		
-
-		Amount get_prod(Item const& item, Amount const& base) const override {
-			if (get_proditem() == item) {  // buildings can only produce one kind of item
-				return type->prod * base;				
-			}
-			return 0;
-		};
+		Amount get_prod() const { 
+			return type->prod; 
+		}
 		
-		Amount get_cons(Item const& item, Amount const& base) const override { 
-			if (get_proditem() == item) {  // buildings can only produce one kind of item
-				return type->cons * base;
-			}
-			return 0;			
+		Amount get_cons() const { 
+			return type->cons;			
 		};
+
+		Amount get_prod(Env const& env, Unit const& unit, Item const& item) const override;
+		
+		Amount get_cons(Env const& env, Unit const& unit, Item const& item) const override;
 
 
 		Build & set_type(BuildType const& type) {

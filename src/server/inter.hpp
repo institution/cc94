@@ -161,14 +161,14 @@ namespace col{
 		CC94_DEFINE_INTER(
 			improve,
 			(Unit::Id, unit_id)
-			(Phys::Id, phys_id)
+			(Phys, phys_id)
 		)
 
 		// action
 		CC94_DEFINE_INTER(
 			destroy,
 			(Unit::Id, unit_id)
-			(Phys::Id, phys_id)
+			(Phys, phys_id)
 		)
 
 		// action
@@ -231,7 +231,7 @@ namespace col{
 			prod_build,
 			(Terr::Id, terr_id)
 			(Build::Id, build_id)
-			(Item::Id, item_id)
+			(Item, item_id)
 		)
 
 		// action
@@ -239,7 +239,7 @@ namespace col{
 			prod_field,
 			(Terr::Id, terr_id)
 			(Field::Id, field_id)
-			(Item::Id, item_id)
+			(Item, item_id)
 		)
 
 		// action

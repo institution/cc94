@@ -11,6 +11,7 @@ namespace col {
 
 
 
+	
 	NationColor make_color_by_name(const string &s) {
 		if (s == "red") {
 			return NationColor(255,0,0);
@@ -227,7 +228,7 @@ namespace col {
 		
 		size_t i = curr_pos + 1;
 		while (i < lst.size()) {
-			if (f.get_terr().get_yield(lst.at(i), false)) {
+			if (env.get_prod(f.get_terr(), false, lst.at(i))) {
 				return lst.at(i);
 			}
 			++i;
@@ -235,7 +236,7 @@ namespace col {
 		
 		i = 0;
 		while (i < curr_pos) {
-			if (f.get_terr().get_yield(lst.at(i), false)) {
+			if (env.get_prod(f.get_terr(), false, lst.at(i))) {
 				return lst.at(i);
 			}
 			++i;
@@ -484,7 +485,7 @@ namespace col {
 					auto& t = *get_sel_terr(); 
 					auto& u = env.create<Unit>(c, p);
 					env.init(t, u);
-					if (compatible(u.get_travel(), LAND) and
+					if (compatible(u.get_travel(), TravelLand) and
 						!compatible(u.get_travel(), t.get_travel())) 
 					{
 						u.transported = true;

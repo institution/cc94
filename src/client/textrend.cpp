@@ -125,7 +125,56 @@ namespace col{
 		v2s pos,
 		PixFont const& font,
 		Color fg,
-		Color bg,
+		string const& text
+	) {
+		// current position
+		auto g_pos = pos;
+		
+		// may be empty string
+		if (text.size() > 0)
+		{
+			size_t i = 0;
+			size_t j = text.size();
+
+			
+			for (auto k = i; k < j; ++k) {
+				auto& g = font.glyphs.at(text.at(k));
+				
+				//print(std::cerr, "render_text_at: g_pos=%||; r_dim=%||; char=%||;\n", g_pos, r_dim, text.at(k));
+
+				font.render_glyph(win, g_pos, g, fg);
+
+				g_pos[0] += g.rect.dim[0] + font.adv;
+
+			}
+
+			return b2s(pos, g_pos + v2s(0, font.get_height()));
+		}
+		else {
+			return b2s{pos, {0,0}};
+		}
+		
+		
+	}
+
+
+	v2s render_text_at2(
+		Front & win,
+
+		b2s box,   // lines should wrap in this box
+		v2s pos,   // pos to start inside box
+
+		PixFont const& font,
+		Color fg,
+		
+		string const& text
+	);
+
+	b2s render_text_at(
+		Front & win,
+		v2s pos,
+		PixFont const& font,
+		Style const& style,
 		string const& text
 	) {
 		auto r_dim = get_text_dim(font, text);
@@ -133,27 +182,37 @@ namespace col{
 		// render position
 		auto g_pos = pos;
 		
-		// render background
-		if (bg.a != 0) {
-			win.render_fill({pos, r_dim}, bg);			
+		// render background if any
+		if (style.has_bg()) {
+			win.render_fill({pos, r_dim}, style.bg);
 		}
 
-		// assert(fgcol == font.color);
+		bool highlight{false};
 
 		// may be empty string
 		if (r_dim[0] > 0 and r_dim[1] > 0)
 		{
 			size_t i = 0;
 			size_t j = text.size();
-
 			
 			for (auto k = i; k < j; ++k) {
 
-				auto& g = font.glyphs.at(text.at(k));
+				auto c = text.at(k);
+				if (style.has_hl() and c == '^') {
+					highlight = !highlight;
+					continue;
+				}
+
+				auto& g = font.glyphs.at(c);
 				
 				//print(std::cerr, "render_text_at: g_pos=%||; r_dim=%||; char=%||;\n", g_pos, r_dim, text.at(k));
-				
-				font.render_glyph(win, g_pos, g, fg);
+
+				if (not highlight) {
+					font.render_glyph(win, g_pos, g, style.fg);
+				}
+				else {
+					font.render_glyph(win, g_pos, g, style.hl);
+				}
 
 				g_pos[0] += g.rect.dim[0] + font.adv;
 
@@ -164,31 +223,106 @@ namespace col{
 	}
 
 
+	
+	void TextRend2::render_text(string const& text) {
+		cpos = render_text_at2(win, box, cpos, font, style.fg, text);
+	
+	}
+	
+	using Event = Console::Event;
+	using Button = Console::Button;
+	using Key = front::Key;
+	using Dev = Console::Dev;
 
+	
+	void TextRend2::render_link(string const& text, Action act) {
+		b2s area;
+		area.pos = cpos;
+		cpos = render_text_at2(win, box, cpos, font, style.hl, text);
+		area.dim = v2s(cpos[0] - area.pos[0], font.get_height());
+		
+		con.on(Event::Press, Button::Left, area.pos, area.dim, act);
+	}
+		
 
-
-	b2s render_text_at2(
+	v2s render_text_at2(
 		Front & win,
 
-		v2s r_pos,
+		b2s box,   // lines should wrap in this box
+		v2s pos,   // pos to start inside box
 
-		PixFont & font,
+		PixFont const& font,
 		Color fg,
-		Color bg,
-
+		
 		string const& text
 	) {
-		v2s r_dim = get_text_dim2(font, text);
+		//v2s r_dim = get_text_dim2(font, text);
 		//print("text dim = %||\n", r_dim);
 
-		if (r_dim[0] > 0 and r_dim[1] > 0) {
+		v2s g_pos = pos;
+		if (text.size() > 0) {
 
 			auto height = font.get_height();
 
 			size_t i = 0;
 			size_t j = text.size();
 
-			v2s g_pos = r_pos;
+			
+			for (auto k = i; k < j; ++k) {
+
+				auto c = text.at(k);
+				if (c == '\n') {
+					g_pos[0] = box.pos[0];
+					g_pos[1] += height;
+					continue;
+				}
+				//print("letter=%||\n", c);
+				auto& g = font.glyphs.at(c);
+				
+				//print("render_text_at2 pos=%|| char=%||\n", g_pos, c);
+				font.render_glyph(win, g_pos, g, fg);
+
+				g_pos[0] += g.rect.dim[0] + font.adv;
+			}
+		}
+		return g_pos;		
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	v2s render_text_at2(
+		Front & win,
+
+		v2s r_pos,
+
+		PixFont & font,
+		Color fg,
+		
+		string const& text
+	) {
+		//v2s r_dim = get_text_dim2(font, text);
+		//print("text dim = %||\n", r_dim);
+
+		v2s g_pos = r_pos;
+		if (text.size() > 0) {
+
+			auto height = font.get_height();
+
+			size_t i = 0;
+			size_t j = text.size();
+
+			
 			for (auto k = i; k < j; ++k) {
 
 				auto c = text.at(k);
@@ -206,7 +340,7 @@ namespace col{
 				g_pos[0] += g.rect.dim[0] + font.adv;
 			}
 		}
-		return b2s{r_pos, r_dim};
+		return g_pos;		
 	}
 
 	

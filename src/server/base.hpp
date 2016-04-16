@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include "distinct.hpp"
 #include "col.hpp"
 #include "phys.hpp"
 #include "item.hpp"
@@ -14,7 +13,7 @@ namespace col {
 
 	using Coords = Vector2<Coord>;
 
-
+	using ext::fail;
 
 	/* Dir::t code is yx in mod 3-1 (2 -> -1)
 	00 0  -1,-1
@@ -76,13 +75,10 @@ namespace col {
 	uint8 const PLOW = 'p';
 	//uint8 const BUILD = 'b';
 
-	namespace detail { struct Travel; }
-	using Travel = distinct::Enum<detail::Travel, uint8>;
 
-	//using Travel = uint8;
-	Travel const LAND = 1;
-	Travel const SEA = 2;
 
+	using Travel = uint8_t;
+	
 	Travel const TravelNone = 0;
 	Travel const TravelLand = 1;
 	Travel const TravelSea = 2;
@@ -181,9 +177,11 @@ namespace col {
 
 
 
+
+
 }
 
-
+/*
 namespace std {
 	template <>
 	struct hash<col::Item>
@@ -193,4 +191,4 @@ namespace std {
 			return hash<int>()(x.val);
 		}
 	};
-}
+}*/

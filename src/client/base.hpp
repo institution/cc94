@@ -23,5 +23,5 @@ namespace col{
 	using ext::v2;
 	using ext::fail;
 
-	
+	using Action = std::function<void()>;
 }

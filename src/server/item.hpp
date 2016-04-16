@@ -1,24 +1,14 @@
 #pragma once
 
 #include "col.hpp"
-#include "distinct.hpp"
-
-
+#include "enums.hpp"
 
 namespace col {
-	namespace detail{
-		struct Item;
-	}
-
-	using Item = distinct::Enum<detail::Item, uint8_t>;
-
-	inline int get_id(Item const& item) {
-		return item.get_value();
-	}
 
 
+	using Item = int8_t;
 
-	constexpr Item const
+	Item const
 		ItemNone{0},
 		
 		// Field items
@@ -31,7 +21,7 @@ namespace col {
 		ItemLumber{7},
 		ItemOre{8},
 		ItemSilver{9},
-		
+				
 		// Build items
 		ItemHorses{10},
 		ItemRum{11},
@@ -42,35 +32,61 @@ namespace col {
 		ItemTools{16},
 		ItemMuskets{17},
 		ItemCannons{18},
-		
-		// Other
 		ItemHammers{19},
 		ItemCross{20},
 		ItemBell{21},
 
 		// Pop growth
-		ItemToys{22},   // humans: 200 toys -> Colonist
-		ItemRags{23},    // horses: 50 rags -> Horse
+		ItemToys{22},
+		ItemRags{23},
+
+		ItemEnd{24};
+		
+
+	Item const 
+		ItemNoneEnd = ItemNone + 1,
+		ItemFieldEnd = ItemSilver + 1,
+		ItemBuildEnd = ItemBell + 1;
 
 
-		
-		
-		ItemEnd{25}    // keep this at the end
-		;
-		
-	int const ItemCount = ItemEnd; // total num of items
+	array<char const*, ItemEnd> const item_names = {
+		"None",
+		"Food",
+		"Fish",
+		"Sugar",
+		"Tobacco",
+		"Cotton",
+		"Furs",
+		"Lumber",
+		"Ore",
+		"Silver",
+		"Horses",
+		"Rum",
+		"Cigars",
+		"Cloth",
+		"Coats",
+		"TradeGoods",
+		"Tools",
+		"Muskets",
+		"Cannons",
+		"Hammers",
+		"Cross",
+		"Bell",
+		"Toys",
+		"Rags"
+	};
 	
-	int const ItemNoneCount = 1;
-	int const ItemFieldCount = 10;
-	int const ItemBuildCount = 22;
+	inline char const* get_item_name(Item x) {
+		return item_names.at(x);
+	}
 	
-	int const NITEMS = 24; // total num of items
+	inline Item get_item_by_name(char const* name) {
+		return _get_by_name<Item, ItemEnd>(item_names, name);
+	}
 
-
-
-
-
-
+	inline Item get_item_by_name(string const& name) {
+		return _get_by_name<Item, ItemEnd>(item_names, name);
+	}
 
 
 }

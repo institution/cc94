@@ -40,6 +40,7 @@ namespace col{
 		
 	};
 	
+	struct Env;
 
 	struct Workplace{
 		
@@ -73,8 +74,8 @@ namespace col{
 			task.reset(&mk); 
 		}
 		
-		virtual Amount get_prod(Item const& item, Amount const& base) const { return 0; };
-		virtual Amount get_cons(Item const& item, Amount const& base) const { return 0; };
+		virtual Amount get_prod(Env const& env, Unit const& unit, Item const& item) const { return 0; };
+		virtual Amount get_cons(Env const& env, Unit const& unit, Item const& item) const { return 0; };
 
 	};
 

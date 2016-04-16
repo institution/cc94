@@ -45,7 +45,7 @@ using roll::replay;
  v 0.1.5 *
  
  * emscripten compatible * 
- * v0.2.0 *
+ v 0.2.0 *
  
  * open graphics generator, terrain/textures * 
  * unified construct building/unit framework * 
@@ -54,45 +54,62 @@ using roll::replay;
  * select field production gui improv * 
  * show colony resources ballance * 
  
- * AA font 64 base *
- * load/unload cargo into transport, gui rework
- *  arbitrary number of items
- *  drop cargo on transport icon
+ * AA font 64 base *  
+ * tileset folder can be passed as cmd arg *
+ 
+ * arbitrary map size *
+ *  scroll map with arrows *
+ *  resize command
+ 
+ v 0.2.1
+ 
+ * base specialists 
+ *  unit can have speciality *
+ *  teaching (school) *
+ *  speciality affects productivity
+ *  clear speciality
+  
+ * cargo gui rework
+ *  arbitrary number of items *
+ *  drop cargo on transport
+ *  square cargo icons
  
  * idle factory button 
-   
- * simple AI
  
- * AA font - use font_height in layout
+ * travel to europe by sea - exit_map(ship, dest) order - trade
+ * europe screen
+ * sell/buy in europe  
+ 
+ 
+ * fog of war 
+   
+ * simple AI, colony building
+ * simple AI, colony managment
  
  v 0.2.4
-  
- * unified construct building/unit framework, equip tools
  
+ * startup time log
+ 
+ * menu gui, orders
+ * trade framework
+ * trade with forein powers/indians
+ 
+ * simple AI, trade
+ 
+ * v0.2.8
+  
  * land combat 
  * artillery fire during enemy turn?
  * temporary fortification
  * simple AI - combat
- * v0.2.8
  
- * fog of war 
- * map size
  * food as default field prod ?
  * v0.3.0
- 
+  
  * repair unit
- * specialists framework
- * teach unit (school)
  * specialist by practice
  * v0.4.0
  
- * menu gui, orders
- * trade framework
- * sell/buy in europe  
- * trade with forein powers/indians
- * travel to europe by sea - exit_map(ship, dest) order - trade
- * europe screen
- * simple AI, trade
  * v0.5.0
  
  * transport framework (routes) 
@@ -136,6 +153,8 @@ using roll::replay;
  * play after independence
  * game goals/scenarios for map editing
  
+ * hires layout
+ *  AA font - use font_height in layout
  
  
  */
@@ -260,17 +279,6 @@ TEST_CASE( "terr", "" ) {
 		REQUIRE(t.has_phys(PhysForest));
 	}
 	
-	SECTION("yield food mixed forest no-expert == 4") {
-		REQUIRE(4 == t.get_yield(ItemFood, 1));
-	}
-	
-	SECTION("yield food sea") {
-		Terr t(AltSea, BiomePlains);
-		REQUIRE(t.get_yield(ItemFood, 1) == 4);	
-	}
-	
-			
-	
 }
 
 
@@ -299,7 +307,7 @@ TEST_CASE( "env::move_unit", "" ) {
 	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND).set_speed(1),
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1),
 		env.create<Nation>()
 	);
 
@@ -346,7 +354,7 @@ TEST_CASE( "equip unit", "" ) {
 	REQUIRE(u.get_type() == ut);
 	REQUIRE(st.get(ItemMuskets) == 0);
 	REQUIRE(st.get(ItemHorses) == 0);
-	}
+}
 
 
 
@@ -361,13 +369,13 @@ TEST_CASE( "board ship", "" ) {
 	auto& p = env.create<Nation>();
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND).set_speed(1),
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1),
 		p
 	);
 	env.init(env.get_terr({0,0}), u);
 	
 	auto& s = env.create<Unit>(
-		env.create<UnitType>().set_travel(SEA).set_speed(2).set_slots(2),
+		env.create<UnitType>().set_travel(TravelSea).set_speed(2).set_slots(2),
 		p
 	);
 	env.init(env.get_terr({1,0}), s);
@@ -452,7 +460,7 @@ TEST_CASE( "food_prod", "" ) {
 	auto & terr = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
+		env.create<UnitType>().set_travel(TravelLand),
 		env.create<Nation>()
 	);
 
@@ -469,7 +477,7 @@ TEST_CASE( "food_prod", "" ) {
 		
 	SECTION("produce") {
 		REQUIRE_NOTHROW( env.produce(st, f) );	
-		REQUIRE((terr.get_yield(ItemFood, 1) - 2) == st.get(ItemFood));
+		REQUIRE((env.get_prod(terr, u, ItemFood) - 2) == st.get(ItemFood));
 	}
 	
 	
@@ -497,7 +505,7 @@ TEST_CASE("construct_build") {
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 	
 	auto& unit = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
+		env.create<UnitType>().set_travel(TravelLand),
 		env.create<Nation>()
 	);
 	auto& t = env.get_terr({0,0});	
@@ -530,18 +538,23 @@ TEST_CASE("construct_build") {
 	//REQUIRE_NOTHROW(env.start());
 }
 
-
+TEST_CASE( "is_expert", "" ) {	
+	Unit unit;
+	unit.set_prof(ProfCarpenter);
+	REQUIRE(unit.get_prof() == ProfCarpenter);
+	REQUIRE(get_prof_by_item(ItemHammers) == ProfCarpenter);
+	
+	REQUIRE(is_expert(unit, ItemHammers) == true);
+}
 
 TEST_CASE( "colony_workplace_production", "" ) {
 	
-	Env env;
-	BuildType::Id const BuildFurTradersHouse = 33;
-
+	Env env;	
 	env.resize({1,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
-	
+		
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
+		env.create<UnitType>().set_travel(TravelLand),
 		env.create<Nation>()
 	);
 
@@ -566,18 +579,14 @@ TEST_CASE( "colony_workplace_production", "" ) {
 		REQUIRE(b.get_proditem() == ItemCoats);
 		REQUIRE(b.get_consitem() == ItemFurs);
 		
-		Amount base = 3;
+		REQUIRE(env.get_prod(b, u, ItemCoats) == 3);
+		REQUIRE(env.get_cons(b, u, ItemCoats) == 3);
 		
-		REQUIRE(b.get_prod(ItemCoats, base) == 3);
-		REQUIRE(b.get_cons(ItemCoats, base) == 3);
-		
-		REQUIRE(b.get_prod(ItemSilver, base) == 0);
-		REQUIRE(b.get_cons(ItemSilver, base) == 0);
+		REQUIRE(env.get_prod(b, u, ItemSilver) == 0);
+		REQUIRE(env.get_cons(b, u, ItemSilver) == 0);
 		
 	}	
 
-	
-	
 	SECTION("build") {
 		env.set_random_gen(replay({0}));
 		
@@ -615,7 +624,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 			Amount base = 1;
 			
 			// yield - consumption -> produced
-			REQUIRE( (t.get_yield(ItemFood, base) - 2) == st.get(ItemFood) );
+			REQUIRE( (env.get_prod(t, u, ItemFood) - 2) == st.get(ItemFood) );
 			// unit used all time
 			REQUIRE(u.time_left == 0);
 		}
@@ -669,6 +678,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 
 
 
+
 TEST_CASE( "scoring", "" ) {
 
 	Env env;
@@ -709,7 +719,7 @@ TEST_CASE( "serialize", "" ) {
 	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(LAND),
+		env.create<UnitType>().set_travel(TravelLand),
 		env.create<Nation>()
 	);
 
@@ -771,7 +781,7 @@ TEST_CASE( "two_units", "" ) {
 	auto& t1 = env.get_terr({0,0});
 	auto& t2 = env.get_terr({1,0});
 
-	auto& ut = env.create<UnitType>().set_travel(LAND);
+	auto& ut = env.create<UnitType>().set_travel(TravelLand);
 	ut.set_attack(2).set_combat(1);
 
 	auto& p = env.create<Nation>();
@@ -800,10 +810,10 @@ TEST_CASE( "two_units", "" ) {
 
 
 TEST_CASE( "compatible", "[env][misc][regress]" ) {		
-	REQUIRE(compatible(LAND,SEA) == false);
-	REQUIRE(compatible(SEA,LAND) == false);
-	REQUIRE(compatible(LAND,LAND) == true);
-	REQUIRE(compatible(SEA,SEA) == true);
+	REQUIRE(compatible(TravelLand,TravelSea) == false);
+	REQUIRE(compatible(TravelSea,TravelLand) == false);
+	REQUIRE(compatible(TravelLand,TravelLand) == true);
+	REQUIRE(compatible(TravelSea,TravelSea) == true);
 }
 
 
@@ -816,7 +826,7 @@ TEST_CASE( "improve square", "" ) {
 	auto& t = env.get_terr({0,0});
 	
 	auto& ut1 = env.create<UnitType>().set_base(11).set_equip1(ItemTools, 20);
-	auto& ut2 = env.create<UnitType>().set_base(11).set_travel(LAND).set_equip1(ItemTools, 40);
+	auto& ut2 = env.create<UnitType>().set_base(11).set_travel(TravelLand).set_equip1(ItemTools, 40);
 	
 	auto& u = env.create<Unit>(
 		ut2,
@@ -862,7 +872,7 @@ TEST_CASE( "io::write<Env>", "[env]" ) {
 
 	auto u = env.create<Unit>(
 		1,
-		env.create<UnitType>(1).set_travel(LAND)
+		env.create<UnitType>(1).set_travel(TravelLand)
 	);
 
 	env.move_in(t, u);

@@ -99,19 +99,6 @@ namespace col {
 		}
 	}
 
-	template<typename D, typename T, typename A>
-	void read(A & ar, distinct::Enum<D, T> & e) {
-		T id;
-		read(ar, id);
-		e = distinct::Enum<D, T>(id);		
-	}
-
-	template<typename D, typename T, typename A>
-	void write(A & ar, distinct::Enum<D, T> const& e) {
-		write(ar, T(e));		
-	}
-
-
 	template<typename E, typename A>
 	void read_enum(A & ar, E & e) {
 		using Integer = typename std::underlying_type<E>::type;
@@ -273,7 +260,10 @@ namespace col {
 		write(ar, x.nation->id);
 		//write(ar, x.space_left);
 		write(ar, x.time_left);
-		write(ar, x.transported);
+		write(ar, x.transported);		
+		write(ar, x.prof_dir);
+		write(ar, x.prof_num);
+		
 
 		// unit terr
 		write(ar, env.get_coords(*x.terr));
@@ -321,6 +311,8 @@ namespace col {
 		unit.nation = & env.get<Nation> ( read<col::Nation::Id> (ar) );
 		read(ar, unit.time_left);
 		read(ar, unit.transported);
+		read(ar, unit.prof_dir);
+		read(ar, unit.prof_num);
 
 		// terr
 		env.init(env.get_terr(read<col::Coords>(ar)), unit);

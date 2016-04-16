@@ -1,18 +1,18 @@
 #pragma once
 
 #include "col.hpp"
-#include "distinct.hpp"
 
 namespace col {
 
+/*
 	namespace detail {
 		struct Phys;
 	}
 
 	using Phys = distinct::Enum<detail::Phys,uint16>;
+*/
 
-
-	constexpr
+	using Phys = uint16_t;
 	Phys const
 		PhysNone = 0,
 		// unused = 1,

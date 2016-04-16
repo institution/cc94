@@ -8,7 +8,10 @@ namespace col {
 	
 	//tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 	
-	unordered_map<Biome,string,Biome::hash> BIOME_NAMES{
+
+		
+		
+	unordered_map<Biome,string> BIOME_NAMES{
 		{BiomeNone, "unknown"},
 		{BiomeTundra, "tundra"},
 		{BiomePrairie, "prairie"},
@@ -30,7 +33,7 @@ namespace col {
 		return BiomeNone;
 	}
 	
-	unordered_map<Phys, string,Phys::hash> PHYS_NAMES {
+	unordered_map<Phys, string> PHYS_NAMES {
 		{PhysSeaLane, "sealane"},
 		{PhysRoad, "road"},
 		{PhysForest, "forest"},
@@ -48,7 +51,7 @@ namespace col {
 		return PhysNone;
 	}
 	
-	unordered_map<Item, string,Item::hash> ITEM_NAMES {
+	/*unordered_map<Item, string> ITEM_NAMES {
 		{ItemFood, "food"},
 		{ItemSugar, "sugar"},
 		{ItemTobacco, "tobacco"},
@@ -69,26 +72,26 @@ namespace col {
 		{ItemCross, "cross"},		
 		{ItemFish, "fish"},
 		{ItemBell, "bell"}
-	};
+	};*/
 
-	Item get_item_by_name(string const& name) {
+	/*Item get_item_by_name(string const& name) {
 		for (auto& item: ITEM_NAMES) {
 			if (item.second == name) {
 				return item.first;
 			}
 		}
 		return ItemNone;
-	}
+	}*/
 	
 	string const NONE("none");
 	
-	string const& get_item_name(Item const& item) {
+	/*string const& get_item_name(Item const& item) {
 		auto it = ITEM_NAMES.find(item);
 		if (it != ITEM_NAMES.end()) {
 			return it->second;
 		}
 		return NONE;		
-	}
+	}*/
 	
 	
 	

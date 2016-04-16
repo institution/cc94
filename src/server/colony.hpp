@@ -47,7 +47,7 @@ namespace col {
 
 		cont<Build>::type builds;
 
-		Build * select_place_for(BuildType const& bt) 
+		Build * select_place_for(BuildType const& bt)
 		{		
 			using SlotId = cont<Build>::type::size_type;
 			
@@ -61,6 +61,8 @@ namespace col {
 			}			
 			return nullptr;
 		}
+		
+
 
 		Store & get_store() { return store; }
 		Store const& get_store() const { return store; }

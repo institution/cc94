@@ -69,7 +69,14 @@ namespace col {
 		return ret;
 	}
 
+
+	struct Console;
 	
+	struct Widget{
+		virtual void render(Front & win, Console & con) {
+			print(std::cerr, "default widget render");
+		}
+	};
 
 
 	struct Console{
@@ -127,8 +134,8 @@ namespace col {
 		
 		
 		
-		Build *selprod_build{nullptr};
-		Makeable const* selprod_makeable{nullptr};
+		//Build *selprod_build{nullptr};
+		//Makeable const* selprod_makeable{nullptr};
 		
 
 		using Event = halo::Event;
@@ -145,7 +152,31 @@ namespace col {
 			AMERICA, COLONY, EUROPE, REPORT
 		};
 
+		Widget * widget{nullptr};
+		//Widget * widget_next{nullptr};
+		
+		template <class T, class ... Args>
+		T & replace_widget(Args && ... args) {
+			if (widget) {
+				delete widget;
+			}		
+			T * t = new T(std::forward<Args>(args)...);	
+			widget = t; 
+			return *t;
+		}
 
+		void clear_widget() {
+			if (widget) {
+				delete widget;
+			}			
+			widget = nullptr;			
+		}
+
+		// call this at the begining of render function
+		void sync_widget() {
+			
+		}
+		
 
 		// is console active - keyboard focus
 		int active{false};
@@ -527,11 +558,11 @@ namespace col {
 				if (verbose >= 2) print("Console.handle_events: some event;\n");
 				
 				switch (ev.type) {
-					case front::EventKeyDown:
+					/*case front::EventKeyDown:
 						if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
 							app.stop();
 						}
-						break;
+						break;*/
 					case front::EventQuit:
 						if (verbose >= 1) {
 							print("EventQuit\n");

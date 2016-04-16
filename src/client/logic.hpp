@@ -13,7 +13,7 @@ namespace col{
 		UnitTypes equip_to_types(Env const& env, Unit const& u);
 
 		Items const& get_all_items(Env const& env);
-		Items get_proditems(Env const& env, Field const& f);
+		
 
 		Unit const* get_unassigned_unit(Env const& env, Terr const& terr);
 
@@ -37,12 +37,14 @@ namespace col{
 
 
 
-		Amount get_nominal_prod(Workplace const& fact, Item const& item);
+		
+		Amount get_nominal_prod(Env const& env, Workplace const& fact, Item const& item);
+
 		
 		// Fill registers describing colony resources ballance
 		// lim -- limited delta (by supply)
 		// nom -- nominal delta
-		void fill_colony_regs(Terr const& terr, Register & lim, Register & nom);
+		void fill_colony_regs(Env const& env, Terr const& terr, Register & lim, Register & nom);
 
 
 

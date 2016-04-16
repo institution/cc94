@@ -12,6 +12,8 @@ namespace col{
 
 
 	struct Workplace;
+	
+	
 
 	struct UnitType: Makeable {
 		using Id = Makeable::Id;
@@ -32,6 +34,7 @@ namespace col{
 		Item item2{ItemNone};
 		Amount num2{0};
 		Amount cost{0};
+		uint8 icon_expert{0};
 
 		// setters
 		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
@@ -73,7 +76,7 @@ namespace col{
 		explicit UnitType(Id const& id): id(id) {}
 
 		explicit UnitType(vector<string> const& xs) {
-			assert(xs.size() >= 9);
+			assert(xs.size() >= 15);
 
 			name = trim_copy(xs[0]);
 			id = stoi(xs[1]);
@@ -90,6 +93,7 @@ namespace col{
 			item2 = stoi0(xs[12]);
 			num2 = stoi0(xs[13]);
 			cost = stoi0(xs[14]);
+			icon_expert = stoi0(xs[15]);			
 		}
 
 	}; // UnitType
@@ -253,6 +257,7 @@ namespace col{
 		uint8 const& get_time_left() const { return time_left; }
 		Order::type const& get_order() const { return order; }
 		int get_icon() const { return type->icon; }
+		int get_icon_expert() const { return type->icon_expert; }
 
 		Id const& get_base() const { return type->base; }
 		Item const& get_item2() const { return type->item2; }
@@ -268,15 +273,10 @@ namespace col{
 			return *this;
 		}
 		
-		Amount get_prod(Item const& item) const { 
-			// if expert in item return 6
-			
-			if (item < ItemNoneCount) return 0; 				
-			if (item < ItemFieldCount) return 1;			
-			if (item < ItemBuildCount) return 3;
-			
-			throw Error("unknown item");			
-		}
+		
+		
+		
+		
 
 		bool is_working() const {
 			return workplace != nullptr;

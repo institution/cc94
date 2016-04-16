@@ -38,7 +38,6 @@ namespace col {
 		ProfEnd{22};    
 
 
-
 	char const* get_prof_name(Prof p);
 	Prof get_prof_by_name(char const* name);
 	

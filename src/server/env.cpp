@@ -9,31 +9,32 @@ namespace col {
 		Env::StatePlay = 1,
 		Env::StateExit = 2;
 
+
 	Prof get_prof_by_item(Item item)
 	{
 		switch (item) {
-			ItemNone: return ProfNone;
-			ItemFood: return ProfFarmer;
-			ItemFish: return ProfFisherman;
-			ItemSugar: return ProfSugarPlanter;
-			ItemTobacco: return ProfTobaccoPlanter;
-			ItemCotton: return ProfCottonPlanter;
-			ItemFurs: return ProfFurTrapper;
-			ItemLumber: return ProfLumberjack;
-			ItemOre: return ProfOreMiner;
-			ItemSilver: return ProfSilverMiner;
-			ItemHorses: return ProfNone;
-			ItemRum: return ProfDistiller;
-			ItemCigars: return ProfTobaconist;
-			ItemCloth: return ProfWeaver;
-			ItemCoats: return ProfFurTrader;
-			ItemTradeGoods: return ProfNone;
-			ItemTools: return ProfBlacksmith;
-			ItemMuskets: return ProfGunsmith;
-			ItemCannons: return ProfGunsmith;
-			ItemHammers: return ProfCarpenter;
-			ItemCross: return ProfPreacher;
-			ItemBell: return ProfStatesman;
+			case ItemNone: return ProfNone;
+			case ItemFood: return ProfFarmer;
+			case ItemFish: return ProfFisherman;
+			case ItemSugar: return ProfSugarPlanter;
+			case ItemTobacco: return ProfTobaccoPlanter;
+			case ItemCotton: return ProfCottonPlanter;
+			case ItemFurs: return ProfFurTrapper;
+			case ItemLumber: return ProfLumberjack;
+			case ItemOre: return ProfOreMiner;
+			case ItemSilver: return ProfSilverMiner;
+			case ItemHorses: return ProfNone;
+			case ItemRum: return ProfDistiller;
+			case ItemCigars: return ProfTobaconist;
+			case ItemCloth: return ProfWeaver;
+			case ItemCoats: return ProfFurTrader;
+			case ItemTradeGoods: return ProfNone;
+			case ItemTools: return ProfBlacksmith;
+			case ItemMuskets: return ProfGunsmith;
+			case ItemCannons: return ProfGunsmith;
+			case ItemHammers: return ProfCarpenter;
+			case ItemCross: return ProfPreacher;
+			case ItemBell: return ProfStatesman;
 		}
 		return ProfNone;
 	}
@@ -60,6 +61,209 @@ namespace col {
 		return ProfNone;
 	}
 
+
+	bool is_expert(Unit const& unit, Item const& item) {
+		auto req = get_prof_by_item(item);
+		return req != ProfNone and req == unit.get_prof();		
+	}
+
+
+	
+
+	/// How much of 'item can be produced by 'unit in 'build
+	Amount Env::get_prod(Build const& build, Unit const& unit, Item const& item) const {
+		if (build.get_proditem() == item) {
+			return build.get_prod() * (is_expert(unit, item) + 1);
+		}
+		else {
+			return 0;
+		}		
+	}
+	
+	/// How much of raw materials needed to produce 'item will be consumed by 'unit in 'build
+	Amount Env::get_cons(Build const& build, Unit const& unit, Item const& item) const {
+		if (build.get_proditem() == item) {
+			return build.get_cons() * (is_expert(unit, item) + 1);
+		}
+		else {
+			return 0;
+		}		
+	}
+
+	/// How much of 'item can be produced by 'unit on 'terr
+	Amount Env::get_prod(Terr const& terr, Unit const& unit, Item const& item) const {
+		/* 		 
+		    Why this is so complicated; games are supposed to have easy to understand rules
+		  ballance should be achieved otherwise (negative feedback possibly)
+		 TODO: simplify in AC spirit; yields should be devised from climate parameters; 			
+		*/
+		
+		int ret = 0;
+		int forest = terr.has_phys(PhysForest);
+		int plow = terr.has_phys(PhysPlow) * 2;
+		int river = terr.has_phys(PhysRiver);
+		int expert = is_expert(unit, item) + 1;
+		
+		auto alt = terr.get_alt();
+		auto biome = terr.get_biome();
+		
+		switch(item) {
+			case ItemFish:
+				if (alt == AltSea) {
+					ret = 4;
+					/*
+					if (river) {
+						ret += 1;
+					}
+										
+					if (is_expert(unit, item)) {
+						ret += 2;
+					}
+					*/			
+					
+				}
+				break;
+			case ItemLumber:
+				if (alt >= AltFlat) {
+					if (forest) {
+						switch (biome) {
+							case BiomePlains:
+							case BiomeSavannah:
+								ret = 6;
+								break;
+							case BiomeTundra:
+							case BiomePrairie:
+							case BiomeGrassland:
+							case BiomeSwamp:
+							case BiomeMarsh:
+								ret = 4;
+								break;
+							case BiomeDesert:
+								ret = 2;
+								break;
+						}
+					}					
+				}
+				break;
+			case ItemOre:
+				if (alt > AltFlat) {
+					ret = 4;
+				}
+				else if (alt == AltFlat) {
+					switch (biome) {
+						case BiomeTundra:
+						case BiomeSwamp:
+						case BiomeMarsh:
+						case BiomeDesert:
+							ret = 2 - forest;
+							break;
+					}
+				}
+				break;
+			case ItemFurs:
+				if (alt == AltFlat) {
+					if (forest) {
+						switch (biome) {
+							case BiomeTundra:
+							case BiomePlains:
+								ret = 3;
+								break;
+							case BiomePrairie:
+							case BiomeGrassland:
+							case BiomeMarsh:
+							case BiomeSavannah:
+							case BiomeDesert:
+							case BiomeArctic:
+								ret = 2;
+								break;
+							case BiomeSwamp:
+								ret = 1;
+								break;
+						}
+					}
+				}
+				break;
+			case ItemFood:
+				if (alt == AltSea) {
+					ret = 4;
+				}
+				else if (alt == AltFlat) {
+					switch (biome) {
+						case BiomePlains:
+							ret = 5 - forest + plow;
+							break;
+						case BiomeSavannah:
+							ret = 4 - forest + plow;
+							break;
+						case BiomeTundra:
+						case BiomePrairie:
+						case BiomeGrassland:
+						case BiomeMarsh:
+						case BiomeSwamp:
+							ret = 3 - forest + plow;
+							break;
+						case BiomeDesert:
+							ret = 2 - forest + plow;
+							break;
+					}
+				}
+				else if (alt == AltHill) {
+					ret = 2 + plow;
+				}
+				break;
+			case ItemCotton:
+				if (alt == AltFlat) {
+					switch (biome) {
+						case BiomePrairie:
+							ret = 3 - forest + plow;
+							break;
+						case BiomePlains:
+							ret = 2 - forest + plow;
+							break;
+						case BiomeDesert:
+							ret = 1 - forest + plow;
+							break;
+					}
+				}
+				break;
+			case ItemTobacco:
+				if (alt == AltFlat) {
+					switch (biome) {
+						case BiomeGrassland:
+							ret = 3 - forest + plow;
+							break;
+						case BiomeMarsh:
+							ret = 2 - forest + plow;
+							break;
+					}
+				}
+				break;
+			case ItemSugar:
+				if (alt == AltFlat) {
+					switch (biome) {
+						case BiomeSavannah:
+							ret = 3 - forest + plow;
+							break;
+						case BiomeSwamp:
+							ret = 2 - forest + plow;
+							break;
+					}
+				}
+				break;
+			case ItemSilver:
+				if (alt == AltMountain) {
+					ret = 1;
+				}
+				break;
+		}
+		return ret * expert;
+	}
+
+
+
+
+	
+	
 
 	int Env::get_movement_cost(Terr const& dest, Terr const& orig, Travel const& travel) const {
 
@@ -180,8 +384,8 @@ namespace col {
 			ProdCons nom;
 			for (auto * u: wp.get_units()) {
 				if (u->time_left == TIME_UNIT) {
-					auto uprod = wp.get_prod(proditem, u->get_prod(proditem));
-					auto ucons = wp.get_cons(proditem, u->get_prod(proditem));
+					auto uprod = wp.get_prod(*this, *u, proditem);
+					auto ucons = wp.get_cons(*this, *u, proditem);
 					
 					
 					if (proditem == ItemFood or proditem == ItemFish) {

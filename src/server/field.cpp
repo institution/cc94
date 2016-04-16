@@ -1,11 +1,11 @@
 #include "field.hpp"
-
+#include "env.hpp"
 
 namespace col {
 	
-	Amount Field::get_prod(Item const& item, Amount const& base) const {
+	Amount Field::get_prod(Env const& env, Unit const& unit, Item const& item) const {
 		assert(terr != nullptr);
-		return terr->get_yield(item, base);
+		return env.get_prod(*terr, unit, item);		
 	};
 	
 	bool operator==(Field const& self, Field const& other) {

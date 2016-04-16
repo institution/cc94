@@ -83,32 +83,32 @@ namespace col{
 		}*/
 
 		
-		Amount get_nominal_prod(Workplace const& fact, Item const& item) {
+		Amount get_nominal_prod(Env const& env, Workplace const& fact, Item const& item) {
 			Amount prod = 0;
 			for (auto* u: fact.get_units()) {
-				prod += fact.get_prod(item, u->get_prod(item));
+				prod += fact.get_prod(env, *u, item);
 			}
 			return prod;
 		}
 		
-		ProdCons get_nominal_prodcons(Workplace const& fact, Item const& item) {
+		ProdCons get_nominal_prodcons(Env const& env, Workplace const& fact, Item const& item) {
 			ProdCons nom;
 			for (auto* u: fact.get_units()) {
-				nom.prod += fact.get_prod(item, u->get_prod(item));
-				nom.cons += fact.get_prod(item, u->get_prod(item));
+				nom.prod += fact.get_prod(env, *u, item);
+				nom.cons += fact.get_cons(env, *u, item);
 			}
 			return nom;
 		}
 		
 
-		void sim_produce(Workplace const& wp, Register & p, Register & c) {
+		void sim_produce(Env const& env, Workplace const& wp, Register & p, Register & c) {
 			auto const& proditem = wp.get_proditem();
 			auto const& consitem = wp.get_consitem();
 
 			if (proditem != ItemNone) {
 				for (auto * u: wp.get_units()) {					
-					auto nprod = wp.get_prod(proditem, u->get_prod(proditem));
-					auto ncons = wp.get_cons(proditem, u->get_prod(proditem));
+					auto nprod = wp.get_prod(env, *u, proditem);
+					auto ncons = wp.get_cons(env, *u, proditem);
 						
 					p.add(proditem, nprod);
 					c.add(consitem, ncons);
@@ -118,28 +118,17 @@ namespace col{
 		} 
 		
 		// Fill ballance registers
-		void fill_colony_regs(Terr const& terr, Register & p, Register & c) {
+		void fill_colony_regs(Env const& env, Terr const& terr, Register & p, Register & c) {
 			auto const& cc = terr.get_colony();
 						
 			for (auto const* f: cc.get_workplaces()) {
-				sim_produce(*f, p, c);
+				sim_produce(env, *f, p, c);
 			}
 		}
 		
 
 
 
-
-		Items get_proditems(Env const& env, Field const& f) {
-			// return -- list of items avaliable for production (with non zero yields))
-			Items rs;
-			for (auto& it: get_all_items(env)) {
-				if (f.get_terr().get_yield(it, false)) {
-					rs.push_back(it);
-				}
-			}
-			return rs;
-		}
 
 
 		Unit const* get_unassigned_unit(Env const& env, Terr const& terr) {

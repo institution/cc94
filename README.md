@@ -1,14 +1,15 @@
 cc94
 ====
 
-cc94 is a remake of the Colonization game from 1994. It's based on original graphics files so a copy of Colonization is required to play.
+Remake of the Sid Meier's Colonization game from 1994. Based on original graphics files so a copy of Colonization is required to play.
 
-cc94 is currently in early version of 0.2.0
+Version 0.2.0 (early preview)
+
 
 How to play
 -----------
 
-Multiplatform web browser version (development preview): http://institution.github.io/cc94/ 
+Multiplatform web browser version: http://institution.github.io/cc94/ 
 
 
 Interface

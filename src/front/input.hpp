@@ -83,6 +83,7 @@ namespace front {
 
 	namespace keys {
 		Key const
+			KeyNone = 0,
 			KeyNum0 = SDLK_0,
 			KeyNum1 = SDLK_1,
 			KeyNum2 = SDLK_2,

@@ -8,7 +8,7 @@ namespace col{
 
 	
 
-	template <class T>
+	/*template <class T>
 	struct CellT {
 
 		v2<T> pos, dim, end;
@@ -29,7 +29,8 @@ namespace col{
 
 	};
 
-	using Cell = CellT<int16_t>;
+	using Cell = CellT<int16_t>;*/
+	using Cell = b2s;
 
 	struct Layout {
 
@@ -38,6 +39,7 @@ namespace col{
 		int16_t line_sel;   
 		int16_t font_tiny;
 		int16_t scale;
+		v2s sep;
 
 		Cell scr, bar, pan, map;
 		Cell city_builds, city_fields, city_units, city_unit_cargo, city_supply_nums, city_resources, city_exit;
