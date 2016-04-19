@@ -371,6 +371,7 @@ namespace col {
 		write(ar, x.biome);
 		write(ar, x.phys);
 		write(ar, x.alt);
+		write(ar, x.discovered);
 	}
 
 	template<typename A>

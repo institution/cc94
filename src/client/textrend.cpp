@@ -138,7 +138,7 @@ namespace col{
 
 			
 			for (auto k = i; k < j; ++k) {
-				auto& g = font.glyphs.at(text.at(k));
+				auto& g = font.get_glyph(text.at(k));
 				
 				//print(std::cerr, "render_text_at: g_pos=%||; r_dim=%||; char=%||;\n", g_pos, r_dim, text.at(k));
 
@@ -203,7 +203,7 @@ namespace col{
 					continue;
 				}
 
-				auto& g = font.glyphs.at(c);
+				auto& g = font.get_glyph(c);
 				
 				//print(std::cerr, "render_text_at: g_pos=%||; r_dim=%||; char=%||;\n", g_pos, r_dim, text.at(k));
 
@@ -277,7 +277,7 @@ namespace col{
 					continue;
 				}
 				//print("letter=%||\n", c);
-				auto& g = font.glyphs.at(c);
+				auto& g = font.get_glyph(c);
 				
 				//print("render_text_at2 pos=%|| char=%||\n", g_pos, c);
 				font.render_glyph(win, g_pos, g, fg);
@@ -332,7 +332,7 @@ namespace col{
 					continue;
 				}
 				//print("letter=%||\n", c);
-				auto& g = font.glyphs.at(c);
+				auto& g = font.get_glyph(c);
 				
 				//print("render_text_at2 pos=%|| char=%||\n", g_pos, c);
 				font.render_glyph(win, g_pos, g, fg);

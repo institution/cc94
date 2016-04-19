@@ -1,6 +1,8 @@
 #pragma once
 
 #include "col.hpp"
+#include "enums.hpp"
+
 
 namespace col {
 
@@ -23,6 +25,31 @@ namespace col {
 		BiomeArctic{9},
 		BiomeEnd{10};
 
+
+	array<char const*, BiomeEnd> const biome_names = {
+		"None",
+		"Tundra",
+		"Prairie",
+		"Plains",
+		"Desert",
+		"Savannah",
+		"Grassland",
+		"Marsh",
+		"Swamp",
+		"Arctic"
+	};
+	
+	inline char const* get_biome_name(Biome x) {
+		return biome_names.at(x);
+	}
+	
+	inline Biome get_biome_by_name(char const* name) {
+		return _get_by_name<Biome, BiomeEnd>(biome_names, name);
+	}
+
+	inline Biome get_biome_by_name(string const& name) {
+		return _get_by_name<Biome, BiomeEnd>(biome_names, name);
+	}	
 
 }
 

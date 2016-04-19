@@ -4,11 +4,13 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
 
 
 #include "core.hpp"
 #include "inter.hpp"
 #include "prof.hpp"
+#include "base.hpp"
 
 namespace col{
 
@@ -72,7 +74,18 @@ namespace col{
 	bool is_expert(Unit const& unit, Item const& item);
 
 
+	
+
 	struct Env: Core {
+	
+		/** 
+			Has 2 kinds of interface
+			restricted - availble to players - actions allowed by game rules
+			full - availble when map editing
+			
+			interface should be enforced by Agent himself?
+			
+		**/
 
 		using State = uint8_t;
 		
@@ -120,14 +133,42 @@ namespace col{
 			mod++;
 		}
 
-		
 
+		/*void update_terr(Terr::Id id, Alt alt, Biome biome, Phys phys) {
+		
+		}
+		
+		void update_unit(Unit::Id id, ) {
+		
+		}*/
+
+		/// for visible unit
+		void for_unit(Nation const& nation, std::function<void(Unit const&)> block) {			
+			for (auto & p: units) 
+			{				
+				if (has_vision(nation, p.second.get_terr())) {
+					block(p.second);
+				}
+			}
+		}
+		
+		void for_unit(std::function<void(Unit &)> block) {
+			for (auto & p: units) 
+			{				
+				block(p.second);
+			}
+		}
+
+
+		Coords get_dim() const { return Coords(w,h); }
 
 		int get_turn_no() const {
 			return turn_no;
 		}
 
-		
+		bool has_control(Nation const& nat, Unit const& unit) {
+			return nat.id == unit.nation->id;
+		}
 
 
 
@@ -140,9 +181,9 @@ namespace col{
 
 		}
 
+
 		
-
-
+		
 		Nation const* get_current_nation_p() const {
 			if (!in_progress()) {
 				return nullptr;
@@ -426,7 +467,7 @@ namespace col{
 
 			 [global]
 				increase turn counter
-
+				
 			 [per tile]
 				time reset on units
 				colony production
@@ -440,12 +481,14 @@ namespace col{
 			turn_no++;
 			//notify_effect(inter::set_turn(turn_no));
 
-			// time reset on units
+			clear_vision();
+
+			// time reset on units and vision recalc
 			for (auto& item: units) {
-				// cerr << "turn calc for: " << item.second << endl;
 				Unit & u = item.second;
-				u.time_left = TIME_UNIT;
-				//notify_effect(get_terr(u), inter::set_tp(u.id, TIME_UNIT));
+				
+				u.time_left = TIME_UNIT;				
+				update_vision(u);
 			}
 
 			// all colonies
@@ -479,14 +522,16 @@ namespace col{
 		}
 
 
+		/*Terr const& get_visible_terr(Nation const& f, Coords c) {
+			// TODO
+		}*/
 
 
-
-		bool has_vision(Nation const& p, Terr const& t) {
-			return 1;
+		bool has_vision(Nation const& f, Terr const& t) {
+			return t.get_vision(f.id);
 		}
 
-
+		
 
 
 		void reset(Coords const& dim) {
@@ -601,8 +646,8 @@ namespace col{
 
 
 		bool move_unit(int8 dx, int8 dy, Unit & u) {
-			/* Move/board unit on adjacent square/ship
-			 */
+			/// Move/board unit on adjacent square/ship
+			
 
 			// unit checks
 			if (u.get_nation() != get_current_nation()) {
@@ -668,6 +713,7 @@ namespace col{
 
 			if (run_map_task(u, time_cost)) {
 				t_move(dest, u);
+				update_vision(u);   // only main unit, transported units dont have vision 
 
 				/*
 				notify_effect(orig,
@@ -1271,11 +1317,51 @@ namespace col{
 			t.add(x);
 			x.terr = &t;
 		}
+		
+		
+
+
+		void clear_vision() {
+			auto dim = get_dim();
+			
+			for (int j = 0; j < dim[1]; j++)
+			{
+				for (int i = 0; i < dim[0]; i++)
+				{
+					get_terr({i,j}).clear_vision();
+				}
+			}			
+		}
+		
+		Nation::Id get_control_id(Unit const& u) const { return u.get_nation().id; }
+
+
+		void update_vision(Unit const& u) {
+			auto p = get_coords(u);
+			auto id = get_control_id(u);
+			Coord r = 2;
+			auto dim = get_dim();
+			
+			auto i0 = std::max<Coord>(0, p[0]-r);
+			auto i1 = std::min<Coord>(p[0]+r, dim[0]-1);
+			
+			auto j0 = std::max<Coord>(0, p[1]-r);
+			auto j1 = std::min<Coord>(p[1]+r, dim[1]-1);
+			
+			for (Coord j = j0; j <= j1; ++j)
+			{
+				for (Coord i = i0; i <= i1; ++i)
+				{
+					get_terr({i,j}).mark_vision(id);
+				}				
+			}
+		}
 
 
 		void init(Terr & t, Unit & u) {
 			t.add(u);
 			u.terr = &t;
+			update_vision(u);
 		}
 		
 		void init(UnitType const& ut, Terr & t, Nation & nat) {

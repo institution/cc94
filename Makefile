@@ -27,7 +27,7 @@ EMOPTS+=-s ASSERTIONS=1
 
 # compiler options
 CCOPTS:=
-CCOPTS+=-std=c++11
+CCOPTS+=-std=c++14
 CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null -Wno-vla-extension
 #CCOPTS+=-ferror-limit=3

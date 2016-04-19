@@ -14,24 +14,10 @@ namespace col {
 
 	v2i const tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 
-	extern std::unordered_map<Biome,string> BIOME_NAMES;
-	Biome get_biome_by_name(string const& name);
-
-	extern std::unordered_map<Phys,string> PHYS_NAMES;
-	Phys get_phys_by_name(string const& name);
-
-	/*extern std::unordered_map<Item,string> ITEM_NAMES;
-	Item get_item_by_name(string const& name);*/
-
-	//string const& get_item_name(Item const& item);
-
 	inline char const* get_name(Item const& item) { return get_item_name(item); }	
 	inline string const& get_name(BuildType const& x) { return x.get_name(); }
 	inline string const& get_name(UnitType const& x) { return x.get_name(); }
 	inline string const& get_name(Makeable const& x) { return x.get_name(); }
-		
-	
-	
 	
 
 	array<Item, 16> const COLONY_ITEMS = {
@@ -41,9 +27,9 @@ namespace col {
 		ItemTradeGoods,ItemTools,ItemMuskets
 	};
 
-
+		
 	//
-	auto const biome_icons_ids = array<int,10>({0,1,4,3,2,6,5,7,8,10});
+	auto const biome_icons_ids = array<int,BiomeEnd>({0,1,4,3,2,6,5,7,8,10});
 
 	inline
 	int get_biome_icon_id(Biome const& b) {

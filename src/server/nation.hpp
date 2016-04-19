@@ -6,6 +6,8 @@
 namespace col {
 
 
+	
+
 	struct Nation {
 		using Id = uint8_t;
 		using Auth = uint32_t;
@@ -22,9 +24,11 @@ namespace col {
 			id(id),
 			name(name),
 			color(color),
-			flag_id(flag_id),
-			auth(roll::roll1(100000))
-		{}
+			flag_id(flag_id)			
+		{			
+			assert(0 <= id and id < 32);
+			auth = roll::roll1(100000) << 8 | id;		
+		}
 
 
 		Nation() = default;
@@ -33,6 +37,9 @@ namespace col {
 		Nation(Nation const&) = delete;
 
 		~Nation() {}
+
+		
+		
 
 		template<class A>
 		void serialize(A & ar, uint const& version) {
@@ -59,11 +66,9 @@ namespace col {
 	};
 
 
-
-
 	template<>
 	struct Id<Nation>{
-		using type = uint32;
+		using type = Nation::Id;
 	};
 
 

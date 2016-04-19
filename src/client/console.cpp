@@ -286,6 +286,7 @@ namespace col {
 			put("load");
 			
 			// editor
+			put("reset");
 			put("list-nations");
 			put("list-units");
 			put("list-unit-types");
@@ -330,6 +331,16 @@ namespace col {
 			put("score");
 			put("cls");
 			put("print");
+		}
+		else if (cmd == "reset") {
+			switch (es.size()) {
+				default:
+					put("Usage: reset <width> <height>");
+					break;
+				case 3:	
+					env.reset(v2s(stoi(es.at(1)), stoi(es.at(2))));
+					break;
+			}
 		}
 		else if (cmd == "add-phys") {
 			switch (es.size()) {

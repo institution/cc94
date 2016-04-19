@@ -31,6 +31,9 @@ namespace col {
 	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
 
 	using Terrs = boost::multi_array<Terr, 2>;
+	
+	
+	
 	using Units = unordered_map<Unit::Id, Unit>;
 	//using Builds = unordered_map<Build::Id, Build>;
 	using Colonies = unordered_map<Colony::Id, Colony>;
@@ -81,7 +84,6 @@ namespace col {
 		Unit::Id get_id(Unit const* u) const { return (u) ? (u->id) : (Unit::Id(0)); }
 		UnitType::Id get_id(UnitType const& ut) const { return ut.id; }
 		Nation::Id get_id(Nation const& n) { return n.id; }
-
 
 		
 		template<class Type>

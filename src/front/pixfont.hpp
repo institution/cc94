@@ -37,12 +37,12 @@ namespace front {
 		}
 				
 		PixGlyph const& get_glyph(uint32_t c) const {
-			return glyphs.at(c);
-			/*auto it = glyphs.find(c);
+			
+			auto it = glyphs.find(c);
 			if (it == glyphs.end()) {
-
+				return glyphs.at('@');
 			}
-			return *it.second;*/
+			return (*it).second;
 		}
 
 		int get_height() const { 

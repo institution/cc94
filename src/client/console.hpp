@@ -95,12 +95,7 @@ namespace col {
 
 		long time{0};  // miliseconds
 
-		/*struct SelectProductionOnBuild {
-			
-			build_id
-			selected_id
-			
-		};*/
+		bool editing{true};
 		
 		
 		int equip_to_unit_id{0};
@@ -185,7 +180,9 @@ namespace col {
 
 		Mode mode;
 		
-		Nation::Id nation_id;
+		Nation::Id nation_id{1};
+		
+		
 
 		string memtag;
 		

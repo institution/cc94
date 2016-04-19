@@ -6,12 +6,6 @@
 
 namespace col{
 
-	struct View {
-
-		on
-
-	};
-	
 
 	struct Layout {
 

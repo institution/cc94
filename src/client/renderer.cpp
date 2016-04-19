@@ -92,7 +92,7 @@ namespace col {
 
 	inline
 	bool is_water(Terr const& t) {
-		return t.is_water_tile();
+		return t.alt == AltSea;
 	}
 
 
@@ -1064,6 +1064,16 @@ namespace col {
 
 
 
+	bool has_vision(Console const& con, Terr const& terr) {
+		return con.editing or terr.get_vision(con.nation_id);
+	}
+	
+	bool is_discovered(Console const& con, Terr const& terr) {
+		return con.editing or terr.get_discovered(con.nation_id);
+	}
+
+
+
 	void show_select_makeable(Env const& env, Console & con, Colony & colony, Build & factory, b2s box, v2f const& align) {
 		
 		auto & select = con.replace_widget<Select>();
@@ -1991,12 +2001,15 @@ namespace col {
 		Dir::W, Dir::E, Dir::D, Dir::C, Dir::X, Dir::Z, Dir::A, Dir::Q
 	};
 
+	bool looks_like_sea(Terr const& t) {
+		return t.get_alt() == AltSea;
+	}
 
-	int get_coast_index(uint8 const& l, Terr const& t0, Terr const& t1, Terr const& t2) {
+	int get_coast_index(uint8_t const& l, Terr const& t0, Terr const& t1, Terr const& t2) {
 		uint8 k =
-			(!is_water(t2) << 2) +
-			(!is_water(t1) << 1) +
-			(!is_water(t0) << 0);
+			(!looks_like_sea(t2) << 2) +
+			(!looks_like_sea(t1) << 1) +
+			(!looks_like_sea(t0) << 0);
 		return (k<<2) + l;
 	}
 
@@ -2026,12 +2039,12 @@ namespace col {
 		Dir::type d,
 		int offset
 	) {
-		auto b = get(loc, d).biome;
+		auto b = get(loc, d).biome;		
 		if (b != BiomeNone) {
-			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );
+			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );	
 		}
 		else {
-			// no diffuse from unexplored terrain (looks as bad as diffuse on water from terrain)
+			// no diffuse from unexplored terrain (TODO: looks bad)
 		}
 	}
 
@@ -2045,6 +2058,7 @@ namespace col {
 
 
 
+	/// Render terrain: altitude, biome and physical features
 	void render_terr(Front &win,
 			v2s pos,
 			Env const& env,
@@ -2064,12 +2078,8 @@ namespace col {
 		auto mountain = (terr.get_alt() == AltMountain);
 
 
-		// render biome
-		if (biome == BiomeNone) {
-			render_sprite(win, pix, res(win, PHYS, 149));
-			return;  // unknown terrain - early return !!!
-		}
 
+		// render biome
 		render_sprite(win, pix, res(win, TERR, get_biome_icon_id(biome)));
 
 		// render neighs pattern
@@ -2382,8 +2392,19 @@ namespace col {
 
 	//void select_area()
 
+	void render_fog(Front & win, v2s pos) {
+		win.render_fill({pos,ly.terr_dim}, Color(64,64,64,64));
+	}
 
-	void render_map(Front &win, Env const& env, Console & con, v2s pos,
+	void render_unknown(Front & win, v2s pos) {
+		render_sprite(win, pos, res(win, PHYS, 149));
+	}
+
+
+		
+
+	
+	void render_map(Front & win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
 	{
 
@@ -2433,12 +2454,18 @@ namespace col {
 				auto coords = Coords(i,j) + vpos;
 
 				if (env.in_bounds(coords)) {
-
+				
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 
 					auto& terr = env.get_terr(coords);
-					render_terr(win, pos, env, terr);
 
+
+					if (is_discovered(con, terr)) {
+						render_terr(win, pos, env, terr);
+					}
+					else {
+						render_unknown(win, pos);
+					}
 
 					// right press on terr -- select terr
 					con.on(Event::Press, Button::Right, pos, ly.terr_dim,
@@ -2492,8 +2519,9 @@ namespace col {
 
 
 
-
-
+		
+		
+		
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
@@ -2504,15 +2532,19 @@ namespace col {
 
 					auto& terr = env.get_terr(coords);
 
-					render_stack(win, con, pos, env, terr);
+					if (has_vision(con, terr)) {
+						render_stack(win, con, pos, env, terr);
+					}
+					else {
+						if (is_discovered(con, terr)) {
+							render_fog(win, pos);
+						}
+					}
 
 				}
 			}
 		}
-
-		//for (auto &p: env.units) {
-		//	render_icon(win, env, p.second);
-		//}
+	
 
 		// render cursor on selected tile
 		if (!con.get_sel_unit()) {
@@ -2609,6 +2641,15 @@ namespace col {
 
 		//front::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
+		con.on(Event::Press, KeyF12,
+			[&con](){ 
+				con.editing = !con.editing; 
+				con.put("EDITING = %||", int(con.editing));
+			}
+		);
+	
+		
+
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 
 		// terrain info
@@ -2629,30 +2670,44 @@ namespace col {
 		// Turn 5, England
 		cur.render_text("Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n");
 
-		if (con.nation_id) {
-			//info += format("You are (id): %||", env.get<Nation>(con.nation_id).get_name());
-			
+		if (con.nation_id) 
+		{
 			cur.render_text(format("You are (id): %||\n", int(con.nation_id)));
 		}
 
 
 
-		if (Terr const* tp = con.get_sel_terr()) {
+		if (Terr const* tp = con.get_sel_terr()) 
+		{
 			auto& t = *tp;
-			string phys_info;
-			for (auto const& item: PHYS_NAMES) {
-				auto const& phys = item.first;
-				auto const& name = item.second;
+			
+			if (is_discovered(con, t))
+			{				
+				string phys_info;
+				for (auto const& item: phys_names) {
+					auto const& phys = item.first;
+					auto const& name = string(item.second);
 
-				if (t.has_phys(phys)) phys_info += name + ",";
+					if (t.has_phys(phys)) phys_info += name + ",";
+				}
+				
+				cur.render_text(format("Biome: %||\n", get_biome_name(t.biome)));			
+				cur.render_text(format("Alt: %||\n", int(t.alt)));
+				cur.render_text(format("[%||]\n", phys_info));
+				//cur.render_text(format("move: %||\n", env.get_movement_cost(t, t, TravelLand)));
+				//cur.render_text(format("improv: %||\n", env.get_improv_cost(t)));
+				
+				/*string road = t.has(PhysRoad) ? "yes" : "no";
+				string forest = t.has(PhysForest) ? "yes" : "no";
+				string river = t.has(PhysMinorRiver) ? "minor" : (t.has(PhysMajorRiver) ? "major" : "none");
+				string plow = t.has(PhysPlow) ? "yes" : "no";*/
+			
 			}
-
-			cur.render_text(format("%||\n", BIOME_NAMES.at(t.biome)));
-			cur.render_text(format("[%||]\n", phys_info));
-
-			cur.render_text(format("move: %||\n", env.get_movement_cost(t, t, TravelLand)));
-			cur.render_text(format("improv: %||\n", env.get_improv_cost(t)));
-
+			else {
+				cur.render_text(format("Biome: %||\n", "Unknown"));			
+				cur.render_text(format("Alt: %||\n", "Unknown"));
+				cur.render_text(format("[%||]\n", "Unknown"));				
+			}
 			
 		}
 
@@ -2762,7 +2817,7 @@ namespace col {
 
 				// left click -> select idle
 				con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
-					[&con,terr](){ con.select_terr(terr); }
+					[&con,terr](){ con.select_terr(terr); con.mode = Console::Mode::COLONY; }
 				);
 				
 			}

@@ -123,12 +123,12 @@ namespace col{
 	
 
 	struct Unit{
-		using Id = uint32;
+		using Id = uint32_t;
 
 		Id id{0};
 		UnitType const* type{nullptr};
 		Nation * nation{nullptr};
-		uint8 time_left{TIME_UNIT};
+		uint8_t time_left{TIME_UNIT};
 		bool transported{0};
 		
 		Storage store;
@@ -137,19 +137,21 @@ namespace col{
 		Terr *terr{nullptr};
 		Workplace *workplace{nullptr};
 		
-		// system - not part of unit, false means unit non-existant
+		// is alive
 		bool in_game{true};
-
-		Order::type order{Order::Unknown};   // TODO: remove
-
-		Amount space_left{0}; // [t]
-		uint8 extend{0}; // num of boarded units TODO: need this?
 		
-		Amount health{0};
+		Amount space_left{0}; // [t]
+		uint8_t extend{0}; // num of boarded units TODO: need this?
+		
 		
 		Prof prof_dir{ProfNone};
 		int8_t prof_num{0};
 
+		Terr const& get_terr() const {
+			return *terr;
+		}
+
+		
 		Prof get_prof() const {
 			return (prof_num >= 8) ? prof_dir : ProfNone;
 		}
@@ -232,8 +234,8 @@ namespace col{
 			assert(nation == nullptr);
 		}
 
-		//bool is_expert(Item const& item) const { return false; }
-
+		
+		
 		Nation & get_nation() const { return *nation; }
 		Unit & set_nation(Nation & nation) { this->nation = &nation; return *this; }
 
@@ -255,7 +257,6 @@ namespace col{
 		float get_extend() const { return extend; }
 		bool get_transported() const { return transported; }
 		uint8 const& get_time_left() const { return time_left; }
-		Order::type const& get_order() const { return order; }
 		int get_icon() const { return type->icon; }
 		int get_icon_expert() const { return type->icon_expert; }
 

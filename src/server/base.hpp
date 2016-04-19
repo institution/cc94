@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "ext/vals.hpp"
 #include "col.hpp"
 #include "phys.hpp"
 #include "item.hpp"
@@ -27,6 +28,7 @@ namespace col {
 	22 8  1,1
 	*/
 
+	
 
 	namespace Dir{
 		using type = uint8;

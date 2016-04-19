@@ -59,44 +59,60 @@ using roll::replay;
  
  * arbitrary map size *
  *  scroll map with arrows *
- *  resize command
+ *  resize command *
  
- v 0.2.1
+ * editor hlinks *
  
- * base specialists 
+ * base specialists *
  *  unit can have speciality *
  *  teaching (school) *
- *  speciality affects productivity
- *  clear speciality
+ *  speciality affects productivity *
+ *  clear speciality (edit) *
+ 
+ * idle factory button -> zoom to colony *
+ 
+ 
+     
+ * simple AI, colony building
+ *  choose place: >1forest, >1ore, nearby(<4tile) but do not overlap(>3tile)
+ *  move nearest colonist and build
+ 
+ * simple AI, colony managment
+ *  assign to work: food, lumber, carpenter
+ *  construct following fixed order: docks, lumber mill, ...
+ *  move any unassigned unit to colony
+  
+ * fog of war 
+ 
+ * teaching: block 2 teachers one student, unit attr
+ * teaching: choose best student, search units
+  
+ v 0.2.8
+ 
+ * menu gui, orders
+ * gui improvments
+ * human ai helpers
+ * somehow playable scenario map
+ 
+ v 0.3.0
   
  * cargo gui rework
  *  arbitrary number of items *
  *  drop cargo on transport
  *  square cargo icons
  
- * idle factory button 
- 
  * travel to europe by sea - exit_map(ship, dest) order - trade
  * europe screen
  * sell/buy in europe  
- 
- 
- * fog of war 
-   
- * simple AI, colony building
- * simple AI, colony managment
- 
- v 0.2.4
- 
- * startup time log
- 
- * menu gui, orders
+  
  * trade framework
  * trade with forein powers/indians
  
  * simple AI, trade
  
- * v0.2.8
+ * teaching revisited ?
+ 
+ * v0.3.5
   
  * land combat 
  * artillery fire during enemy turn?
@@ -104,11 +120,14 @@ using roll::replay;
  * simple AI - combat
  
  * food as default field prod ?
- * v0.3.0
+ * v0.4.0
   
  * repair unit
  * specialist by practice
- * v0.4.0
+ 
+ * v0.4.5
+ 
+ * startup time log
  
  * v0.5.0
  

@@ -11,35 +11,37 @@ namespace col{
 
 
 
-	using Alt = uint8;
-
-	Alt const AltNone = 0;
-	Alt const AltSea = 1;
-	Alt const AltFlat = 2;
-	Alt const AltHill = 3;
-	Alt const AltMountain = 4;
+	using Alt = int8_t;
+	
+	
+	Alt const 
+		AltSea = 1,
+		AltFlat = 2,
+		AltHill = 3,
+		AltMountain = 4;
+		
+	Alt const AltDefault = AltSea;
+	Biome const BiomeDefault = BiomeDesert;
 
 	struct Colony;
 	struct Unit;
 
-	using Vision = std::bitset<32>;
+	using Vision = uint32_t;
 
 	struct Terr {
 		using Id = Coords;
 
-		Biome biome{BiomeNone};
+		Alt alt{AltDefault};
+		Biome biome{BiomeDefault};
 		Phys phys{PhysNone};
-		Alt alt{AltNone};
-
+		
 		vector<Unit*> units;
-		Colony* colony{nullptr};
+		Colony * colony{nullptr};
+		
+		Vision vision{0};
+		Vision discovered{0};
 
-		Vision vision;
-
-		// Constructors
-		//Terr(): biome(BiomePlains), phys(PhysNone), alt(SEA_LEVEL), colony(nullptr) {}
-
-		explicit Terr(Alt const& alt = AltNone, Biome const& biome = BiomeNone, Phys const& phys = PhysNone):
+		explicit Terr(Alt const& alt = AltDefault, Biome const& biome = BiomeDefault, Phys const& phys = PhysNone):
 			biome(biome), phys(phys), alt(alt)
 		{}
 
@@ -48,50 +50,28 @@ namespace col{
 			assert(units.size() == 0);
 		}
 
+		void clear_vision() {
+			vision = 0;	
+		}
+		
+		void mark_vision(Nation::Id id) {
+			vision |= (Vision(1) << id);
+			discovered |= (Vision(1) << id);
+		}
+
 		void set_vision(Nation::Id id, bool val) {
-			vision.set(id, val);
+			vision |= (Vision(1) << id);
 		}
-
+		
+		bool get_discovered(Nation::Id id) const {
+			return discovered & (Vision(1) << id);
+		}
+				
 		bool get_vision(Nation::Id id) const {
-			return vision[id];
-		}
-
-		/*
-		move_unit(Unit &u, Place &from) {
-
-		}
-
-		move_cargo(Cargo &c, Place &from) {
-
-		}*/
-
-		// Place
-		PlaceType::type place_type() {
-			return PlaceType::Terr;
+			return vision & (Vision(1) << id);
 		}
 
 
-		Amount get_yield(Item const& item, Amount const& base) const;
-
-		vector<Item> get_proditems() const {
-			array<Item,9> field_items = {
-				ItemFood,ItemSugar,ItemTobacco,
-				ItemCotton,ItemFurs,ItemLumber,
-				ItemOre,ItemSilver,ItemFish
-			};
-
-			vector<Item> xs;
-			for (auto const& item: field_items) {
-				if (get_yield(item, 0)) {
-					xs.push_back(item);
-				}
-			}
-			return xs;
-		}
-
-		int get_space_left() {
-			return 999;
-		}
 
 		void add(Unit & u) {
 			units.push_back(&u);
@@ -156,7 +136,9 @@ namespace col{
 		}
 
 		void add_phys(Phys const& p) {
+			//print("add_phys: %|| | %|| -> %||\n", int(phys), int(p), int(phys | p));
 			phys = phys | p;
+			
 		}
 
 		void sub_phys(Phys const& p) {
@@ -174,14 +156,23 @@ namespace col{
 
 		Travel get_travel() const;
 
-		bool is_water_tile() const {
-			return alt == AltSea;
-		}
-
 	};
 
 
-
+	inline Travel Terr::get_travel() const {
+		if (alt == AltSea) {
+			return TravelSea;
+		}
+		else {
+			if (colony != nullptr) {
+				return TravelSea | TravelLand;
+			}
+			else {
+				return TravelLand;
+			}
+		}
+		fail("ERROR: Terr::get_travel: Unknown travel type\n");		
+	}
 
 
 

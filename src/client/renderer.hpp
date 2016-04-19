@@ -8,6 +8,7 @@
 namespace col {
 
 	void render(Front &app, col::Env & env, col::Console & con, int verbose);
+	
 
 	void preload_renderer(Front &app);
 

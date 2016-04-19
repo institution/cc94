@@ -298,6 +298,36 @@ namespace col{
 			construct_unit
 
 		>;
+		
+	
+	
+
+	/**
+		
+		transfer_cargo(Store x, Store y, Manifest manifest)
+		move_unit(Unit u, Dir dir)
+
+		improve(Unit u, Phys phys),
+		destroy(Unit u, Phys phys),
+
+		ready,
+		move_unit,
+		improve,
+		destroy,
+		build_colony,
+
+		toogle_board,
+
+		work_build,
+		work_field,
+		work_none,
+
+		prod_build,
+		prod_field,
+
+		construct_build,
+		construct_unit
+	**/
 
 
 	/*
