@@ -98,6 +98,39 @@ namespace col{
 
 	}; // UnitType
 
+	UnitType::Id const
+		UnitTypeNone{0},
+		UnitTypeColonists{1},
+		UnitTypePioneers20{2},
+		UnitTypePioneers40{3},
+		UnitTypePioneers60{4},
+		UnitTypePioneers80{5},
+		UnitTypePioneers100{6},
+		UnitTypeMissionaries{7},
+		UnitTypeSoldier{8},
+		UnitTypeScout{9},
+		UnitTypeDragoon{10},
+		UnitTypeContArmy{11},
+		UnitTypeContCav{12},
+		UnitTypeRegular{13},
+		UnitTypeCavalry{14},
+		UnitTypeTreasure{15},
+		UnitTypeArtillery{16},
+		UnitTypeWagonTrain{17},
+		UnitTypeCaravel{18},
+		UnitTypeMerchantman{19},
+		UnitTypeGalleon{20},
+		UnitTypePrivateer{21},
+		UnitTypeFrigate{22},
+		UnitTypeManOWar{23},
+		UnitTypeBraves{24},
+		UnitTypeArmedBraves{25},
+		UnitTypeMtdBraves{26},
+		UnitTypeMtdWarriors{27},
+		UnitTypeEnd{28};
+
+	
+
 	inline
 	bool operator==(UnitType const& t1, UnitType const& t2) {
 		return t1.id == t2.id;

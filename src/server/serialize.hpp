@@ -375,10 +375,11 @@ namespace col {
 	}
 
 	template<typename A>
-	void read(A & ar, Env const& env, Terr const& x) {
+	void read(A & ar, Env const& env, Terr & x) {
 		read(ar, x.biome);
 		read(ar, x.phys);
 		read(ar, x.alt);
+		read(ar, x.discovered);
 	}
 
 
@@ -432,6 +433,8 @@ namespace col {
 		// colonies		
 		{
 			if (verbose) print("save colonies\n");
+						
+			// write_byte(ar, 'C');
 			
 			auto& ps = env.get_cont<Colony>();
 			
@@ -546,16 +549,20 @@ namespace col {
 					auto& x = env.get_terr(Coords(i,j));
 
 					// terr value
-					read(ar, x.biome);
-					read(ar, x.phys);
-					read(ar, x.alt);
-
+					read(ar, env, x);
 				}
 			}
 		}
 
+		
+
 		// colonies
 		{
+			// section mark
+			/*if (read_byte(ar) != 'C') {
+				fail('invalid section mark: expected C (Colonies)');
+			}*/
+		
 			if (verbose) print("load colonies\n");
 			
 			auto& ps = env.get_cont<Colony>();

@@ -209,8 +209,24 @@ namespace col {
 
 		}
 
+		v2s view_dim{15,12};
+
 		void move_view(v2s delta) {
+			auto max_pos = env.get_dim() - view_dim;
+			auto min_pos = v2s{0,0};
+			
 			view_pos += delta;
+			
+			for (int i=0; i<2; ++i) {
+				if (view_pos[i] > max_pos[i]) {
+					view_pos[i] = max_pos[i];
+				}
+				
+				if (view_pos[i] < min_pos[i]) {
+					view_pos[i] = min_pos[i];
+				}				
+			}
+			
 		}
 
 		void apply_inter(inter::Any const& a, Agent & s);

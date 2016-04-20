@@ -609,6 +609,9 @@ namespace col {
 		v2s pos;
 		v2s dim;
 		
+		//b2s box;
+		
+		
 		vector<Col> cols;
 		vector<Elem> rows;
 		
@@ -670,9 +673,8 @@ namespace col {
 		{
 			// default single column
 			if (cols.size() == 0) {
-				cols.push_back(Col("", 200, 0.0f));			
-			}
-		
+				cols.push_back(Col("", 400, 0.0f));			
+			}		
 		
 			auto line_height = ly.font_tiny;
 			auto sep = ly.sep;   // cell sep
@@ -694,6 +696,10 @@ namespace col {
 		
 		auto line_height = ly.font_tiny;
 		auto sep = ly.sep;   // cell sep
+
+		// any event -- ignore
+		con.on();
+
 
 		// click anywhere -- cancel
 		con.on(Event::Press, oncancel);
@@ -770,8 +776,6 @@ namespace col {
 				auto & cell = row.text[i];
 
 				auto cdim = v2s(col.width, line_height);
-
-				
 
 				render_text(win,
 					cpos, cdim, v2f(col.align, 0.5),
@@ -2286,32 +2290,18 @@ namespace col {
 
 		// now render selected unit
 		if (sel_unit_here) {
-
 			render_selected_unit(win, con, pos, *con.get_sel_unit());
-
 		}
 
 	}
 
-
-
-	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit) {
-		auto & icon = res(win, ICON, get_icon_id(unit));
+	void handle_selected_unit(Front & win, Console & con, Unit & unit) 
+	{
 		auto unit_id = unit.id;
-
-		// render blinking shield
-		if (con.blink()) {
-			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
-		}
-
-		// render unit in field
-		render_sprite(win,
-			calc_align({pos, ly.terr_dim}, get_dim(icon)),
-			icon
-		);
-
-
-		// selected unit keyboard shortcuts (numpad -> move)
+	
+		// selected unit keyboard shortcuts 
+		
+		// numpad move
 		con.on(Event::Press, KeyNumpad2,
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
@@ -2337,35 +2327,31 @@ namespace col {
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
 
-		// move on nums
-		con.on(Event::Press, KeyNum2,
+		// alpha move
+		con.on(Event::Press, KeyX,
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
-		con.on(Event::Press, KeyNum8,
+		con.on(Event::Press, KeyW,
 			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
-		con.on(Event::Press, KeyNum6,
+		con.on(Event::Press, KeyD,
 			[&con,unit_id](){ con.command("move 1 0"); }
 		);
-		con.on(Event::Press, KeyNum4,
+		con.on(Event::Press, KeyA,
 			[&con,unit_id](){ con.command("move -1 0"); }
 		);
-		con.on(Event::Press, KeyNum3,
+		con.on(Event::Press, KeyC,
 			[&con,unit_id](){ con.command("move 1 1"); }
 		);
-		con.on(Event::Press, KeyNum7,
+		con.on(Event::Press, KeyQ,
 			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
-		con.on(Event::Press, KeyNum1,
+		con.on(Event::Press, KeyZ,
 			[&con,unit_id](){ con.command("move -1 1"); }
 		);
-		con.on(Event::Press, KeyNum9,
+		con.on(Event::Press, KeyE,
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
-
-
-
-
 
 		// build colony
 		con.on(Event::Press, KeyB,
@@ -2390,6 +2376,26 @@ namespace col {
 
 	}
 
+	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit) {
+		auto & icon = res(win, ICON, get_icon_id(unit));
+		auto unit_id = unit.id;
+
+		// render blinking shield
+		if (con.blink()) {
+			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
+		}
+
+		// render unit in field
+		render_sprite(win,
+			calc_align({pos, ly.terr_dim}, get_dim(icon)),
+			icon
+		);
+
+
+		
+	
+	}
+
 	//void select_area()
 
 	void render_fog(Front & win, v2s pos) {
@@ -2408,11 +2414,12 @@ namespace col {
 			Coords const& delta)
 	{
 
-		auto w = 15;
-		auto h = 12;
+		
+		auto w = con.view_dim[0];
+		auto h = con.view_dim[1];
 		
 
-
+		
 		// left arrow -- scroll map
 		con.on(Event::Press, KeyLeft, 
 			[&con](){
@@ -2517,10 +2524,6 @@ namespace col {
 		}
 
 
-
-
-		
-		
 		
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
@@ -2545,6 +2548,10 @@ namespace col {
 			}
 		}
 	
+		if (auto *u = con.get_sel_unit()) 
+		{
+			handle_selected_unit(win, con, *u);
+		}
 
 		// render cursor on selected tile
 		if (!con.get_sel_unit()) {
@@ -2600,6 +2607,39 @@ namespace col {
 
 	}
 
+	void show_select_unit_type(Env const& env, Console & con) {
+		auto & s = con.replace_widget<Select>();
+		auto * u = con.get_sel_unit();
+		
+		
+		for (auto i = UnitTypeNone + 1; i < UnitTypeEnd; ++i) 
+		{
+			// TODO remove this - select should auto page
+			if (i == UnitTypePioneers20) {
+				i = UnitTypePioneers100;
+			}
+		
+			auto & type = env.get<UnitType>(i);
+			
+			if (i == type.id) {
+				s.set_highlight();
+			}
+		
+			s.add({type.get_name()}, [u, &type](){ 
+				u->set_type(type);
+			});
+		}
+				
+		s.oncancel = [&con](){
+			con.clear_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.clear_widget();
+		};   // onselect
+				
+		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+	}
 
 	void show_select_speciality(Console & con) {
 		
@@ -2607,16 +2647,14 @@ namespace col {
 		
 		auto * u = con.get_sel_unit();
 		
-		for (int i = ProfNone; i < ProfEnd; i++)
+		for (int i = ProfNone; i < ProfEnd; ++i)
 		{
 			if (i == u->get_prof()) {
 				s.set_highlight();
 			}
 		
-			s.add({get_prof_name(i)}, [&con, i](){ 
-				if (auto * u = con.get_sel_unit()) {
-					u->set_prof(i);
-				}
+			s.add({get_prof_name(i)}, [u, i](){ 
+				u->set_prof(i);				
 			});
 		}
 		
@@ -2715,11 +2753,16 @@ namespace col {
 
 		if (auto u = con.get_sel_unit()) {
 			
-			cur.render_link(u->get_name(), [&con](){
-				show_select_speciality(con);
+			cur.render_link(u->get_name(), [&env, &con](){
+				show_select_unit_type(env, con);
 			});
-			cur.render_text("\n");
-						
+			
+			cur.render_text("(");			
+			cur.render_link(get_prof_name(u->get_prof()), [&con](){
+				show_select_speciality(con);
+			});						
+			cur.render_text(")\n");
+			
 			cur.render_text(format("Time left: %||/%||\n",
 				int(u->time_left),
 				int(TIME_UNIT)

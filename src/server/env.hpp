@@ -794,7 +794,7 @@ namespace col{
 		//	return get_terr(get_coords(u) + vec4dir(dir));
 		//}
 
-
+		
 
 		void kill(Unit & u) {
 			// this function will erase from container you are currently iterating over

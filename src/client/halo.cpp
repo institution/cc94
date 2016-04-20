@@ -7,10 +7,10 @@ namespace halo{
 	std::ostream & operator<<(std::ostream & o, Pattern const& p) {
 		o << "Pattern(";
 		if (p.dev) o << "dev=" << static_cast<int>(*p.dev) << ",";
-		if (p.event) o << "event=" << static_cast<int>(*p.event) << ",";
+		if (p.event) o << "event=" << get_event_name(*p.event) << ",";
 		if (p.button) o << "button=" << static_cast<int>(*p.button) << ",";
 		if (p.key) o << "key=" << static_cast<int>(*p.key) << ",";
-		if (p.mod) o << "mod=" << static_cast<int>(*p.mod) << ",";
+		if (p.mod) o << "mod=" << get_mod_name(*p.mod) << ",";
 		if (p.unicode) o << "unicode=" << static_cast<int>(*p.unicode) << ",";
 		if (p.area) {
 			o << "pos=" << (*p.area).pos << ",";
@@ -37,11 +37,14 @@ namespace halo{
 			t = t and (!p.unicode or (q.unicode and *p.unicode == *q.unicode));
 			t = t and (!p.area or (q.area and geo2::overlap(*p.area, (*q.area).pos)));
 			
-			/*if (verbose and q.event and *q.event != Event::Hover) {
-				print("halo event: %||: %||\n", p, t);
-			}*/
+			
+			//if (verbose and q.event and *q.event != Event::Hover) {
+			//	print("halo event: %||: %||\n", p, t);
+			//}
 			
 			if (t) {
+				//print("halo event: %||: %||\n", p, t);
+			
 				if (p.callback) {
 					p.callback();
 				}

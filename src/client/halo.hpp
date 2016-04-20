@@ -33,10 +33,32 @@ namespace halo{
 	uint8_t const ModButton = 1 << 3;
 	
 
+	inline char const* get_mod_name(Mod x) {
+		switch (x) {
+			case ModNone: return "None";
+			case ModAlt: return "Alt";
+			case ModCtrl: return "Ctrl";
+			case ModShift: return "Shift";
+			case ModButton: return "Buttom";
+		}
+		return "<Invalid>";
+	}
+
 
 	enum struct Event {
 		None, Press, Release, Hover, Char
 	};
+	
+	inline char const* get_event_name(Event e) {
+		switch (e) {
+			case Event::None: return "None";
+			case Event::Press: return "Press";
+			case Event::Release: return "Release";
+			case Event::Hover: return "Hover";
+			case Event::Char: return "Char";
+		}
+		return "<Invalid>";
+	}
 
 	enum struct Button{
 		None, Left, Right,
