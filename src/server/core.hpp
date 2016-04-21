@@ -30,7 +30,8 @@ namespace col {
 	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
 	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
 
-	using Terrs = boost::multi_array<Terr, 2>;
+	//using Terrs = boost::multi_array<Terr, 2>;
+	using Terrs = ext::darray2<Terr, Coord>;
 	
 	
 	
@@ -65,7 +66,8 @@ namespace col {
 
 		explicit
 		Core():
-			terrs(Coords(0,0), boost::fortran_storage_order())			
+			//terrs(Coords(0,0), boost::fortran_storage_order())
+			terrs(Coords(0,0))
 		{
 			bts = make_shared<BuildTypes>();
 			uts = make_shared<UnitTypes>();
@@ -154,7 +156,12 @@ namespace col {
 
 	inline Coords Core::get_coords(Terr const& t) const {
 		// offset = x*w + y
-		uint32 offset = uint32(&t - &terrs[0][0]);
+		assert(terrs.size() > 0);
+		
+		auto offset = size_t(&t - &terrs[0]);
+		
+		assert(offset < terrs.size());
+		
 		return Coords(offset % w, offset / w);
 	}
 

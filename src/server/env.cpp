@@ -9,7 +9,7 @@ namespace col {
 		Env::StatePlay = 1,
 		Env::StateExit = 2;
 
-
+	/// Speciality name
 	Prof get_prof_by_item(Item item)
 	{
 		switch (item) {
@@ -39,8 +39,10 @@ namespace col {
 		return ProfNone;
 	}
 
+	/// What 'unit is doing
 	Prof get_unit_occupation(Unit const& u)
 	{
+		
 		if (u.is_working()) {
 			return get_prof_by_item(u.get_workplace().get_proditem());
 		}
@@ -61,7 +63,7 @@ namespace col {
 		return ProfNone;
 	}
 
-
+	/// Is 'unit expert in production of 'item
 	bool is_expert(Unit const& unit, Item const& item) {
 		auto req = get_prof_by_item(item);
 		return req != ProfNone and req == unit.get_prof();		
@@ -90,8 +92,8 @@ namespace col {
 		}		
 	}
 
-	/// How much of 'item can be produced by 'unit on 'terr
-	Amount Env::get_prod(Terr const& terr, Unit const& unit, Item const& item) const {
+	/// How much of 'item can be produced on 'terr by Standard Colonist
+	Amount Env::get_base_prod(Terr const& terr, Item const& item) const {
 		/* 		 
 		    Why this is so complicated; games are supposed to have easy to understand rules
 		  ballance should be achieved otherwise (negative feedback possibly)
@@ -102,25 +104,13 @@ namespace col {
 		int forest = terr.has_phys(PhysForest);
 		int plow = terr.has_phys(PhysPlow) * 2;
 		int river = terr.has_phys(PhysRiver);
-		int expert = is_expert(unit, item) + 1;
-		
 		auto alt = terr.get_alt();
 		auto biome = terr.get_biome();
 		
 		switch(item) {
 			case ItemFish:
 				if (alt == AltSea) {
-					ret = 4;
-					/*
-					if (river) {
-						ret += 1;
-					}
-										
-					if (is_expert(unit, item)) {
-						ret += 2;
-					}
-					*/			
-					
+					ret = 4;					
 				}
 				break;
 			case ItemLumber:
@@ -256,7 +246,14 @@ namespace col {
 				}
 				break;
 		}
-		return ret * expert;
+		return ret;	
+	}
+	
+	
+	/// How much of 'item can be produced by 'unit on 'terr
+	Amount Env::get_prod(Terr const& terr, Unit const& unit, Item const& item) const {
+		int expert = is_expert(unit, item) + 1;
+		return get_base_prod(terr, item) * expert;
 	}
 
 

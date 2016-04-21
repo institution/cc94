@@ -7,29 +7,6 @@
 namespace col{
 
 	
-
-	/*template <class T>
-	struct CellT {
-
-		v2<T> pos, dim, end;
-
-		CellT() = default;
-
-		CellT(v2<T> pos, v2<T> dim):
-			pos(pos), dim(dim)
-		{
-			end = pos + dim;
-		}
-
-		CellT(T x, T y, T w, T h):
-			pos(x,y), dim(w,h)
-		{
-			end = pos + dim;
-		}
-
-	};
-
-	using Cell = CellT<int16_t>;*/
 	using Cell = b2s;
 
 	struct Layout {

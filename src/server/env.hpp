@@ -36,7 +36,8 @@ namespace col{
 
 	};
 
-
+	/// Command result: 1 Ok, 0 Try next turn, -1 Not possible
+	using Result = int8_t;
 
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x & y;
@@ -794,7 +795,7 @@ namespace col{
 		//	return get_terr(get_coords(u) + vec4dir(dir));
 		//}
 
-		
+
 
 		void kill(Unit & u) {
 			// this function will erase from container you are currently iterating over
@@ -1050,21 +1051,39 @@ namespace col{
 		Amount get_prod(Terr const& terr, Unit const& unit, Item const& item) const;
 
 
+		/// Can colony be build on 'terr
+		bool is_colonizable(Terr const& terr) const {
+			auto alt = terr.get_alt();
+			return 
+				not terr.has_colony() 
+				and AltFlat <= alt and alt <= AltHill;			
+		}
+		
+		/// Is 'unit capable of building colony
+		bool is_colonist(Unit const& unit) {
+			return unit.get_type().id <= UnitTypeCavalry;
+			// return compatible(unit.get_travel(), TravelLand)
+		}
 
-		bool colonize(Unit &u, string const& name) {
+		
+		
+		Result colonize(Unit &u, string const& name) {
 
 			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
+				return -1;
+				//throw Error("not your unit");
 			}
 
-			if (!compatible(u.get_travel(), TravelLand)) {
-				throw Error("not land-based unit");
+			if (not is_colonist(u)) {
+				return -1;
+				//throw Error("not land-based unit");
 			}
 
 			auto& t = get_terr(u);
 
-			if (t.has_colony()) {
-				throw Error("already colonized");
+			if (not is_colonizable(t)) {
+				return -1;
+				//throw Error("cannot colonize here");
 			}
 
 			auto time_cost = TIME_UNIT;
@@ -1336,6 +1355,8 @@ namespace col{
 		Nation::Id get_control_id(Unit const& u) const { return u.get_nation().id; }
 
 
+
+
 		void update_vision(Unit const& u) {
 			auto p = get_coords(u);
 			auto id = get_control_id(u);
@@ -1356,6 +1377,8 @@ namespace col{
 				}				
 			}
 		}
+		
+		
 
 
 		void init(Terr & t, Unit & u) {
@@ -1515,7 +1538,9 @@ namespace col{
 		void init_colony(Terr & t);
 
 
-
+		Amount get_base_prod(Terr const& terr, Item const& item) const;
+		
+		
 
 		void set_turn(uint32 turn_no) {
 			this->turn_no = turn_no;
