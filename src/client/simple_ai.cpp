@@ -17,9 +17,24 @@ namespace simple_ai{
 		return std::abs(d[0]) + std::abs(d[1]);		
 	}
 	
+	auto & SimpleAi::get_random_engine() {
+		return random_engine;
+	}
+	
+
+	float SimpleAi::random_number(float x, float y)
+	{
+		static std::uniform_real_distribution<float> d{};
+
+		using parm_t = decltype(d)::param_type;
+		return d(get_random_engine(), parm_t{x, y});
+	}
+
+	
 	void SimpleAi::sync() {
-		
-		
+		if (env.get_dim() != val.get_dim()) {
+			val.resize(env.get_dim(), 0.0f);		
+		}
 	}
 	
 	bool SimpleAi::get_food_item(Terr const& terr) const {
@@ -94,7 +109,7 @@ namespace simple_ai{
 		auto total = v2f(0,0);
 		float count = 0;
 		
-		for (auto const& unit: vals(env.units)) {
+		for (auto const& unit: list_values(env.units)) {
 			if (env.has_control(nation, unit)) {
 				total += v2f(env.get_coords(unit));
 				count += 1;
@@ -152,30 +167,18 @@ namespace simple_ai{
 
 	bool SimpleAi::step() {
 		
+		sync();
 		
-		// for all visible squares
-		for (auto const& terr: env.terrs)
+		if (env.in_progress() and env.get_current_nation() == nation) 
 		{
-			if () {
-				
+			print("simple_ai: moving units\n");
 			
-			
-			}
-		}
 		
-		
-		
-		if (env.in_progress()) {
-			if (env.get_current_nation() == nation) {
-				print("simple_ai: moving units\n");
-				
-			
-				print("simple_ai: ready\n");
-				env.ready(nation);
-			}
+			print("simple_ai: ready\n");
+			env.ready(nation);
 		}
 		
 		return true;
 	}
-		
+
 }

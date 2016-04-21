@@ -15,10 +15,24 @@ namespace col{
 	
 	
 	Alt const 
+		AltNone = 0,
 		AltSea = 1,
 		AltFlat = 2,
 		AltHill = 3,
-		AltMountain = 4;
+		AltMountain = 4,
+		AltEnd = 5;
+		
+	inline char const* get_alt_name(Alt alt) {
+		switch(alt) {
+			case AltNone: return "<InvalidAlt:None>";
+			case AltSea: return "Sea";
+			case AltFlat: return "Flat";
+			case AltHill: return "Hill";
+			case AltMountain: return "Mountain";
+			case AltEnd: return "<InvalidAlt:End>";
+		}
+		return "<InvalidAlt>";
+	}
 		
 	Alt const AltDefault = AltSea;
 	Biome const BiomeDefault = BiomeDesert;

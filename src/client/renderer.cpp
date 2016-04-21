@@ -627,6 +627,11 @@ namespace col {
 			rows.push_back(Elem(text, onselect, shortcut));
 		}
 		
+		void add(vector<string> const& text, bool hl, Action const& onselect, Key shortcut=KeyNone) {
+			if (hl) { set_highlight(); }
+			rows.push_back(Elem(text, onselect, shortcut));
+		}
+		
 		/*void add(string const& text, Action const& onselect, Key shortcut=KeyNone) {
 			rows.push_back(Elem({text}, onselect, shortcut));
 		}*/
@@ -2607,6 +2612,48 @@ namespace col {
 
 	}
 
+	void finish_popup(Console & con, Select & s) 
+	{
+		s.oncancel = [&con](){
+			con.clear_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.clear_widget();
+		};   // onselect
+				
+		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+	}
+
+	void show_select_biome(Env const& env, Console & con, Terr const& terr) {
+		auto current = terr.get_biome();
+		auto & s = con.replace_widget<Select>();
+		
+		for (auto i = BiomeNone+1; i < BiomeEnd; ++i)
+		{
+			s.add({get_biome_name(i)}, i == current, [&con, i](){
+				con.set_biome(i);
+			});			
+		}
+		
+		finish_popup(con, s);
+	}
+	
+	void show_select_alt(Env const& env, Console & con, Terr const& terr) {
+		auto current = terr.get_alt();
+		auto & s = con.replace_widget<Select>();
+		
+		for (auto i = AltNone+1; i < AltEnd; ++i)
+		{
+			s.add({get_alt_name(i)}, i == current, [&con, i](){
+				con.set_alt(i);
+			});			
+		}
+		
+		finish_popup(con, s);
+	}
+
+
 	void show_select_unit_type(Env const& env, Console & con) {
 		auto & s = con.replace_widget<Select>();
 		auto * u = con.get_sel_unit();
@@ -2729,9 +2776,22 @@ namespace col {
 					if (t.has_phys(phys)) phys_info += name + ",";
 				}
 				
-				cur.render_text(format("Biome: %||\n", get_biome_name(t.biome)));			
-				cur.render_text(format("Alt: %||\n", int(t.alt)));
+				cur.render_text("Biome: ");
+				cur.render_link(get_biome_name(t.biome), [&con, &env, &t](){
+					show_select_biome(env, con, t);
+				});
+				cur.render_text("\n");
+				
+				cur.render_text("Alt: ");
+				cur.render_link(get_alt_name(t.get_alt()), [&con, &env, &t](){
+					show_select_alt(env, con, t);
+				});
+				cur.render_text("\n");
+				
+				
 				cur.render_text(format("[%||]\n", phys_info));
+				
+				
 				//cur.render_text(format("move: %||\n", env.get_movement_cost(t, t, TravelLand)));
 				//cur.render_text(format("improv: %||\n", env.get_improv_cost(t)));
 				

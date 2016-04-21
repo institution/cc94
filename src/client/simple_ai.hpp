@@ -40,16 +40,17 @@ namespace simple_ai{
 
 	struct SimpleAi: Agent {
 
+		std::default_random_engine random_engine;
+
 		Env & env;
 		Nation & nation;
 		Nation::Id nation_id;
 		//Nation::Auth auth{0};
 		
-		std::default_random_engine random_engine;
+		ext::darray2<float, Coord> val;
 		
-		auto & get_random_engine() {
-			return random_engine;
-		}
+		
+		
 		
 		
 
@@ -57,24 +58,17 @@ namespace simple_ai{
 		
 		SimpleAi(Env & env, Nation & nation): env(env), nation(nation) 
 		{
-			nation_id = nation.id;
-			
+			nation_id = nation.id;			
 			random_engine.seed(std::random_device{}());
 		}
 
-		float random_number(float x, float y)
-		{
-			static std::uniform_real_distribution<float> d{};
-
-			using parm_t = decltype(d)::param_type;
-			return d(get_random_engine(), parm_t{x, y});
-		}
-
+		
 
 		// -------------
-		//v2f get_coords(Terr const& terr) const { return env.get_coords(terr); }
 		
-	
+		auto & get_random_engine();
+		float random_number(float x, float y);
+		
 		bool get_food_item(Terr const& terr) const;	
 		bool has_vision(Terr const& terr) const;
 		bool is_discovered(Terr const& terr) const;	
@@ -90,6 +84,8 @@ namespace simple_ai{
 	
 
 	};
+
+
 
 }
 

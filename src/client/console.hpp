@@ -255,6 +255,19 @@ namespace col {
 				)
 			);
 		}
+		
+		void set_biome(Biome biome) {
+			for (auto tp: get_sel_terrs()) {
+				tp->set_biome(biome);
+			}
+		}
+		
+		void set_alt(Alt alt) {
+			for (auto tp: get_sel_terrs()) {
+				tp->set_alt(alt);
+			}
+		}
+
 
 		inter::Any get_inter(Unit::Id unit_id, char letter, uint8 dx, uint8 dy) {
 			inter::Any a;
