@@ -26,20 +26,31 @@ namespace col {
 	Phys const PhysRoad = PhysTransit;
 	Phys const PhysSeaLane = PhysTransit;
 	Phys const PhysRiver = PhysMinorRiver | PhysMajorRiver;
+	Phys const PhysForestPlow = PhysPlow | PhysForest;
 	Phys const PhysAlterable = PhysRoad | PhysForest | PhysPlow;
 				
 	// plow xor forest
 	// majorriver xor minorriver
 	// road xor sealane
-		
+	
+	
+	inline Phys next_phys(Phys mask, Phys p) {
+		p = mask & p;
+		if (p == 0) {
+			return mask & ~(mask - 1);   //  00111100 -> 00000100
+		}
+		else {
+			return mask & (p << 1);
+		}
+	}
 		
 	unordered_map<Phys, char const*> const phys_names {
-		{PhysSeaLane, "sealane"},
-		{PhysRoad, "road"},
-		{PhysForest, "forest"},
-		{PhysMinorRiver, "minorriver"},
-		{PhysMajorRiver, "majorriver"},
-		{PhysPlow, "plow"}
+		{PhysSeaLane, "SeaLane"},
+		{PhysRoad, "Road"},
+		{PhysForest, "Forest"},
+		{PhysMinorRiver, "MinorRiver"},
+		{PhysMajorRiver, "MajorRiver"},
+		{PhysPlow, "Plow"}
 	};
 
 	inline char const* get_phys_name(Phys phys) {
@@ -48,7 +59,7 @@ namespace col {
 				return item.second;
 			}
 		}
-		return "none";
+		return "None";
 	}
 	
 

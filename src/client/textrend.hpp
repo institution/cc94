@@ -113,6 +113,11 @@ namespace col{
 	
 	struct TextRend2{
 		
+		using Mode = int8_t;
+		Mode const
+			Link = 1,
+			Text = 2;
+		
 		Front & win;
 		Console & con;
 		
@@ -135,6 +140,17 @@ namespace col{
 		
 		void render_text(string const& text);
 		void render_link(string const& text, Action a);
+		void render(Mode what, string const& text, Action a) {
+			if (what == Link) {
+				render_link(text, a);
+			}
+			else {
+				render_text(text);
+			}
+		}
+		void render(Mode what, string const& text) {
+			render_text(text);
+		}
 		
 	};
 	

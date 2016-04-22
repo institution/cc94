@@ -151,13 +151,24 @@ namespace col{
 
 		void add_phys(Phys const& p) {
 			//print("add_phys: %|| | %|| -> %||\n", int(phys), int(p), int(phys | p));
-			phys = phys | p;
-			
+			phys = phys | p;			
 		}
-
+		
 		void sub_phys(Phys const& p) {
 			phys = phys & (~p);
 		}
+		
+		void set_phys(Phys mask, Phys value) {
+			phys = (phys & (~mask)) | (value & mask);
+		}
+		
+		void switch_phys(Phys mask) {
+			auto p = get_phys(mask);
+			Phys first = mask & ~(mask - 1);   //  00111100 -> 00000100
+			set_phys(mask, (p == 0) ? first : (p << 1));	
+		}
+
+		Phys get_phys(Phys mask) const { return phys & mask; }
 
 		Phys const& get_phys() const { return phys; }
 		void set_phys(Phys const& phys) { this->phys = phys; }

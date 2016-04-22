@@ -267,6 +267,18 @@ namespace col {
 				tp->set_alt(alt);
 			}
 		}
+		
+		void set_phys(Phys mask, Phys value) {
+			for (auto tp: get_sel_terrs()) {
+				tp->set_phys(mask, value);
+			}
+		}
+		
+		void switch_phys(Phys mask) {
+			for (auto tp: get_sel_terrs()) {
+				tp->switch_phys(mask);
+			}
+		}
 
 
 		inter::Any get_inter(Unit::Id unit_id, char letter, uint8 dx, uint8 dy) {

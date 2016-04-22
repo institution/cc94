@@ -2423,7 +2423,7 @@ namespace col {
 		auto w = con.view_dim[0];
 		auto h = con.view_dim[1];
 		
-
+		
 		
 		// left arrow -- scroll map
 		con.on(Event::Press, KeyLeft, 
@@ -2457,7 +2457,8 @@ namespace col {
 		auto vdim = v2s(w,h);
 
 		// TODO: clamp view -- prevent black margins to appear
-			
+		
+		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
 		
 		
 		for (int j = 0; j < h; ++j) {
@@ -2559,31 +2560,37 @@ namespace col {
 		}
 
 		// render cursor on selected tile
-		if (!con.get_sel_unit()) {
+		if (not con.get_sel_unit()) {
 			if (Terr* tp = con.get_sel_terr()) {
 
 				for (auto tp: con.get_sel_terrs()) {
 					auto coords = env.get_coords(*tp);
-
-					render_inline(win,
-						vmul(coords - vpos, ly.terr_dim) + pos,
-						ly.terr_dim,
-						{128,128,128,255},
-						ly.line
-					);
+					
+				
+					if (overlap(view_box, coords)) 
+					{
+						render_inline(win,
+							vmul(coords - vpos, ly.terr_dim) + pos,
+							ly.terr_dim,
+							{128,128,128,255},
+							ly.line
+						);
+					}
 				}
 
 				auto coords = env.get_coords(*tp);
-
+				
 				// blink main terr
 				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
-					render_inline(win,
-						vmul(coords - vpos, ly.terr_dim) + pos,
-						ly.terr_dim,
-						{255,255,255,255},
-						ly.line
-					);
+					if (overlap(view_box, coords)) {
+						render_inline(win,
+							vmul(coords - vpos, ly.terr_dim) + pos,
+							ly.terr_dim,
+							{255,255,255,255},
+							ly.line
+						);
+					}
 				}
 
 
@@ -2652,6 +2659,39 @@ namespace col {
 		
 		finish_popup(con, s);
 	}
+	
+	void show_select_river(Console & con, Terr & terr) {
+		auto current = terr.get_phys(PhysRiver);
+		auto & s = con.replace_widget<Select>();
+		
+		auto lst = std::array<Phys,3>{PhysNone, PhysMinorRiver, PhysMajorRiver};
+		
+		for (auto i: lst)
+		{
+			s.add({get_phys_name(i)}, i == current, [&con, i](){
+				con.set_phys(PhysRiver, i);
+			});			
+		}
+		
+		finish_popup(con, s);
+	}
+	
+	void show_select_flora(Console & con, Terr & terr) {
+		auto current = terr.get_phys(PhysForestPlow);
+		auto & s = con.replace_widget<Select>();
+		
+		auto lst = std::array<Phys,3>{PhysNone, PhysForest, PhysPlow};
+		
+		for (auto i: lst)
+		{
+			s.add({get_phys_name(i)}, i == current, [&con, i](){
+				con.set_phys(PhysForestPlow, i);
+			});			
+		}
+		
+		finish_popup(con, s);
+	}
+
 
 
 	void show_select_unit_type(Env const& env, Console & con) {
@@ -2662,30 +2702,19 @@ namespace col {
 		for (auto i = UnitTypeNone + 1; i < UnitTypeEnd; ++i) 
 		{
 			// TODO remove this - select should auto page
+			// skip to save space; menu too long with this
 			if (i == UnitTypePioneers20) {
 				i = UnitTypePioneers100;
 			}
 		
 			auto & type = env.get<UnitType>(i);
 			
-			if (i == type.id) {
-				s.set_highlight();
-			}
-		
-			s.add({type.get_name()}, [u, &type](){ 
+			s.add({type.get_name()}, i == u->get_type().id, [u, &type](){ 
 				u->set_type(type);
 			});
 		}
-				
-		s.oncancel = [&con](){
-			con.clear_widget();
-		};   // oncancel
 		
-		s.onselect = [&con](){
-			con.clear_widget();
-		};   // onselect
-				
-		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+		finish_popup(con, s);
 	}
 
 	void show_select_speciality(Console & con) {
@@ -2696,24 +2725,12 @@ namespace col {
 		
 		for (int i = ProfNone; i < ProfEnd; ++i)
 		{
-			if (i == u->get_prof()) {
-				s.set_highlight();
-			}
-		
-			s.add({get_prof_name(i)}, [u, i](){ 
+			s.add({get_prof_name(i)}, i == u->get_prof(), [u, i](){ 
 				u->set_prof(i);				
 			});
 		}
 		
-		s.oncancel = [&con](){
-			con.clear_widget();
-		};   // oncancel
-		
-		s.onselect = [&con](){
-			con.clear_widget();
-		};   // onselect
-				
-		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+		finish_popup(con, s);
 	}
 
 
@@ -2762,7 +2779,7 @@ namespace col {
 
 
 
-		if (Terr const* tp = con.get_sel_terr()) 
+		if (Terr * tp = con.get_sel_terr()) 
 		{
 			auto& t = *tp;
 			
@@ -2776,29 +2793,82 @@ namespace col {
 					if (t.has_phys(phys)) phys_info += name + ",";
 				}
 				
-				cur.render_text("Biome: ");
-				cur.render_link(get_biome_name(t.biome), [&con, &env, &t](){
+				auto Text = cur.Text;
+				auto Link = con.editing ? cur.Link : cur.Text;
+				
+				cur.render(Text, "Biome: ");
+				cur.render(Link, get_biome_name(t.biome), [&con, &env, &t](){
 					show_select_biome(env, con, t);
 				});
-				cur.render_text("\n");
+				cur.render(Text, "\n");
 				
-				cur.render_text("Alt: ");
-				cur.render_link(get_alt_name(t.get_alt()), [&con, &env, &t](){
+				cur.render(Text, "Alt: ");
+				cur.render(Link, get_alt_name(t.get_alt()), [&con, &env, &t](){
 					show_select_alt(env, con, t);
 				});
-				cur.render_text("\n");
+				cur.render(Text, "\n");
 				
 				
-				cur.render_text(format("[%||]\n", phys_info));
+				//cur.render(Textformat("[%||]\n", phys_info));
+				
+				auto river = t.get_phys(PhysRiver);
+				auto forest = t.get_phys(PhysForest);
+				auto plow = t.get_phys(PhysPlow);
+				auto road = t.get_phys(PhysRoad);
+				
+				auto get_river_name = [](Phys river){
+					switch (river) {						
+						case PhysMinorRiver: return "MiRi";
+						case PhysMajorRiver: return "MaRi";
+					}
+					return "NoRi";
+				};
+				
+				cur.render(Text, "(");
+				cur.render(Link, 
+					get_river_name(river),
+					[&con,river](){
+						con.set_phys(PhysRiver, next_phys(PhysRiver, river));
+					}
+				);				
+				cur.render(Text, ",");
+				
+				cur.render(Link, 
+					forest ? "Fore" : "NoFo",
+					[&con,forest](){
+						con.set_phys(PhysForest, next_phys(PhysForest, forest));
+					}
+				);				
+				cur.render(Text, ",");				
+				
+				cur.render(Link, 
+					plow ? "Plow" : "NoPl",
+					[&con,plow](){
+						con.set_phys(PhysPlow, next_phys(PhysPlow, plow));
+					}
+				);			
+				cur.render(Text, ",");
 				
 				
-				//cur.render_text(format("move: %||\n", env.get_movement_cost(t, t, TravelLand)));
-				//cur.render_text(format("improv: %||\n", env.get_improv_cost(t)));
+				cur.render(Link, 
+					road ? "Road" : "NoRo",
+					[&con, road](){
+						con.set_phys(PhysRoad, next_phys(PhysRoad, road));
+					}
+				);
+				cur.render(Text, ")\n");
 				
-				/*string road = t.has(PhysRoad) ? "yes" : "no";
+				
+				/*
+				
+				
+				
+				
+				string road = t.has(PhysRoad) ? "yes" : "no";
 				string forest = t.has(PhysForest) ? "yes" : "no";
+				string plow = t.has(PhysPlow) ? "yes" : "no";
 				string river = t.has(PhysMinorRiver) ? "minor" : (t.has(PhysMajorRiver) ? "major" : "none");
-				string plow = t.has(PhysPlow) ? "yes" : "no";*/
+				*/
 			
 			}
 			else {
