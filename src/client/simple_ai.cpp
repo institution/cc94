@@ -30,7 +30,15 @@ namespace simple_ai{
 		return d(get_random_engine(), parm_t{x, y});
 	}
 
-	
+	int8_t SimpleAi::random_integer(int8_t x, int8_t y)
+	{
+		static std::uniform_int_distribution<int8_t> d{};
+
+		using parm_t = decltype(d)::param_type;
+		return d(get_random_engine(), parm_t{x, y});
+	}
+
+
 	void SimpleAi::sync() {
 		if (env.get_dim() != val.get_dim()) {
 			val.resize(env.get_dim(), 0.0f);		
@@ -164,6 +172,7 @@ namespace simple_ai{
 		
 		return env.get_coords(*best_terr);	
 	}
+	
 
 	bool SimpleAi::step() {
 		
@@ -171,9 +180,18 @@ namespace simple_ai{
 		
 		if (env.in_progress() and env.get_current_nation() == nation) 
 		{
-			print("simple_ai: moving units\n");
+			// move units in random directions
 			
-		
+			print("simple_ai: moving units\n");			
+			for (auto & unit: list_values(env.units))
+			{
+				if (env.has_control(nation, unit)) 
+				{
+					auto dir = Coords(random_integer(-1,+1), random_integer(-1,+1));
+					env.move_unit(dir[0], dir[1], unit);
+				}
+			}
+			
 			print("simple_ai: ready\n");
 			env.ready(nation);
 		}

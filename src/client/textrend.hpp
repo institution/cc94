@@ -50,7 +50,7 @@ namespace col{
 		string const& text
 	);
 
-	/** Render text at box with aligment 
+	/** Render text at box with aligment and possibly background
 	*/
 	inline b2s render_text(
 		Front &win,
@@ -65,12 +65,16 @@ namespace col{
 
 		string const& text
 	) {
+		/*if (bg != ColorNone) {
+			win.render_fill(win, pos, dim, bg);
+		}*/
 		return render_text_at(win,
 			calc_align(pos, dim, get_text_dim(font, text), align),
 			font, Style(fg, bg),
 			text
 		);
 	}
+	
 	
 	/** Render text at box with aligment 
 	*/
@@ -113,19 +117,42 @@ namespace col{
 	
 	struct TextRend2{
 		
-		using Mode = int8_t;
-		Mode const
-			Link = 1,
-			Text = 2;
-		
 		Front & win;
 		Console & con;
 		
 		b2s box;
-		v2s cpos;
+		v2s cpos; // cursor pos
+		int8_t ccol{0}; // cursor column
 		
 		PixFont const& font;
 		Style const& style;		
+		
+		
+		array<int16_t, 8> tabs{120,120,120,120,120,120,120,120};
+		array<int8_t, 8> align{-1,-1,-1,-1,-1,-1,-1,-1};
+		
+		
+		
+		
+		void set_tabs(
+			int16_t a0 = 120, int16_t a1 = 120, int16_t a2 = 120, int16_t a3 = 120, 
+			int16_t a4 = 120, int16_t a5 = 120, int16_t a6 = 120, int16_t a7 = 120
+		) {
+			tabs = {a0,a1,a2,a3,a4,a5,a6,a7};
+			for (size_t i = 1; i < tabs.size(); ++i)
+			{
+				tabs[i] += tabs[i-1];
+			}
+			
+		}
+		
+		void set_align(
+			int8_t a0 = -1, int8_t a1 = -1, int8_t a2 = -1, int8_t a3 = -1, 
+			int8_t a4 = -1, int8_t a5 = -1, int8_t a6 = -1, int8_t a7 = -1
+		) {
+			align = {a0,a1,a2,a3,a4,a5,a6,a7};
+		}
+		
 		
 		
 		TextRend2(Front & win, Console & con, b2s box, PixFont const& font, Style const& style):
@@ -136,21 +163,38 @@ namespace col{
 			style(style)
 		{
 			cpos = box.pos;
+			set_tabs();
 		}
 		
-		void render_text(string const& text);
-		void render_link(string const& text, Action a);
-		void render(Mode what, string const& text, Action a) {
-			if (what == Link) {
-				render_link(text, a);
+		TextRend2 & newline();
+		TextRend2 & td();
+		TextRend2 & tr();
+		
+		TextRend2 & text(string const& t);
+		TextRend2 & link(string const& t, Action a);
+		TextRend2 & link(string const& t, bool active, Action a) {
+			if (active) {
+				return link(t, a);
 			}
 			else {
-				render_text(text);
+				return text(t);
 			}
 		}
-		void render(Mode what, string const& text) {
-			render_text(text);
+		
+		/*
+		b2s get_current_box() {
+		
 		}
+		
+		TextRend2 & backlight(bool b) {
+			win.render_fill()
+		}
+		
+		TextRend2 & on(Event e, Button b, Action a) {
+			con.on(e, b, a);
+		}*/
+		
+		
 		
 	};
 	

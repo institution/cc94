@@ -38,6 +38,11 @@ namespace col{
 
 	/// Command result: 1 Ok, 0 Try next turn, -1 Not possible
 	using Result = int8_t;
+	Result const 
+		Impossible = -1,
+		TryAgain = 0,
+		Ok = 1;
+	
 
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x & y;
@@ -645,34 +650,44 @@ namespace col{
 			u.set_type(get<UnitType>(u.get_type_id() - 1));
 		}
 
+		string error_message;
+		void set_error(string const& s) {
+			error_message = s;
+		}
 
-		bool move_unit(int8 dx, int8 dy, Unit & u) {
+
+		Result move_unit(int8 dx, int8 dy, Unit & u) {
 			/// Move/board unit on adjacent square/ship
 			
 
 			// unit checks
 			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
+				set_error("not your turn");
+				return -1;
 			}
 
 			if (u.get_speed() == 0) {
-				throw Error("this unit cannot move (speed = 0)");
+				set_error("this unit cannot move (speed = 0)");
+				return -1;
 			}
 
 			// direction check
 			if (!(-1 <= dx and dx <= 1 and -1 <= dy and dy <= 1)) {
-				throw Error("invalid coords");
+				set_error("invalid direction given");
+				return -1;
 			}
 
 			if (dx == 0 and dy == 0) {
-				throw Error("already here");
+				set_error("already here");
+				return -1;
 			}
 
 			auto & orig = get_terr(u);
 			auto dest_coords = get_coords(orig) + Coords(dx,dy);
 
 			if (!in_bounds(dest_coords)) {
-				throw Error("destination outside of map");
+				set_error("destination outside of map");
+				return -1;
 			}
 
 			auto & dest = get_terr(dest_coords);
@@ -684,14 +699,16 @@ namespace col{
 					transported = 1;
 				}
 				else {
-					throw Error("cannot travel through this terrain");
+					set_error("cannot travel through this terrain");
+					return -1;
 				}
 			}
 
 			// dynamic check
 			Nation * cp = get_control(dest);
 			if (cp and cp->id != get_current_nation().id) {
-				throw Error("destination occupied by enemy");
+				set_error("destination occupied by enemy");
+				return -1;
 			}
 
 			// execute
@@ -1493,7 +1510,7 @@ namespace col{
 
 			++cpid;
 			while (nations.find(cpid) == nations.end()) {
-				if (cpid > 10) {
+				if (cpid > 31) {
 					turn();     // TURN HERE
 					cpid = 0;
 				}
@@ -1607,9 +1624,7 @@ namespace col{
 
 
 
-
-
-
+		
 
 		void set_owner(const Unit::Id &icon_id, const Nation::Id &nation_id) {
 			units.at(icon_id).nation = &nations.at(nation_id);

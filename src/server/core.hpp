@@ -225,6 +225,7 @@ namespace col {
 
 	}
 
+
 	template<class T, class... A> inline
 	T& Core::create(A&&... args) {
 		uint32 id = get_next_id();

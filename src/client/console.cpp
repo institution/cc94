@@ -4,6 +4,7 @@
 #include "props.hpp"
 #include "renderer.hpp"
 #include "null_ai.hpp"
+#include "simple_ai.hpp"
 #include "../front/front.hpp"
 
 namespace col {
@@ -210,6 +211,58 @@ namespace col {
 		++mod;
 	}
 	
+	
+
+	void Console::init_GUI() 
+	{
+		if (verbose >= 1) print("GUILoop: app.init\n");
+		win.init(
+			"cc94",
+			{conf.screen_w, conf.screen_h}
+		);
+		
+		if (verbose >= 1) print("GUILoop: preload renderer\n");
+		preload_renderer(win);
+		
+		if (verbose) print("GUILoop: set_logical_dim\n");
+		win.set_logical_dim({conf.screen_w, conf.screen_h});
+					
+		last_mod_env = env.mod - 1;
+		last_mod_con = mod - 1;
+		
+
+		last_tick = win.get_ticks();
+		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
+	}
+	
+	bool Console::step_GUI() 
+	{	
+			
+		if (verbose >= 2) print("GUILoop.step: {; app.done=%||\n", win.done);
+		
+		if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
+			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
+			time = win.get_ticks();
+			last_tick = time;
+
+			if (verbose >= 2) print("GUILoop.step: render; tick=%||\n", last_tick);
+			
+			render(win, env, *this, verbose);
+
+			last_mod_env = env.mod;
+			last_mod_con = mod;
+		}
+
+		if (verbose >= 2) print("GUILoop.step: handle_events;\n");
+
+		handle_events(win);
+					
+		if (verbose >= 2) print("GUILoop.step: }\n");
+					
+		return !win.done;		
+		
+	}
+	
 	Item Console::get_next_workitem_field(Env const& env, Field const& f) const {
 		// return next item availbe for production in this workplace
 		
@@ -255,6 +308,11 @@ namespace col {
 		}
 		
 	}
+	
+	void Console::add_simple_ai(Nation::Id nation_id) {
+		runner.add_agent<simple_ai::SimpleAi>(env, env.get<Nation>(nation_id));
+	}
+	
 	
 	void Console::do_command(string const& line) {
 		
@@ -319,7 +377,7 @@ namespace col {
 			put("info");
 			
 			// ai
-			//put("create-ai");				
+			put("attach-ai");
 			//put("exec-ai");
 			//put("list-ais");
 			
@@ -371,6 +429,20 @@ namespace col {
 		else if (cmd == "cls") {
 			output.clear();
 		}
+		
+		
+		else if (cmd == "attach-ai") {
+			switch (es.size()) {
+				default:
+					put("Usage: attach-ai <nation_id>");
+					break;
+				case 2:
+					add_simple_ai(stoi(es.at(1)));
+					put("Simple AI attached");
+					break;
+			}
+		}		
+		
 		else if (cmd == "info") {
 			switch (es.size()) {
 				default:

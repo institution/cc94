@@ -74,6 +74,7 @@ namespace col {
 	Style const StyleMenu(ColorFont, ColorNone, ColorFontSelected, ColorFontDisabled);
 	
 	
+	
 	// Texture get dim
 	v2s get_dim(Texture const& t) { return t.dim; }
 
@@ -611,7 +612,6 @@ namespace col {
 		
 		//b2s box;
 		
-		
 		vector<Col> cols;
 		vector<Elem> rows;
 		
@@ -951,7 +951,7 @@ namespace col {
 			auto p = pos + v2s(0, i * LINE_HEIGHT);
 			auto d = v2s(dim[0], LINE_HEIGHT);
 
-			auto& key = kvs[i].first;
+			auto & key = kvs[i].first;
 
 			auto fg = ColorFont;
 
@@ -2734,6 +2734,119 @@ namespace col {
 	}
 
 
+	/*struct Node 
+	{		
+		virtual v2s get_dim() const {}
+		virtual bool is_selectable() const { return false; }
+		
+		virtual Node * get_right() {}
+		virtual Node * get_up() {}
+		virtual Node * get_down() {}
+		
+		virtual void set_right(Node *) {}
+		virtual void set_up(Node *) {}
+		virtual void set_down(Node *) {}
+		
+		virtual void render(Front & win, Console & con) {}
+		
+		virtual ~Node() {}
+	};
+	
+	//Node * right_{nullptr}, 
+	//Node * up_{nullptr}, 
+	//Node * down_{nullptr};
+	
+	struct Cell: Node {
+	
+	}
+	
+	struct Text: Node {
+		
+	
+	
+		string text;
+	}*/
+	
+
+
+
+	struct Menu : Widget {
+		int cursor{-1};
+		void render(Front & win, Console & con) override;
+			
+		int size() { return 2; }
+				
+		void move(size_t i) {
+			cursor = i;
+			if (cursor <= 0) { cursor = size(); }
+			if (cursor >= size()) { cursor = 0; }
+		}
+
+		void move_up() {
+			if (cursor <= 0) { cursor = size(); }
+			cursor -= 1;
+		}
+
+		void move_down() {
+			cursor += 1;
+			if (cursor >= size()) { cursor = 0; }
+		}		
+	};
+
+	void Menu::render(Front & win, Console & con) {
+		/*TextRend2 cur(win, con, ly.bar, PixFont, StyleMenu);
+		
+		cur.link("Reports")
+		
+		Game   Unit   Reports   BlaBla
+		*/
+		
+		
+		
+		
+		
+		/*
+		
+		auto cind = 0;
+		
+		auto box = ly.bar;		
+		
+		v2s cpos = box.pos;
+		v2s cdim = {120, box.dim[1]};
+		
+		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }		
+		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Game");		
+		con.on
+		cpos[0] += cdim[0];
+		
+		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }
+		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Reports");
+		cpos[0] += cdim[0];
+		*/
+		
+		
+		
+		
+	}
+
+	void render_nations_table() {
+		/*
+		cur.set_tabs(160, 100, 40);
+		cur.set_align(0, 0, 0);
+		cur.text("Name").td().text("Power").td().text("Bla").tr();
+		
+		cur.set_align(-1, +1, 0);
+		cur.link("England", con.editing, [](){ }).td();
+		cur.text("88").td();
+		cur.text("bla").tr();
+		
+		cur.link("England", con.editing, [](){ }).tab();
+		*/
+		
+		
+	
+	}
+
 	void render_panel(Front & win,
 			Env const& env,
 			Console & con,
@@ -2770,11 +2883,11 @@ namespace col {
 		auto cur = TextRend2(win, con, ly.pan, FontTiny, StyleMenu);
 
 		// Turn 5, England
-		cur.render_text("Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n");
+		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n");
 
 		if (con.nation_id) 
 		{
-			cur.render_text(format("You are (id): %||\n", int(con.nation_id)));
+			cur.text(format("You are (id): %||\n", int(con.nation_id)));
 		}
 
 
@@ -2793,20 +2906,22 @@ namespace col {
 					if (t.has_phys(phys)) phys_info += name + ",";
 				}
 				
-				auto Text = cur.Text;
-				auto Link = con.editing ? cur.Link : cur.Text;
 				
-				cur.render(Text, "Biome: ");
-				cur.render(Link, get_biome_name(t.biome), [&con, &env, &t](){
-					show_select_biome(env, con, t);
-				});
-				cur.render(Text, "\n");
+				cur.text("Biome: ");
+				cur.link(get_biome_name(t.biome), con.editing, 
+					[&con, &env, &t](){
+						show_select_biome(env, con, t);
+					}
+				);
+				cur.text("\n");
 				
-				cur.render(Text, "Alt: ");
-				cur.render(Link, get_alt_name(t.get_alt()), [&con, &env, &t](){
-					show_select_alt(env, con, t);
-				});
-				cur.render(Text, "\n");
+				cur.text("Alt: ");
+				cur.link(get_alt_name(t.get_alt()), con.editing, 
+					[&con, &env, &t](){
+						show_select_alt(env, con, t);
+					}
+				);
+				cur.text("\n");
 				
 				
 				//cur.render(Textformat("[%||]\n", phys_info));
@@ -2824,86 +2939,73 @@ namespace col {
 					return "NoRi";
 				};
 				
-				cur.render(Text, "(");
-				cur.render(Link, 
-					get_river_name(river),
+				cur.text("(");
+				cur.link(get_river_name(river), con.editing,
 					[&con,river](){
 						con.set_phys(PhysRiver, next_phys(PhysRiver, river));
 					}
 				);				
-				cur.render(Text, ",");
+				cur.text(",");
 				
-				cur.render(Link, 
-					forest ? "Fore" : "NoFo",
+				cur.link((forest ? "Fore" : "NoFo"), con.editing,
 					[&con,forest](){
 						con.set_phys(PhysForest, next_phys(PhysForest, forest));
 					}
 				);				
-				cur.render(Text, ",");				
+				cur.text(",");
 				
-				cur.render(Link, 
-					plow ? "Plow" : "NoPl",
+				cur.link((plow ? "Plow" : "NoPl"), con.editing,
 					[&con,plow](){
 						con.set_phys(PhysPlow, next_phys(PhysPlow, plow));
 					}
 				);			
-				cur.render(Text, ",");
+				cur.text(",");
 				
 				
-				cur.render(Link, 
-					road ? "Road" : "NoRo",
+				cur.link((road ? "Road" : "NoRo"), con.editing,
 					[&con, road](){
 						con.set_phys(PhysRoad, next_phys(PhysRoad, road));
 					}
 				);
-				cur.render(Text, ")\n");
-				
-				
-				/*
-				
-				
-				
-				
-				string road = t.has(PhysRoad) ? "yes" : "no";
-				string forest = t.has(PhysForest) ? "yes" : "no";
-				string plow = t.has(PhysPlow) ? "yes" : "no";
-				string river = t.has(PhysMinorRiver) ? "minor" : (t.has(PhysMajorRiver) ? "major" : "none");
-				*/
+				cur.text(")\n");
+			
 			
 			}
 			else {
-				cur.render_text(format("Biome: %||\n", "Unknown"));			
-				cur.render_text(format("Alt: %||\n", "Unknown"));
-				cur.render_text(format("[%||]\n", "Unknown"));				
+				cur.text(format("Biome: %||\n", "Unknown"));			
+				cur.text(format("Alt: %||\n", "Unknown"));
+				cur.text(format("(%||)\n", "Unknown"));				
 			}
 			
 		}
 
-		cur.render_text("\n");
+		cur.text("\n");
 
 		if (auto u = con.get_sel_unit()) {
 			
-			cur.render_link(u->get_name(), [&env, &con](){
+			cur.link(u->get_name(), con.editing, 
+			[&env, &con](){
 				show_select_unit_type(env, con);
 			});
 			
-			cur.render_text("(");			
-			cur.render_link(get_prof_name(u->get_prof()), [&con](){
+			cur.text("(");			
+			cur.link(get_prof_name(u->get_prof()), con.editing,
+			[&con](){
 				show_select_speciality(con);
 			});						
-			cur.render_text(")\n");
+			cur.text(")\n");
 			
-			cur.render_text(format("Time left: %||/%||\n",
+			cur.text(format("Time left: %||/%||\n",
 				int(u->time_left),
 				int(TIME_UNIT)
 			));
 
-			cur.render_text(format("moves: %||\n", get_moves(*u)));
-			cur.render_text(format("transported: %||\n", u->get_transported()));
-			cur.render_text(format("space left: %||\n", u->get_space_left()));
+			cur.text(format("moves: %||\n", get_moves(*u)));
+			cur.text(format("transported: %||\n", u->get_transported()));
+			cur.text(format("space left: %||\n", u->get_space_left()));
 
 			if (u->get_item1() == ItemTools) {
-				cur.render_text(format("tools: %||\n", u->get_num1()));
+				cur.text(format("tools: %||\n", u->get_num1()));
 			}
 
 		}

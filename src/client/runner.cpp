@@ -6,7 +6,7 @@
 #include "console.hpp"
 #include "server/serialize.hpp"
 #include "../ext/format.hpp"
-#include "gui.hpp"
+
 
 namespace col{
 	
@@ -50,7 +50,7 @@ namespace col{
 		}
 
 		
-		(*this).add_agent<col::Gui>(env, *this);	
+		(*this).add_agent<col::Console>(env, *this);	
 				
 	}
 	

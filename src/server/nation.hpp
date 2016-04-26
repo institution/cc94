@@ -10,6 +10,7 @@ namespace col {
 
 	struct Nation {
 		using Id = uint8_t;
+		
 		using Auth = uint32_t;
 
 		Id id;
@@ -17,14 +18,17 @@ namespace col {
 		NationColor color;
 		uint8_t flag_id;
 		uint32_t auth;
+		
+		uint8_t vision_id;
 
 		//Player *player{nullptr};
 
-		Nation(Id const& id, string const& name="", NationColor const& color={0,0,0}, uint32 const& flag_id=0):
+		Nation(Id const& id, string const& name="", NationColor const& color={0,0,0}, uint32 const& flag_id=0, uint8_t vision_id = 0):
 			id(id),
 			name(name),
 			color(color),
-			flag_id(flag_id)			
+			flag_id(flag_id),
+			vision_id(vision_id)
 		{			
 			assert(0 <= id and id < 32);
 			auth = roll::roll1(100000) << 8 | id;		

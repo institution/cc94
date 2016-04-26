@@ -79,7 +79,7 @@ namespace col {
 	};
 
 
-	struct Console{
+	struct Console : Agent {
 		vector<string> output;
 		string buffer;
 		std::deque<string> history;
@@ -121,11 +121,47 @@ namespace col {
 		Runner & runner;
 		
 		
+		void add_simple_ai(Nation::Id nation_id);
+		
+		
+		
 		unordered_set<char16_t> charset;
 
 		
 		// currently selected popup entry
 		int selected_id{0};
+		
+		
+		
+		
+		
+		// last modification time
+		front::Tick last_mod_env;
+		front::Tick last_mod_con;
+		
+		front::Tick last_tick;
+		
+		front::Front win;
+		
+		int verbose{0};
+		
+		void init();
+		
+		
+		
+		void init_GUI();
+		bool step_GUI();
+		
+		string get_name() const override {
+			return "GUI `Console`";
+		}
+		
+		bool step() override {
+			return step_GUI();
+		}
+		
+		
+	
 		
 		
 		
@@ -183,21 +219,18 @@ namespace col {
 		Nation::Id nation_id{1};
 		
 		
-
 		string memtag;
 		
-		int verbose{0};
-
-
 		Env *server{nullptr};   // wtf?
 
-		
+
+		/// map view position
+		v2s view_dim{15,12};
 
 
-		Console(Env & env, Runner & runner, bool verbose):
-			env(env), server(&env), runner(runner), verbose(verbose)
+		Console(Env & env, Runner & runner):
+			env(env), server(&env), runner(runner), verbose(0)
 		{
-
 			for (auto c: CHARSET) {
 				charset.insert(c);
 			}
@@ -206,11 +239,18 @@ namespace col {
 			mod = 0;
 			mode = Mode::AMERICA;
 			clear();
+			
+			
 
+			init_GUI();
 		}
 
-		v2s view_dim{15,12};
+		bool has_control(Unit const& unit) const {
+			return editing or env.has_control(env.get_nation(nation_id), unit);
+		}
 
+
+		
 		void move_view(v2s delta) {
 			auto max_pos = env.get_dim() - view_dim;
 			auto min_pos = v2s{0,0};

@@ -224,10 +224,6 @@ namespace col{
 
 
 	
-	void TextRend2::render_text(string const& text) {
-		cpos = render_text_at2(win, box, cpos, font, style.fg, text);
-	
-	}
 	
 	using Event = Console::Event;
 	using Button = Console::Button;
@@ -235,15 +231,76 @@ namespace col{
 	using Dev = Console::Dev;
 
 	
-	void TextRend2::render_link(string const& text, Action act) {
+	
+	
+	TextRend2 & TextRend2::link(string const& text, Action act) {
 		b2s area;
 		area.pos = cpos;
 		cpos = render_text_at2(win, box, cpos, font, style.hl, text);
 		area.dim = v2s(cpos[0] - area.pos[0], font.get_height());
 		
 		con.on(Event::Press, Button::Left, area.pos, area.dim, act);
+		return *this;
 	}
+	
+	TextRend2 & TextRend2::newline() {
+		cpos[0] = box.pos[0];
+		cpos[1] += font.get_height();
+		ccol = 0;
+		return *this;
+	}
+	
+	TextRend2 & TextRend2::td() {
+		cpos[0] = box.pos[0] + tabs.at(ccol);
+		ccol += 1;
+		return *this;
+	}
+	
+	TextRend2 & TextRend2::tr() {
+		cpos[0] = box.pos[0];
+		cpos[1] += font.get_height();
+		ccol = 0;
+		return *this;
+	}
+	
+	
+	TextRend2 & TextRend2::text(string const& text_) {
+		/// Render 2D text:
+		/// new line -- newline
+		/// tab -- new column
 		
+		if (text_.size() > 0) {
+
+			auto height = font.get_height();
+
+			size_t i = 0;
+			size_t j = text_.size();
+
+			
+			for (auto k = i; k < j; ++k) {
+
+				auto c = text_.at(k);
+				
+				if (c == '\n') {
+					cpos[0] = box.pos[0];
+					cpos[1] += height;
+					ccol = 0;
+					continue;
+				}
+				
+				//print("letter=%||\n", c);
+				auto & g = font.get_glyph(c);
+				
+				//print("render_text_at2 pos=%|| char=%||\n", g_pos, c);
+				font.render_glyph(win, cpos, g, style.fg);
+
+				cpos[0] += g.rect.dim[0] + font.adv;
+			}
+		}
+		return *this;
+	}
+
+	
 
 	v2s render_text_at2(
 		Front & win,

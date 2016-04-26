@@ -52,9 +52,11 @@ namespace simple_ai{
 		
 		
 		
-		
+		string get_name() const override {
+			return format("Simple AI (%||)", nation.get_name());
+		}
 
-		bool step();
+		bool step() override;
 		
 		SimpleAi(Env & env, Nation & nation): env(env), nation(nation) 
 		{
@@ -68,6 +70,8 @@ namespace simple_ai{
 		
 		auto & get_random_engine();
 		float random_number(float x, float y);
+		int8_t random_integer(int8_t x, int8_t y);
+
 		
 		bool get_food_item(Terr const& terr) const;	
 		bool has_vision(Terr const& terr) const;
