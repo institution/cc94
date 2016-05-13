@@ -539,8 +539,8 @@ namespace col {
 		set_build(c, 14, fence);
 
 		// init fields
-		for (auto dir: ALL_DIRS) {
-			auto dest = get_coords(t) + vec4dir(dir);
+		for (auto dir: AllDirs) {
+			auto dest = get_coords(t) + dir2vec(dir);
 			if (in_bounds(dest)) {
 				c.add_field(Field(get_terr(dest)));
 			}

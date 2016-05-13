@@ -23,4 +23,7 @@ namespace front {
 	struct PixFont;
 
 
+	using b2c = b2s;
+	using v2c = v2s;
+
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include "env.hpp"
 
 namespace col{
@@ -64,47 +65,6 @@ namespace col{
 		}
 
 		
-		
-
-		struct Memory{
-			// remember and repeat orders
-
-
-			struct Order{
-				char code;
-				int8 dx, dy;
-				Order(char c, int8 dx=0, int8 dy=0): code(c), dx(dx), dy(dy) {}
-				Order() = default;
-			};
-
-			// next active unit without order
-			Unit * get_next_to_order(Env & env, Nation const& p, Unit * cur = nullptr) const;
-			Unit const* get_next_to_order(Env const& env, Nation const& p, Unit const* cur = nullptr) const;
-
-			// next active unit with order
-			Unit * get_next_to_repeat(Env & env, Nation const& p, Unit * cur = nullptr) const;
-			Unit const* get_next_to_repeat(Env const& env, Nation const& p, Unit const* cur = nullptr) const;
-
-			using Unit2Order = map<Unit::Id, Order>;
-			Unit2Order uos;
-
-
-
-			Order get_order(Unit::Id id) const {
-				auto p = uos.find(id);
-				if (p != uos.end()) {
-					return (*p).second;
-				}
-				return Order('-');
-			}
-
-			Memory & set_order(Unit::Id id, char c='-', int8 dx=0, int8 dy=0) {
-				uos[id] = Order(c, dx, dy);
-				return *this;
-			}
-
-
-		};
 
 
 		/*struct Routes

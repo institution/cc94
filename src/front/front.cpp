@@ -191,6 +191,35 @@ namespace front {
 		
 	}*/
 
+	void Front::render_line(v2s a, v2s b, Color c, int8_t thick) 
+	{
+		// render textured quad
+		
+		set_blend_fill(c);
+		
+		if (a == b) {
+			return;
+		}
+		
+		auto aa = v2f(a);
+		auto bb = v2f(b);
+		
+		auto x = bb - aa;
+		auto y = v2f{-x[1], x[0]};
+		auto n = (y * (1.0f / std::sqrt(y.norm2()))) * thick;
+		
+		// quad as triangle fan x,y + u,v + displacement
+		GLfloat data[] = {
+			aa[0], aa[1],  0.0f, 0.0f, -n[0], -n[1],
+			aa[0], aa[1],  0.0f, 1.0f,  n[0],  n[1],
+			bb[0], bb[1],  1.0f, 1.0f,  n[0],  n[1],
+			bb[0], bb[1],  1.0f, 0.0f, -n[0], -n[1]
+		};
+
+		_render_call_GL(line_seg.id, data, sizeof(data));
+	}
+
+
 	void Front::render_fill(b2s box, Color c) {
 		set_blend_fill(c);
 
@@ -335,9 +364,22 @@ namespace front {
 		// activate prog[0] (render texture simple)
 
 		glUniform1i(myGetUniformLocation(prog[0], "s_texture"), 0);
-
-		uint8_t rgba[] = {255,255,255,255};
-		white1x1 = make_texture(rgba, {1,1});
+		
+		{
+			uint8_t rgba[] = {255,255,255,255};
+			white1x1 = make_texture(rgba, {1,1});
+		}
+		
+		{
+			uint8_t rgba[] = {
+				63,63,63,63,
+				127,127,127,127,
+				255,255,255,255,
+				127,127,127,127,
+				63,63,63,63
+			};
+			line_seg = make_texture(rgba, {1,5});
+		}
 
 		clear();
 		

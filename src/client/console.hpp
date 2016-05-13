@@ -37,6 +37,127 @@ namespace col {
 	struct Console;
 
 
+	
+	
+	using Ins = int8_t;
+	Ins const
+		InsNone{0},
+		InsWait{1},       // Space for N turns
+		InsMove{2},
+		InsAttack{3},
+		InsBuild{4},
+		InsClear{5},
+		InsRoad{6},
+		InsPlow{7},
+		InsWork{9};        // automatically assigned to units working inside city
+		
+	inline string get_ins_name(Ins ins) {
+		switch (ins) {
+			case InsNone: return "InsNone";
+			case InsWait: return "InsWait";
+			case InsMove: return "InsMove";
+			case InsAttack: return "InsAttack";
+			case InsBuild: return "InsBuild";
+			case InsClear: return "InsClear";
+			case InsRoad: return "InsRoad";
+			case InsPlow: return "InsPlow";
+			case InsWork: return "InsWork";
+			default: 
+				print(std::cerr, "WARINING: unknown ins code: %||\n", ins);
+				return "InsError";			
+		}	
+	}
+		
+	using Arg = int8_t;
+		
+	struct Cmd{
+		Ins ins;
+		Arg arg;
+		Cmd() = default;
+		Cmd(Ins ins, Arg arg): ins(ins), arg(arg) {}
+	};
+	
+	inline bool operator==(Cmd a, Cmd b) {
+		return a.ins == b.ins and a.arg == b.arg;
+	}
+	
+	inline Cmd make_cmd(Ins a, Arg b = 0) {
+		return Cmd(a,b);
+	}
+	
+	inline ostream & operator<<(ostream & o, Cmd const& cmd) {
+		o << format("(%|| %||)", get_ins_name(cmd.ins), int(cmd.arg));
+		return o;
+	}
+	
+
+	struct Chain {
+		vector<Cmd> cmds;
+		
+		size_t size() { return cmds.size(); }
+		Cmd const& at(size_t i) const { return cmds.at(i); }
+		Cmd & at(size_t i) { return cmds.at(i); }
+		
+		
+		void pop_cmd() { cmds.pop_back(); }
+		bool has_cmd() const { return cmds.size() > 0;}
+		void clear_cmds() { cmds.clear(); }
+		
+		Cmd get_curr_cmd() const { 
+			if (has_cmd()) {
+				return cmds.back(); 
+			}
+			else {
+				return make_cmd(InsNone);
+			}				
+		}
+					
+		void add_cmd(Cmd cmd) {	
+			cmds.push_back(make_cmd(InsNone));
+			for (auto i = cmds.size(); i >= 2; --i)
+			{
+				cmds[i-1] = cmds[i-2];
+			}				
+			cmds[0] = cmd;
+		}
+		
+		void set_cmd(Cmd cmd) {				
+			clear_cmds();
+			add_cmd(cmd);
+		}
+	};
+
+	/*char order2letter(Order o) {
+		switch (o) {
+			case OrderNone: return '-';
+			case OrderWait: return 'W';
+			case OrderMove: return 'G';
+			case OrderAttack: return 'A';
+			case OrderBuild: return 'B';
+			case OrderClear: return 'O';
+			case OrderRoad: return 'R';
+			case OrderPlow: return 'P';
+			case OrderWork: return 'w';
+			default: return '?';			
+		}
+	}
+	
+	Order letter2order(char l) {
+		switch (o) {
+			case '-': return OrderNone;
+			case 'W': return OrderWait;
+			case 'G': return OrderMove;
+			case 'A': return OrderAttack;
+			case 'B': return OrderBuild;
+			case 'O': return OrderClear;
+			case 'R': return OrderRoad;
+			case 'P': return OrderPlow;
+			case '=': return OrderWaitOne;
+			//case 'w': return OrderWaitInf;   // no need - this order is only used internally
+			default: return OrderNone;			
+		}
+	}*/
+
 	// mouse events: normal, drag&drop
 
 	/*
@@ -85,11 +206,9 @@ namespace col {
 		std::deque<string> history;
 		std::deque<string>::iterator chi;
 
-		logic::Memory mem;
-
 		Env & env;
 
-		uint32 mod;
+		uint32_t mod;
 
 		Auth auth{0};
 
@@ -115,13 +234,19 @@ namespace col {
 		Unit* sel_unit{nullptr};
 
 		v2s view_pos{0,0};
+		
+		
+		b2c get_view_box() const {
+			return b2c(view_pos, view_dim);
+		}
 
 		
 
-		Runner & runner;
+		Runner * runner{nullptr};
 		
 		
-		void add_simple_ai(Nation::Id nation_id);
+		template <class AI>
+		void add_ai(Nation::Id nation_id);
 		
 		
 		
@@ -131,6 +256,17 @@ namespace col {
 		// currently selected popup entry
 		int selected_id{0};
 		
+		using CurMod = int8_t;
+		CurMod
+			CurModDefault = 0,
+			CurModMove = 1,
+			CurModTerr = 2,
+			CurModUnit = 3;
+		
+		CurMod cursor_mode{CurModDefault};
+		
+		
+		Dir part_dir{DirS};
 		
 		
 		
@@ -157,6 +293,7 @@ namespace col {
 		}
 		
 		bool step() override {
+			sync();
 			return step_GUI();
 		}
 		
@@ -228,7 +365,7 @@ namespace col {
 		v2s view_dim{15,12};
 
 
-		Console(Env & env, Runner & runner):
+		Console(Env & env, Runner * runner):
 			env(env), server(&env), runner(runner), verbose(0)
 		{
 			for (auto c: CHARSET) {
@@ -239,23 +376,30 @@ namespace col {
 			mod = 0;
 			mode = Mode::AMERICA;
 			clear();
-			
-			
 
-			init_GUI();
+			if (runner) {
+				init_GUI();
+			}
 		}
 
+		
+		
+		
+
+		void set_nation_id(Nation::Id id) {
+			nation_id = id;
+		}
+		
 		bool has_control(Unit const& unit) const {
 			return editing or env.has_control(env.get_nation(nation_id), unit);
 		}
 
 
 		
-		void move_view(v2s delta) {
+		
+		void limit_view() {
 			auto max_pos = env.get_dim() - view_dim;
 			auto min_pos = v2s{0,0};
-			
-			view_pos += delta;
 			
 			for (int i=0; i<2; ++i) {
 				if (view_pos[i] > max_pos[i]) {
@@ -266,7 +410,16 @@ namespace col {
 					view_pos[i] = min_pos[i];
 				}				
 			}
-			
+		}
+		
+		void move_view(v2s delta) {			
+			view_pos += delta;			
+			limit_view();			
+		}
+		
+		void center_view_on(v2c pos) {			
+			view_pos = pos - v2c(view_dim[0]/2, view_dim[1]/2);			
+			limit_view();			
 		}
 
 		void apply_inter(inter::Any const& a, Agent & s);
@@ -286,14 +439,84 @@ namespace col {
 			return is_selected( env.in_bounds(c) ? (&env.get_terr(c)) : nullptr );
 		}
 
+		struct UnitExt;
+
+		template <class F>
+		Unit * find_unit(Unit * cur, F f) {
+			if (cur and f(*cur)) {
+				return cur;
+			}
+			for (auto & u: list_values(env.units)) {
+				if (f(u)) {
+					return &u;
+				}
+			}
+			return nullptr;
+		}
+		
+		template <class F>
+		UnitExt * find_unitext(UnitExt * cur, F f) {
+			if (cur and f(*cur)) {
+				return cur;
+			}
+			for (auto & u: list_values(unitexts)) {
+				if (f(u)) {
+					return &u;
+				}
+			}
+			return nullptr;
+		}
+		
+		Unit * get_next_to_order(Unit * cur) {
+			return find_unit(cur, [this](Unit & u) {
+				return 
+					has_control(u) and 
+					u.get_time_left() and 
+					not u.is_working() and 
+					not get_unitext(u.id).has_cmd();
+			});
+		}
+
+		
+		
+		
+		
+		Unit * get_next_to_repeat(Unit * cur) 
+		{
+			return find_unit(cur, [this](Unit & u) {
+				return 
+					has_control(u) and 
+					u.get_time_left() and 
+					get_unitext(u.id).has_cmd() and
+					get_unitext(u.id).can_cont;					
+			});
+		}
+
+		Unit * get_next_to_repeat() {
+			return get_next_to_repeat(get_sel_unit());
+		}
+		
+		void center_on(Unit const* u) {
+			if (u) {
+				auto unit_pos = env.get_coords(*u);
+				auto view_box = b2c(view_pos, view_dim);
+				//print("view_box = %||; unit_pos = %||\n", view_box, unit_pos);
+				if (not overlap(view_box, unit_pos)) 
+				{
+					center_view_on(unit_pos);
+				}
+				else {
+					//print("no overlap\n");
+				}
+			}
+		}
+		
 		void select_next_unit() {
 			select_unit(
-				mem.get_next_to_order(
-					env,
-					env.get_current_nation(),
-					get_sel_unit()
-				)
+				get_next_to_order(get_sel_unit())
 			);
+			
+			center_on(get_sel_unit());			
 		}
 		
 		void set_biome(Biome biome) {
@@ -361,19 +584,6 @@ namespace col {
 		}
 
 
-		void order_unit(Unit::Id unit_id, char letter, int8 dx=0, int8 dy=0) {
-			// R,P,O,B - road,plow,clear-forest,build-colony
-			// 1,2,3,4,6,7,8,9 - move dir
-
-			inter::Any a = get_inter(unit_id, letter, dx, dy);
-
-			if (exec(a)) {
-				mem.set_order(unit_id, letter, dx, dy);
-				select_next_unit();
-			}
-
-
-		}
 
 
 
@@ -382,7 +592,7 @@ namespace col {
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
 			if (unit) {
-				mem.set_order(unit->id, '-');
+				get_unitext(unit->id).clear_cmds();				
 			}
 		}
 
@@ -449,7 +659,20 @@ namespace col {
 
 
 		char get_letter(Unit const& u) {
-			return mem.get_order(env.get_id(u)).code;
+			auto & ue = get_unitext(u.id);			
+			auto cmd = ue.get_curr_cmd();
+			switch (cmd.ins) {
+				case InsNone: return '-';
+				case InsWait: return 'W';
+				case InsMove: return 'G';
+				case InsAttack: return 'G';
+				case InsBuild: return 'B';
+				case InsClear: return 'O';
+				case InsRoad: return 'R';
+				case InsPlow: return 'P';
+				case InsWork: return 'w';
+				default: return '?';						
+			}
 		}
 
 
@@ -493,10 +716,6 @@ namespace col {
 
 
 
-		void skip_unit() {
-			mem.set_order(get_sel_unit()->id, ' ');
-			select_next_unit();
-		}
 
 
 		void reset_hotspots() {
@@ -515,38 +734,233 @@ namespace col {
 			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
 
+		Nation & get_nation() {
+			return env.get_nation(nation_id);
+		}
+
+
+		v2c get_coords(Unit const& u) const {
+			return env.get_coords(u);
+		}
+
+
+
+
+		struct UnitExt {
+			Unit::Id id;
+			
+			Chain chain;
+			
+			// true means unit is doing nothing productive right now
+			bool can_cont{true};
+			
+			void pop_cmd() { chain.pop_cmd(); }			
+			bool has_cmd() const { return chain.has_cmd();}
+			void clear_cmds() { chain.clear_cmds(); }			
+			Cmd get_curr_cmd() const { return chain.get_curr_cmd(); }										
+			void add_cmd(Cmd cmd) { chain.add_cmd(cmd); }				
+			void set_cmd(Cmd cmd) { chain.set_cmd(cmd); }
+									
+			UnitExt() = default;
+			UnitExt(Unit::Id id): id(id) {}
+		};
+		
+		unordered_map<Unit::Id, UnitExt> unitexts;
+		
+		
+		
+		
+		Chain path;
+		
+		void select_path(Chain p) {
+			path = p;
+		}
+		void select_path() {
+			path.clear_cmds();
+		}
+		
+		Chain find_path(v2c scr, v2c trg) {
+			Chain p;
+			p.add_cmd(make_cmd(InsMove, DirD));
+			p.add_cmd(make_cmd(InsMove, DirC));
+			p.add_cmd(make_cmd(InsMove, DirX));
+			return p;
+		}	
+		
+		
+		void show_error(string const& msg) {
+			// TODO
+			print("msg: %||\n", msg);
+		}
+		
+		void show_error() {
+			show_error(env.read_error());
+		}
+		
+		void handle_error() {
+			if (env.has_error()) {
+				show_error(env.read_error());
+			}
+		}
+		
+		
+		
+		
+		
+		
+		/// Make 'unit do current command.
+		/// return true when unit is ready to execute next command
+		/// return false when current command wasn't finished yet
+		bool exec_unit_cmd(UnitExt & ext) 
+		{	
+			print("exec_unit_cmd: id=%||, cmd=%||\n", ext.id, ext.get_curr_cmd());
+		
+			Unit & unit = env.get_unit(ext.id);
+			
+			auto cmd = ext.get_curr_cmd();
+			
+			switch (cmd.ins) {
+				case InsNone: {
+					ext.pop_cmd();
+					ext.can_cont = 1;
+					return 1;
+				}					
+				case InsWait: {
+					ext.can_cont = false;
+					return 0;
+				}										
+				case InsMove: {
+					auto dir = (Dir)cmd.arg;
+					auto r = env.move_unit(dir, unit);
+					handle_error();
+					if (r) {
+						ext.pop_cmd();
+					}
+					ext.can_cont = bool(r);
+					return r;
+				}
+				case InsAttack: {
+					auto dir = (Dir)cmd.arg;
+					// auto r = env.move_unit(dir, unit);
+					auto r = 1;  // TODO ^
+					handle_error();
+					if (r) {
+						ext.pop_cmd();
+					}
+					ext.can_cont = bool(r);
+					return r;
+				}
+				case InsBuild: {					
+					auto r = env.colonize(unit);
+					handle_error();
+					if (r) { ext.pop_cmd(); }
+					ext.can_cont = bool(r);
+					return r;
+				}
+				case InsClear: {
+					auto r = env.destroy(unit, PhysForest);
+					handle_error();
+					if (r) { ext.pop_cmd(); }
+					ext.can_cont = bool(r);
+					return r;
+				}
+				case InsRoad: {
+					auto r = env.improve(unit, PhysRoad);
+					handle_error();
+					if (r) { ext.pop_cmd(); }
+					ext.can_cont = bool(r);
+					return r;					
+				}
+				case InsPlow: {
+					auto r = env.improve(unit, PhysPlow);
+					handle_error();
+					if (r) { ext.pop_cmd(); }
+					ext.can_cont = bool(r);
+					return r;
+				}
+				case InsWork: {
+					ext.can_cont = 0;
+					return 0;
+				}
+				default: {
+					print(std::cerr, "WARNING: unknown unit command code: %||\n", cmd.ins);
+					ext.pop_cmd();
+					return 1;
+				}
+			}		
+		}
+		
+		UnitExt & get_unitext(Unit::Id id) {
+			auto p = unitexts.find(id);
+			if (p != unitexts.end()) {
+				return p->second;
+			}
+			auto r = unitexts.insert({id, UnitExt(id)});
+			return unitexts.at(id);
+			//return r.first->second;
+			//return unitexts[id];
+		}
+		
+		/// Move all units with active command
 		void repeat_all() {
 			// any user input except hover -> break
 			//on([&stop](){ stop = true; })
 
-			auto& n = env.get_current_nation();
+			auto & nation = get_nation();
 
-			while (Unit *unit = mem.get_next_to_repeat(env, n))
-			{
-				// exec action
-				print("exec action %||\n", get_letter(*unit));
-
-				auto unit_id = unit->id;
-
-				auto o = mem.get_order(unit_id);
-
-				try {
-					get_server().apply_inter(
-						get_inter(unit_id, o.code, o.dx, o.dy), auth
-					);
-				}
-				catch (Error & e) {
-					mem.set_order(unit_id);
-					put(e.what());
-					print("%||\n", e.what());
-				}
-
+			
+			while (auto * up = get_next_to_repeat()) {
+				auto & unit = *up;
+				
+				auto & ext = get_unitext(unit.id);
+				
+				while (ext.has_cmd() and exec_unit_cmd(ext)) {
+					// sleep ?
+					// show ?
+					// center on unit?
+				}	
+			
 			}
+			
 			select_next_unit();
-
-
-
 		}
+		
+		
+		
+
+
+
+
+		
+		// R,P,O,B - road,plow,clear-forest,build-colony
+		// 1,2,3,4,6,7,8,9 - move dir
+
+		void cmd_unit(Unit::Id unit_id, Cmd cmd) 
+		{
+			auto & unit_ext = get_unitext(unit_id);
+			unit_ext.set_cmd(cmd);			
+			exec_unit_cmd(unit_ext);
+			select_next_unit();
+		}
+
+
+
+
+
+
+		TurnNo last_sync{-1};
+
+		void sync() {
+			auto ct = env.get_turn_no();
+			if (ct != last_sync) {
+				print("con.SYNCING\n");
+				for (auto & ue: list_values(unitexts)) {
+					ue.can_cont = 1;
+				}
+				last_sync = ct;
+			}
+		}
+
 
 		void load_cargo(Item const& item, Amount const& num);
 

@@ -50,7 +50,7 @@ namespace col{
 		}
 
 		
-		(*this).add_agent<col::Console>(env, *this);	
+		(*this).add_agent<col::Console>(env, this);	
 				
 	}
 	

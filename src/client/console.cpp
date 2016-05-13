@@ -237,7 +237,8 @@ namespace col {
 	
 	bool Console::step_GUI() 
 	{	
-			
+		sync();
+		
 		if (verbose >= 2) print("GUILoop.step: {; app.done=%||\n", win.done);
 		
 		if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
@@ -309,8 +310,14 @@ namespace col {
 		
 	}
 	
-	void Console::add_simple_ai(Nation::Id nation_id) {
-		runner.add_agent<simple_ai::SimpleAi>(env, env.get<Nation>(nation_id));
+	template <class AI>
+	void Console::add_ai(Nation::Id nation_id) {
+		if (not runner) {
+			fail("ERROR: cannot add AI: no runner\n");
+		}
+		else {
+			runner->add_agent<AI>(env, env.get<Nation>(nation_id));
+		}
 	}
 	
 	
@@ -437,7 +444,7 @@ namespace col {
 					put("Usage: attach-ai <nation_id>");
 					break;
 				case 2:
-					add_simple_ai(stoi(es.at(1)));
+					add_ai<simple_ai::SimpleAi>(stoi(es.at(1)));
 					put("Simple AI attached");
 					break;
 			}
@@ -506,10 +513,8 @@ namespace col {
 					break;
 				}
 				case 2: {
-					auto nation_id = std::stoi(es.at(1));
-					
-					runner.add_agent<null_ai::NullAi>(env, nation_id);
-										
+					auto nation_id = std::stoi(es.at(1));						
+					add_ai<null_ai::NullAi>(nation_id);										
 					break;
 				}
 			}

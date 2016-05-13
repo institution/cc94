@@ -2,6 +2,7 @@
 
 #include <array>
 #include "ext/vals.hpp"
+#include "ext/ext.hpp"
 #include "col.hpp"
 #include "phys.hpp"
 #include "item.hpp"
@@ -10,62 +11,15 @@
 namespace col {
 
 
-	using Coord = int16;
-
-	using Coords = Vector2<Coord>;
+	using Coord = int16_t;
+	using Coords = ext::v2<Coord>;
+	using v2c = Coords;
 
 	using ext::fail;
 
-	/* Dir::t code is yx in mod 3-1 (2 -> -1)
-	00 0  -1,-1
-	01 1  -1,0
-	02 2  -1,1
-	10 3  0,-1
-	11 4  0,0
-	12 5  0,1
-	20 6  1,-1
-	21 7  1,0
-	22 8  1,1
-	*/
-
 	
 
-	namespace Dir{
-		using type = uint8;
-		using t = type;
-		type const
-			Q=0, W=1, E=2,
-			A=3, S=4, D=5,
-			Z=6, X=7, C=8;
-	}
-
-	//array<Dir::t const, 9> ALL_DIRS;
-	extern std::array<Dir::t const, 9> ALL_DIRS;
-
-	inline Coords vec4dir(Dir::t const& d) {
-		return Coords((d % 3) - 1, (d / 3) - 1);
-	}
-
-	inline Dir::t dir4vec(Coords const& d) {
-		return (d[0] + 1) + (d[1] + 1) * 3;
-	}
-
-
-	namespace Order{
-		using type = char;
-
-		type const
-			BuildRoad = 'R',
-			BuildColony = 'B',
-			Unknown = '-',
-			Space = ' ',
-			Move = 'm',
-			Work = 'w',
-			PlowFields = 'P',
-			ClearForset = 'p';
-	}
-
-
+	
 
 	uint8 const TIME_UNIT = 12;
 	uint8 const SPACE_UNIT = 12;
@@ -166,16 +120,6 @@ namespace col {
 
 	};
 
-	/*template <class R>
-	aga2::Mv1<R> operator*(aga2::Mv1<R> const& x, R const& y) {
-		//return x * aga2::Mv0<R>(y);
-		return x * y;
-	}*/
-
-	/*template <class R>
-	aga2::Mv1<R> operator*(R const& x, aga2::Mv1<R> const& y) {
-		return aga2::Mv0<R>(x) * y;
-	}*/
 
 
 
@@ -183,14 +127,5 @@ namespace col {
 
 }
 
-/*
-namespace std {
-	template <>
-	struct hash<col::Item>
-	{
-		size_t operator()(col::Item const& x) const
-		{
-			return hash<int>()(x.val);
-		}
-	};
-}*/
+#include "dir.hpp"
+

@@ -36,12 +36,14 @@ namespace col{
 
 	};
 
+	using b2c = ext::b2<Coord>;
+
 	/// Command result: 1 Ok, 0 Try next turn, -1 Not possible
-	using Result = int8_t;
-	Result const 
-		Impossible = -1,
-		TryAgain = 0,
-		Ok = 1;
+	using Res = int8_t;
+	Res const 
+		ResErr = -1,
+		ResCont = 0,
+		ResOk = 1;
 	
 
 	inline bool compatible(Travel const& x, Travel const& y) {
@@ -80,7 +82,7 @@ namespace col{
 	bool is_expert(Unit const& unit, Item const& item);
 
 
-	
+	using TurnNo = int32_t;
 
 	struct Env: Core {
 	
@@ -102,13 +104,13 @@ namespace col{
 			StateExit;
 
 		// turn system
-		uint32 turn_no{0};
-		uint32 turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
+		TurnNo turn_no{0};
+		TurnNo turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
 		Nation::Id cpid{0}; // current nation
 		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
 		// misc non game state
-		uint32 mod;
+		TurnNo mod;
 		boost::function<int (int range)> roll;
 
 		// opts
@@ -197,16 +199,19 @@ namespace col{
 			return &nations.at(cpid);
 		}
 
-		Nation const& get_current_nation() const {
-			if (!in_progress()) {
-				throw Error("no current nation: game in regress");
+		Nation const& get_current_nation() const 
+		{
+			if (not in_progress()) {
+				throw Error("game in regress: no current nation");
 			}
 			return nations.at(cpid);
 		}
 		
 		Nation & get_current_nation() {
-			return const_cast<Nation&>(
-				static_cast<Env const*>	(this) -> get_current_nation() );
+			if (not in_progress()) {				
+				throw Error("game in regress: no current nation");
+			}
+			return nations.at(cpid);
 		}
 
 		Env& set_current_nation(Nation const& p) {
@@ -391,6 +396,9 @@ namespace col{
 			
 		}
 
+		string get_nation_name(Nation::Id nation_id) const {
+			return this->get_nation(nation_id).get_name();
+		}
 		
 		
 
@@ -651,35 +659,46 @@ namespace col{
 		}
 
 		string error_message;
+		
+		bool has_error() const {
+			return error_message.size() > 0;
+		}
+		
 		void set_error(string const& s) {
 			error_message = s;
 		}
+		
+		string read_error() {
+			auto s = error_message;
+			error_message = "";
+			return s;
+		}
 
+		Unit & get_unit(Unit::Id id) {
+			return get<Unit>(id);
+		}
 
-		Result move_unit(int8 dx, int8 dy, Unit & u) {
+		
+
+		Res move_unit(int8 dx, int8 dy, Unit & u) {
 			/// Move/board unit on adjacent square/ship
 			
 
 			// unit checks
-			if (u.get_nation() != get_current_nation()) {
-				set_error("not your turn");
-				return -1;
-			}
-
 			if (u.get_speed() == 0) {
 				set_error("this unit cannot move (speed = 0)");
-				return -1;
+				return ResErr;
 			}
 
 			// direction check
 			if (!(-1 <= dx and dx <= 1 and -1 <= dy and dy <= 1)) {
 				set_error("invalid direction given");
-				return -1;
+				return ResErr;
 			}
 
 			if (dx == 0 and dy == 0) {
 				set_error("already here");
-				return -1;
+				return ResErr;
 			}
 
 			auto & orig = get_terr(u);
@@ -687,7 +706,7 @@ namespace col{
 
 			if (!in_bounds(dest_coords)) {
 				set_error("destination outside of map");
-				return -1;
+				return ResErr;
 			}
 
 			auto & dest = get_terr(dest_coords);
@@ -700,7 +719,7 @@ namespace col{
 				}
 				else {
 					set_error("cannot travel through this terrain");
-					return -1;
+					return ResErr;
 				}
 			}
 
@@ -708,7 +727,7 @@ namespace col{
 			Nation * cp = get_control(dest);
 			if (cp and cp->id != get_current_nation().id) {
 				set_error("destination occupied by enemy");
-				return -1;
+				return ResErr;
 			}
 
 			// execute
@@ -768,15 +787,18 @@ namespace col{
 
 				record_action();
 
-				return 1; // success
+				return ResOk; // success
 			}
 
 			record_action();
-			return 0; // try next turn
+			return ResCont; // try next turn
 
 		}
 
-
+		Res move_unit(Dir dir, Unit & u) {
+			auto v = dir2vec(dir);
+			return move_unit(v[0], v[1], u);
+		}
 
 
 		bool has_defender(Coords const& pos) const {
@@ -808,10 +830,6 @@ namespace col{
 			return t.units[0];
 		}
 
-		//Terr & get_dest(Unit &u, Dir) {
-		//	return get_terr(get_coords(u) + vec4dir(dir));
-		//}
-
 
 
 		void kill(Unit & u) {
@@ -825,17 +843,17 @@ namespace col{
 			// wow! that was radical
 		}
 
-		bool order_attack(Unit & attacker, Dir::t const& dir, bool exec=1) {
+		Res order_attack(Unit & attacker, Dir dir, bool exec=1) {
 			/* Order attack
 			 */
 
-			if (dir == Dir::S) {
+			if (dir == DirS) {
 				throw Error("cannot attack self");
 			}
 
 			// get terr
 			auto& orig = get_terr(attacker);
-			auto dest_coords = get_coords(orig) + vec4dir(dir);
+			auto dest_coords = get_coords(orig) + dir2vec(dir);
 			if (!in_bounds(dest_coords)) {
 				throw Error("target outside of map");
 			}
@@ -885,123 +903,130 @@ namespace col{
 					}
 
 					record_action();
-					return 1; // command executed
+					return ResOk; // command executed
 				}
 				else {
 					record_action();
-					return 0; // try next turn
+					return ResCont; // try next turn
 				}
 			}
 			else {
-				return -1;
+				return ResErr;
 			}
 		}
 
 
-		bool destroy(Unit & u, Phys const& feat) {
+		Res destroy(Unit & u, Phys const& feat) 
+		{
 			// unit checks
-			if (u.get_nation() != get_current_nation()) {
-				throw InvalidAction("not your unit");
-			}
-
 			if (!has_tools(u)) {
-				throw InvalidAction("need tools");
+				set_error("need tools");
+				return ResErr;
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), TravelLand)) {
-				throw InvalidAction("can clear on land only");
+				set_error("can clear on land only");
+				return ResErr;
 			}
 
 			if (!t.has_phys(feat)) {
-				throw InvalidAction("no feat to clear");
+				set_error("no feat to clear");
+				return ResErr;
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
 				t.sub_phys(feat);
-				return 1;
+				return ResOk;
 			}
-			return 0;
+			return ResCont;
 		}
 
 
 
 
-		void improve(Unit & u, Phys const& feat) {
+		Res improve(Unit & u, Phys const& feat) {
 			auto unit_id = get_id(u);
 
 			if (!(feat & PhysAlterable)) {
-				throw InvalidAction("only road,plow and forest can be altered");
+				set_error("only road,plow and forest can be altered");
+				return ResErr;
 			}
 
 			// unit checks
-			if (u.get_nation() != get_current_nation()) {
-				throw InvalidAction("not your unit");
-			}
-
 			if (!has_tools(u)) {
-				throw InvalidAction("need tools");
+				set_error("need tools");
+				return ResErr;
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), TravelLand)) {
-				throw InvalidAction("can build on land only");
+				set_error("can build on land only");
+				return ResErr;
 			}
 
 			if (t.has_phys(feat)) {
-				throw InvalidAction("improvment already exists");
+				set_error("improvment already exists");
+				return ResErr;
 			}
 
 			if (feat == PhysPlow and t.has_phys(PhysForest)) {
-				throw InvalidAction("cannot plow forest; clear first");
+				set_error("cannot plow forest; clear first");
+				return ResErr;
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
 				t.add_phys(feat);
+				return ResOk;
+			}
+			else {
+				return ResCont;
 			}
 		}
 
 
 
 
-		bool a_destroy(Unit & u, Phys const& feat) {
+		Res a_destroy(Unit & u, Phys const& feat) {
 
 			if (!(feat & PhysAlterable)) {
-				throw Error("only road,plow and forest can be altered");
+				set_error("only road,plow and forest can be altered");
+				return ResErr;
 			}
 
 			// unit checks
-			if (u.get_nation() != get_current_nation()) {
-				throw Error("not your unit");
-			}
-
 			if (!has_tools(u)) {
-				throw Error("need tools");
+				set_error("need tools");
+				return ResErr;
 			}
 
 			auto& t = get_terr(u);
 
 			// terrain checks
 			if (!compatible(t.get_travel(), TravelLand)) {
-				throw Error("not on land");
+				set_error("not on land");
+				return ResErr;
 			}
 
 			if (!t.has_phys(feat)) {
-				throw Error("no feat here");
+				set_error("no feat here");
+				return ResErr;
 			}
 
 			if (run_map_task(u, get_improv_cost(t))) {
 				use_tools(u);
 				t.sub_phys(feat);
-				return 1;
+				return ResOk;
 			}
-			return 0;
+			else {
+				return ResCont;
+			}
 		}
 
 
@@ -1084,30 +1109,28 @@ namespace col{
 
 		
 		
-		Result colonize(Unit &u, string const& name) {
+		Res colonize(Unit &u, string const& name = "") {
 
 			if (u.get_nation() != get_current_nation()) {
-				return -1;
-				//throw Error("not your unit");
+				set_error("not your unit");
+				return -1;				
 			}
 
 			if (not is_colonist(u)) {
-				return -1;
-				//throw Error("not land-based unit");
+				set_error("not land-based unit");
+				return -1;				
 			}
 
 			auto& t = get_terr(u);
 
 			if (not is_colonizable(t)) {
-				return -1;
-				//throw Error("cannot colonize here");
+				set_error("cannot colonize here");
+				return -1;				
 			}
 
 			auto time_cost = TIME_UNIT;
 			if (run_map_task(u, time_cost)) {
-
 				init_colony(t);
-
 				return 1;  // ok
 			}
 			return 0;  // try next turn
@@ -1209,8 +1232,8 @@ namespace col{
 
 
 
-		Dir::type get_dir_to_from(Terr const& to, Terr const& from) {
-			return dir4vec(get_coords(to) - get_coords(from));
+		Dir get_dir_to_from(Terr const& to, Terr const& from) {
+			return vec2dir(get_coords(to) - get_coords(from));
 		}
 
 		Nation const* get_control(Terr const& terr) const {
@@ -1369,14 +1392,19 @@ namespace col{
 			}			
 		}
 		
-		Nation::Id get_control_id(Unit const& u) const { return u.get_nation().id; }
+		Nation::Id get_control_id(Unit const& u) const { 
+			return u.get_nation().id; 			
+		}
 
 
 
 
 		void update_vision(Unit const& u) {
+			if (not u.nation) return;
+			
 			auto p = get_coords(u);
 			auto id = get_control_id(u);
+			
 			Coord r = 2;
 			auto dim = get_dim();
 			
@@ -1496,7 +1524,7 @@ namespace col{
 
 
 		Terr& get_colony_field(Terr const& ct, int num) {
-			return get_terr(vec4dir(num) + get_coords(ct));
+			return get_terr(dir2vec(num) + get_coords(ct));
 		}
 
 
@@ -1631,7 +1659,7 @@ namespace col{
 			++mod;
 		}
 
-		Nation& get_nation(Nation::Id const& id) {
+		Nation & get_nation(Nation::Id const& id) {
 			return nations.at(id);
 		}
 

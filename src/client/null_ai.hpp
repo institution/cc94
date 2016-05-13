@@ -21,7 +21,7 @@ namespace null_ai{
 		Env & env;
 		Nation::Id nation_id;
 
-		NullAi(Env & env, Nation::Id nation_id): env(env), nation_id(nation_id) {
+		NullAi(Env & env, Nation & nation): env(env), nation_id(nation.id) {
 			
 		}
 

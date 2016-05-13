@@ -69,6 +69,7 @@ namespace front {
 
 		glm::mat4 proj;
 		Texture white1x1;
+		Texture line_seg;
 		
 		// misc
 		bool verbose{false};
@@ -106,6 +107,7 @@ namespace front {
 
 		//void render_texture(Texture const& t, b2s trg, b2s src, Color fg);
 
+		void render_line(v2s a, v2s b, Color c, int8_t thick);
 		void render_fill(b2s box, Color c);
 		
 		Tick get_ticks();		
@@ -130,13 +132,15 @@ namespace front {
 	};
 
 	inline Front::~Front() {
-		destroy_GL();
-		destroy_SDL();
+		if (win) {
+			destroy_GL();
+			destroy_SDL();
+		}
 	}
 
 	inline void Front::init(std::string const& title, v2s dim) {
 		create_SDL(title, dim);
-		create_GL();
+		create_GL();		
 	}
 
 	inline Tick Front::get_ticks() {

@@ -25,9 +25,9 @@ namespace col{
 
 
 		template <class T, class ... Args>
-		void add_agent(Args & ... args) {
+		void add_agent(Args && ... args) {
 			if (agents.size() < max_size) {
-				agents.push_back(new T(args...));
+				agents.push_back(new T(args...));				
 			}
 			else {
 				ext::fail("cannot add agent: agents.size() >= max_size");

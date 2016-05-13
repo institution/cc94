@@ -778,7 +778,7 @@ TEST_CASE( "serialize", "" ) {
 	REQUIRE(env.get_coords(u) == Coords(0,0));
 
 	env.set_random_gen(replay({0}));
-	env.order_move(u, Dir::D);
+	env.order_move(u, DirD);
 
 	REQUIRE(env.get_coords(u) == Coords(1,0));
 	*/
@@ -820,7 +820,7 @@ TEST_CASE( "two_units", "" ) {
 		auto id2 = u2.id;
 
 		env.set_random_gen(replay({1}));
-		env.order_attack(u1, Dir::D);
+		env.order_attack(u1, DirD);
 
 		REQUIRE(env.exist<Unit>(id1) == true);
 		REQUIRE(env.exist<Unit>(id2) == false);

@@ -4,6 +4,7 @@
 
 #include "col.hpp"
 #include "base.hpp"
+#include "dir.hpp"
 #include "objs.hpp"
 #include "nation.hpp"
 #include "csv.hpp"
@@ -137,8 +138,8 @@ namespace col {
 		void resize(Coords const& dim);
 		void set_terr(Coords const& z, Terr const& t) {	terrs(z) = t; }
 
-		template <Dir::t D>	bool in_bound(Coords const& p) const;
-		template <Dir::t D>	bool on_bound(Coords const& p) const;
+		template <Dir D>	bool in_bound(Coords const& p) const;
+		template <Dir D>	bool on_bound(Coords const& p) const;
 
 		bool in_bounds(Coords const& p) const;
 
@@ -343,19 +344,19 @@ namespace col {
 
 
 
-	template <> inline bool Core::in_bound<Dir::A>(Coords const& p) const { return 0 <= p[0]; }
-	template <> inline bool Core::in_bound<Dir::D>(Coords const& p) const { return p[0] < w; }
-	template <> inline bool Core::in_bound<Dir::W>(Coords const& p) const { return 0 <= p[1]; }
-	template <> inline bool Core::in_bound<Dir::X>(Coords const& p) const {	return p[1] < h; }
+	template <> inline bool Core::in_bound<DirA>(Coords const& p) const { return 0 <= p[0]; }
+	template <> inline bool Core::in_bound<DirD>(Coords const& p) const { return p[0] < w; }
+	template <> inline bool Core::in_bound<DirW>(Coords const& p) const { return 0 <= p[1]; }
+	template <> inline bool Core::in_bound<DirX>(Coords const& p) const {	return p[1] < h; }
 
-	template <> inline bool Core::on_bound<Dir::A>(Coords const& p) const {	return 0 == p[0]; }
-	template <> inline bool Core::on_bound<Dir::D>(Coords const& p) const { return p[0] == w - 1; }
-	template <> inline bool Core::on_bound<Dir::W>(Coords const& p) const {	return 0 == p[1]; }
-	template <> inline bool Core::on_bound<Dir::X>(Coords const& p) const { return p[1] == h - 1; }
+	template <> inline bool Core::on_bound<DirA>(Coords const& p) const {	return 0 == p[0]; }
+	template <> inline bool Core::on_bound<DirD>(Coords const& p) const { return p[0] == w - 1; }
+	template <> inline bool Core::on_bound<DirW>(Coords const& p) const {	return 0 == p[1]; }
+	template <> inline bool Core::on_bound<DirX>(Coords const& p) const { return p[1] == h - 1; }
 
 	inline bool Core::in_bounds(Coords const& p) const {
-		return in_bound<Dir::A>(p) and in_bound<Dir::D>(p)
-		   and in_bound<Dir::W>(p) and in_bound<Dir::X>(p);
+		return in_bound<DirA>(p) and in_bound<DirD>(p)
+		   and in_bound<DirW>(p) and in_bound<DirX>(p);
 	}
 
 

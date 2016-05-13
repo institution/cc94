@@ -236,6 +236,15 @@ namespace col{
 
 		Unit(
 			Id const& id,
+			UnitType const& type
+		):
+			id(id),
+			type(&type),
+			space_left(type.get_space())
+		{}
+
+		Unit(
+			Id const& id,
 			UnitType const& type,
 			Nation & nation
 		):
@@ -270,7 +279,7 @@ namespace col{
 		
 		
 		Nation & get_nation() const { return *nation; }
-		Unit & set_nation(Nation & nation) { this->nation = &nation; return *this; }
+		Unit & set_nation(Nation * nation) { this->nation = nation; return *this; }
 
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }

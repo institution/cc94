@@ -128,7 +128,8 @@ namespace col {
 		BUILD = 5,
 		WOODTILE = 6,
 		DIFFUSE = 7,
-		COAST = 8;
+		COAST = 8,
+		ZZ = 9;
 		
 
 	Path get_res_dir(ResCat cat) {
@@ -143,6 +144,7 @@ namespace col {
 			case WOODTILE: return "WOODTILE_SS";
 			case DIFFUSE: return "*DIFFUSE*";
 			case COAST: return "*COAST*";
+			case ZZ: return "ZZ";
 		}
 		fail("unknown resource category: %||\n", cat);
 	}
@@ -1977,37 +1979,37 @@ namespace col {
 
 	array<Terr const*, 9> make_terr_ext(Env const& env, Coords const& p) {
 		array<Terr const*, 9> arr;
-		for (auto dir: ALL_DIRS) {
-			arr[(dir)] = &get_terr_ext(env, p + vec4dir(dir));
+		for (auto dir: AllDirs) {
+			arr[(dir)] = &get_terr_ext(env, p + dir2vec(dir));
 		}
 		return arr;
 	}
 
-	Terr const& get(array<Terr const*, 9> const& loc, Dir::t const& dir) {
+	Terr const& get(array<Terr const*, 9> const& loc, Dir const& dir) {
 		return *loc[(dir)];
 	}
 
 	int get_wxad_index(LocalArea const& loc, Phys const& phys) {
 		int idx = 0;
-		if ( get(loc, Dir::W).has_phys(phys) ) idx |= 8;
-		if ( get(loc, Dir::X).has_phys(phys) ) idx |= 4;
-		if ( get(loc, Dir::A).has_phys(phys) ) idx |= 2;
-		if ( get(loc, Dir::D).has_phys(phys) ) idx |= 1;
+		if ( get(loc, DirW).has_phys(phys) ) idx |= 8;
+		if ( get(loc, DirX).has_phys(phys) ) idx |= 4;
+		if ( get(loc, DirA).has_phys(phys) ) idx |= 2;
+		if ( get(loc, DirD).has_phys(phys) ) idx |= 1;
 		return idx;
 	}
 
 	int get_wxad_index_level(LocalArea const& loc, Alt const& lvl) {
 		int idx = 0;
-		if ( get(loc, Dir::W).get_alt() == lvl ) idx |= 8;
-		if ( get(loc, Dir::X).get_alt() == lvl ) idx |= 4;
-		if ( get(loc, Dir::A).get_alt() == lvl ) idx |= 2;
-		if ( get(loc, Dir::D).get_alt() == lvl ) idx |= 1;
+		if ( get(loc, DirW).get_alt() == lvl ) idx |= 8;
+		if ( get(loc, DirX).get_alt() == lvl ) idx |= 4;
+		if ( get(loc, DirA).get_alt() == lvl ) idx |= 2;
+		if ( get(loc, DirD).get_alt() == lvl ) idx |= 1;
 		return idx;
 	}
 
 
-	array<Dir::t,8> CLOCKWISE_DIRS = {
-		Dir::W, Dir::E, Dir::D, Dir::C, Dir::X, Dir::Z, Dir::A, Dir::Q
+	array<Dir,8> CLOCKWISE_DIRS = {
+		DirW, DirE, DirD, DirC, DirX, DirZ, DirA, DirQ
 	};
 
 	bool looks_like_sea(Terr const& t) {
@@ -2024,19 +2026,19 @@ namespace col {
 
 	/*
 	Biome get_render_biome(LocalArea const& loc) {
-		auto b = get(loc, Dir::S).biome;
+		auto b = get(loc, DirS).biome;
 
 		if (is_water_biome(b)) {
-			auto c = get(loc, Dir::A);
+			auto c = get(loc, DirA);
 			if (!is_water_biome(c)) return c;
 
-			c = get(loc, Dir::X);
+			c = get(loc, DirX);
 			if (!is_water_biome(c)) return c;
 
-			c = get(loc, Dir::D);
+			c = get(loc, DirD);
 			if (!is_water_biome(c)) return c;
 
-			c = get(loc, Dir::W);
+			c = get(loc, DirW);
 			if (!is_water_biome(c)) return c;
 		}
 		return b;
@@ -2045,7 +2047,7 @@ namespace col {
 	void render_diffuse_from(Front &win,
 		v2s pix,
 		LocalArea const& loc,
-		Dir::type d,
+		Dir d,
 		int offset
 	) {
 		auto b = get(loc, d).biome;		
@@ -2092,10 +2094,10 @@ namespace col {
 		render_sprite(win, pix, res(win, TERR, get_biome_icon_id(biome)));
 
 		// render neighs pattern
-		render_diffuse_from(win, pix, loc, Dir::W, 0);
-		render_diffuse_from(win, pix, loc, Dir::D, 50);
-		render_diffuse_from(win, pix, loc, Dir::X, 100);
-		render_diffuse_from(win, pix, loc, Dir::A, 150);
+		render_diffuse_from(win, pix, loc, DirW, 0);
+		render_diffuse_from(win, pix, loc, DirD, 50);
+		render_diffuse_from(win, pix, loc, DirX, 100);
+		render_diffuse_from(win, pix, loc, DirA, 150);
 
 
 
@@ -2117,19 +2119,19 @@ namespace col {
 			uint8 const h = conf.tile_dim >> 1;
 
 			render_sprite(win, pix + v2s(0,0), res(win, COAST,
-				base + get_coast_index(0, get(loc,Dir::A), get(loc,Dir::Q), get(loc,Dir::W))
+				base + get_coast_index(0, get(loc,DirA), get(loc,DirQ), get(loc,DirW))
 			));
 
 			render_sprite(win, pix + v2s(h,0), res(win, COAST,
-				base + get_coast_index(1, get(loc,Dir::W), get(loc,Dir::E), get(loc,Dir::D))
+				base + get_coast_index(1, get(loc,DirW), get(loc,DirE), get(loc,DirD))
 			));
 
 			render_sprite(win, pix + v2s(h,h), res(win, COAST,
-				base + get_coast_index(2, get(loc,Dir::D), get(loc,Dir::C), get(loc,Dir::X))
+				base + get_coast_index(2, get(loc,DirD), get(loc,DirC), get(loc,DirX))
 			));
 
 			render_sprite(win, pix + v2s(0,h), res(win, COAST,
-				base + get_coast_index(3, get(loc,Dir::X), get(loc,Dir::Z), get(loc,Dir::A))
+				base + get_coast_index(3, get(loc,DirX), get(loc,DirZ), get(loc,DirA))
 			));
 
 		}
@@ -2364,19 +2366,24 @@ namespace col {
 		);
 		// build road
 		con.on(Event::Press, KeyR,
-			[&con,unit_id](){ con.order_unit(unit_id, 'R'); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsRoad)); }
 		);
 		// plow fields
 		con.on(Event::Press, KeyP,
-			[&con,unit_id](){ con.order_unit(unit_id, 'P'); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsPlow)); }
 		);
 		// clear forest
 		con.on(Event::Press, KeyO,
-			[&con,unit_id](){ con.order_unit(unit_id, 'O'); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsClear)); }
 		);
 		// space - skip unit
 		con.on(Event::Press, KeySpace,
-			[&con](){ con.skip_unit(); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsWait, 1)); }
+		);
+		
+		// M - move mode
+		con.on(Event::Press, KeyM,
+			[&con](){ con.cursor_mode = con.CurModMove; }
 		);
 
 	}
@@ -2412,8 +2419,152 @@ namespace col {
 	}
 
 
+	void render_dir(Console & con, Coords pos, Dir dir) 
+	{
+		/*auto vbox = b2c(con.view_pos, con.view_dim);
+
+		if (not overlap(vbox, pos)) {
+			return;
+		}
+		
+		rpos = pos - con.view_pos
+		
+		rpos * ly.ti		
+
+		// pix
+		ly.map.pos
 		
 
+		array<Dir,8> CLOCKWISE_DIRS = {
+			DirW, DirE, DirD, DirC, DirX, DirZ, DirA, DirQ
+		};
+
+		if (terr.has_phys(PhysRoad)) {
+			bool r = false;
+			for (int i=0; i<8; ++i) {
+				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) ) {
+					render_sprite(win, pix, res(win, PHYS, 82 + i));
+					r = true;
+				}
+			}
+			if (!r) {
+				render_sprite(win, pix, res(win, PHYS, 81));
+			}
+		}*/
+	}
+
+		
+	void render_path(Console & con, vector<Coords> const& xs) 
+	{
+		/// ds -- list of dirs ie. {0,1}, {1,-1}, ...
+		/*
+		
+
+		
+		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
+		
+		
+		1 \
+		2 /
+		3 |
+		4 -
+		
+		
+		auto pos = start;
+		for (auto d: ds) {
+			
+			curr
+			next = pos + d;
+			
+			x = d[0]
+			y = d[1]
+			
+			tex_pos
+			
+			if (x == -1) {
+				if (y == -1) {
+					tex_pos = next
+					tex_ind =
+				}
+				else if (y ==  0) {
+					tex_pos = 
+					tex_ind =
+				}
+				else if (y ==  1) {
+					tex_pos = 
+					tex_ind =
+				}
+			}
+			else if (x ==  0) {
+				if (y == -1) {
+					tex_pos = 
+					tex_ind =
+				}
+				else if (y ==  0) {
+					
+					
+				}
+				else if (y ==  1) {
+					tex_pos = 
+					tex_ind =
+				}
+			}
+			else if (x ==  1) {
+				if (x == -1) {
+					tex_pos = 
+					tex_ind =
+				}
+				else if (x ==  0) {
+					tex_pos = 
+					tex_ind =
+				}
+				else if (x ==  1) {
+					tex_pos = 
+					tex_ind =
+				}
+			}
+			
+			1,1
+			
+		
+			for (int i = 0; i < w; ++i) {
+		
+				auto coords = Coords(i,j) + vpos;
+
+				if (env.in_bounds(coords)) {
+				
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
+
+					auto& terr = env.get_terr(coords);
+
+		*/
+	}
+	
+	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex) 
+	{
+		if (overlap(con.get_view_box(), xy)) {
+			auto rpos = ly.map.pos + vmul(ly.terr_dim, xy);
+			win.render(tex, rpos);
+		}
+	}
+	
+	
+	
+	/// Return res num assigned to this dir
+	ResNum dir_res_num(Dir dir) {
+		switch (dir) {
+			case DirQ: return 8;
+			case DirW: return 1;
+			case DirE: return 2;
+			case DirA: return 7;
+			
+			case DirD: return 3;
+			case DirZ: return 6;
+			case DirX: return 5;
+			case DirC: return 4;
+		}
+		assert(false);
+	}
 	
 	void render_map(Front & win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
@@ -2456,8 +2607,6 @@ namespace col {
 		auto vpos = con.view_pos;
 		auto vdim = v2s(w,h);
 
-		// TODO: clamp view -- prevent black margins to appear
-		
 		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
 		
 		
@@ -2521,6 +2670,20 @@ namespace col {
 							con.select_terr(coords, -1);
 						}
 					);
+
+					if (con.cursor_mode == con.CurModMove) 
+					{
+						// left press on terr while in move mode -- show path
+						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
+							[&con,coords](){
+								if (auto * u = con.get_sel_unit()) {
+									con.select_path(
+										con.find_path(con.get_coords(*u), coords)
+									);
+								}
+							}
+						);
+					}
 
 
 				}
@@ -2596,11 +2759,42 @@ namespace col {
 
 			}
 		}
-
-
+		
+		
+		// render path
+		if (auto * u = con.get_sel_unit()) 
+		{
+			auto pos = con.get_coords(*u);
+			
+			for (auto i = con.path.size(); i > 0; --i) {
+				auto cmd = con.path.at(i-1);
+			
+				switch (cmd.ins) {
+					case InsMove: {
+						Dir dir = cmd.arg;
+					
+						render_on_tile(win, con, pos, 
+							res(win, ZZ, dir_res_num(dir))
+						);
+						
+						pos += dir2vec(dir);
+						
+						
+						render_on_tile(win, con, pos, 
+							res(win, ZZ, dir_res_num(turnabout(dir)))
+						);
+					
+						break;
+					}					
+				}
+			}
+			
+		}
 	}
-
-
+	
+	
+	
+	
 	
 
 	void render_bar(Front &win,
@@ -2847,6 +3041,19 @@ namespace col {
 	
 	}
 
+	void show_select_nation(Console & con) {
+		auto & s = con.replace_widget<Select>();
+		
+		for (auto & nation: list_values(con.env.nations)) 
+		{			
+			auto id = nation.id;
+			s.add({nation.get_name()}, id == con.nation_id, [&con, id](){
+				con.set_nation_id(id);
+			});			
+		}		
+		finish_popup(con, s);	
+	}
+
 	void render_panel(Front & win,
 			Env const& env,
 			Console & con,
@@ -2887,7 +3094,11 @@ namespace col {
 
 		if (con.nation_id) 
 		{
-			cur.text(format("You are (id): %||\n", int(con.nation_id)));
+			cur.text("You are: ");
+			cur.link(env.get_nation_name(con.nation_id), con.editing, [&con](){
+				show_select_nation(con);
+			});
+			cur.text("\n");			
 		}
 
 
@@ -3051,7 +3262,7 @@ namespace col {
 				
 				auto& p = env.get_current_nation();
 				
-				auto colind = (con.mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
+				auto colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 				
 				// show button
 				auto text_box = render_text(win,
@@ -3107,23 +3318,24 @@ namespace col {
 
 			if (env.in_progress()) {
 				auto& p = env.get_current_nation();
-				
-				auto & mem = con.mem;
 
-				if (mem.get_next_to_repeat(env, p)) {
+				if (con.get_next_to_repeat(nullptr)) {
 					lab = "Move all";
 					cmd = "move-all";
 					colind = ColorWhite;
 
 					// Enter -> move all
 					con.on(Event::Press, KeyEnter,
-						[&con](){ con.repeat_all(); }
+						[&con](){ 						
+							print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
+							con.repeat_all(); 
+						}
 					);
 				}
 				else {
 					lab = "End of turn";
 					cmd = "ready";
-					colind = (mem.get_next_to_order(env, p)) ? ColorGray : ColorWhite;
+					colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 
 					// Enter -> end turn
 					con.on(Event::Press, KeyEnter,
@@ -3261,7 +3473,6 @@ namespace col {
 	}
 
 	
-
 	
 
 	void render(Front & app, col::Env & env, col::Console & con, int verbose) {
@@ -3335,7 +3546,7 @@ namespace col {
 			con.widget->render(app, con);
 		}
 
-
+		//app.render_line(ly.scr.pos, ly.scr.end(), ColorRed, 5);
 
 
 		if (verbose >= 2) print("render: app.flip\n");
