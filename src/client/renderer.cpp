@@ -1075,13 +1075,6 @@ namespace col {
 
 
 
-	bool has_vision(Console const& con, Terr const& terr) {
-		return con.editing or terr.get_vision(con.nation_id);
-	}
-	
-	bool is_discovered(Console const& con, Terr const& terr) {
-		return con.editing or terr.get_discovered(con.nation_id);
-	}
 
 
 
@@ -2302,6 +2295,23 @@ namespace col {
 
 	}
 
+
+	/// Return res num assigned to this dir
+	ResNum dir_res_num(Dir dir) {
+		switch (dir) {
+			case DirQ: return 8;
+			case DirW: return 1;
+			case DirE: return 2;
+			case DirA: return 7;
+			
+			case DirD: return 3;
+			case DirZ: return 6;
+			case DirX: return 5;
+			case DirC: return 4;
+		}
+		assert(false);
+	}
+
 	void handle_selected_unit(Front & win, Console & con, Unit & unit) 
 	{
 		auto unit_id = unit.id;
@@ -2381,9 +2391,14 @@ namespace col {
 			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsWait, 1)); }
 		);
 		
+		// esc - clear orders
+		con.on(Event::Press, KeyEsc,
+			[&con,unit_id](){ con.clear_unit_cmds(unit_id); }
+		);
+		
 		// M - move mode
 		con.on(Event::Press, KeyM,
-			[&con](){ con.cursor_mode = con.CurModMove; }
+			[&con](){ con.set_input_mode(con.InputModeMove); }
 		);
 
 	}
@@ -2543,38 +2558,48 @@ namespace col {
 	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex) 
 	{
 		if (overlap(con.get_view_box(), xy)) {
-			auto rpos = ly.map.pos + vmul(ly.terr_dim, xy);
+			auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.get_view_pos());
 			win.render(tex, rpos);
 		}
 	}
 	
-	
-	
-	/// Return res num assigned to this dir
-	ResNum dir_res_num(Dir dir) {
-		switch (dir) {
-			case DirQ: return 8;
-			case DirW: return 1;
-			case DirE: return 2;
-			case DirA: return 7;
-			
-			case DirD: return 3;
-			case DirZ: return 6;
-			case DirX: return 5;
-			case DirC: return 4;
+	void render_cmds(Console & con, v2c unit_pos, Chain const& cmds) 
+	{		
+		auto pos = unit_pos;
+		
+		for (auto i = cmds.size(); i > 0; --i) {
+			auto cmd = cmds.at(i-1);
+		
+			switch (cmd.ins) {
+				case InsMove: {
+					Dir dir = cmd.arg;
+				
+					render_on_tile(con.win, con, pos, 
+						res(con.win, ZZ, dir_res_num(dir))
+					);
+					
+					pos += dir2vec(dir);
+					
+					render_on_tile(con.win, con, pos, 
+						res(con.win, ZZ, dir_res_num(turnabout(dir)))
+					);
+				
+					break;
+				}					
+			}
 		}
-		assert(false);
+	
 	}
+	
+	
+	
+
 	
 	void render_map(Front & win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
 	{
-
-		
 		auto w = con.view_dim[0];
 		auto h = con.view_dim[1];
-		
-		
 		
 		// left arrow -- scroll map
 		con.on(Event::Press, KeyLeft, 
@@ -2622,65 +2647,92 @@ namespace col {
 					auto& terr = env.get_terr(coords);
 
 
-					if (is_discovered(con, terr)) {
+					if (con.is_discovered(terr)) {
 						render_terr(win, pos, env, terr);
 					}
 					else {
 						render_unknown(win, pos);
 					}
 
-					// right press on terr -- select terr
-					con.on(Event::Press, Button::Right, pos, ly.terr_dim,
+					auto dim = ly.terr_dim;
+
+					// right click on terr -- center view
+					con.on(Event::Press, Button::Right, pos, dim,
 						[&con,coords](){
-							con.select_terr(coords);
+							con.center_view_on(coords);
 						}
 					);
 
-					// right press on terr with shift -- add select terr
-					con.on(Event::Press, Button::Right, halo::ModButton|halo::ModShift, pos, ly.terr_dim,
-						[&con,coords](){
-							con.select_terr(coords, +1);
-						}
-					);
+					if (con.get_input_mode() == con.InputModeDefault) {						
+						// left press on terr -- select terr					
+						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords);
+							}
+						);
 
-					// right press on terr with ctrl -- sub select terr
-					con.on(Event::Press, Button::Right, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim,
-						[&con,coords](){
-							con.select_terr(coords, -1);
-						}
-					);
+						// left press on terr with shift -- add select terr
+						con.on(Event::Press, Button::Left, halo::ModButtonLeft|halo::ModShift, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords, +1);
+							}
+						);
 
-					// hover with button down over terr -- select set
-					con.on(Event::Hover, halo::ModButton, pos, ly.terr_dim,
-						[&con,coords](){
-							con.select_terr(coords);
-						}
-					);
+						// left press on terr with ctrl -- sub select terr
+						con.on(Event::Press, Button::Left, halo::ModButtonLeft|halo::ModCtrl, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords, -1);
+							}
+						);
 
-					// hover with button down with shift over terr -- select add
-					con.on(Event::Hover, halo::ModButton|halo::ModShift, pos, ly.terr_dim,
-						[&con,coords](){
-							con.select_terr(coords, +1);
-						}
-					);
+						// hover with button down over terr -- select set
+						con.on(Event::Hover, halo::ModButtonLeft, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords);
+							}
+						);
 
-					// hover with button down with ctrl over terr -- select sub
-					con.on(Event::Hover, halo::ModButton|halo::ModCtrl, pos, ly.terr_dim,
-						[&con,coords](){
-							con.select_terr(coords, -1);
-						}
-					);
+						// hover with button down with shift over terr -- select add
+						con.on(Event::Hover, halo::ModButtonLeft|halo::ModShift, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords, +1);
+							}
+						);
 
-					if (con.cursor_mode == con.CurModMove) 
+						// hover with button down with ctrl over terr -- select sub
+						con.on(Event::Hover, halo::ModButtonLeft|halo::ModCtrl, pos, ly.terr_dim,
+							[&con,coords](){
+								con.select_terr(coords, -1);
+							}
+						);
+					}
+					else if (con.get_input_mode() == con.InputModeMove) 
 					{
-						// left press on terr while in move mode -- show path
+						// left press on terr -- show path
 						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
 							[&con,coords](){
 								if (auto * u = con.get_sel_unit()) {
 									con.select_path(
-										con.find_path(con.get_coords(*u), coords)
+										con.find_path(con.get_coords(*u), coords, *u)
 									);
 								}
+							}
+						);
+						
+						// press enter -- confirm path
+						con.on(Event::Press, KeyEnter,
+							[&con,coords](){
+								if (auto * u = con.get_sel_unit()) {
+									con.cmd_unit(u->id, con.get_sel_path());								
+								}
+								con.set_input_mode(con.InputModeDefault);
+							}
+						);
+						
+						// press esc -- cancel path
+						con.on(Event::Press, KeyEsc,
+							[&con,coords](){
+								con.set_input_mode(con.InputModeDefault);
 							}
 						);
 					}
@@ -2692,7 +2744,18 @@ namespace col {
 			}
 		}
 
-
+		// render unit path/commands
+		if (auto * u = con.get_sel_unit()) 
+		{		
+			if (con.get_input_mode() == con.InputModeMove) 
+			{
+				render_cmds(con, con.get_coords(*u), con.get_sel_path());
+			}
+			else if (con.get_input_mode() == con.InputModeDefault) 
+			{
+				render_cmds(con, con.get_coords(*u), con.get_unit_cmds(*u));
+			}			
+		}
 		
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
@@ -2704,11 +2767,11 @@ namespace col {
 
 					auto& terr = env.get_terr(coords);
 
-					if (has_vision(con, terr)) {
+					if (con.has_vision(terr)) {
 						render_stack(win, con, pos, env, terr);
 					}
 					else {
-						if (is_discovered(con, terr)) {
+						if (con.is_discovered(terr)) {
 							render_fog(win, pos);
 						}
 					}
@@ -2761,39 +2824,8 @@ namespace col {
 		}
 		
 		
-		// render path
-		if (auto * u = con.get_sel_unit()) 
-		{
-			auto pos = con.get_coords(*u);
-			
-			for (auto i = con.path.size(); i > 0; --i) {
-				auto cmd = con.path.at(i-1);
-			
-				switch (cmd.ins) {
-					case InsMove: {
-						Dir dir = cmd.arg;
-					
-						render_on_tile(win, con, pos, 
-							res(win, ZZ, dir_res_num(dir))
-						);
-						
-						pos += dir2vec(dir);
-						
-						
-						render_on_tile(win, con, pos, 
-							res(win, ZZ, dir_res_num(turnabout(dir)))
-						);
-					
-						break;
-					}					
-				}
-			}
-			
-		}
+		
 	}
-	
-	
-	
 	
 	
 
@@ -3107,7 +3139,7 @@ namespace col {
 		{
 			auto& t = *tp;
 			
-			if (is_discovered(con, t))
+			if (con.is_discovered(t))
 			{				
 				string phys_info;
 				for (auto const& item: phys_names) {
@@ -3324,23 +3356,31 @@ namespace col {
 					cmd = "move-all";
 					colind = ColorWhite;
 
-					// Enter -> move all
-					con.on(Event::Press, KeyEnter,
-						[&con](){ 						
-							print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
-							con.repeat_all(); 
-						}
-					);
+					
+					if (con.get_input_mode() == con.InputModeDefault) 
+					{
+						// Enter -> move all
+						con.on(Event::Press, KeyEnter,
+							[&con](){ 						
+								print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
+								con.repeat_all(); 
+							}
+						);
+					}
 				}
 				else {
 					lab = "End of turn";
 					cmd = "ready";
 					colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 
-					// Enter -> end turn
-					con.on(Event::Press, KeyEnter,
-						[&con](){ con.command("ready"); }
-					);
+					
+					if (con.get_input_mode() == con.InputModeDefault) 
+					{
+						// Enter -> end turn	
+						con.on(Event::Press, KeyEnter,
+							[&con](){ con.command("ready"); }
+						);
+					}
 				}
 			}
 			else {

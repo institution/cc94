@@ -109,3 +109,41 @@ TEST_CASE( "chain.add_cmd", "" ) {
 	REQUIRE(cs.at(0) == Cmd(InsMove, DirE));
 	
 }	
+
+TEST_CASE( "console.find_path", "" ) {
+	
+	Env env({2,1}, Terr(AltFlat,BiomePlains,PhysNone));
+	
+	Console con(env, nullptr);
+	
+	auto & u = env.create<Unit>(
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+	);
+	
+	auto cs = con.find_path({0,0},{1,0},u);
+	
+	REQUIRE(cs.size() == 1);
+	REQUIRE(cs.at(0) == Cmd(InsMove, DirD));	
+}
+
+TEST_CASE( "console.find_path2", "" ) {
+	
+	Env env({3,3}, Terr(AltFlat,BiomePlains,PhysNone));
+	env.get_terr({0,1}).set_alt(AltSea);
+	env.get_terr({1,1}).set_alt(AltSea);
+	
+	auto & u = env.create<Unit>(
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+	);
+	
+	
+	Console con(env, nullptr);
+	
+	auto cs = con.find_path({0,0},{0,2},u);
+	
+	REQUIRE(cs.size() == 4);
+	REQUIRE(cs.at(3) == Cmd(InsMove, DirD));
+	REQUIRE(cs.at(2) == Cmd(InsMove, DirC));
+	REQUIRE(cs.at(1) == Cmd(InsMove, DirZ));
+	REQUIRE(cs.at(0) == Cmd(InsMove, DirA));	
+}

@@ -26,20 +26,21 @@ namespace halo{
 
 
 	using Mod = uint8_t;
-	uint8_t const ModNone = 0;
-	uint8_t const ModAlt = 1 << 0;
-	uint8_t const ModCtrl = 1 << 1;
-	uint8_t const ModShift = 1 << 2;
-	uint8_t const ModButton = 1 << 3;
+	Mod const ModNone = 0;
+	Mod const ModAlt = 1 << 0;
+	Mod const ModCtrl = 1 << 1;
+	Mod const ModShift = 1 << 2;	
+	Mod const ModButtonLeft = 1 << 3;
+	Mod const ModButtonRight = 1 << 4;	
 	
-
 	inline char const* get_mod_name(Mod x) {
 		switch (x) {
 			case ModNone: return "None";
 			case ModAlt: return "Alt";
 			case ModCtrl: return "Ctrl";
 			case ModShift: return "Shift";
-			case ModButton: return "Buttom";
+			case ModButtonLeft: return "ButtomLeft";
+			case ModButtonRight: return "ButtomRight";
 		}
 		return "<Invalid>";
 	}

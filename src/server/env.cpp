@@ -260,35 +260,48 @@ namespace col {
 
 
 	
-	
 
-	int Env::get_movement_cost(Terr const& dest, Terr const& orig, Travel const& travel) const {
+	
+	/// movment cost for particular unit (TimeInf -- movment impossible)
+	Time Env::get_move_cost(Terr const& dest, Terr const& orig, Unit const& u) 
+	{	
+		if (compatible(u.get_travel(), orig.get_travel())) 
+		{
+			return get_movement_cost(dest, orig, u.get_travel()) / u.get_speed();	
+		}
+		else {
+			return TimeInf;
+		}
+	}
+
+	/// movment cost for specific travel mode
+	Time Env::get_movement_cost(Terr const& dest, Terr const& orig, Travel const& travel) const {
 
 		if (travel == TravelSea) {
 			if (dest.alt == AltSea) {
-				return TIME_UNIT;
+				return TimeUnit;
 			}
 			else if (dest.has_colony() and !orig.has_colony()) {
-				return TIME_UNIT;
+				return TimeUnit;
 			}
 			else {
-				return -1;
+				return TimeInf;
 			}
 		}
 		else if (travel == TravelLand) {
 			if (dest.alt != AltSea) {
 				if (dest.has_phys(PhysRoad) and orig.has_phys(PhysRoad)) {
-					return TIME_UNIT / 3;
+					return TimeUnit / 3;
 				}
 				else if (dest.has_phys(PhysRiver) and orig.has_phys(PhysRiver)) {
-					return TIME_UNIT / 3;
+					return TimeUnit / 3;
 				}
 				else {
-					return TIME_UNIT * get_roughness(dest);
+					return TimeUnit * get_roughness(dest);
 				}
 			}
 			else {
-				return -1;
+				return TimeInf;
 			}
 		}
 		else {
@@ -345,7 +358,7 @@ namespace col {
 			// may teach?
 			if (tprof != ProfNone
 			and food_sup >= 2
-			and teacher->time_left == TIME_UNIT)
+			and teacher->time_left == TimeUnit)
 			{
 				// search for student, TODO: look for most advanced student and teach him
 				for (auto * student: t.units) {
@@ -380,7 +393,7 @@ namespace col {
 			// from workers
 			ProdCons nom;
 			for (auto * u: wp.get_units()) {
-				if (u->time_left == TIME_UNIT) {
+				if (u->time_left == TimeUnit) {
 					auto uprod = wp.get_prod(*this, *u, proditem);
 					auto ucons = wp.get_cons(*this, *u, proditem);
 					

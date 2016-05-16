@@ -13,6 +13,7 @@
 #include "halo.hpp"
 #include "player.hpp"
 #include "runner.hpp"
+#include "random_module.hpp"
 #include "../front/front.hpp"
 
 
@@ -94,7 +95,7 @@ namespace col {
 	struct Chain {
 		vector<Cmd> cmds;
 		
-		size_t size() { return cmds.size(); }
+		size_t size() const { return cmds.size(); }
 		Cmd const& at(size_t i) const { return cmds.at(i); }
 		Cmd & at(size_t i) { return cmds.at(i); }
 		
@@ -121,11 +122,21 @@ namespace col {
 			cmds[0] = cmd;
 		}
 		
+		void add_cmds(Chain other) {				
+			for (auto i = other.cmds.size(); i > 0; --i)
+			{
+				add_cmd(other.cmds[i-1]);
+			}			
+		}
+		
 		void set_cmd(Cmd cmd) {				
 			clear_cmds();
 			add_cmd(cmd);
 		}
 	};
+	
+	
+	
 
 	/*char order2letter(Order o) {
 		switch (o) {
@@ -233,14 +244,11 @@ namespace col {
 		// selected unit
 		Unit* sel_unit{nullptr};
 
-		v2s view_pos{0,0};
+		v2s view_pos{0,0};		
 		
-		
-		b2c get_view_box() const {
-			return b2c(view_pos, view_dim);
-		}
-
-		
+		b2c get_view_box() const { return b2c(view_pos, view_dim); }
+		v2c get_view_pos() const { return view_pos; }		
+		v2c get_view_dim() const { return view_dim; }
 
 		Runner * runner{nullptr};
 		
@@ -256,20 +264,31 @@ namespace col {
 		// currently selected popup entry
 		int selected_id{0};
 		
-		using CurMod = int8_t;
-		CurMod
-			CurModDefault = 0,
-			CurModMove = 1,
-			CurModTerr = 2,
-			CurModUnit = 3;
+		using InputMode = int8_t;
+		InputMode
+			InputModeDefault = 0,
+			InputModeMove = 1,
+			InputModeTerr = 2,
+			InputModeUnit = 3;
 		
-		CurMod cursor_mode{CurModDefault};
+		InputMode input_mode{InputModeDefault};
+		
+		InputMode get_input_mode() const {
+			return input_mode;
+		}
+		
+		void set_input_mode(InputMode input_mode) {
+			select_path();
+			
+			this->input_mode = input_mode;			
+		}
 		
 		
 		Dir part_dir{DirS};
 		
 		
-		
+		RandomModule rm;
+
 		
 		// last modification time
 		front::Tick last_mod_env;
@@ -365,7 +384,7 @@ namespace col {
 		v2s view_dim{15,12};
 
 
-		Console(Env & env, Runner * runner):
+		Console(Env & env, Runner * runner = nullptr):
 			env(env), server(&env), runner(runner), verbose(0)
 		{
 			for (auto c: CHARSET) {
@@ -586,14 +605,14 @@ namespace col {
 
 
 
-
-
+		void clear_unit_cmds(Unit::Id unit_id) {
+			get_unitext(unit_id).clear_cmds();
+		}
 
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
-			if (unit) {
-				get_unitext(unit->id).clear_cmds();				
-			}
+			select_path();
+			set_input_mode(InputModeDefault);
 		}
 
 		void unselect_unit() {
@@ -656,6 +675,15 @@ namespace col {
 
 
 
+		bool has_vision(Terr const& terr) const {
+			return this->editing or terr.get_vision(this->nation_id);
+		}
+		
+		bool is_discovered(Terr const& terr) const {
+			return this->editing or terr.get_discovered(this->nation_id);
+		}
+
+		Time get_move_cost(v2c p1, v2c p0, Unit const& u) const;
 
 
 		char get_letter(Unit const& u) {
@@ -758,8 +786,14 @@ namespace col {
 			bool has_cmd() const { return chain.has_cmd();}
 			void clear_cmds() { chain.clear_cmds(); }			
 			Cmd get_curr_cmd() const { return chain.get_curr_cmd(); }										
-			void add_cmd(Cmd cmd) { chain.add_cmd(cmd); }				
+			void add_cmd(Cmd cmd) { chain.add_cmd(cmd); }			
 			void set_cmd(Cmd cmd) { chain.set_cmd(cmd); }
+			
+			void add_cmds(Chain other) { chain.add_cmds(other); }
+			
+			Chain const& get_cmds() const {
+				return chain;
+			}
 									
 			UnitExt() = default;
 			UnitExt(Unit::Id id): id(id) {}
@@ -779,13 +813,14 @@ namespace col {
 			path.clear_cmds();
 		}
 		
-		Chain find_path(v2c scr, v2c trg) {
-			Chain p;
-			p.add_cmd(make_cmd(InsMove, DirD));
-			p.add_cmd(make_cmd(InsMove, DirC));
-			p.add_cmd(make_cmd(InsMove, DirX));
-			return p;
-		}	
+		Chain get_sel_path() {
+			return path;
+		}
+		
+		std::array<Dir, 8> const neighs = {DirQ,DirW,DirE,DirA,DirD,DirZ,DirX,DirC};
+		
+		Chain find_path(v2c src, v2c trg, Unit const& u);
+	
 		
 		
 		void show_error(string const& msg) {
@@ -890,6 +925,17 @@ namespace col {
 			}		
 		}
 		
+		
+		UnitExt & get_unit_ext(Unit::Id id) {
+			auto p = unitexts.find(id);
+			if (p != unitexts.end()) {
+				return p->second;
+			}
+			auto r = unitexts.insert({id, UnitExt(id)});
+			return unitexts.at(id);			
+		}
+		
+		
 		UnitExt & get_unitext(Unit::Id id) {
 			auto p = unitexts.find(id);
 			if (p != unitexts.end()) {
@@ -929,7 +975,9 @@ namespace col {
 		
 
 
-
+		Chain const& get_unit_cmds(Unit const& unit) {
+			return get_unit_ext(unit.id).get_cmds();
+		}
 
 		
 		// R,P,O,B - road,plow,clear-forest,build-colony
@@ -943,6 +991,16 @@ namespace col {
 			select_next_unit();
 		}
 
+		void cmd_unit(Unit::Id unit_id, Chain cmds) 
+		{
+			auto & unit_ext = get_unitext(unit_id);
+			
+			unit_ext.add_cmds(cmds);
+			
+			
+			exec_unit_cmd(unit_ext);
+			select_next_unit();
+		}
 
 
 

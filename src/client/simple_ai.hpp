@@ -34,8 +34,6 @@ namespace simple_ai{
 
 	
 	
-
-	
 		
 
 	struct SimpleAi: Agent {

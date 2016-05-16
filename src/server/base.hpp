@@ -20,15 +20,19 @@ namespace col {
 	
 
 	
-
-	uint8 const TIME_UNIT = 12;
-	uint8 const SPACE_UNIT = 12;
+	using Time = int8_t;	
+	Time const TimeUnit = 12;
+	Time const TimeInf = 120;		
+	
+	
+	Time const TIME_UNIT = 12;
+	int8_t const SPACE_UNIT = 12;
 	// uint8 const COLONIZE_TP_COST = 6;
 
 
-	uint8 const WORK = 'w';
-	uint8 const ROAD = 'r';
-	uint8 const PLOW = 'p';
+	char const WORK = 'w';
+	char const ROAD = 'r';
+	char const PLOW = 'p';
 	//uint8 const BUILD = 'b';
 
 

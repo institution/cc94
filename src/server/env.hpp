@@ -592,19 +592,24 @@ namespace col{
 
 		}
 
-		bool run_map_task(Unit &u, uint8 const& time_cost) {
+		bool run_map_task(Unit &u, int8_t time_cost) {
 			/*
 			 */
+			if (time_cost > TIME_UNIT * 8) {
+				set_error("this task will never finish");
+				return 0;
+			}
 
 			auto time_left = u.time_left;
+			
 			if (time_left < time_cost) {
 				u.time_left = 0;
 				return check(time_left, time_cost);
 			}
 			else {
-				if (verbose) {
-					print("check no need\n");
-				}
+				//if (verbose) {
+				//	print("check no need\n");
+				//}
 				u.time_left -= time_cost;
 				return 1;
 			}
@@ -641,7 +646,7 @@ namespace col{
 			return space;
 		}
 
-		int get_movement_cost(Terr const& dest, Terr const& orig, Travel const&) const;
+		Time get_movement_cost(Terr const& dest, Terr const& orig, Travel const&) const;
 
 
 		bool has_transport(Terr const& dest, Unit const& u) const {
@@ -678,16 +683,18 @@ namespace col{
 			return get<Unit>(id);
 		}
 
+
+		/// return movment cost in time units (TimeInf -- movment impossible)
+		Time get_move_cost(Terr const& dest, Terr const& orig, Unit const& u);
+		
 		
 
 		Res move_unit(int8 dx, int8 dy, Unit & u) {
 			/// Move/board unit on adjacent square/ship
-			
 
-			// unit checks
-			if (u.get_speed() == 0) {
-				set_error("this unit cannot move (speed = 0)");
-				return ResErr;
+			if (dx == 0 and dy == 0) {
+				// already here - no problem
+				return ResOk;
 			}
 
 			// direction check
@@ -696,8 +703,9 @@ namespace col{
 				return ResErr;
 			}
 
-			if (dx == 0 and dy == 0) {
-				set_error("already here");
+			// unit checks
+			if (u.get_speed() == 0) {
+				set_error("this unit cannot move (speed = 0)");
 				return ResErr;
 			}
 
@@ -713,7 +721,7 @@ namespace col{
 
 			bool transported = 0;
 
-			if (!compatible(u.get_travel(), dest.get_travel())) {
+			if (not compatible(u.get_travel(), dest.get_travel())) {
 				if (has_transport(dest, u)) {
 					transported = 1;
 				}
@@ -733,14 +741,14 @@ namespace col{
 			// execute
 
 			// cost to move
-			int time_cost = -1;
+			Time time_cost = TimeInf;
 
 			if (transported or u.transported) {
 				// board/unboard from/to land
-				time_cost = TIME_UNIT;
+				time_cost = TimeUnit;
 			}
 			else {
-				time_cost = get_movement_cost(dest, orig, u.get_travel()) / u.get_speed();
+				time_cost = get_move_cost(dest, orig, u);
 			}
 
 			if (time_cost <= 0) {

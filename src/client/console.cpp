@@ -68,11 +68,18 @@ namespace col {
 		}
 		
 		auto mouse = front::get_mouse();
-		
-		if (mouse[front::ButtonLeft] or mouse[front::ButtonRight]) 
+				
+		if (mouse[front::ButtonLeft]) 
 		{
-			mod = mod | halo::ModButton;
+			mod = mod | halo::ModButtonLeft;
 		}
+		
+		if (mouse[front::ButtonRight]) 
+		{
+			mod = mod | halo::ModButtonRight;
+		}
+		
+		
 		return mod;	
 	}
 	
@@ -957,6 +964,121 @@ namespace col {
 	}
 	
 	
+	Time Console::get_move_cost(v2c p1, v2c p0, Unit const& u) const {
+		auto const& t0 = env.get_terr(p0);
+		auto const& t1 = env.get_terr(p1);
+		
+		if (is_discovered(t1) and is_discovered(t0)) {
+			return env.get_move_cost(t1, t0, u);
+		}
+		else {
+			return TimeInf;
+		}
+	}
+	
+
+	template <class T, class U>
+	void print_table(ostream & o, darray2::darray2<T,U> const& a) 
+	{		
+		for (U j = 0; j < a.dim[1]; ++j) {
+			for (U i = 0; i < a.dim[0]; ++i)
+			{
+				auto x = a({i,j});
+				int c;
+				if (x > 1000000) {
+					c = -2;
+				}
+				else {
+					c = x;
+				}
+			
+				o << c << ' ';
+			}
+			o << "\n";
+		}
+	}
+
+
+	Chain Console::find_path(v2c src, v2c trg, Unit const& u) 
+	{
+		auto t0 = env.get_terr(src).get_travel();
+		
+		float const Neutral = -1;
+		float const Infinity = std::numeric_limits<float>::infinity();
+		
+		ext::darray2<float, Coord> tmp(env.get_dim(), Neutral);
+		
+		std::unordered_set<v2c, MyHash<v2c>> ws0;
+		std::unordered_set<v2c, MyHash<v2c>> ws1;
+		auto * ps0 = &ws0;
+		auto * ps1 = &ws1;
+		
+		ps0->insert(trg);
+		tmp(trg) = 0.0f;
+		
+		bool ret = false;
+		int8_t i = 0;
+		
+		print("find path 1\n");
+		
+		while (not ret and i < 100) {				
+			for (auto w0: *ps0) {
+				for (auto d: neighs) {
+					auto w1 = w0 + dir2vec(d);						
+					if (env.in_bounds(w1) and tmp(w1) == Neutral) 
+					{						
+						auto cost = get_move_cost(w1, w0, u);
+						
+						if (cost != TimeInf) {
+							tmp(w1) = tmp(w0) + cost + rm.random_float(0.0f, 0.01f);
+							ps1->insert(w1);
+							
+							if (w1 == src) {
+								ret = true;
+							}
+						}
+						else {
+							tmp(w1) = Infinity;
+						}						
+					}
+				}					
+			}				
+			std::swap(ps0, ps1);
+			ps1->clear();
+			++i;
+		}
+		
+		print("find path 2: \n");
+		print_table(std::cout, tmp);
+		print("\n");
+		
+		Chain cmds;
+		
+		if (ret == true) {
+			
+			auto p0 = src;
+			while (p0 != trg) {				
+				v2c best_p = p0;
+				Dir best_d = DirS;
+				float best_cost = Infinity;
+				for (auto d: neighs) {						
+					auto p1 = p0 + dir2vec(d);
+					if (env.in_bounds(p1) and tmp(p1) != Neutral) {
+						auto cost = tmp(p1);
+						if (cost < best_cost) {
+							best_cost = cost;
+							best_p = p1;
+							best_d = d;
+						}
+					}
+				}
+				p0 = best_p;
+				cmds.add_cmd(make_cmd(InsMove, best_d));
+			}				
+		}
+					
+		return cmds;
+	}
 	
 
 
