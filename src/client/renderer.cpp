@@ -10,6 +10,8 @@
 #include "align.hpp"
 #include "textrend.hpp"
 #include "layout.hpp"
+#include "simple_ai.hpp"
+#include "colordefs.hpp"
 
 
 //namespace Key = front::Key;
@@ -37,39 +39,6 @@ namespace col {
 		_4 = 4;
 
 
-
-	Color const ColorSelectedBG = Color(0x3c,0x20,0x18,0xff);
-
-	Color const ColorNone = Color(0,0,0,0);
-
-	Color const ColorFontSelected = Color(0xc7,0xa2,0x20,0xff);
-	Color const ColorFont = Color(0x55,0x96,0x34,0xff);
-	Color const ColorFontDisabled = Color(85,85,85,255);
-
-	Color const ColorBlack = Color(0,0,0,255);
-	Color const ColorGreen = Color(0,255,0,255);
-	Color const ColorBlue = Color(0,0,255,255);
-	Color const ColorRed = Color(255,0,0,255);
-	Color const ColorDarkGreen = Color(0,127,0,255);
-	Color const ColorDarkBlue = Color(0,0,127,255);
-	Color const ColorDarkRed = Color(127,0,0,255);
-	Color const ColorYellow = Color(255,255,0,255);
-	Color const ColorWhite = Color(255,255,255,255);
-	Color const ColorGray = Color(128,128,128,128);
-
-	Color const ColorDarkSkyBlue = Color(76,100,172,255);
-	Color const ColorSkyBlue = Color(104,136,192,255);
-	Color const ColorLightSkyBlue = Color(156,184,220,255);
-
-
-	Color const ColorDarkBrown = Color(60,32,24);
-	Color const ColorBrown = Color(121,73,52);
-	Color const ColorLightBrown = Color(152,128,92);
-		
-
-	Color const ColorDarkWoodBrown = Color(84,68,44,255);
-	Color const ColorWoodBrown = Color(132,112,80,255);
-	Color const ColorLightWoodBrown = Color(152,128,92,255);
 
 	Style const StyleMenu(ColorFont, ColorNone, ColorFontSelected, ColorFontDisabled);
 	
@@ -2376,30 +2345,46 @@ namespace col {
 		);
 		// build road
 		con.on(Event::Press, KeyR,
-			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsRoad)); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsRoad)); }
 		);
 		// plow fields
 		con.on(Event::Press, KeyP,
-			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsPlow)); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsPlow)); }
 		);
 		// clear forest
 		con.on(Event::Press, KeyO,
-			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsClear)); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsClear)); }
 		);
 		// space - skip unit
 		con.on(Event::Press, KeySpace,
-			[&con,unit_id](){ con.cmd_unit(unit_id, make_cmd(InsWait, 1)); }
+			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsWait, 1)); }
 		);
 		
 		// esc - clear orders
 		con.on(Event::Press, KeyEsc,
-			[&con,unit_id](){ con.clear_unit_cmds(unit_id); }
+			[&con,unit_id](){ 
+				con.clear_unit_cmds(unit_id); 
+				con.set_input_mode(con.InputModeDefault);
+			}
 		);
 		
-		// M - move mode
+		// press enter -- execute current orders
+		con.on(Event::Press, KeyEnter,
+			[&con](){
+				if (auto * u = con.get_sel_unit_ext()) {
+					con.exec_unit_cmds(*u);
+					con.select_next_unit();
+				}
+				con.set_input_mode(con.InputModeDefault);
+			}
+		);
+		
+		// M - enter move mode
 		con.on(Event::Press, KeyM,
 			[&con](){ con.set_input_mode(con.InputModeMove); }
 		);
+		
+		
 
 	}
 
@@ -2434,136 +2419,32 @@ namespace col {
 	}
 
 
-	void render_dir(Console & con, Coords pos, Dir dir) 
+
+	
+	
+	bool is_tile_on_screen(Console & con, Coords xy) 
 	{
-		/*auto vbox = b2c(con.view_pos, con.view_dim);
-
-		if (not overlap(vbox, pos)) {
-			return;
-		}
-		
-		rpos = pos - con.view_pos
-		
-		rpos * ly.ti		
-
-		// pix
-		ly.map.pos
-		
-
-		array<Dir,8> CLOCKWISE_DIRS = {
-			DirW, DirE, DirD, DirC, DirX, DirZ, DirA, DirQ
-		};
-
-		if (terr.has_phys(PhysRoad)) {
-			bool r = false;
-			for (int i=0; i<8; ++i) {
-				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) ) {
-					render_sprite(win, pix, res(win, PHYS, 82 + i));
-					r = true;
-				}
-			}
-			if (!r) {
-				render_sprite(win, pix, res(win, PHYS, 81));
-			}
-		}*/
+		return overlap(con.get_view_box(), xy);			
 	}
-
-		
-	void render_path(Console & con, vector<Coords> const& xs) 
+	
+	b2s get_tile_on_screen(Console & con, Coords xy)
 	{
-		/// ds -- list of dirs ie. {0,1}, {1,-1}, ...
-		/*
-		
-
-		
-		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
-		
-		
-		1 \
-		2 /
-		3 |
-		4 -
-		
-		
-		auto pos = start;
-		for (auto d: ds) {
-			
-			curr
-			next = pos + d;
-			
-			x = d[0]
-			y = d[1]
-			
-			tex_pos
-			
-			if (x == -1) {
-				if (y == -1) {
-					tex_pos = next
-					tex_ind =
-				}
-				else if (y ==  0) {
-					tex_pos = 
-					tex_ind =
-				}
-				else if (y ==  1) {
-					tex_pos = 
-					tex_ind =
-				}
-			}
-			else if (x ==  0) {
-				if (y == -1) {
-					tex_pos = 
-					tex_ind =
-				}
-				else if (y ==  0) {
-					
-					
-				}
-				else if (y ==  1) {
-					tex_pos = 
-					tex_ind =
-				}
-			}
-			else if (x ==  1) {
-				if (x == -1) {
-					tex_pos = 
-					tex_ind =
-				}
-				else if (x ==  0) {
-					tex_pos = 
-					tex_ind =
-				}
-				else if (x ==  1) {
-					tex_pos = 
-					tex_ind =
-				}
-			}
-			
-			1,1
-			
-		
-			for (int i = 0; i < w; ++i) {
-		
-				auto coords = Coords(i,j) + vpos;
-
-				if (env.in_bounds(coords)) {
-				
-					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
-
-					auto& terr = env.get_terr(coords);
-
-		*/
+		auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.get_view_pos());
+		return b2s(rpos, ly.terr_dim);
 	}
 	
 	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex) 
 	{
-		if (overlap(con.get_view_box(), xy)) {
-			auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.get_view_pos());
+		if (is_tile_on_screen(con, xy)) {
+			auto rpos = get_tile_on_screen(con, xy).pos;
 			win.render(tex, rpos);
 		}
 	}
 	
-	void render_cmds(Console & con, v2c unit_pos, Chain const& cmds) 
+	
+	
+	
+	void render_cmds(Console & con, v2c unit_pos, Cmds const& cmds) 
 	{		
 		auto pos = unit_pos;
 		
@@ -2589,6 +2470,39 @@ namespace col {
 			}
 		}
 	
+	}
+	
+	
+	void render_marks(Console & con, Marks const& marks) {
+		for (auto & m: marks.list()) {
+			if (is_tile_on_screen(con, m.pos)) 
+			{
+				auto box = get_tile_on_screen(con, m.pos);
+				
+				render_text(con.win,
+					box.pos, box.dim, v2f(0.5f, 0.5f),
+					FontTiny, ColorBlue, ColorBlack,
+					m.label	
+				);
+			}
+		}
+	}
+	
+	void render_debug_ai(Console & con) {
+		if (con.runner) 
+		{
+			auto & win = con.win;
+			
+			for (Agent * a: con.runner->agents) 
+			{
+				auto cls = a->get_class();
+				if (cls == simple_ai::ClassSimpleAi) 
+				{
+					auto * b = static_cast<simple_ai::SimpleAi*>(a);
+					render_marks(con, b->marks);
+				}			
+			}
+		}
 	}
 	
 	
@@ -2711,30 +2625,16 @@ namespace col {
 						// left press on terr -- show path
 						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
 							[&con,coords](){
-								if (auto * u = con.get_sel_unit()) {
-									con.select_path(
-										con.find_path(con.get_coords(*u), coords, *u)
-									);
+								if (auto * u = con.get_sel_unit_ext()) {																		
+									auto path = con.find_path(con.get_coords(*u), coords, *u);
+									u->cmds.clear();
+									if (path.exists()) {
+										u->cmds.adds(path.cmds);
+									}				
 								}
 							}
 						);
 						
-						// press enter -- confirm path
-						con.on(Event::Press, KeyEnter,
-							[&con,coords](){
-								if (auto * u = con.get_sel_unit()) {
-									con.cmd_unit(u->id, con.get_sel_path());								
-								}
-								con.set_input_mode(con.InputModeDefault);
-							}
-						);
-						
-						// press esc -- cancel path
-						con.on(Event::Press, KeyEsc,
-							[&con,coords](){
-								con.set_input_mode(con.InputModeDefault);
-							}
-						);
 					}
 
 
@@ -2745,16 +2645,20 @@ namespace col {
 		}
 
 		// render unit path/commands
-		if (auto * u = con.get_sel_unit()) 
-		{		
-			if (con.get_input_mode() == con.InputModeMove) 
-			{
-				render_cmds(con, con.get_coords(*u), con.get_sel_path());
-			}
-			else if (con.get_input_mode() == con.InputModeDefault) 
-			{
-				render_cmds(con, con.get_coords(*u), con.get_unit_cmds(*u));
-			}			
+		if (auto * u = con.get_sel_unit_ext()) 
+		{			
+			// unit is controlled by human or AI
+			// editing mode -> show unit command
+			// playing mode -> show only if ours
+			
+			/*auto * agn = con.get_agent(u->id);
+			
+			if (con.editing or agn == &con) {
+				auto const& cmds = get_unit_cmds(agn, u->id);
+			
+				render_cmds(con, con.get_coords(*u), cmds);
+			}*/
+			render_cmds(con, con.get_coords(*u), u->cmds);
 		}
 		
 		// stacks on map
@@ -2823,6 +2727,10 @@ namespace col {
 			}
 		}
 		
+		if (con.editing) {
+			render_debug_ai(con);
+		}
+		
 		
 		
 	}
@@ -2856,6 +2764,19 @@ namespace col {
 		};   // onselect
 				
 		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+	}
+	
+	void finish_popup_at(Console & con, Select & s, v2s pos) 
+	{
+		s.oncancel = [&con](){
+			con.clear_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.clear_widget();
+		};   // onselect
+				
+		s.set_geo({pos, v2s(0,0)}, v2f(0.0f, 0.0f));
 	}
 
 	void show_select_biome(Env const& env, Console & con, Terr const& terr) {
@@ -3359,13 +3280,13 @@ namespace col {
 					
 					if (con.get_input_mode() == con.InputModeDefault) 
 					{
-						// Enter -> move all
-						con.on(Event::Press, KeyEnter,
+						// Ctrl + Enter -> move all
+						/*con.on(Event::Press, halo::ModCtrl, KeyEnter,
 							[&con](){ 						
 								print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
 								con.repeat_all(); 
 							}
-						);
+						);*/
 					}
 				}
 				else {
@@ -3376,10 +3297,10 @@ namespace col {
 					
 					if (con.get_input_mode() == con.InputModeDefault) 
 					{
-						// Enter -> end turn	
-						con.on(Event::Press, KeyEnter,
+						// Ctrl + Enter -> end turn	
+						/*con.on(Event::Press, halo::ModCtrl, KeyEnter,
 							[&con](){ con.command("ready"); }
-						);
+						);*/
 					}
 				}
 			}
@@ -3418,76 +3339,64 @@ namespace col {
 
 
 	void render_cmd(Front & app, col::Console & con) {
-		if (con.is_active()) {
 
-			auto ln = con.output.size();
-			v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
+		auto ln = con.output.size();
+		v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
 
-			for (auto& line: boost::adaptors::reverse(con.output)) {
+		for (auto& line: boost::adaptors::reverse(con.output)) {
 
 
-				auto text_box = render_text(app,
-					pos, {0,0}, {0,0},
-					FontTiny, ColorFont, {0,0,0,128},
-					line
-				);
-
-				pos[1] += text_box.dim[1];
-			}
-
-			// command line with cursor
-			render_text(app,
-				ly.scr.pos, {0,0}, {0,0},
-				FontTiny, ColorFont, ColorNone,
-				con.buffer + "_"
+			auto text_box = render_text(app,
+				pos, {0,0}, {0,0},
+				FontTiny, ColorFont, {0,0,0,128},
+				line
 			);
 
-			// trap all keyboard
-			con.on(Dev::Keyboard);
-
-			// char entered
-			con.on(Event::Char, [&con](halo::Pattern const& p){
-				con.handle_char(*p.unicode);
-			});
-
-			// deactivate
-			con.on(Event::Char, u'`', [&con](){
-				con.set_active(false);
-			});
-
-			// history up
-			con.on(Event::Press, KeyUp, [&con](){
-				con.history_up();
-			});
-
-			// history down
-			con.on(Event::Press, KeyDown, [&con](){
-				con.history_down();
-			});
-
-			// enter
-			con.on(Event::Press, KeyReturn, [&con](){
-				con.handle_char(u'\r');
-			});
-
-			// backspace
-			con.on(Event::Press, KeyBackspace, [&con](){
-				con.handle_char(u'\b');
-			});
-
-
-
-
-
-		}
-		else {
-			// activate
-			con.on(Event::Char, u'`', [&con](){
-				con.set_active(true);
-			});
+			pos[1] += text_box.dim[1];
 		}
 
+		// command line with cursor
+		render_text(app,
+			ly.scr.pos, {0,0}, {0,0},
+			FontTiny, ColorFont, ColorNone,
+			con.buffer + "_"
+		);
+
+		// trap all keyboard
+		con.on(Dev::Keyboard);
+
+		// char entered
+		con.on(Event::Char, [&con](halo::Pattern const& p){
+			con.handle_char(*p.unicode);
+		});
+
+		// history up
+		con.on(Event::Press, KeyUp, [&con](){
+			con.history_up();
+		});
+
+		// history down
+		con.on(Event::Press, KeyDown, [&con](){
+			con.history_down();
+		});
+
+		// enter
+		con.on(Event::Press, KeyReturn, [&con](){
+			con.handle_char(u'\r');
+		});
+
+		// backspace
+		con.on(Event::Press, KeyBackspace, [&con](){
+			con.handle_char(u'\b');
+		});
+
+
+
+
+		
 	}
+
+
 
 
 	void render_cursor(Front & win, Console const& con) {
@@ -3512,8 +3421,48 @@ namespace col {
 		}
 	}
 
+	void show_order_menu(Console & con, v2s pos) 
+	{	
+		auto & s = con.replace_widget<Select>();
+
+		
+		s.add({"Move (M)"}, [&con](){
+			if (con.has_sel_unit()) {
+				con.set_input_mode(con.InputModeMove);
+			}
+		});
+		
+		s.add({"Exec (Enter)"}, [&con](){
+			if (auto * u = con.get_sel_unit_ext()) {
+				con.exec_unit_cmds(*u);
+				con.select_next_unit();
+			}
+		});
+		
+		s.add({"Clear (Esc)"}, [&con](){
+			if (con.has_sel_unit()) {
+				con.clear_unit_cmds(con.get_sel_unit_id());
+			}
+		});
+		
+		
+		finish_popup_at(con, s, pos);	
+	}
 	
 	
+	void render_menu(Console & con) 
+	{
+		auto cur = TextRend2(con.win, con, ly.bar, FontTiny, StyleMenu);
+
+		auto pos = cur.get_pos() + v2s(0, cur.get_height() + ly.line);		
+
+		cur.link("Order", true, [&con, pos](){
+			show_order_menu(con, pos);
+		});
+
+	}
+	
+
 
 	void render(Front & app, col::Env & env, col::Console & con, int verbose) {
 	
@@ -3525,8 +3474,8 @@ namespace col {
 
 		con.reset_hotspots();
 
-		int w = app.get_logical_dim()[0];
-		int h = app.get_logical_dim()[1];
+		int w = app.get_ctx_dim()[0];
+		int h = app.get_ctx_dim()[1];
 
 
 		render_drag_clear(con);
@@ -3541,6 +3490,9 @@ namespace col {
 			{ly.bar.dim[0], ly.line},
 			{0,0,0,255}
 		);
+
+
+		
 
 
 		if (con.mode == Console::Mode::COLONY) {
@@ -3576,7 +3528,30 @@ namespace col {
 
 		if (verbose >= 2) print("render: render_cmd\n");
 
-		render_cmd(app, con);
+
+		if (con.is_active()) {
+
+			render_cmd(app, con);
+
+			// deactivate terminal
+			con.on(Event::Char, u'`', [&con](){
+				con.set_active(false);
+			});
+
+		}
+		else {
+			render_menu(con);
+		
+			// activate terminal
+			con.on(Event::Char, u'`', [&con](){
+				con.set_active(true);
+			});
+		}
+
+		
+		
+
+		
 
 		render_cursor(app, con);
 

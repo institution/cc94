@@ -60,7 +60,7 @@ namespace col{
 		Id get_place_on_id() const { return place_on_id; }
 		
 		Amount get_cost() const { return cost_hammers; }
-		Class get_class() const { return Class::BuildType; }
+		Class get_class() const { return ClassBuildType; }
 		
 		//BuildType & set_name(string const& name) { this->name = name; return *this; }
 
@@ -162,7 +162,7 @@ namespace col{
 			return PlaceType::Build;
 		}
 		
-		virtual Class get_class() const { return Class::Build; }
+		virtual Class get_class() const { return ClassBuild; }
 
 		string const& get_name() const {
 			return this->type->name;

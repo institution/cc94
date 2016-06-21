@@ -131,7 +131,9 @@ namespace col{
 		array<int16_t, 8> tabs{120,120,120,120,120,120,120,120};
 		array<int8_t, 8> align{-1,-1,-1,-1,-1,-1,-1,-1};
 		
+		v2s get_pos() const { return cpos; }
 		
+		int get_height() const { return font.get_height(); }
 		
 		
 		void set_tabs(

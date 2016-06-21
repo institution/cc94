@@ -68,7 +68,7 @@ namespace col{
 
 		// methods
 		Amount get_space() const { return Amount(slots) * 100; }
-		Class get_class() const { return Class::UnitType; }
+		Class get_class() const { return ClassUnitType; }
 
 		// constructors
 		UnitType() {}
@@ -153,14 +153,16 @@ namespace col{
 	struct Build;
 	struct Field;
 
-	
+	using Org = int16_t;
 
 	struct Unit{
 		using Id = uint32_t;
 
 		Id id{0};
 		UnitType const* type{nullptr};
-		Nation * nation{nullptr};
+		
+		Org org{0};   // organization, group, faction
+		
 		uint8_t time_left{TIME_UNIT};
 		bool transported{0};
 		
@@ -246,11 +248,11 @@ namespace col{
 		Unit(
 			Id const& id,
 			UnitType const& type,
-			Nation & nation
+			Org org
 		):
 			id(id),
 			type(&type),
-			nation(&nation),
+			org(org),
 			space_left(type.get_space())
 		{}
 

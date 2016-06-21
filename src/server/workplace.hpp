@@ -56,8 +56,15 @@ namespace col{
 				
 		virtual Item const& get_consitem() const { return ItemNone; }
 			
+		/*
+		Colony * colony{nullptr};
 		
-		virtual int get_slots() const { return 1; }
+		void set_colony(Colony & colony) { this->colony = &colony; }
+		Colony & get_colony() { return *colony; }
+		Colony const& get_colony() const { return *colony; }*/
+		
+		
+		virtual int get_slots() const = 0; //{ return 1; }
 		int get_space_left() const { return get_slots() - units.size(); }
 		bool has_units() const { return units.size(); }
 

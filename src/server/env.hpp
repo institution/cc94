@@ -1109,6 +1109,8 @@ namespace col{
 				and AltFlat <= alt and alt <= AltHill;			
 		}
 		
+		
+		
 		/// Is 'unit capable of building colony
 		bool is_colonist(Unit const& unit) {
 			return unit.get_type().id <= UnitTypeCavalry;
@@ -1117,31 +1119,26 @@ namespace col{
 
 		
 		
-		Res colonize(Unit &u, string const& name = "") {
-
-			if (u.get_nation() != get_current_nation()) {
-				set_error("not your unit");
-				return -1;				
-			}
-
+		Res colonize(Unit &u, string const& name = "") 
+		{
 			if (not is_colonist(u)) {
-				set_error("not land-based unit");
-				return -1;				
+				set_error("this unit cannot colonize");
+				return ResErr;				
 			}
 
 			auto& t = get_terr(u);
 
 			if (not is_colonizable(t)) {
 				set_error("cannot colonize here");
-				return -1;				
+				return ResErr;				
 			}
 
 			auto time_cost = TIME_UNIT;
 			if (run_map_task(u, time_cost)) {
 				init_colony(t);
-				return 1;  // ok
+				return ResOk;  // ok
 			}
-			return 0;  // try next turn
+			return ResCont;  // try next turn
 		}
 
 		void apply(inter::build_colony const& a) {
@@ -1335,11 +1332,12 @@ namespace col{
 			}
 		}
 
-		void work_none(Unit & u) {
+		Res work_none(Unit & u) {
 			if (u.workplace) {
 				u.workplace->sub(u);
 				u.workplace = nullptr;
 			}			
+			return ResOk;
 		}
 
 
@@ -1466,18 +1464,16 @@ namespace col{
 
 
 
-		void work_field(Field::Id field_id, Unit & u) {
+		Res work_field(Field::Id field_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_field(terr, field_id, u.get_nation());
-			work_workplace(f, u);
-			//notify_effect(terr,	inter::work_field(field_id, get_id(u)));
+			return work_workplace(f, u);			
 		}
 
-		void work_build(Build::Id build_id, Unit & u) {
+		Res work_build(Build::Id build_id, Unit & u) {
 			Terr & terr = get_terr(u);
 			auto& f = get_build(terr, build_id, u.get_nation());
-			work_workplace(f, u);
-			//notify_effect(terr,	inter::work_build(build_id, get_id(u)));
+			return work_workplace(f, u);			
 		}
 
 
@@ -1518,15 +1514,15 @@ namespace col{
 
 
 		
-		void work_workplace(Workplace & wp, Unit & u) {
-			if (&u.get_workplace() == &wp) {
-
-			}
+		Res work_workplace(Workplace & wp, Unit & u) 
+		{			
 			if (wp.get_space_left() >= u.get_size()) {
 				t_move(wp, u);
+				return ResOk;
 			}
 			else {
-				throw Error("no space left");
+				set_error("no space left");
+				return ResErr;				
 			}
 		}
 

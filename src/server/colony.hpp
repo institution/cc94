@@ -93,6 +93,11 @@ namespace col {
 
 		int get_field_index(Field const& f) const;
 
+		int get_field_id(Field const& f) const {
+			assert(fields.size() > 0);				
+			return &f - &fields[0];		
+		}
+
 
 		Build& get_build(int i) {
 			return builds.at(i);

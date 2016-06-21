@@ -71,27 +71,38 @@ using roll::replay;
  
  * idle factory button -> zoom to colony *
  
+ * fog of war *
  
+ * path-finding + gui *
      
- * simple AI, colony building
- *  choose place: >1forest, >1ore, nearby(<4tile) but do not overlap(>3tile)
- *  move nearest colonist and build
+ * simple AI, colony building *
+ *  choose place: >1forest, >1ore, nearby(<4tile) but do not overlap(>3tile) *
+ *  move nearest colonist and build *
  
- * simple AI, colony managment
- *  assign to work: food, lumber, carpenter
- *  construct following fixed order: docks, lumber mill, ...
- *  move any unassigned unit to colony
+ * simple AI: task creation
+ *  colonize
+ *  discover
+ *  improve
+ *  work food  
+ 
+ * simple AI: task assigment
+ *  assign tasks to units
+ 
+ * simple AI, colony managment; maximize food prod
+ *  assign to work: food, ore, lumber
+ *  improve tiles
+ *  construct blacksmith house
   
- * fog of war 
+ * simple AI:
+ *  construct in fixed order: docks, lumber mill, ...
  
  * teaching: block 2 teachers one student, unit attr
  * teaching: choose best student, search units
   
  v 0.2.8
  
- * menu gui, orders
+ * menu: save/load
  * gui improvments
- * human ai helpers
  * somehow playable scenario map
  
  v 0.3.0
@@ -256,8 +267,6 @@ TEST_CASE( "env", "" ) {
 	REQUIRE_NOTHROW(env.resize({1,1}));
 	
 	auto& t = env.get_terr({0,0});
-	REQUIRE(t.get_biome() == BiomeNone);
-	
 	
 	// fill
 	REQUIRE_NOTHROW(env.fill(Terr{AltSea, BiomeTundra}));
@@ -568,9 +577,7 @@ TEST_CASE( "is_expert", "" ) {
 
 TEST_CASE( "colony_workplace_production", "" ) {
 	
-	Env env;	
-	env.resize({1,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	Env env({1,1}, Terr(AltFlat, BiomePlains));	
 		
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(TravelLand),
@@ -863,7 +870,9 @@ TEST_CASE( "improve square", "" ) {
 		REQUIRE( u.get_num1() == 20 );
 
 		// cant double-improve
-		REQUIRE_THROWS_AS(env.improve(u, PhysRoad), Error);				
+		REQUIRE(not env.has_error());
+		env.improve(u, PhysRoad);		
+		REQUIRE(env.has_error());
 	}
 
 	SECTION("plow field") {
@@ -876,6 +885,40 @@ TEST_CASE( "improve square", "" ) {
 		REQUIRE( u.get_num1() == 20 );
 		
 	}
+
+
+}
+
+
+
+TEST_CASE( "move cost", "" ) {
+
+	// move cost impossible between land and ocean
+
+	Env env;
+	env.resize({2,2});
+	
+	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
+	env.set_terr({0,1}, Terr(AltFlat, BiomePlains));
+	env.set_terr({1,1}, Terr(AltSea, BiomePlains));
+	
+	
+	auto& t00 = env.get_terr({0,0});
+	auto& t10 = env.get_terr({1,0});
+	auto& t01 = env.get_terr({0,1});
+	auto& t11 = env.get_terr({1,1});
+	
+	//env.init_colony(t00);
+	t01.add_phys(PhysMinorRiver);
+	
+	
+	auto& u = env.create<Unit>(
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+	);
+	
+	REQUIRE(env.get_move_cost(t10, t00, u) == TimeInf);
+	REQUIRE(env.get_move_cost(t01, t00, u) < TimeInf);
 
 
 }

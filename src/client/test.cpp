@@ -39,7 +39,7 @@ TEST_CASE( "console.get_letter", "" ) {
 			
 	Console con(env, nullptr);
 	
-	con.cmd_unit(unit.id, make_cmd(InsClear));	
+	con.cmd_unit(unit.id, Cmd(InsClear));	
 	REQUIRE(con.get_letter(unit) == 'O');
 	
 }
@@ -59,11 +59,11 @@ TEST_CASE( "console.get_next_to_repeat", "" ) {
 	REQUIRE(con.get_next_to_repeat(nullptr) == nullptr);
 	
 	// with command
-	con.get_unitext(unit.id).set_cmd(make_cmd(InsRoad, 0));
+	con.get_unit_ext(unit).set_cmd(Cmd(InsRoad, 0));
 	REQUIRE(con.get_next_to_repeat(nullptr) == &unit);
 	
 	// with command but can't cont
-	con.get_unitext(unit.id).can_cont = false;
+	con.get_unit_ext(unit).can_cont = false;
 	REQUIRE(con.get_next_to_repeat(nullptr) == nullptr);
 	
 }
@@ -79,29 +79,29 @@ TEST_CASE( "console.cmd_unit", "" ) {
 	
 	Console con(env, nullptr);
 	
-	con.cmd_unit(unit.id, make_cmd(InsWait));	
-	REQUIRE(con.get_unitext(unit.id).can_cont == false);
+	con.cmd_unit(unit.id, Cmd(InsWait));	
+	REQUIRE(con.get_unit_ext(unit).can_cont == false);
 	
 }		
 
 TEST_CASE( "chain.add_cmd", "" ) {
 	
-	Chain cs;
+	Cmds cs;
 	
 	REQUIRE(cs.size() == 0);
 	
-	cs.add_cmd(Cmd(InsMove, DirQ));
+	cs.add(Cmd(InsMove, DirQ));
 	
 	REQUIRE(cs.size() == 1);
 	REQUIRE(cs.at(0) == Cmd(InsMove, DirQ));
 	
-	cs.add_cmd(Cmd(InsMove, DirW));
+	cs.add(Cmd(InsMove, DirW));
 	
 	REQUIRE(cs.size() == 2);
 	REQUIRE(cs.at(1) == Cmd(InsMove, DirQ));
 	REQUIRE(cs.at(0) == Cmd(InsMove, DirW));
 	
-	cs.add_cmd(Cmd(InsMove, DirE));
+	cs.add(Cmd(InsMove, DirE));
 	
 	REQUIRE(cs.size() == 3);
 	REQUIRE(cs.at(2) == Cmd(InsMove, DirQ));
@@ -120,10 +120,11 @@ TEST_CASE( "console.find_path", "" ) {
 		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
 	);
 	
-	auto cs = con.find_path({0,0},{1,0},u);
+	auto path = con.find_path({0,0},{1,0}, u);
 	
-	REQUIRE(cs.size() == 1);
-	REQUIRE(cs.at(0) == Cmd(InsMove, DirD));	
+	REQUIRE(path.exists());
+	REQUIRE(path.cmds.size() == 1);
+	REQUIRE(path.cmds.at(0) == Cmd(InsMove, DirD));	
 }
 
 TEST_CASE( "console.find_path2", "" ) {
@@ -139,7 +140,8 @@ TEST_CASE( "console.find_path2", "" ) {
 	
 	Console con(env, nullptr);
 	
-	auto cs = con.find_path({0,0},{0,2},u);
+	auto path = con.find_path({0,0},{0,2},u);
+	auto & cs = path.cmds;
 	
 	REQUIRE(cs.size() == 4);
 	REQUIRE(cs.at(3) == Cmd(InsMove, DirD));
@@ -147,3 +149,5 @@ TEST_CASE( "console.find_path2", "" ) {
 	REQUIRE(cs.at(1) == Cmd(InsMove, DirZ));
 	REQUIRE(cs.at(0) == Cmd(InsMove, DirA));	
 }
+
+

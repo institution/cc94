@@ -144,6 +144,7 @@ namespace front {
 		// bottom-right pixel is (width-1,height-1)
 
 		// orto
+		
 		float tarr[] = {
 			2.0f/width,  0.0f,         0.0f,     -1.0f,
 			0.0f,       -2.0f/height,  0.0f,      1.0f,
@@ -154,6 +155,21 @@ namespace front {
 		proj = glm::transpose(proj);	
 		return proj;
 	}
+
+
+	glm::mat4 make_scale_matrix(v2f s)
+	{
+		float tarr[] = {
+			s[0],    0.0f,  0.0f,  0.0f,
+			0.0f,  s[1],    0.0f,  0.0f,
+			0.0f,  0.0f,  1.0f,  0.0f,
+			0.0f,  0.0f,  0.0f,  1.0f,
+		};
+		auto proj = glm::make_mat4x4(tarr);
+		return proj;
+	}
+
+
 
 
 	void Front::render_texture(Texture const& t, v2s trg, b2s src, Color fg) {
@@ -355,11 +371,12 @@ namespace front {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		
-		glViewport(0, 0, win_dim[0], win_dim[1]);
+		
+		set_ctx_dim(win_dim);
+		CHECK_GL();
+		
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		CHECK_GL();
-
-		set_logical_dim(win_dim);
 
 		// activate prog[0] (render texture simple)
 
@@ -385,9 +402,13 @@ namespace front {
 		
 	}
 
-	void Front::set_logical_dim(v2s dim)
+	void Front::set_ctx_dim(v2s ctx_dim)
 	{
-		this->proj = make_projection_matrix(dim[0], dim[1]);
+		auto win_dim = get_win_dim();
+			
+		glViewport(0, 0, win_dim[0], win_dim[1]);	
+	
+		this->proj = make_projection_matrix(ctx_dim[0], ctx_dim[1]);
 
 		glUniformMatrix4fv(
 			myGetUniformLocation(prog[0], "m_proj"),
@@ -397,13 +418,12 @@ namespace front {
 		);
 		CHECK_GL();
 
-		ctx_dim = dim;
+		this->ctx_dim = ctx_dim;
 	}
 
-	void Front::set_physical_dim(v2s dim) {
-		assert(0);
+	void Front::set_ctx_dim() {
+		set_ctx_dim(ctx_dim);
 	}
-
 
 	void Front::clear() {
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -436,7 +456,6 @@ namespace front {
 		this->ctx = SDL_GL_CreateContext(win);
 		check_sdl();
 
-		this->win_dim = dim;
 		this->ctx_dim = dim;		
 	}
 

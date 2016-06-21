@@ -15,6 +15,10 @@
 #include "runner.hpp"
 #include "random_module.hpp"
 #include "../front/front.hpp"
+#include "command.hpp"
+#include "exts.hpp"
+#include "marks.hpp"
+#include "path.hpp"
 
 
 /*
@@ -39,156 +43,11 @@ namespace col {
 
 
 	
-	
-	using Ins = int8_t;
-	Ins const
-		InsNone{0},
-		InsWait{1},       // Space for N turns
-		InsMove{2},
-		InsAttack{3},
-		InsBuild{4},
-		InsClear{5},
-		InsRoad{6},
-		InsPlow{7},
-		InsWork{9};        // automatically assigned to units working inside city
-		
-	inline string get_ins_name(Ins ins) {
-		switch (ins) {
-			case InsNone: return "InsNone";
-			case InsWait: return "InsWait";
-			case InsMove: return "InsMove";
-			case InsAttack: return "InsAttack";
-			case InsBuild: return "InsBuild";
-			case InsClear: return "InsClear";
-			case InsRoad: return "InsRoad";
-			case InsPlow: return "InsPlow";
-			case InsWork: return "InsWork";
-			default: 
-				print(std::cerr, "WARINING: unknown ins code: %||\n", ins);
-				return "InsError";			
-		}	
-	}
-		
-	using Arg = int8_t;
-		
-	struct Cmd{
-		Ins ins;
-		Arg arg;
-		Cmd() = default;
-		Cmd(Ins ins, Arg arg): ins(ins), arg(arg) {}
-	};
-	
-	inline bool operator==(Cmd a, Cmd b) {
-		return a.ins == b.ins and a.arg == b.arg;
-	}
-	
-	inline Cmd make_cmd(Ins a, Arg b = 0) {
-		return Cmd(a,b);
-	}
-	
-	inline ostream & operator<<(ostream & o, Cmd const& cmd) {
-		o << format("(%|| %||)", get_ins_name(cmd.ins), int(cmd.arg));
-		return o;
-	}
-	
-
-	struct Chain {
-		vector<Cmd> cmds;
-		
-		size_t size() const { return cmds.size(); }
-		Cmd const& at(size_t i) const { return cmds.at(i); }
-		Cmd & at(size_t i) { return cmds.at(i); }
-		
-		
-		void pop_cmd() { cmds.pop_back(); }
-		bool has_cmd() const { return cmds.size() > 0;}
-		void clear_cmds() { cmds.clear(); }
-		
-		Cmd get_curr_cmd() const { 
-			if (has_cmd()) {
-				return cmds.back(); 
-			}
-			else {
-				return make_cmd(InsNone);
-			}				
-		}
-					
-		void add_cmd(Cmd cmd) {	
-			cmds.push_back(make_cmd(InsNone));
-			for (auto i = cmds.size(); i >= 2; --i)
-			{
-				cmds[i-1] = cmds[i-2];
-			}				
-			cmds[0] = cmd;
-		}
-		
-		void add_cmds(Chain other) {				
-			for (auto i = other.cmds.size(); i > 0; --i)
-			{
-				add_cmd(other.cmds[i-1]);
-			}			
-		}
-		
-		void set_cmd(Cmd cmd) {				
-			clear_cmds();
-			add_cmd(cmd);
-		}
-	};
-	
-	
-	
-
-	/*char order2letter(Order o) {
-		switch (o) {
-			case OrderNone: return '-';
-			case OrderWait: return 'W';
-			case OrderMove: return 'G';
-			case OrderAttack: return 'A';
-			case OrderBuild: return 'B';
-			case OrderClear: return 'O';
-			case OrderRoad: return 'R';
-			case OrderPlow: return 'P';
-			case OrderWork: return 'w';
-			default: return '?';			
-		}
-	}
-	
-	Order letter2order(char l) {
-		switch (o) {
-			case '-': return OrderNone;
-			case 'W': return OrderWait;
-			case 'G': return OrderMove;
-			case 'A': return OrderAttack;
-			case 'B': return OrderBuild;
-			case 'O': return OrderClear;
-			case 'R': return OrderRoad;
-			case 'P': return OrderPlow;
-			case '=': return OrderWaitOne;
-			//case 'w': return OrderWaitInf;   // no need - this order is only used internally
-			default: return OrderNone;			
-		}
-	}*/
-
-	// mouse events: normal, drag&drop
-
-	/*
-	struct DragDrop {
-		enum class Obj {
-			None, Item, Unit
-		};
-
-		Obj what;
-		union Arg{
-			Item * item;
-			Unit * unit;
-		} arg;
-	}*/
-
 
 
 	inline v2f get_logical_pos(Front const& front, v2i p) {
-		auto l = front.get_logical_dim();
-		auto o = front.get_physical_dim();
+		auto l = front.get_ctx_dim();
+		auto o = front.get_win_dim();
 		
 		auto rx = float(l[0])/float(o[0]);
 		auto ry = float(l[1])/float(o[1]);
@@ -211,6 +70,46 @@ namespace col {
 	};
 
 
+
+	struct UnitExt {
+		Unit::Id id;
+		
+		Cmds cmds;
+		
+		// true means unit is doing nothing productive right now
+		bool can_cont{true};
+		
+		void pop_cmd() { cmds.pop(); }			
+		bool has_cmd() const { return cmds.has();}
+		void clear_cmds() { cmds.clear(); }			
+		Cmd get_curr_cmd() const { return cmds.get(); }										
+		void add_cmd(Cmd cmd) { cmds.add(cmd); }			
+		void set_cmd(Cmd cmd) { cmds.set(cmd); }
+		
+		void add_cmds(Cmds const& other) { cmds.adds(other); }
+		
+		Cmds const& get_cmds() const {
+			return cmds;
+		}
+								
+		UnitExt() = default;
+		explicit UnitExt(Unit::Id id): id(id) {}
+		UnitExt(UnitExt const&) = delete;
+	};
+	
+	using UnitExts = Exts<Unit, UnitExt>;
+	
+	
+	Class const ClassConsole = 101;
+
+
+	/// provides:
+	/// state for gui rendering
+	/// state for cmd interface
+	/// map editing mode
+	/// human AI heplers (path finding, command queeing, extended info for game objects, has_vision, is_discovered)
+	/// -simple autonomous AI	
+
 	struct Console : Agent {
 		vector<string> output;
 		string buffer;
@@ -227,6 +126,7 @@ namespace col {
 
 		bool editing{true};
 		
+		v2s old_dim{0,0};
 		
 		int equip_to_unit_id{0};
 		int equip_to_unit_type_id{0};
@@ -242,7 +142,7 @@ namespace col {
 		//Terr * sel_terr{nullptr};
 
 		// selected unit
-		Unit* sel_unit{nullptr};
+		Unit * sel_unit{nullptr};
 
 		v2s view_pos{0,0};		
 		
@@ -257,6 +157,10 @@ namespace col {
 		void add_ai(Nation::Id nation_id);
 		
 		
+		Marks marks;
+		
+		//int8_t show_unit_movement{1};		
+		//stepmode_exec_sel_unit_cmds
 		
 		unordered_set<char16_t> charset;
 
@@ -278,8 +182,6 @@ namespace col {
 		}
 		
 		void set_input_mode(InputMode input_mode) {
-			select_path();
-			
 			this->input_mode = input_mode;			
 		}
 		
@@ -318,7 +220,7 @@ namespace col {
 		
 		
 	
-		
+		Class get_class() const override { return ClassConsole; }
 		
 		
 		//Build *selprod_build{nullptr};
@@ -374,6 +276,10 @@ namespace col {
 		
 		Nation::Id nation_id{1};
 		
+		void set_nation_id(Nation::Id id) {
+			nation_id = id;
+		}
+		
 		
 		string memtag;
 		
@@ -401,14 +307,20 @@ namespace col {
 			}
 		}
 
+
+		//Nation * nation{nullptr};
+
+		Color get_color() const {
+			if (nation_id) {
+				auto c = env.get_nation(nation_id).color;
+				return {c.r,c.g,c.b,255};
+			}
+			return {255,0,0,255};
+		}
 		
 		
 		
 
-		void set_nation_id(Nation::Id id) {
-			nation_id = id;
-		}
-		
 		bool has_control(Unit const& unit) const {
 			return editing or env.has_control(env.get_nation(nation_id), unit);
 		}
@@ -458,7 +370,13 @@ namespace col {
 			return is_selected( env.in_bounds(c) ? (&env.get_terr(c)) : nullptr );
 		}
 
-		struct UnitExt;
+		UnitExts unitexts;
+		
+		UnitExt & get_unit_ext(Unit const& u) { return unitexts.get(u); }		
+		UnitExt & get_unit_ext(Unit::Id id) { return unitexts.get(id); }
+
+		
+		
 
 		template <class F>
 		Unit * find_unit(Unit * cur, F f) {
@@ -492,7 +410,7 @@ namespace col {
 					has_control(u) and 
 					u.get_time_left() and 
 					not u.is_working() and 
-					not get_unitext(u.id).has_cmd();
+					not get_unit_ext(u).has_cmd();
 			});
 		}
 
@@ -506,14 +424,16 @@ namespace col {
 				return 
 					has_control(u) and 
 					u.get_time_left() and 
-					get_unitext(u.id).has_cmd() and
-					get_unitext(u.id).can_cont;					
+					get_unit_ext(u).has_cmd() and
+					get_unit_ext(u).can_cont;					
 			});
 		}
 
 		Unit * get_next_to_repeat() {
 			return get_next_to_repeat(get_sel_unit());
 		}
+		
+		
 		
 		void center_on(Unit const* u) {
 			if (u) {
@@ -606,12 +526,11 @@ namespace col {
 
 
 		void clear_unit_cmds(Unit::Id unit_id) {
-			get_unitext(unit_id).clear_cmds();
+			get_unit_ext(unit_id).clear_cmds();
 		}
 
 		void select_unit(Unit *unit) {
 			sel_unit = unit;
-			select_path();
 			set_input_mode(InputModeDefault);
 		}
 
@@ -687,8 +606,8 @@ namespace col {
 
 
 		char get_letter(Unit const& u) {
-			auto & ue = get_unitext(u.id);			
-			auto cmd = ue.get_curr_cmd();
+			auto & ue = get_unit_ext(u);
+			auto cmd = ue.cmds.get();
 			switch (cmd.ins) {
 				case InsNone: return '-';
 				case InsWait: return 'W';
@@ -705,7 +624,9 @@ namespace col {
 
 
 
-
+		bool has_sel_unit() const {
+			return sel_unit != nullptr;
+		}
 
 		Unit* get_sel_unit() const {
 			return sel_unit;
@@ -771,56 +692,32 @@ namespace col {
 			return env.get_coords(u);
 		}
 
+		v2c get_coords(UnitExt const& u) const {
+			return env.get_coords(env.get_unit(u.id));
+		}
 
 
 
-		struct UnitExt {
-			Unit::Id id;
-			
-			Chain chain;
-			
-			// true means unit is doing nothing productive right now
-			bool can_cont{true};
-			
-			void pop_cmd() { chain.pop_cmd(); }			
-			bool has_cmd() const { return chain.has_cmd();}
-			void clear_cmds() { chain.clear_cmds(); }			
-			Cmd get_curr_cmd() const { return chain.get_curr_cmd(); }										
-			void add_cmd(Cmd cmd) { chain.add_cmd(cmd); }			
-			void set_cmd(Cmd cmd) { chain.set_cmd(cmd); }
-			
-			void add_cmds(Chain other) { chain.add_cmds(other); }
-			
-			Chain const& get_cmds() const {
-				return chain;
-			}
-									
-			UnitExt() = default;
-			UnitExt(Unit::Id id): id(id) {}
-		};
-		
-		unordered_map<Unit::Id, UnitExt> unitexts;
 		
 		
 		
 		
-		Chain path;
-		
-		void select_path(Chain p) {
-			path = p;
-		}
-		void select_path() {
-			path.clear_cmds();
+		Unit const& get_unit(UnitExt const& ext) const {
+			return env.get_unit(ext.id);
 		}
 		
-		Chain get_sel_path() {
-			return path;
+		Unit & get_unit(UnitExt & ext) {
+			return env.get_unit(ext.id);
 		}
 		
-		std::array<Dir, 8> const neighs = {DirQ,DirW,DirE,DirA,DirD,DirZ,DirX,DirC};
 		
-		Chain find_path(v2c src, v2c trg, Unit const& u);
-	
+		
+		PathRes find_path(v2c src, v2c trg, UnitExt const& u);
+		
+		PathRes find_path(v2c src, v2c trg, Unit const& u) {
+			return find_path(src, trg, get_unit_ext(u));
+		}
+		
 		
 		
 		void show_error(string const& msg) {
@@ -840,111 +737,35 @@ namespace col {
 		
 		
 		
-		
+
 		
 		
 		/// Make 'unit do current command.
 		/// return true when unit is ready to execute next command
 		/// return false when current command wasn't finished yet
-		bool exec_unit_cmd(UnitExt & ext) 
-		{	
-			print("exec_unit_cmd: id=%||, cmd=%||\n", ext.id, ext.get_curr_cmd());
+		bool exec_unit_cmd(UnitExt & ext);
 		
-			Unit & unit = env.get_unit(ext.id);
-			
-			auto cmd = ext.get_curr_cmd();
-			
-			switch (cmd.ins) {
-				case InsNone: {
-					ext.pop_cmd();
-					ext.can_cont = 1;
-					return 1;
-				}					
-				case InsWait: {
-					ext.can_cont = false;
-					return 0;
-				}										
-				case InsMove: {
-					auto dir = (Dir)cmd.arg;
-					auto r = env.move_unit(dir, unit);
-					handle_error();
-					if (r) {
-						ext.pop_cmd();
-					}
-					ext.can_cont = bool(r);
-					return r;
-				}
-				case InsAttack: {
-					auto dir = (Dir)cmd.arg;
-					// auto r = env.move_unit(dir, unit);
-					auto r = 1;  // TODO ^
-					handle_error();
-					if (r) {
-						ext.pop_cmd();
-					}
-					ext.can_cont = bool(r);
-					return r;
-				}
-				case InsBuild: {					
-					auto r = env.colonize(unit);
-					handle_error();
-					if (r) { ext.pop_cmd(); }
-					ext.can_cont = bool(r);
-					return r;
-				}
-				case InsClear: {
-					auto r = env.destroy(unit, PhysForest);
-					handle_error();
-					if (r) { ext.pop_cmd(); }
-					ext.can_cont = bool(r);
-					return r;
-				}
-				case InsRoad: {
-					auto r = env.improve(unit, PhysRoad);
-					handle_error();
-					if (r) { ext.pop_cmd(); }
-					ext.can_cont = bool(r);
-					return r;					
-				}
-				case InsPlow: {
-					auto r = env.improve(unit, PhysPlow);
-					handle_error();
-					if (r) { ext.pop_cmd(); }
-					ext.can_cont = bool(r);
-					return r;
-				}
-				case InsWork: {
-					ext.can_cont = 0;
-					return 0;
-				}
-				default: {
-					print(std::cerr, "WARNING: unknown unit command code: %||\n", cmd.ins);
-					ext.pop_cmd();
-					return 1;
-				}
-			}		
+		
+		
+		UnitExt * get_sel_unit_ext() 
+		{
+			if (auto * u = get_sel_unit()) {
+				return &get_unit_ext(u->id);
+			}
+			else {
+				return nullptr;
+			}			
 		}
 		
-		
-		UnitExt & get_unit_ext(Unit::Id id) {
-			auto p = unitexts.find(id);
-			if (p != unitexts.end()) {
-				return p->second;
-			}
-			auto r = unitexts.insert({id, UnitExt(id)});
-			return unitexts.at(id);			
-		}
-		
-		
-		UnitExt & get_unitext(Unit::Id id) {
-			auto p = unitexts.find(id);
-			if (p != unitexts.end()) {
-				return p->second;
-			}
-			auto r = unitexts.insert({id, UnitExt(id)});
-			return unitexts.at(id);
-			//return r.first->second;
-			//return unitexts[id];
+
+
+		void exec_unit_cmds(UnitExt & ext) 
+		{
+			while (ext.has_cmd() and exec_unit_cmd(ext)) {
+				// sleep ?
+				// show ?
+				// center on unit?
+			}	
 		}
 		
 		/// Move all units with active command
@@ -958,13 +779,9 @@ namespace col {
 			while (auto * up = get_next_to_repeat()) {
 				auto & unit = *up;
 				
-				auto & ext = get_unitext(unit.id);
+				auto & ext = get_unit_ext(unit);
 				
-				while (ext.has_cmd() and exec_unit_cmd(ext)) {
-					// sleep ?
-					// show ?
-					// center on unit?
-				}	
+				exec_unit_cmds(ext);
 			
 			}
 			
@@ -975,7 +792,7 @@ namespace col {
 		
 
 
-		Chain const& get_unit_cmds(Unit const& unit) {
+		Cmds const& get_unit_cmds(Unit const& unit) {
 			return get_unit_ext(unit.id).get_cmds();
 		}
 
@@ -985,15 +802,15 @@ namespace col {
 
 		void cmd_unit(Unit::Id unit_id, Cmd cmd) 
 		{
-			auto & unit_ext = get_unitext(unit_id);
+			auto & unit_ext = get_unit_ext(unit_id);
 			unit_ext.set_cmd(cmd);			
 			exec_unit_cmd(unit_ext);
 			select_next_unit();
 		}
 
-		void cmd_unit(Unit::Id unit_id, Chain cmds) 
+		void cmd_unit(Unit::Id unit_id, Cmds cmds) 
 		{
-			auto & unit_ext = get_unitext(unit_id);
+			auto & unit_ext = get_unit_ext(unit_id);
 			
 			unit_ext.add_cmds(cmds);
 			
@@ -1155,7 +972,7 @@ namespace col {
 
 		void handle_char(char16_t code);
 
-		void handle(Front const&, front::Event const&);
+		void handle(Front &, front::Event const&);
 
 		void command(string const& line);
 		void do_command(string const& line);

@@ -24,6 +24,8 @@ namespace null_ai{
 		NullAi(Env & env, Nation & nation): env(env), nation_id(nation.id) {
 			
 		}
+		
+		
 
 		bool step() {
 			

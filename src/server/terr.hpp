@@ -121,7 +121,7 @@ namespace col{
 		}
 
 		// Terr
-		Colony& get_colony() {
+		Colony & get_colony() {
 			assert(colony != nullptr);
 			return *colony;
 		}

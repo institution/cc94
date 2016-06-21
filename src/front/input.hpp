@@ -44,6 +44,44 @@ namespace front {
 		EventTextInput = SDL_TEXTINPUT,
 		EventUserEvent = SDL_USEREVENT,
 		EventWindowEvent = SDL_WINDOWEVENT;
+		
+		
+		
+	
+
+	//using WindowEvent = SDL_Event;
+	using WindowEventType = SDL_WindowEventID;
+
+	WindowEventType const		
+		WindowEventShown = SDL_WINDOWEVENT_SHOWN,
+        WindowEventHidden = SDL_WINDOWEVENT_HIDDEN,
+        WindowEventExposed = SDL_WINDOWEVENT_EXPOSED,
+        WindowEventMoved = SDL_WINDOWEVENT_MOVED,
+        WindowEventResized = SDL_WINDOWEVENT_RESIZED,
+        WindowEventSizeChanged = SDL_WINDOWEVENT_SIZE_CHANGED,
+        WindowEventMinimized = SDL_WINDOWEVENT_MINIMIZED,
+        WindowEventMaximized = SDL_WINDOWEVENT_MAXIMIZED,
+        WindowEventRestored = SDL_WINDOWEVENT_RESTORED,
+        WindowEventEnter = SDL_WINDOWEVENT_ENTER,
+        WindowEventLeave = SDL_WINDOWEVENT_LEAVE,
+        WindowEventFocusGained = SDL_WINDOWEVENT_FOCUS_GAINED,
+        WindowEventFocusLost = SDL_WINDOWEVENT_FOCUS_LOST,
+        WindowEventClose = SDL_WINDOWEVENT_CLOSE;
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 
 	void print_window_event(Event const& event);
 

@@ -262,10 +262,10 @@ namespace col {
 	
 
 	
-	/// movment cost for particular unit (TimeInf -- movment impossible)
+	/// movment cost from to 'dest from 'orig for particular 'unit (TimeInf -- movment impossible)
 	Time Env::get_move_cost(Terr const& dest, Terr const& orig, Unit const& u) 
 	{	
-		if (compatible(u.get_travel(), orig.get_travel())) 
+		if (compatible(u.get_travel(), dest.get_travel())) 
 		{
 			return get_movement_cost(dest, orig, u.get_travel()) / u.get_speed();	
 		}
@@ -461,7 +461,7 @@ namespace col {
 		if (f.task and f.task.get() >= f.task.cap()) {
 
 			switch (f.task.what->get_class()) {
-				case Class::UnitType:
+				case ClassUnitType:
 				{
 					UnitType const& ut = *static_cast<UnitType const*>(f.task.what);
 
@@ -481,7 +481,7 @@ namespace col {
 
 					break;
 				}
-				case Class::BuildType:
+				case ClassBuildType:
 				{
 					BuildType const& bt = *static_cast<BuildType const*>(f.task.what);
 					auto *b = c.select_place_for(bt);

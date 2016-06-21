@@ -83,7 +83,7 @@ namespace col {
 		return mod;	
 	}
 	
-	void Console::handle(Front const& app, front::Event const& event) {
+	void Console::handle(Front & app, front::Event const& event) {
 		
 		if (verbose) print("Console.handle: {\n");
 		
@@ -91,12 +91,31 @@ namespace col {
 
 		// prepare pattern
 		Pattern p;
+
+		if (type == front::EventWindowEvent) {
+			
+			front::print_window_event(event);
+			
+			switch (event.window.event) {
+				case front::WindowEventSizeChanged:
+				case front::WindowEventResized: {
+				
+					auto new_dim = v2s(event.window.data1, event.window.data2);
+					if (old_dim != new_dim) {					
+						app.set_ctx_dim();
+						old_dim = new_dim;
+					}
+					break;
+				}
+						
+			}
 		
-		if (type == front::EventKeyDown) {
+		}
+		else if (type == front::EventKeyDown) {
 			p.dev = Dev::Keyboard;
 			p.event = Event::Press;
 			p.key = event.key.keysym.sym;
-			print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
+			//print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
 		}
 		else if (type == front::EventTextInput) {
 			p.dev = Dev::Keyboard;
@@ -232,7 +251,7 @@ namespace col {
 		preload_renderer(win);
 		
 		if (verbose) print("GUILoop: set_logical_dim\n");
-		win.set_logical_dim({conf.screen_w, conf.screen_h});
+		win.set_ctx_dim({conf.screen_w, conf.screen_h});
 					
 		last_mod_env = env.mod - 1;
 		last_mod_con = mod - 1;
@@ -977,109 +996,125 @@ namespace col {
 	}
 	
 
-	template <class T, class U>
-	void print_table(ostream & o, darray2::darray2<T,U> const& a) 
-	{		
-		for (U j = 0; j < a.dim[1]; ++j) {
-			for (U i = 0; i < a.dim[0]; ++i)
-			{
-				auto x = a({i,j});
-				int c;
-				if (x > 1000000) {
-					c = -2;
-				}
-				else {
-					c = x;
-				}
-			
-				o << c << ' ';
-			}
-			o << "\n";
-		}
-	}
 
-
-	Chain Console::find_path(v2c src, v2c trg, Unit const& u) 
+	PathRes Console::find_path(v2c src, v2c trg, UnitExt const& ue) 
 	{
-		auto t0 = env.get_terr(src).get_travel();
-		
-		float const Neutral = -1;
-		float const Infinity = std::numeric_limits<float>::infinity();
-		
-		ext::darray2<float, Coord> tmp(env.get_dim(), Neutral);
-		
-		std::unordered_set<v2c, MyHash<v2c>> ws0;
-		std::unordered_set<v2c, MyHash<v2c>> ws1;
-		auto * ps0 = &ws0;
-		auto * ps1 = &ws1;
-		
-		ps0->insert(trg);
-		tmp(trg) = 0.0f;
-		
-		bool ret = false;
-		int8_t i = 0;
-		
-		print("find path 1\n");
-		
-		while (not ret and i < 100) {				
-			for (auto w0: *ps0) {
-				for (auto d: neighs) {
-					auto w1 = w0 + dir2vec(d);						
-					if (env.in_bounds(w1) and tmp(w1) == Neutral) 
-					{						
-						auto cost = get_move_cost(w1, w0, u);
-						
-						if (cost != TimeInf) {
-							tmp(w1) = tmp(w0) + cost + rm.random_float(0.0f, 0.01f);
-							ps1->insert(w1);
-							
-							if (w1 == src) {
-								ret = true;
-							}
-						}
-						else {
-							tmp(w1) = Infinity;
-						}						
-					}
-				}					
-			}				
-			std::swap(ps0, ps1);
-			ps1->clear();
-			++i;
-		}
-		
-		print("find path 2: \n");
-		print_table(std::cout, tmp);
-		print("\n");
-		
-		Chain cmds;
-		
-		if (ret == true) {
-			
-			auto p0 = src;
-			while (p0 != trg) {				
-				v2c best_p = p0;
-				Dir best_d = DirS;
-				float best_cost = Infinity;
-				for (auto d: neighs) {						
-					auto p1 = p0 + dir2vec(d);
-					if (env.in_bounds(p1) and tmp(p1) != Neutral) {
-						auto cost = tmp(p1);
-						if (cost < best_cost) {
-							best_cost = cost;
-							best_p = p1;
-							best_d = d;
-						}
-					}
-				}
-				p0 = best_p;
-				cmds.add_cmd(make_cmd(InsMove, best_d));
-			}				
-		}
-					
-		return cmds;
-	}
+		auto const& u = get_unit(ue);
 	
+		return col::find_path(env, src, trg, [this,&u](v2c w1, v2c w0) {		
+			auto c = get_move_cost(w1, w0, u);
+			if (c == TimeInf) {
+				return std::numeric_limits<float>::infinity();
+			}
+			else {
+				return c + rm.random_float(0.0f, 0.01f);
+			}
+		});	
+	}
+
+
+
+	/*
+		Esc -- cancel current orders
+		Enter -- execute current orders
+		
+		
+			
+	
+	*/
+
+
+
+
+
+
+
+
+
+	/// Make 'unit do current command.
+	/// return true when unit is ready to execute next command
+	/// return false when current command wasn't finished yet
+	bool Console::exec_unit_cmd(UnitExt & ext) 
+	{	
+		print("exec_unit_cmd: id=%||, cmd=%||\n", ext.id, ext.get_curr_cmd());
+	
+		Unit & unit = env.get_unit(ext.id);
+
+		// assert(ext.cmds.has());
+	
+		auto cmd = ext.cmds.get();
+		
+		switch (cmd.ins) {
+			case InsNone: {
+				ext.pop_cmd();
+				ext.can_cont = 1;
+				return 1;
+			}					
+			case InsWait: {
+				ext.can_cont = false;
+				return 0;
+			}										
+			case InsMove: {
+				auto dir = (Dir)cmd.arg;
+				auto r = env.move_unit(dir, unit);
+				handle_error();
+				if (r) {
+					ext.pop_cmd();
+				}
+				ext.can_cont = bool(r);
+				return r;
+			}
+			case InsAttack: {
+				auto dir = (Dir)cmd.arg;
+				// auto r = env.move_unit(dir, unit);
+				auto r = 1;  // TODO ^
+				handle_error();
+				if (r) {
+					ext.pop_cmd();
+				}
+				ext.can_cont = bool(r);
+				return r;
+			}
+			case InsBuild: {					
+				auto r = env.colonize(unit);
+				handle_error();
+				if (r) { ext.pop_cmd(); }
+				ext.can_cont = bool(r);
+				return r;
+			}
+			case InsClear: {
+				auto r = env.destroy(unit, PhysForest);
+				handle_error();
+				if (r) { ext.pop_cmd(); }
+				ext.can_cont = bool(r);
+				return r;
+			}
+			case InsRoad: {
+				auto r = env.improve(unit, PhysRoad);
+				handle_error();
+				if (r) { ext.pop_cmd(); }
+				ext.can_cont = bool(r);
+				return r;					
+			}
+			case InsPlow: {
+				auto r = env.improve(unit, PhysPlow);
+				handle_error();
+				if (r) { ext.pop_cmd(); }
+				ext.can_cont = bool(r);
+				return r;
+			}
+			case InsWork: {
+				ext.can_cont = 0;
+				return 0;
+			}
+			default: {
+				print(std::cerr, "WARNING: unknown unit command code: %||\n", cmd.ins);
+				ext.pop_cmd();
+				return 1;
+			}
+		}
+
+	}
 
 
 	

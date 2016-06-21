@@ -136,17 +136,17 @@ namespace col {
 	void read(A & ar, Env const& env, col::Task & t) {
 		read(ar, t.progress);
 		
-		Class cls;       read_enum(ar, cls);
+		Class cls;       read(ar, cls);
 		Makeable::Id id; read(ar, id);
 				
 		switch (cls) {
-			case Class::None:
+			case ClassNone:
 				t.what = nullptr;
 				break;
-			case Class::BuildType:
+			case ClassBuildType:
 				t.what = &env.get<BuildType>(id);
 				break;
-			case Class::UnitType:
+			case ClassUnitType:
 				t.what = &env.get<UnitType>(id);
 				break;
 			default:
@@ -159,11 +159,11 @@ namespace col {
 	void write(A & ar, Env const& env, col::Task const& t) {
 		write(ar, t.progress);
 		if (t) {			
-			write_enum(ar, t.what->get_class());
+			write(ar, t.what->get_class());
 			write(ar, t.what->get_id());
 		}
 		else {
-			write_enum(ar, Class::None);
+			write(ar, ClassNone);
 			write(ar, Makeable::Id(0));
 		}
 	}

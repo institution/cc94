@@ -16,6 +16,24 @@ namespace col{
 		return (d[0] + 1) + (d[1] + 1) * 3;
 	}
 	
+	inline string get_dir_name(Dir dir) {
+		switch (dir) {
+			case DirQ: return "DirC";
+			case DirW: return "DirX";
+			case DirE: return "DirZ";
+			case DirA: return "DirD";
+			case DirS: return "DirS";
+			case DirD: return "DirA";
+			case DirZ: return "DirE";
+			case DirX: return "DirW";
+			case DirC: return "DirQ";
+			default: 
+				print(std::cerr, "WARINING: unknown dir code: %||\n", dir);
+				return "DirError";
+		}
+	}
+	
+	
 	inline Dir turnabout(Dir a) {
 		switch (a) {
 			case DirQ: return DirC;
@@ -67,6 +85,12 @@ namespace col{
 		DirZ,DirX,DirC
 	};
 	
+	std::array<Dir, 8> const Neighs = {
+		DirQ,DirW,DirE,
+		DirA,     DirD,
+		DirZ,DirX,DirC
+	};
+
 	
 	/* Dir code is yx in mod 3-1 (2 -> -1)
 	00 0  -1,-1

@@ -22,7 +22,20 @@ namespace col {
 	
 	using Time = int8_t;	
 	Time const TimeUnit = 12;
-	Time const TimeInf = 120;		
+	Time const TimeInf = std::numeric_limits<int8_t>::max();
+	float const FloatInf = std::numeric_limits<float>::infinity();
+	
+	
+	
+	inline float time2float(Time t) {
+		if (t == TimeInf) {
+			return FloatInf;
+		}
+		else {
+			return float(t);
+		}
+	}
+	
 	
 	
 	Time const TIME_UNIT = 12;
@@ -37,7 +50,7 @@ namespace col {
 
 
 
-	using Travel = uint8_t;
+	using Travel = uint8_t;  // this is a flag type
 	
 	Travel const TravelNone = 0;
 	Travel const TravelLand = 1;
@@ -65,17 +78,19 @@ namespace col {
 			Field = 6;
 	}
 	
-	enum struct Class: uint8_t {
-		None,
-		Terr,
-		Colony,
-		Unit,
-		Build,
-		Europe,
-		Field,
-		BuildType,
-		UnitType
-	};
+	using Class = uint8_t;
+	Class const ClassNone = 0;
+		
+	Class const 
+		ClassTerr = 1,
+		ClassColony = 2,
+		ClassUnit = 3,
+		ClassBuild = 4,
+		ClassEurope = 5,
+		ClassField = 6,
+		ClassBuildType = 7,
+		ClassUnitType = 8;
+		
 	
 
 	struct Placeable;

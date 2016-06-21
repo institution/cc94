@@ -103,6 +103,13 @@ namespace halo{
 			this->key = key;
 			this->callback = callback;
 		}
+		
+		// key+mod press/release
+		Pattern(Event event, Mod mod, Key key, std::function<void()> callback) {
+			this->event = event;
+			this->key = key;
+			this->callback = callback;
+		}
 
 		// mouse left/right press/release over area
 		Pattern(Event event, Button button, Vec pos, Vec dim, std::function<void()> callback) {

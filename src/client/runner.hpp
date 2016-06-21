@@ -8,8 +8,6 @@ namespace col{
 
 	struct Runner {
 		
-		
-		
 		Env env;
 		using Agents = vector<Agent*>;
 		Agents agents;

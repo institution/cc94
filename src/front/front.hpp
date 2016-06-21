@@ -82,11 +82,19 @@ namespace front {
 		
 		void flip() { SDL_GL_SwapWindow(win); }
 
-		v2s get_logical_dim() const { return ctx_dim; }
-		v2s get_physical_dim() const { return win_dim; }
+		v2s get_ctx_dim() const { return ctx_dim; }
+		
+		v2s get_win_dim() const { 
+			int w,h;
+			SDL_GetWindowSize(win, &w, &h);
+			return v2s(w,h);
+		}
+		
 
-		void set_logical_dim(v2s dim);
-		void set_physical_dim(v2s dim);
+
+		void set_ctx_dim(v2s);
+		void set_ctx_dim();
+		
 
 
 		bool pool_event(Event & event);
