@@ -18,6 +18,8 @@ namespace col {
 	Color const ColorGreen = Color(0,255,0,255);
 	Color const ColorBlue = Color(0,0,255,255);
 	Color const ColorRed = Color(255,0,0,255);
+	Color const ColorOrange = Color(255,165,0,255);
+	
 	Color const ColorDarkGreen = Color(0,127,0,255);
 	Color const ColorDarkBlue = Color(0,0,127,255);
 	Color const ColorDarkRed = Color(127,0,0,255);

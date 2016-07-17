@@ -33,7 +33,7 @@ TEST_CASE( "console.get_letter", "" ) {
 	auto & unit = env.create<Unit>(	
 		env.create<UnitType>().set_travel(TravelLand).set_speed(1).set_equip1(ItemTools, 20)
 	);
-	env.init(env.get_terr({0,0}), unit);
+	env.put(env.get_terr({0,0}), unit);
 			
 	unit.time_left = 0;
 			
@@ -51,7 +51,7 @@ TEST_CASE( "console.get_next_to_repeat", "" ) {
 	auto & unit = env.create<Unit>(	
 		env.create<UnitType>()
 	);
-	env.init(env.get_terr({0,0}), unit);
+	env.put(env.get_terr({0,0}), unit);
 			
 	Console con(env, nullptr);
 	

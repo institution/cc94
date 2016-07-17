@@ -39,11 +39,11 @@ namespace simple_ai{
 	}
 	
 	bool SimpleAi::has_vision(Terr const& terr) const {
-		return terr.get_vision(nation_id);
+		return has_control() and terr.get_vision(get_control());
 	}
 
 	bool SimpleAi::is_discovered(Terr const& terr) const {
-		return terr.get_discovered(nation_id);
+		return has_control() and terr.get_discovered(get_control());
 	}
 	
 	float SimpleAi::get_terr_food_value(Terr const& terr) const {
@@ -133,7 +133,7 @@ namespace simple_ai{
 	/// What is the value of job 'cmd performed by 'unit starting in 'tdist turns
 	float get_job_value(Unit const& unit, Cmd cmd, int tdist)
 	{
-		
+		return 1.0f;
 		
 		
 	}
@@ -302,7 +302,7 @@ namespace simple_ai{
 		float count = 0;
 		
 		for (auto const& unit: list_values(env.units)) {
-			if (env.has_control(nation, unit)) {
+			if (env.has_control(cc, unit)) {
 				total += v2f(env.get_coords(unit));
 				count += 1;
 			}
@@ -458,14 +458,14 @@ namespace simple_ai{
 		
 		sync();
 		
-		if (env.in_progress() and env.get_current_nation() == nation) 
+		if (env.in_progress() and env.get_current_control() == cc) 
 		{
 			marks.clear();
 		
 			print("simple_ai: units\n");
 			for (auto & unit: list_values(env.units))
 			{
-				if (env.has_control(nation, unit)) 
+				if (env.has_control(cc, unit)) 
 				{
 					// what this unit should do?
 					auto & unit_ext = ues.get(unit);
@@ -524,7 +524,7 @@ namespace simple_ai{
 			}
 			
 			print("simple_ai: ready\n");
-			env.ready(nation);
+			env.ready();
 		}
 		
 		return true;
@@ -569,7 +569,7 @@ namespace simple_ai{
 			}										
 			case InsMove: {
 				auto dir = (Dir)cmd.arg;
-				auto r = env.move_unit(dir, unit);
+				auto r = env.move_unit(unit, dir);
 				
 				if (r) {
 					cmds.pop();

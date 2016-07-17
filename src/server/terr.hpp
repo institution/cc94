@@ -5,7 +5,7 @@
 #include "biome.hpp"
 #include "objs.hpp"
 #include "unit.hpp"
-#include "nation.hpp"
+#include "control.hpp"
 
 namespace col{
 
@@ -49,12 +49,14 @@ namespace col{
 		Biome biome{BiomeDefault};
 		Phys phys{PhysNone};
 		
-		vector<Unit*> units;
+		using Units = vector<Unit*>;
+		Units units;
+		
 		Colony * colony{nullptr};
 		
 		Vision vision{0};
 		Vision discovered{0};
-
+		
 		explicit Terr(Alt const& alt = AltDefault, Biome const& biome = BiomeDefault, Phys const& phys = PhysNone):
 			biome(biome), phys(phys), alt(alt)
 		{}
@@ -68,24 +70,25 @@ namespace col{
 			vision = 0;	
 		}
 		
-		void mark_vision(Nation::Id id) {
+		void mark_vision(Control id) {
 			vision |= (Vision(1) << id);
 			discovered |= (Vision(1) << id);
 		}
 
-		void set_vision(Nation::Id id, bool val) {
+		void set_vision(Control id, bool val) {
 			vision |= (Vision(1) << id);
 		}
 		
-		bool get_discovered(Nation::Id id) const {
+		bool get_discovered(Control id) const {
 			return discovered & (Vision(1) << id);
 		}
 				
-		bool get_vision(Nation::Id id) const {
+		bool get_vision(Control id) const {
 			return vision & (Vision(1) << id);
 		}
 
-
+		Units const& get_units() const { return units; }
+		Units & get_units() { return units; }
 
 		void add(Unit & u) {
 			units.push_back(&u);

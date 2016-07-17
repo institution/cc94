@@ -13,6 +13,46 @@ namespace col {
 	};*/
 
 
+
+	template<class X>
+	struct Xs {		
+		using S = vector<X>;
+		
+		S s;		
+		
+		Xs() = default;
+		Xs(size_t N) {
+			s.reserve(N);
+		}
+		
+		template<class... A>		
+		X & create(A&&... args) 
+		{
+			s.emplace_back(std::forward<A>(args)...);
+			return s.at(s.size() - 1);
+		}
+		
+		void add(X const& x) {
+			s.push_back(x);
+		}
+
+		bool sub(X const& x) {
+			for (auto i = s.begin(); i != s.end(); ++i) {
+				if (*i == x) {
+					s.erase(i);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		void clear() { s.clear(); }
+		
+		typename S::iterator begin() { return s.begin(); }		
+		typename S::iterator end() { return s.end(); }		
+		typename S::size_type size() const { return s.size(); }
+	};
+
 	struct Register {
 		struct Ca {
 			Item item;
@@ -123,6 +163,8 @@ namespace col {
 	};
 
 	using Store = Storage;
+	
+	
 
 }
 

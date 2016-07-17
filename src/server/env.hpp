@@ -8,9 +8,9 @@
 
 
 #include "core.hpp"
-#include "inter.hpp"
 #include "prof.hpp"
 #include "base.hpp"
+#include "faction.hpp"
 
 namespace col{
 
@@ -24,11 +24,11 @@ namespace col{
 
 	// game event like: "Colony Abc builds Warehouse"
 	struct Msg{
-		Nation const* nation{nullptr};
+		Faction const* nation{nullptr};
 		Terr const* terr{nullptr};
 		string msg{""};
 
-		Msg(Nation const& p, Terr const& t, string const& msg):
+		Msg(Faction const& p, Terr const& t, string const& msg):
 			nation(&p), terr(&t), msg(msg)
 		{}
 
@@ -106,7 +106,9 @@ namespace col{
 		// turn system
 		TurnNo turn_no{0};
 		TurnNo turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
-		Nation::Id cpid{0}; // current nation
+		
+		Control current_control{ControlNone}; // current faction
+		
 		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
 		// misc non game state
@@ -130,7 +132,7 @@ namespace col{
 		void clear_all() {
 			clear_units();
 			clear_colonies();
-			clear_nations();
+			clear_factions();
 		}
 
 		void clear_misc() {
@@ -151,10 +153,10 @@ namespace col{
 		}*/
 
 		/// for visible unit
-		void for_unit(Nation const& nation, std::function<void(Unit const&)> block) {			
+		void for_unit(Control cc, std::function<void(Unit const&)> block) {			
 			for (auto & p: units) 
 			{				
-				if (has_vision(nation, p.second.get_terr())) {
+				if (has_vision(cc, p.second.get_terr())) {
 					block(p.second);
 				}
 			}
@@ -174,75 +176,35 @@ namespace col{
 			return turn_no;
 		}
 
-		bool has_control(Nation const& nat, Unit const& unit) {
-			return nat.id == unit.nation->id;
+		bool has_control(Control control, Unit const& unit) {
+			return control == unit.get_control();
 		}
 
 
-
-		void apply(inter::start a) {
-			start();
-			//notify_effect(a);
-		}
-
-		void apply(inter::activate a) {
-
-		}
-
-
-		
-		
-		Nation const* get_current_nation_p() const {
-			if (!in_progress()) {
-				return nullptr;
-			}
-			return &nations.at(cpid);
-		}
-
-		Nation const& get_current_nation() const 
+		bool has_current_control() const 
 		{
-			if (not in_progress()) {
-				throw Error("game in regress: no current nation");
-			}
-			return nations.at(cpid);
+			return current_control != ControlNone;			
 		}
 		
-		Nation & get_current_nation() {
-			if (not in_progress()) {				
-				throw Error("game in regress: no current nation");
+		Control get_current_control() const
+		{
+			return current_control;
+			/*
+			auto p = factions.find(current_control);
+			if (p != factions.end()) {
+				return (*p).second.get_control();
 			}
-			return nations.at(cpid);
-		}
-
-		Env& set_current_nation(Nation const& p) {
-			auto it = nations.find(p.id);
-			if (it == nations.end()) {
-				throw Error("no such nation");
-			}
-			cpid = p.id;
-			return *this;
+			else {
+				return ControlNone;
+			}*/
 		}
 
 
-		void start() {
-			//if (nations.size() < 1) {
-			//	throw Error("need at least one nation to start game");
-			//}
-
-			state = StatePlay;
-
-
-			cpid = 0;
-			while (nations.find(cpid) == nations.end()) {
-				if (cpid > 100) {   // TODO: pfff...
-					throw Error("UNEXPECTED ERROR: cannot find nation");
-				}
-				++cpid;
-			}
-
-
+		void set_current_control(Control cc) {
+			current_control = cc;
 		}
-
+	
+		
 
 		//Storage & get_store(Unit & x) { return x.store; }
 		Storage & get_store(Colony & x) { return x.store; }
@@ -262,24 +224,24 @@ namespace col{
 			get_store(t).set(item, num);
 		}
 
-		void load_cargo(Unit & u, Item item, Amount want_num) {
+		Res load_cargo(Unit & u, Item item, Amount want_num) {
 			auto & t = get_terr(u);
 			auto & st = get_store(t);
 
 			auto terr_num = st.get(item);
 			Amount free_num = u.get_space_left();
 
-			if (free_num < 0) {
-				throw Error("ykhm; free_space=%||", free_num);
-			}
-
+			assert(free_num >= 0);
+			
 			auto mod_num = std::min({terr_num, free_num, want_num});
 
 			unit_set_item(u, item, u.get(item) + mod_num);
 			terr_set_item(t, item, terr_num - mod_num);
+			
+			return ResOk;
 		}
 
-		void unload_cargo(Unit & u, Item item, Amount want_num) {
+		Res unload_cargo(Unit & u, Item item, Amount want_num) {
 			auto & t = get_terr(u);
 			auto & st = get_store(t);
 
@@ -289,21 +251,29 @@ namespace col{
 
 			unit_set_item(u, item, unit_num - mod_num);
 			terr_set_item(t, item, st.get(item) + mod_num);
+			
+			return ResOk;
+		}
+
+		
+		Faction * get_current_faction() {
+			auto c = get_current_control();
+			if (c != ControlNone) {
+				return & get<Faction>(c);
+			}
+			return nullptr;			
 		}
 
 
-		void apply(inter::load_cargo const& a) {
-			auto & u = get<Unit>(a.unit_id);
-
-			if (a.num > 0) {
-				load_cargo(u, a.item, a.num);
+		Res move_cargo(Unit & u, Item item, Amount num) {
+			if (num > 0) {
+				return load_cargo(u, item, num);
 			}
-			else if (a.num < 0)
-				unload_cargo(u, a.item, -a.num);
+			else if (num < 0)
+				return unload_cargo(u, item, -num);
 			else {
-
+				return ResOk;  // zero moved
 			}
-
 		}
 
 
@@ -337,14 +307,6 @@ namespace col{
 
 
 
-		/*
-		void activate_all() {
-			for (auto& p: nations) {
-				if (auto u = p.second.get_player()) {
-					u->apply_inter(inter::activate(), *this);
-				}
-			}
-		}*/
 
 
 
@@ -372,9 +334,10 @@ namespace col{
 			// basket sort fields/builds by produced item
 			array<vector<F*>, j-i> ws;
 
-			for (auto& wp: c.get_cont<F>()) {
+			for (auto& wp: c.get_cont<F>()) 
+			{
 				auto v = wp.get_proditem();
-				if (v) { // may produce None
+				if (v != ItemNone) { // may produce None
 					if (v < i or j <= v) {
 						throw Error("produced item out of range");
 					}
@@ -396,8 +359,9 @@ namespace col{
 			
 		}
 
-		string get_nation_name(Nation::Id nation_id) const {
-			return this->get_nation(nation_id).get_name();
+		
+		bool can_construct(Build const& b) const {
+			return b.get_proditem() == ItemHammers;			
 		}
 		
 		
@@ -453,12 +417,16 @@ namespace col{
 			*/
 
 			// new colonists creation
-			if (p and st.get(ItemFood) >= 100) {
-				st.sub(ItemFood, 100);
-				
-				init(get<UnitType>(1), t, *p);
-				
-
+			
+			auto control = get_control(t);
+			
+			if (control != ControlNone and st.get(ItemFood) >= 100) 
+			{
+				st.sub(ItemFood, 100);				
+				put(
+					t,
+					create<Unit>(get<UnitType>(1), control)
+				);
 			}
 
 			// decay of non-storageable resources
@@ -541,8 +509,8 @@ namespace col{
 		}*/
 
 
-		bool has_vision(Nation const& f, Terr const& t) {
-			return t.get_vision(f.id);
+		bool has_vision(Control c, Terr const& t) {
+			return t.get_vision(c);
 		}
 
 		
@@ -559,15 +527,7 @@ namespace col{
 
 		}
 
-		/*void apply(inter::load const& a) {
-
-			std::istringstream ar(a.data);
-
-			read(ar, *this);
-
-			//notify_effect(a);
-		}*/
-
+		
 		Env & fill(Terr const& t) {
 
 			for (Coord j = 0; j < h; ++j) {
@@ -633,10 +593,10 @@ namespace col{
 		}
 
 
-		int get_transport_space(Terr const& dest, Nation const& nation) const {
+		/*int get_transport_space(Terr const& dest, Control control) const {
 			int space = 0;
 			for (auto& p: dest.units) {
-				if (p->get_nation() == nation) {
+				if (p->get_control() == control) {
 					space += p->get_space_left();
 					if (p->transported) {
 						space -= p->get_size();
@@ -644,14 +604,17 @@ namespace col{
 				}
 			}
 			return space;
+		}*/
+
+		bool can_load(Unit const& transport, Unit const& passenger) const 
+		{
+			assert(0);
 		}
 
 		Time get_movement_cost(Terr const& dest, Terr const& orig, Travel const&) const;
 
 
-		bool has_transport(Terr const& dest, Unit const& u) const {
-			return get_transport_space(dest, u.get_nation()) >= u.get_size();
-		}
+		
 
 
 		bool has_tools(Unit const& u) {
@@ -689,7 +652,23 @@ namespace col{
 		
 		
 
-		Res move_unit(int8 dx, int8 dy, Unit & u) {
+		
+		Unit * find_transport(Terr const& terr, Unit const& passenger) 
+		{
+			for (auto * transport: terr.get_units())
+			{
+				if (transport->can_add(passenger)) {
+					return transport;
+				}
+			}
+			return nullptr;			
+		}
+
+
+		
+
+		
+		Res move_unit(Unit & u, int8_t dx, int8_t dy) {
 			/// Move/board unit on adjacent square/ship
 
 			if (dx == 0 and dy == 0) {
@@ -719,21 +698,22 @@ namespace col{
 
 			auto & dest = get_terr(dest_coords);
 
-			bool transported = 0;
-
-			if (not compatible(u.get_travel(), dest.get_travel())) {
-				if (has_transport(dest, u)) {
-					transported = 1;
-				}
-				else {
+			Unit * transport = nullptr;
+			if (not compatible(u.get_travel(), dest.get_travel())) 
+			{
+				transport = find_transport(dest, u);
+				
+				if (transport == nullptr) {			
 					set_error("cannot travel through this terrain");
 					return ResErr;
 				}
 			}
-
+			
+			
 			// dynamic check
-			Nation * cp = get_control(dest);
-			if (cp and cp->id != get_current_nation().id) {
+			
+			auto dc = get_control(dest);
+			if (dc != ControlNone and dc != u.get_control()) {
 				set_error("destination occupied by enemy");
 				return ResErr;
 			}
@@ -743,70 +723,36 @@ namespace col{
 			// cost to move
 			Time time_cost = TimeInf;
 
-			if (transported or u.transported) {
-				// board/unboard from/to land
+			if (transport) {
 				time_cost = TimeUnit;
 			}
 			else {
 				time_cost = get_move_cost(dest, orig, u);
 			}
-
+			
 			if (time_cost <= 0) {
-				throw Error("time_cost == 0???");
+				ext::fail("time_cost == 0???");
 			}
 
 
 			if (run_map_task(u, time_cost)) {
 				t_move(dest, u);
 				update_vision(u);   // only main unit, transported units dont have vision 
-
-				/*
-				notify_effect(orig,
-					inter::take_unit(get_id(u))
-				);
-
-				notify_effect(dest,
-					inter::set_unit(get_id(u), write_string(*this, u))
-				);
-				*/
-
-				u.transported = transported;
-
-				auto space = u.get_space_left();
-				for (auto& p: orig.units) {
-					if (space < 100) break;
-					if (p->transported) {
-						auto & u2 = *p;
-						t_move(dest, u2);
-
-						/*
-						notify_effect(orig,
-							inter::take_unit(get_id(u2))
-						);
-
-						notify_effect(dest,
-							inter::set_unit(get_id(u2), write_string(*this, u2))
-						);
-						*/
-
-						space -= 100;
-					}
-				}
-
-				record_action();
-
 				return ResOk; // success
 			}
-
-			record_action();
 			return ResCont; // try next turn
 
 		}
 
-		Res move_unit(Dir dir, Unit & u) {
+		Res move_unit(Unit & u, Dir dir) {
 			auto v = dir2vec(dir);
-			return move_unit(v[0], v[1], u);
+			return move_unit(u, v[0], v[1]);
 		}
+		
+		Res move_unit(Unit & u, v2c v) {
+			return move_unit(u, v[0], v[1]);
+		}
+
 
 
 		bool has_defender(Coords const& pos) const {
@@ -1039,12 +985,12 @@ namespace col{
 
 
 		// calc some kind of score
-		float get_result(Nation::Id pid) {
+		float get_result(Control pid) {
 
 			// % of units
 			float score = 0, total = 0;
 			for (auto& p: units) {
-				if (p.second.get_nation().id == pid) {
+				if (p.second.get_control() == pid) {
 					score += 1;
 				}
 				total += 1;
@@ -1083,14 +1029,7 @@ namespace col{
 			u.time_left = tp;
 		}
 
-		/*
-		void apply(inter::set_tp const& e) {
-			auto & u = get<Unit>(e.unit_id);
-			set_tp(u, e.num);
-			//notify_effect(get_terr(u), e);
-		}
-		 */
-
+		
 		/// How much of 'item can be produced by 'unit in 'build
 		Amount get_prod(Build const& build, Unit const& unit, Item const& item) const;
 		
@@ -1141,9 +1080,6 @@ namespace col{
 			return ResCont;  // try next turn
 		}
 
-		void apply(inter::build_colony const& a) {
-			colonize(get<Unit>(a.unit_id), "");
-		}
 
 
 		bool can_make(Build const& build, BuildType const& bt) const;
@@ -1170,31 +1106,7 @@ namespace col{
 						
 		}
 		
-		void apply(inter::construct_build const& a) {
-			auto& t = get_terr(a.terr_id);
-			
-			construct(
-				t.get_colony().get_build(a.build_id),
-				get<BuildType>(a.buildtype_id)
-			);			
-		}
 		
-		void apply(inter::construct_unit const& a) {
-			auto& t = get_terr(a.terr_id);
-			
-			construct(
-				t.get_colony().get_build(a.build_id),
-				get<UnitType>(a.unittype_id)
-			);			
-		}
-
-		void put_build(Terr & t, int slot, BuildType & btype) {
-			t.get_colony().builds.at(slot) = Build(btype);
-		}
-
-		void put_build(Terr & t, int slot, BuildType::Id const& btype_id) {
-			put_build(t, slot, get<BuildType>(btype_id));
-		}
 
 
 		//vector<BuildType*> const& get_allowed_builds(Terr const& t, int slot_id) {
@@ -1241,21 +1153,14 @@ namespace col{
 			return vec2dir(get_coords(to) - get_coords(from));
 		}
 
-		Nation const* get_control(Terr const& terr) const {
+		Control get_control(Terr const& terr) const {
 			if (terr.units.size()) {
-				return &terr.units.at(0)->get_nation();
+				return terr.units.at(0)->get_control();
 			}
-			return nullptr;
+			return ControlNone;
 		}
 
-		Nation * get_control(Terr const& terr) {
-			if (terr.units.size()) {
-				return &terr.units.at(0)->get_nation();
-			}
-			return nullptr;
-		}
-
-
+		
 		int consume_part(Terr & t, Item const& item, Amount const& num) {
 			Store & st = get_store(t);
 			auto real = std::min(st.get(item), num);
@@ -1276,62 +1181,40 @@ namespace col{
 		
 		void resolve_construction(Terr & terr, Workplace & f);
 
-		bool has_control(Terr const& terr, Nation const& p) const {
-			Nation const* c = get_control(terr);
-			return c and *c == p;
+		bool has_control(Terr const& terr, Control control) const {
+			auto c = get_control(terr);
+			return c != ControlNone and c == control;
 		}
 
 
 		// order
-		void set_proditem_field(Nation const& p, Terr & terr, Field::Id field_id, Item const& item) {
-			get_field(terr, field_id, p).set_proditem(item);
+		Res set_proditem_field(Terr & terr, Field::Id field_id, Item const& item) {
+			if (has_field(terr, field_id))
+			{
+				get_field(terr, field_id).set_proditem(item);
+				return ResOk;
+			}
+			set_error("cannot set proditem: no such field");
+			return ResErr;
 		}
 
 
-		void set_proditem_field(Terr & terr, Field::Id field_id, Item const& item) {
-			get_field(terr, field_id).set_proditem(item);
+
+
+
+
+		bool has_field(Terr const& terr, uint8_t field_id) const {
+			return terr.has_colony();
+		}
+		
+		Field const& get_field(Terr const& terr, uint8_t field_id) const {			
+			return terr.get_colony().fields.at(field_id);			
 		}
 
-
-
-
-
-		Field const& get_field(Terr const& terr, int field_id) const {
-			if (terr.has_colony()) {
-				return terr.get_colony().fields.at(field_id);
-			}
-			else {
-				throw Error("no colony here");
-			}
+		Field & get_field(Terr & terr, uint8_t field_id) {
+			return terr.get_colony().fields.at(field_id);			
 		}
-
-		Field & get_field(Terr & terr, int field_id) {
-			if (terr.has_colony()) {
-				return terr.get_colony().fields.at(field_id);
-			}
-			else {
-				throw Error("no colony here");
-			}
-		}
-
-		Field const& get_field(Terr const& terr, int const& field_id, Nation const& p) const {
-			if (has_control(terr, p)) {
-				return get_field(terr, field_id);
-			}
-			else {
-				throw Error("this nation has no control here");
-			}
-		}
-
-		Field & get_field(Terr & terr, int const& field_id, Nation const& p) {
-			if (has_control(terr, p)) {
-				return get_field(terr, field_id);
-			}
-			else {
-				throw Error("this nation has no control here");
-			}
-		}
-
+		
 		Res work_none(Unit & u) {
 			if (u.workplace) {
 				u.workplace->sub(u);
@@ -1353,8 +1236,14 @@ namespace col{
 			u.workplace = &b;
 		}
 
+		void put(Build & b, Unit & u) {
+			work_none(u);
+			b.add(u);
+			u.workplace = &b;
+		}
 
-		void init(Terr & t, Colony & c) {
+
+		void put(Terr & t, Colony & c) {
 			assert(t.colony == nullptr);
 			assert(c.terr == nullptr);
 			t.set_colony(c);
@@ -1398,116 +1287,85 @@ namespace col{
 			}			
 		}
 		
-		Nation::Id get_control_id(Unit const& u) const { 
-			return u.get_nation().id; 			
-		}
-
-
 
 
 		void update_vision(Unit const& u) {
-			if (not u.nation) return;
+			if (not u.has_control()) {
+				return;
+			}
 			
 			auto p = get_coords(u);
-			auto id = get_control_id(u);
+			auto id = u.get_control();
 			
-			Coord r = 2;
-			auto dim = get_dim();
-			
-			auto i0 = std::max<Coord>(0, p[0]-r);
-			auto i1 = std::min<Coord>(p[0]+r, dim[0]-1);
-			
-			auto j0 = std::max<Coord>(0, p[1]-r);
-			auto j1 = std::min<Coord>(p[1]+r, dim[1]-1);
-			
-			for (Coord j = j0; j <= j1; ++j)
-			{
-				for (Coord i = i0; i <= i1; ++i)
+			if (0 < id and id <= 32) {
+				uint32_t vid = 1 << (id - 1);
+				
+				Coord r = 2;
+				auto dim = get_dim();
+				
+				auto i0 = std::max<Coord>(0, p[0]-r);
+				auto i1 = std::min<Coord>(p[0]+r, dim[0]-1);
+				
+				auto j0 = std::max<Coord>(0, p[1]-r);
+				auto j1 = std::min<Coord>(p[1]+r, dim[1]-1);
+				
+				for (Coord j = j0; j <= j1; ++j)
 				{
-					get_terr({i,j}).mark_vision(id);
-				}				
+					for (Coord i = i0; i <= i1; ++i)
+					{
+						get_terr({i,j}).mark_vision(vid);
+					}				
+				}
+				
+			}
+			else {
+				print(std::cerr, "WARNING: update_vision: id=%||; not in range\n", id);
 			}
 		}
 		
 		
 
 
-		void init(Terr & t, Unit & u) {
+		void put(Terr & t, Unit & u) {
 			t.add(u);
 			u.terr = &t;
 			update_vision(u);
 		}
 		
-		void init(UnitType const& ut, Terr & t, Nation & nat) {
-			init(t, create<Unit>(ut, nat));			
+		bool has_build(Terr & terr, Build::Id build_id) {
+			return terr.has_colony() and 0 <= build_id and build_id <= 15;
 		}
 		
-
-
 		Build & get_build(Terr & terr, int build_id) {
-			if (terr.has_colony()) {
-				return terr.get_colony().builds.at(build_id);
-			}
-			else {
-				throw Error("no colony here");
-			}
+			return terr.get_colony().builds.at(build_id);			
 		}
-
-		Build & get_build(Terr & terr, int build_id, Nation const& p) {
-			if (has_control(terr, p)) {
-				return get_build(terr, build_id);
-			}
-			else {
-				throw Error("this nation has no control here");
-			}
-		}
-
-
 
 		Res work_field(Field::Id field_id, Unit & u) {
 			Terr & terr = get_terr(u);
-			auto& f = get_field(terr, field_id, u.get_nation());
-			return work_workplace(f, u);			
+			if (has_field(terr, field_id))
+			{
+				auto& f = get_field(terr, field_id);
+				return work_workplace(f, u);
+			}
+			else {
+				set_error("cannot work: no such field");
+				return ResErr;
+			}
 		}
 
 		Res work_build(Build::Id build_id, Unit & u) {
 			Terr & terr = get_terr(u);
-			auto& f = get_build(terr, build_id, u.get_nation());
-			return work_workplace(f, u);			
+		
+			if (has_build(terr, build_id)) {
+				auto& f = get_build(terr, build_id);
+				return work_workplace(f, u);
+			}
+			else {
+				set_error("no such building here");
+				return ResErr;
+			}
 		}
 
-
-
-		void apply(inter::work_build const& a) {
-			work_build(a.build_id, get<Unit>(a.unit_id));
-		}
-
-		void apply(inter::work_field const& a) {
-			work_field(a.field_id, get<Unit>(a.unit_id));
-		}
-
-		void apply(inter::work_none const& a) {
-			work_none(get<Unit>(a.unit_id));
-		}
-
-
-
-
-
-		void apply(inter::prod_field const& a) {
-			auto & n = get_current_nation();
-			auto & t = get_terr(a.terr_id);
-			set_proditem_field(n, t, a.field_id, a.item_id);
-			//notify_effect(t, a);
-		}
-
-		void apply(inter::prod_build const& a) {
-			throw Error("not yet used");
-			/*auto & n = get_current_nation();
-			auto & t = get_terr(a.terr_id);
-			set_proditem_build(n, t, a.build_id, a.item_id);
-			notify_effect(t, a);*/
-		}
 
 
 
@@ -1533,32 +1391,27 @@ namespace col{
 
 
 
-		bool ready(Nation const& p) {
-
-			if (get_current_nation().id != p.id) {
-				throw Error("not your turn");
+		Res ready() 
+		{
+			if (factions.size() == 0) {
+				current_control = ControlNone;
+				turn();
 			}
-
-
-			++cpid;
-			while (nations.find(cpid) == nations.end()) {
-				if (cpid > 31) {
-					turn();     // TURN HERE
-					cpid = 0;
-				}
-				else {
-					++cpid;
-				}
+			else {
+				do {
+				
+					current_control += 1;	
+					
+					if (current_control > 31) {
+						// TURN HERE
+						turn();     
+						current_control = 0;
+					}
+					
+				} while (factions.find(current_control) == factions.end());
 			}
-
-			record_action();
-
-			/*if (auto u = get_current_nation().get_player()) {
-				u->apply_inter(inter::activate(), *this);
-			}*/
-
-
-			return 1;
+			
+			return ResOk;
 		}
 
 
@@ -1595,10 +1448,6 @@ namespace col{
 			this->turn_no = turn_no;
 		}
 
-		void set_current_nation(Nation::Id const& nation_id) {
-			set_current_nation(get<Nation>(nation_id));
-		}
-
 		void set_biome(Terr::Id terr_id, Biome const& biome) {
 			get<Terr>(terr_id).set_biome(biome);
 		}
@@ -1613,34 +1462,7 @@ namespace col{
 
 
 
-		void apply(inter::ready const& a) {
-			ready(get_current_nation());
-		}
 
-		void toogle_board(Unit & u) {
-			u.transported = !u.transported;
-			//notify_effect(get_terr(u), inter::toogle_board(get_id(u)));
-		}
-
-		void apply(inter::toogle_board const& a) {
-			toogle_board(get<Unit>(a.unit_id));
-		}
-
-
-
-		void apply(inter::move_unit const& a) {
-			move_unit(a.dx, a.dy, get<Unit>(a.unit_id));
-		}
-
-
-		void apply(inter::improve const& a) {
-			improve(get<Unit>(a.unit_id), a.phys_id);
-		}
-
-
-		void apply(inter::destroy const& a) {
-			a_destroy(get<Unit>(a.unit_id), a.phys_id);
-		}
 
 		void sub_item(Terr & t, Item const& item, Amount num) {
 			Store & st = get_store(t);
@@ -1658,35 +1480,14 @@ namespace col{
 
 		
 
-		void set_owner(const Unit::Id &icon_id, const Nation::Id &nation_id) {
-			units.at(icon_id).nation = &nations.at(nation_id);
+		void set_owner(Unit::Id & uid, Control control) {
+			units.at(uid).set_control(control);
 			++mod;
 		}
 
-		Nation & get_nation(Nation::Id const& id) {
-			return nations.at(id);
+		Faction & get_faction(Faction::Id id) {
+			return get<Faction>(id);
 		}
-
-		const Nation& get_nation(const Nation::Id &id) const {
-			auto p = nations.find(id);
-			if (p != nations.end()) {
-				return (*p).second;
-			}
-			else {
-				throw std::runtime_error(format("no nation with id=%||", id));
-			}
-		}
-
-		void del_nation(const Nation::Id &id) {
-			nations.erase(id);
-			++mod;
-		}
-
-		Nation::Id next_key_nation() {
-			return nations.size();
-		}
-
-		void apply_inter(inter::Any const& a, uint32 auth);
 
 
 		
@@ -1695,28 +1496,6 @@ namespace col{
 
 	
 	
-
-	struct Apply: boost::static_visitor<void>{
-		Env & env;
-		Apply(Env & e): env(e) {}
-
-
-		template <class T>
-		void operator()(T const& t) {
-			env.apply(t);
-		}
-
-	};
-
-
-	inline void Env::apply_inter(inter::Any const& a, uint32 auth) {
-		if (auth != get_current_nation().auth) {
-			throw Error("not your turn");
-		}
-
-		Apply ap(*this);
-		boost::apply_visitor(ap, a);
-	}
 
 
 

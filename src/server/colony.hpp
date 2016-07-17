@@ -45,7 +45,9 @@ namespace col {
 		void sub_field(Field const& f) { fields.erase(find(fields.begin(), fields.end(), f)); }
 
 
+		//Xs<Build> builds{16};
 		cont<Build>::type builds;
+		
 
 		Build * select_place_for(BuildType const& bt)
 		{		

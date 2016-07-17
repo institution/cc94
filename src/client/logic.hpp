@@ -23,13 +23,13 @@ namespace col{
 			return u.get_time_left() and !u.is_working();
 		}
 
-		inline
+		/*inline
 		bool owned(Unit const& u, Nation const& p) {
 			return u.get_nation() == p;
-		}
+		}*/
 
 
-		Terr * get_idle_colony(Env const& env, Nation const& nation);
+		
 
 		inline bool is_constructor(Build const& b) {
 			return b.get_proditem() == ItemHammers;			
@@ -52,9 +52,7 @@ namespace col{
 
 
 
-		Unit const* get_next_to_move(Env const& env, Nation const& p, Unit const* cur=nullptr);
-		Unit::Id get_next_to_move_id(Env const& env, Nation const& pl, Unit::Id cur_id=0);
-
+		
 		Unit const* find_unit(Env const& env, Unit const* cur, function<bool(Unit const&)> func);
 		Unit * find_unit(Env & env, Unit * cur, function<bool(Unit const&)> func);
 

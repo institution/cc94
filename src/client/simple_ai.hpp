@@ -7,7 +7,6 @@
 #include "../ext/format.hpp"
 #include "env.hpp"
 #include "player.hpp"
-#include "inter.hpp"
 #include "agent.hpp"
 #include "random_module.hpp"
 #include "exts.hpp"
@@ -23,7 +22,8 @@ namespace simple_ai{
 	
 	using col::Agent;
 	using col::Env;
-	using col::Nation;
+	using col::Faction;
+	using col::Control;
 	using col::Unit;
 	using col::Amount;
 	using col::Terr;
@@ -86,9 +86,8 @@ namespace simple_ai{
 		RandomModule rm;
 
 		Env & env;
-		Nation & nation;
-		Nation::Id nation_id;
-		//Nation::Auth auth{0};
+		
+		Control cc;
 		
 		ext::darray2<float, Coord> val;
 		
@@ -106,14 +105,13 @@ namespace simple_ai{
 		Class get_class() const override { return ClassSimpleAi; }
 		
 		string get_name() const override {
-			return format("Simple AI (%||)", nation.get_name());
+			return format("Simple AI (%||)", env.get<Faction>(cc).get_name());
 		}
 
 		bool step() override;
 		
-		SimpleAi(Env & env, Nation & nation): env(env), nation(nation) 
-		{
-			nation_id = nation.id;			
+		SimpleAi(Env & env, Control cc): env(env), cc(cc)
+		{			
 		}
 
 
@@ -124,8 +122,8 @@ namespace simple_ai{
 		void recalc_tile_exts();
 
 		
-		bool has_control(Unit & unit) const { return env.has_control(nation, unit); }		
-		bool has_control(Terr & terr) const { return env.has_control(terr, nation); }
+		bool has_control(Unit & unit) const { return env.has_control(cc, unit); }		
+		bool has_control(Terr & terr) const { return env.has_control(terr, cc); }
 		
 		UnitExt & get_unit_ext(Unit & unit) { return ues.get(unit.id); }
 		UnitExt const& get_unit_ext(Unit const& unit) { return ues.get(unit.id); }
@@ -150,21 +148,19 @@ namespace simple_ai{
 		float rank_colony_tile(v2c pos, float ccolo, float cfood, float cable, float cdist);
 		
 
-		bool has_nation() const {
-			return nation_id != 0;
+		bool has_control() const {
+			return cc != ControlNone;
 		}
 		
-		Nation & get_nation() { return env.get_nation(nation_id); }
-		Nation const& get_nation() const { return env.get_nation(nation_id); }
-		
-		
-		Color get_color() const {
-			if (has_nation()) {
-				auto c = get_nation().color;
-				return {c.r,c.g,c.b,255};
-			}
-			return {255,0,0,255};
+		Control get_control() const {
+			return cc;
 		}
+		
+		//Nation & get_nation() { return env.get_nation(nation_id); }
+		//Nation const& get_nation() const { return env.get_nation(nation_id); }
+		
+		
+		
 		
 
 		void sync();

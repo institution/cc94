@@ -6,7 +6,6 @@
 #include "base.hpp"
 #include "dir.hpp"
 #include "objs.hpp"
-#include "nation.hpp"
 #include "csv.hpp"
 #include "terr.hpp"
 #include "build.hpp"
@@ -16,6 +15,7 @@
 #include "field.hpp"
 #include "type_name.hpp"
 #include "colony.hpp"
+#include "faction.hpp"
 
 namespace col {
 
@@ -23,7 +23,7 @@ namespace col {
 	ENABLE_TYPENAME(UnitType);
 	ENABLE_TYPENAME(Build);
 	ENABLE_TYPENAME(BuildType);
-	ENABLE_TYPENAME(Nation);
+	ENABLE_TYPENAME(Faction);
 	ENABLE_TYPENAME(Colony);
 	ENABLE_TYPENAME(Terr);
 
@@ -40,7 +40,7 @@ namespace col {
 	//using Builds = unordered_map<Build::Id, Build>;
 	using Colonies = unordered_map<Colony::Id, Colony>;
 	// using Nations = unordered_map<Nation::Id, Nation>;
-	using Nations = unordered_map<Nation::Id, Nation>;
+	using Factions = unordered_map<Faction::Id, Faction>;
 
 
 
@@ -53,7 +53,7 @@ namespace col {
 		shared_ptr<UnitTypes> uts;
 
 		// state
-		Nations nations;
+		Factions factions;
 		Colonies colonies;
 		Units units;
 
@@ -79,14 +79,14 @@ namespace col {
 		~Core() {
 			clear_units();
 			clear_colonies();
-			clear_nations();
+			clear_factions();
 		}
 
 
 		Unit::Id get_id(Unit const& u) const { return u.id; }
 		Unit::Id get_id(Unit const* u) const { return (u) ? (u->id) : (Unit::Id(0)); }
 		UnitType::Id get_id(UnitType const& ut) const { return ut.id; }
-		Nation::Id get_id(Nation const& n) { return n.id; }
+		Faction::Id get_id(Faction const& n) { return n.id; }
 
 		
 		template<class Type>
@@ -131,8 +131,15 @@ namespace col {
 		template <typename T>
 		Terr const& get_terr(T const& u) const;
 
+		template<class... A> inline
+		Faction & create_faction(A&&... args);
 		
-
+		template <typename T> inline
+		T * opt(typename T::Id const& id);
+	
+		template <typename T> inline
+		T const* opt(typename T::Id const& id) const;
+	
 
 
 		void resize(Coords const& dim);
@@ -146,11 +153,11 @@ namespace col {
 
 		void free(Unit & u);
 		void free(Colony & c);
-		void free(Nation & c);
+		void free(Faction & c);
 
 		void clear_units();
 		void clear_colonies();
-		void clear_nations();
+		void clear_factions();
 
 
 	};
@@ -226,11 +233,27 @@ namespace col {
 
 	}
 
+	
+	template<class... A> inline
+	Faction & Core::create_faction(A&&... args) 
+	{		
+		auto id = Faction::Id(factions.size());
+		
+		auto p = factions.emplace(piecewise_construct,
+			forward_as_tuple(id),
+			forward_as_tuple(id, std::forward<A>(args)...)
+		).first;
 
+		return (*p).second;
+	}
+
+	
+	
 	template<class T, class... A> inline
 	T& Core::create(A&&... args) {
 		uint32 id = get_next_id();
-		auto& ts = get_cont<T>();
+		auto & ts = get_cont<T>();
+		
 		auto p = ts.emplace(piecewise_construct,
 			forward_as_tuple(id),
 			forward_as_tuple(id, std::forward<A>(args)...)
@@ -243,6 +266,28 @@ namespace col {
 	void Core::remove(typename T::Id const& id) {
 		get_cont<T>().erase(id);
 	}
+
+	template <typename T> inline
+	T * Core::opt(typename T::Id const& id) {
+		auto & ts = get_cont<T>();
+		auto it = ts.find(id);
+		if (it == ts.end()) {
+			return nullptr;
+		}
+		return &(*it).second;
+	}
+
+
+	template <typename T> inline
+	T const* Core::opt(typename T::Id const& id) const {
+		auto & ts = get_cont<T>();
+		auto it = ts.find(id);
+		if (it == ts.end()) {
+			return nullptr;
+		}
+		return &(*it).second;
+	}
+
 
 	template <typename T> inline
 	T const& Core::get(typename T::Id const& id) const {
@@ -287,7 +332,6 @@ namespace col {
 			u.workplace = nullptr;
 		}
 		u.type = nullptr;
-		u.nation = nullptr;
 	}
 
 	inline void Core::free(Colony & c) {
@@ -297,7 +341,7 @@ namespace col {
 		}
 	}
 
-	inline void Core::free(Nation & c) {
+	inline void Core::free(Faction & c) {
 
 	}
 
@@ -318,12 +362,12 @@ namespace col {
 		colonies.clear();
 	}
 
-	inline void Core::clear_nations() {
+	inline void Core::clear_factions() {
 		// remove all nations; first remove colonies
-		for (auto& p: nations) {
+		for (auto& p: factions) {
 			free(p.second);
 		}
-		nations.clear();
+		factions.clear();
 	}
 
 
@@ -334,8 +378,8 @@ namespace col {
 	template <>	inline Units const& Core::get_cont<Unit>() const { return units; }
 	template <>	inline Colonies & Core::get_cont<Colony>() { return colonies; }
 	template <>	inline Colonies const& Core::get_cont<Colony>() const { return colonies; }
-	template <>	inline Nations & Core::get_cont<Nation>() { return nations; }
-	template <>	inline Nations const& Core::get_cont<Nation>() const { return nations; }
+	template <>	inline Factions & Core::get_cont<Faction>() { return factions; }
+	template <>	inline Factions const& Core::get_cont<Faction>() const { return factions; }
 
 	template <>	inline UnitTypes & Core::get_cont<UnitType>() { return *uts; }
 	template <>	inline UnitTypes const& Core::get_cont<UnitType>() const { return *uts; }

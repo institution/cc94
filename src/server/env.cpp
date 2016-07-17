@@ -336,13 +336,15 @@ namespace col {
 		
 		auto & c = terr.get_colony();
 
-		for (auto & b: c.builds) {				
-			switch (b.get_type_id()) {
-				case BuildSchoolhouse:						
-				case BuildCollege:						
-				case BuildUniversity:
-					resolve_teaching(get_store(c), b, terr);
-					break;						
+		for (auto & b: c.builds) {
+			if (b.type) {
+				switch (b.get_type_id()) {
+					case BuildSchoolhouse:						
+					case BuildCollege:						
+					case BuildUniversity:
+						resolve_teaching(get_store(c), b, terr);
+						break;						
+				}
 			}
 		}
 	}
@@ -467,15 +469,14 @@ namespace col {
 
 					auto nat = get_control(terr);
 
-					if (nat == nullptr) {
+					if (nat == ControlNone) {
 						if (verbose) {
 							print("unit cannot be created because lack of control; pos=%||\n", get_coords(terr));
 						}
 					}
 					else {
 						// TODO: may need to equip with tools
-
-						init(ut, terr, *nat);
+						put(terr, create<Unit>(ut, nat));
 						f.task.reset();
 					}
 
@@ -518,10 +519,9 @@ namespace col {
 
 	}
 
-
 	void Env::init_colony(Terr & t) {
 		auto& c = create<Colony>();
-		init(t, c);
+		put(t, c);
 
 		BuildType::Id const tree1 = 45;
 		BuildType::Id const tree2 = 44;
@@ -597,11 +597,8 @@ namespace col {
 		return false;
 	}
 
-	void Env::equip(Unit & u, UnitType & ut) {
-		if (u.get_nation() != get_current_nation()) {
-			throw Error("not your unit");
-		}
-
+	void Env::equip(Unit & u, UnitType & ut) 
+	{
 		Terr & t = get_terr(u);
 		Store & st = get_store(t);
 

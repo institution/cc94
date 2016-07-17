@@ -28,7 +28,7 @@ namespace col{
 			return ALL_ITEMS;
 		}
 
-		
+		/*
 		Terr * get_idle_colony(Env const& env, Nation const& nation) {
 			for (auto &p: env.get_cont<Colony>()) {
 				
@@ -47,7 +47,7 @@ namespace col{
 			}
 			return nullptr;
 		}
-		
+		*/
 		/*Unit * get_idle_unit(Env const& env, Nation const& nation) {
 			for (auto &p: env.get_cont<Unit>()) {
 				

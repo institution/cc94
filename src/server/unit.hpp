@@ -4,6 +4,8 @@
 #include "storage.hpp"
 #include "makeable.hpp"
 #include "prof.hpp"
+#include "control.hpp"
+#include "faction.hpp"
 
 namespace col{
 
@@ -21,13 +23,13 @@ namespace col{
 		// data
 		string name{""};
 		Id id;
-		uint8 speed{0};  // flat tiles per 1t (TIME_UNIT)
-		uint8 attack{0}; // attack strength
-		uint8 combat{0}; // defense strength
-		uint8 slots{0};
-		uint8 size{0};
-		uint8 icon{0};
-		uint8 travel{0}; // travel flags LAND | SEA
+		uint8_t speed{0};  // flat tiles per 1t (TIME_UNIT)
+		uint8_t attack{0}; // attack strength
+		uint8_t combat{0}; // defense strength
+		uint8_t slots{0};
+		uint8_t size{0};
+		uint8_t icon{0};
+		uint8_t travel{0}; // travel flags LAND | SEA
 		Id base{0};
 		Item item1{ItemNone};
 		Amount num1{0};
@@ -153,7 +155,45 @@ namespace col{
 	struct Build;
 	struct Field;
 
-	using Org = int16_t;
+	
+
+		
+
+	struct Unit;
+
+	
+
+	struct Location {
+		using Type = int8_t;
+		static Type const
+			TypeNone = 0,
+			TypeTerr = 1,
+			TypeUnit = 2,
+			TypeField = 3,
+			TypeBuild = 4;
+	
+		Type type{TypeNone};
+		
+		union {
+			Terr * terr;
+			Unit * unit;
+			Field * field;
+			Build * build;
+			void * any;
+		} value;
+		
+		void set(Terr * terr) { type = TypeTerr; value.terr = terr; }
+		void set(Unit * unit) { type = TypeUnit; value.unit = unit; }
+		void set(Field * field) { type = TypeField; value.field = field; }
+		void set(Build * build) { type = TypeBuild; value.build = build; }
+				
+		Terr * get_terr() { assert(type == TypeTerr); return value.terr; }
+		Unit * get_unit() { assert(type == TypeUnit); return value.unit; }
+		Field * get_field() { assert(type == TypeField); return value.field; }
+		Build * get_build() { assert(type == TypeBuild); return value.build; }
+				
+		void clear() { value.any = nullptr;}
+	};
 
 	struct Unit{
 		using Id = uint32_t;
@@ -161,26 +201,38 @@ namespace col{
 		Id id{0};
 		UnitType const* type{nullptr};
 		
-		Org org{0};   // organization, group, faction
+		Control control{0};   // organization, group, faction
 		
 		uint8_t time_left{TIME_UNIT};
-		bool transported{0};
 		
+		
+		using Units = Xs<Unit*>;
+		Units units;		
 		Storage store;
 
 		// where am I
 		Terr *terr{nullptr};
 		Workplace *workplace{nullptr};
 		
-		// is alive
 		bool in_game{true};
 		
-		Amount space_left{0}; // [t]
-		uint8_t extend{0}; // num of boarded units TODO: need this?
+		using State = int8_t;
+		static State const
+			StateNone = 0,
+			StateAlive = 1,
+			StateDead = 2;
 		
+		State state{StateNone};
+		
+		Amount space_left{0}; // [t]
+
+		
+		Location loc;
 		
 		Prof prof_dir{ProfNone};
 		int8_t prof_num{0};
+
+		//transported{0};
 
 		Terr const& get_terr() const {
 			return *terr;
@@ -248,11 +300,22 @@ namespace col{
 		Unit(
 			Id const& id,
 			UnitType const& type,
-			Org org
+			Control control
 		):
 			id(id),
 			type(&type),
-			org(org),
+			control(control),
+			space_left(type.get_space())
+		{}
+		
+		Unit(
+			Id const& id,
+			UnitType const& type,
+			Faction const& faction
+		):
+			id(id),
+			type(&type),
+			control(faction.get_control()),
 			space_left(type.get_space())
 		{}
 
@@ -265,8 +328,7 @@ namespace col{
 
 			assert(w.terr == nullptr);
 			assert(w.workplace == nullptr);
-			w.type = nullptr;
-			w.nation = nullptr;
+			w.type = nullptr;			
 		}
 
 		Unit(Unit const&) = delete;
@@ -274,14 +336,16 @@ namespace col{
 		~Unit() {
 			assert(terr == nullptr);
 			assert(workplace == nullptr);
-			assert(type == nullptr);
-			assert(nation == nullptr);
+			assert(type == nullptr);			
 		}
 
 		
 		
-		Nation & get_nation() const { return *nation; }
-		Unit & set_nation(Nation * nation) { this->nation = nation; return *this; }
+
+		bool has_control() const { return control != ControlNone; }
+		Control get_control() const { return control; }
+		Unit & set_control(Control c) { this->control = c; return *this; }
+
 
 		UnitType const& get_type() const { return *type; }
 		UnitType::Id const& get_type_id() const { return type->id; }
@@ -290,16 +354,39 @@ namespace col{
 		float get_speed() const { return type->get_speed(); }
 		float get_slots() const { return type->get_slots(); }
 
+		
+		bool can_add(Unit const& p) const {
+			return space_left >= 100;			
+		}
+		
+		void add(Unit & p) {
+			assert(can_add(p));
+			space_left -= 100;			
+			units.add(&p);
+			p.loc.set(this);
+		}		
+		
+		void sub(Unit & p) {
+			if (units.sub(&p)) {
+				space_left += 100;	
+			}	
+		}
+		
+		
+		bool is_transported() const {
+			return loc.type == Location::TypeUnit;
+		}
+                   
 		Amount get_space() const { return type->get_space(); }
-
 		Amount get_space_left() const { return space_left; }
-
-
-		float get_size() const { return type->get_size(); }
+		
+		Amount get_size() const { return type->get_size(); }
+		
+		
 		float get_attack() const { return type->get_attack(); }
 		float get_combat() const { return type->get_combat(); }
-		float get_extend() const { return extend; }
-		bool get_transported() const { return transported; }
+	
+		
 		uint8 const& get_time_left() const { return time_left; }
 		int get_icon() const { return type->icon; }
 		int get_icon_expert() const { return type->icon_expert; }

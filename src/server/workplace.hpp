@@ -42,6 +42,9 @@ namespace col{
 	
 	struct Env;
 
+
+	
+
 	struct Workplace{
 		
 		virtual PlaceType::type place_type() = 0;

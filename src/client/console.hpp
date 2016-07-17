@@ -154,7 +154,7 @@ namespace col {
 		
 		
 		template <class AI>
-		void add_ai(Nation::Id nation_id);
+		void add_ai(Control cc);
 		
 		
 		Marks marks;
@@ -274,10 +274,11 @@ namespace col {
 
 		Mode mode;
 		
-		Nation::Id nation_id{1};
+		// my control code
+		Control mcc{ControlNone};
 		
-		void set_nation_id(Nation::Id id) {
-			nation_id = id;
+		void set_control(Control cc) {
+			mcc = cc;
 		}
 		
 		
@@ -308,21 +309,24 @@ namespace col {
 		}
 
 
-		//Nation * nation{nullptr};
+		
 
-		Color get_color() const {
-			if (nation_id) {
-				auto c = env.get_nation(nation_id).color;
-				return {c.r,c.g,c.b,255};
+		Color get_color() const 
+		{
+			switch (mcc) {
+				case ControlEnglandCol: return {255,0,0,255};
+				case ControlFranceCol: return {0,0,255,255};
+				case ControlSpainCol: return {255,0,255,255};
+				case ControlNetherlandsCol: return {255,255,0,255};
 			}
-			return {255,0,0,255};
+			return {255,0,0,255};			
 		}
 		
 		
 		
 
 		bool has_control(Unit const& unit) const {
-			return editing or env.has_control(env.get_nation(nation_id), unit);
+			return editing or env.has_control(mcc, unit);
 		}
 
 
@@ -353,7 +357,6 @@ namespace col {
 			limit_view();			
 		}
 
-		void apply_inter(inter::Any const& a, Agent & s);
 
 		bool is_selected(Terr * terr) {
 			if (terr) {
@@ -433,6 +436,25 @@ namespace col {
 			return get_next_to_repeat(get_sel_unit());
 		}
 		
+		Terr * get_idle_colony(Control control) {
+			for (auto & p: env.get_cont<Colony>()) 
+			{				
+				auto & c = p.second;
+				auto & terr = c.get_terr();
+				
+				if (env.get_control(terr) == control) 
+				{
+					for (auto & b: c.builds) {
+											
+						if (env.can_construct(b) and !b.task and b.has_units()) 
+						{
+							return &terr;
+						}
+					}
+				}
+			}
+			return nullptr;
+		}
 		
 		
 		void center_on(Unit const* u) {
@@ -483,44 +505,7 @@ namespace col {
 		}
 
 
-		inter::Any get_inter(Unit::Id unit_id, char letter, uint8 dx, uint8 dy) {
-			inter::Any a;
-
-			switch(letter) {
-				case 'R':
-					a = inter::improve(unit_id, PhysRoad);
-					break;
-				case 'P':
-					a = inter::improve(unit_id, PhysPlow);
-					break;
-				case 'O':
-					a = inter::destroy(unit_id, PhysForest);
-					break;
-				case 'B':
-					a = inter::build_colony(unit_id);
-					break;
-				case 'G':
-					assert(dx != 0 or dy != 0);
-					a = inter::move_unit(dx, dy, unit_id);
-					break;
-				default:
-					throw Error("unknown order code: %||", letter);
-			}
-			return a;
-		}
-
-
-		bool exec(inter::Any const& a) {
-			try {
-				get_server().apply_inter(a, auth);
-				return 1;
-			}
-			catch(InvalidAction const& e) {
-				put(e.what());
-				print("%||\n", e.what());
-				return 0;
-			}
-		}
+		
 
 
 
@@ -592,14 +577,17 @@ namespace col {
 		}
 
 
-
+		Control get_control() const {
+			return mcc;
+		}
+		
 
 		bool has_vision(Terr const& terr) const {
-			return this->editing or terr.get_vision(this->nation_id);
+			return editing or terr.get_vision(mcc);
 		}
 		
 		bool is_discovered(Terr const& terr) const {
-			return this->editing or terr.get_discovered(this->nation_id);
+			return editing or terr.get_discovered(mcc);
 		}
 
 		Time get_move_cost(v2c p1, v2c p0, Unit const& u) const;
@@ -683,11 +671,7 @@ namespace col {
 			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
 
-		Nation & get_nation() {
-			return env.get_nation(nation_id);
-		}
-
-
+		
 		v2c get_coords(Unit const& u) const {
 			return env.get_coords(u);
 		}
@@ -773,9 +757,6 @@ namespace col {
 			// any user input except hover -> break
 			//on([&stop](){ stop = true; })
 
-			auto & nation = get_nation();
-
-			
 			while (auto * up = get_next_to_repeat()) {
 				auto & unit = *up;
 				

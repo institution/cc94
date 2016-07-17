@@ -226,6 +226,16 @@ namespace col {
 		return fr.make_texture(surf);
 	}
 
+	Color get_control_color(Control cc) 
+	{
+		switch (cc) {
+			case ControlEnglandCol: return ColorRed;
+			case ControlFranceCol: return ColorBlue;
+			case ControlSpainCol: return ColorYellow;
+			case ControlNetherlandsCol: return ColorOrange;
+		}
+		return ColorBrown;
+	}
 
 
 	void preload_coast(Front & fr, Biome bio, int start) {
@@ -453,11 +463,7 @@ namespace col {
 	}
 
 	
-	inline Color get_nation_color(Nation const& n) {
-		auto c = n.color;
-		return {c.r,c.g,c.b,255};
-	}
-
+	
 
 	void render_area(
 		Front & win,
@@ -576,6 +582,184 @@ namespace col {
 		{}		
 	};
 
+
+	struct Cell {
+		b2s box;
+		v2f align{0.0f,0.0f};		
+		v2s pad{0,0};
+		
+		b2s const& get_outer_box() { return box; }
+		b2s get_inner_box() const { return b2s(box.pos, box.dim - pad); }
+		
+		int8_t border{0};
+		
+		void render(Console & con);
+	};
+	
+	void Cell::render(Console & con) {
+		if (border) {
+			render_inline(con.win, pos, dim, ColorLightBrown, border);
+		}
+	}
+
+	struct TextEdit: Widget, Cell
+	{
+		string text;
+		uint8_t max_length{255};
+		
+		void set(string const& s) { text = s; }
+		string get() const { return text; }
+		
+		void backspace() { if (text.size()) text.pop_back(); }
+		void clear() { text = ""; }
+		void append(char c) { if (text.size() < max_lenght) text += c; }
+		
+		void render(Front & win, Console & con) override;
+	};
+	
+	
+	col1 = 0*ex;
+	col2 = 10*ex;
+	
+	Grid()
+	
+	Frame()
+		Line()
+			Label("height", 10).set_align(100)
+			Edit("123", 6).set_align(100)
+		Line()
+			Label("width", 10).set_align(100)
+			Edit("123", 6).set_align(100)
+		Line()
+			Button("OK", 8)
+		
+		
+	
+	line().put(Button("Cancel"))
+	
+	
+	Label("length")
+	Edit("123")
+	
+	
+	c.move(10,10)
+	c.set_dim(10*ex + 12*ex, 4*em)
+	c.render_outline()
+	
+	c.render(Label).move(col2).render(Edit).move(col1).br()
+	
+	c1.render(Label).br()
+	c1.render(Label).br()
+	
+	
+	
+	
+	
+	
+	void TextEdit::render(Front & win) override 
+	{	
+		render_text(win,
+			pos
+			FontTiny, ColorGreen,
+			text + "_"
+		);
+		
+		
+		auto line_height = ly.font_tiny;
+		auto sep = ly.sep;   // cell sep
+
+
+		// esc -- cancel
+		con.on(Event::Press, KeyEsc, oncancel);
+
+		// background & outline border
+		render_area(win, pos, dim, res(win, WOODTILE, 1));
+		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
+
+		// click on dialog -- do nothing
+		con.on(Event::Press, pos, dim, [](){});
+
+		// enter -- select under cursor
+		con.on(Event::Press, KeyEnter, 
+			[this](){ this->select(); }
+		);
+
+		// up arrow -- move cursor
+		con.on(Event::Press, KeyUp, 
+			[this](){ this->move_up(); }
+		);
+
+		// down arrow -- move cursor
+		con.on(Event::Press, KeyDown, 
+			[this](){ this->move_down(); }
+		);
+		
+		auto row_dim = v2s(dim[0] - sep[0]*2, line_height);
+		auto row_pos = pos + sep;
+
+		for (size_t j = 0; j < rows.size(); ++j) {
+			auto & row = rows[j];
+
+			auto cpos = row_pos;
+
+			if (j == cursor) {
+				render_fill(win,
+					row_pos, row_dim, ColorSelectedBG
+				);
+			}
+			
+			// left click on row -- move cursor
+			con.on(Event::Press, Button::Left, row_pos, row_dim,
+				[this, j](){ 
+					this->move(j); 
+				}
+			);
+			
+			// left release on row -- select
+			con.on(Event::Release, Button::Left, row_pos, row_dim,
+				[this](){ this->select(); }
+			);
+
+			
+			//if (row.text.size() == 0) {
+			//	// separator
+			//}
+			
+			auto fg = ColorFont;
+			if (not row.onselect) {
+				// disabled
+				fg = ColorFontDisabled;
+			}
+			else if (j == highlight) {
+				// highlighted
+				fg = ColorFontSelected;
+			}
+
+			// render row by cell
+			for (size_t i = 0; i < cols.size(); ++i) {
+				auto & col = cols[i];
+				auto & cell = row.text[i];
+
+				auto cdim = v2s(col.width, line_height);
+
+				render_text(win,
+					cpos, cdim, v2f(col.align, 0.5),
+					FontTiny, fg,
+					cell
+				);
+
+				cpos[0] += col.width + sep[0];
+			}
+
+			row_pos[1] += line_height + sep[1];
+		}
+		
+		
+		
+		
+	}
+	
+
 	struct Select: Widget {
 			
 		v2s pos;
@@ -676,32 +860,33 @@ namespace col {
 		// any event -- ignore
 		con.on();
 
-
 		// click anywhere -- cancel
-		con.on(Event::Press, oncancel);
-
+		con.on(EventPress, KeyLMB, oncancel);
+		con.on(EventPress, KeyRMB, oncancel);
+		
 		// esc -- cancel
-		con.on(Event::Press, KeyEsc, oncancel);
-
+		con.on(EventPress, KeyEsc, oncancel);
+		
 		// background & outline border
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
 
 		// click on dialog -- do nothing
-		con.on(Event::Press, pos, dim, [](){});
+		con.on(EventPress, KeyLMB, pos, dim);
+		con.on(EventPress, KeyRMB, pos, dim);
 
 		// enter -- select under cursor
-		con.on(Event::Press, KeyEnter, 
+		con.on(EventPress, KeyEnter, 
 			[this](){ this->select(); }
 		);
 
 		// up arrow -- move cursor
-		con.on(Event::Press, KeyUp, 
+		con.on(EventPress, KeyUp, 
 			[this](){ this->move_up(); }
 		);
 
 		// down arrow -- move cursor
-		con.on(Event::Press, KeyDown, 
+		con.on(EventPress, KeyDown, 
 			[this](){ this->move_down(); }
 		);
 		
@@ -720,14 +905,14 @@ namespace col {
 			}
 			
 			// left click on row -- move cursor
-			con.on(Event::Press, Button::Left, row_pos, row_dim,
+			con.on(EventPress, KeyLMB, row_pos, row_dim,
 				[this, j](){ 
 					this->move(j); 
 				}
 			);
 			
 			// left release on row -- select
-			con.on(Event::Release, Button::Left, row_pos, row_dim,
+			con.on(EventRelease, KeyLMB, row_pos, row_dim,
 				[this](){ this->select(); }
 			);
 
@@ -1537,7 +1722,7 @@ namespace col {
 				// units on field
 				for (auto& unit_p: field.units) {
 					auto& unit = *unit_p;
-					if (unit.in_game) {
+					{
 						v2s unit_dim = v2s(field_dim[0]/2, field_dim[1]);
 						v2s unit_pos = field_pos + v2s(field_dim[0]/2, 0);
 
@@ -2192,7 +2377,9 @@ namespace col {
 
 
 	Color get_unit_color(Unit const& u) {
-		auto c = get_nation_color(u.get_nation());
+		
+		auto c = get_control_color(u.get_control());
+		
 		if (u.get_time_left() == 0) {
 			return Color(c.r/2, c.g/2, c.b/2, c.a);
 		}
@@ -2228,9 +2415,12 @@ namespace col {
 			);
 
 			// colony flag
-			if (auto p = env.get_control(terr)) {
-				// render owner flag over colony (unit in garrison)
-				render_sprite(win, {pos[0] + ly.S(5), pos[1]}, res(win, ICON, p->get_flag_id()));
+			{
+				auto p = env.get_control(terr);
+				if (p != ControlNone) {
+					// render owner flag over colony (unit in garrison)
+					render_sprite(win, {pos[0] + ly.S(5), pos[1]}, res(win, ICON, get_control_flagicon(p)));
+				}
 			}
 
 		}
@@ -2997,11 +3187,11 @@ namespace col {
 	void show_select_nation(Console & con) {
 		auto & s = con.replace_widget<Select>();
 		
-		for (auto & nation: list_values(con.env.nations)) 
+		for (auto & faction: list_values(con.env.factions)) 
 		{			
-			auto id = nation.id;
-			s.add({nation.get_name()}, id == con.nation_id, [&con, id](){
-				con.set_nation_id(id);
+			auto id = faction.id;
+			s.add({faction.get_name()}, id == con.get_control(), [&con, id](){
+				con.set_control(id);
 			});			
 		}		
 		finish_popup(con, s);	
@@ -3033,26 +3223,38 @@ namespace col {
 		 * road
 		 */
 
-		
 
-		string nation_name = "EDITING";
-		if (env.in_progress()) {
-			nation_name = env.get_current_nation().name;
+		string faction_name = "Nobody";
+		if (env.has_current_control()) {
+			auto & f = env.get<Faction>(env.get_current_control());
+			faction_name = f.get_name();
 		}
+		
+		
+		
+		
+		
+		
+		
+		
 
 		auto cur = TextRend2(win, con, ly.pan, FontTiny, StyleMenu);
 
 		// Turn 5, England
-		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + nation_name + "\n");
+		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + faction_name + "\n");
 
-		if (con.nation_id) 
-		{
-			cur.text("You are: ");
-			cur.link(env.get_nation_name(con.nation_id), con.editing, [&con](){
-				show_select_nation(con);
-			});
-			cur.text("\n");			
-		}
+		
+		string my_name = 
+			(con.get_control() != ControlNone) ? 
+				env.get<Faction>(con.get_control()).get_name() :
+				"Nobody";
+				
+		cur.text("You are: ");
+		cur.link(my_name, con.editing, [&con](){
+			show_select_nation(con);
+		});
+		cur.text("\n");			
+	
 
 
 
@@ -3165,7 +3367,7 @@ namespace col {
 			));
 
 			cur.text(format("moves: %||\n", get_moves(*u)));
-			cur.text(format("transported: %||\n", u->get_transported()));
+			// cur.text(format("transported: %||\n", u->get_transported()));
 			cur.text(format("space left: %||\n", u->get_space_left()));
 
 			if (u->get_item1() == ItemTools) {
@@ -3181,12 +3383,12 @@ namespace col {
 
 
 		// top right: nation indicator
-		if (env.in_progress()) {
+		if (env.has_current_control()) {
 			
 			render_fill(win,
 				pos + v2s(dim[0]-ly.S(1),0),
 				v2s(ly.S(1), ly.S(1)),
-				get_nation_color(env.get_current_nation())
+				get_control_color(env.get_current_control())
 			);
 		}
 
@@ -3211,9 +3413,9 @@ namespace col {
 		
 		// Idle Unit
 		{
-			if (env.in_progress()) {
+			if (env.has_current_control()) {
 				
-				auto& p = env.get_current_nation();
+				//auto & p = env.get_current_control();
 				
 				auto colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 				
@@ -3233,15 +3435,17 @@ namespace col {
 		}
 		
 		
+		
+		
+		
+		
 		// Idle Factory
 		{
-			if (env.in_progress()) {
+			if (env.has_current_control()) {
 				
-				auto& p = env.get_current_nation();
-			
 				auto colind = ColorGray;
 			
-				auto* terr = logic::get_idle_colony(env, p);
+				auto * terr = con.get_idle_colony(env.get_current_control());
 				if (terr) {
 					colind = ColorWhite;
 				}
@@ -3269,8 +3473,8 @@ namespace col {
 			auto cmd = string();
 			auto colind = ColorRed;
 
-			if (env.in_progress()) {
-				auto& p = env.get_current_nation();
+			{
+				auto p = env.get_current_control();
 
 				if (con.get_next_to_repeat(nullptr)) {
 					lab = "Move all";
@@ -3303,11 +3507,6 @@ namespace col {
 						);*/
 					}
 				}
-			}
-			else {
-				lab = "Start game";
-				cmd = "start";				
-				colind = (env.nations.size() < 1) ? ColorGray : ColorWhite;
 			}
 			
 			
@@ -3421,6 +3620,60 @@ namespace col {
 		}
 	}
 
+
+
+/*
+	
+	struct MenuEntry
+	{
+		string label{""};		
+		function<bool()> can_run;
+		function<void()> run;
+	};
+
+	
+	
+	
+		s.add({"Move (M)"}, [&con](){
+			if (con.has_sel_unit()) {
+				con.set_input_mode(con.InputModeMove);
+			}
+		});
+		
+*/
+
+
+
+
+	void show_edit_menu(Console & con, v2s pos) 
+	{	
+		auto & s = con.replace_widget<Select>();
+
+		
+		s.add({"Add faction"}, [&con](){
+			show_add_faction_widget();
+			if (con.has_sel_unit()) {
+				con.set_input_mode(con.InputModeMove);
+			}
+		});
+		
+		s.add({"Exec (Enter)"}, [&con](){
+			if (auto * u = con.get_sel_unit_ext()) {
+				con.exec_unit_cmds(*u);
+				con.select_next_unit();
+			}
+		});
+		
+		s.add({"Clear (Esc)"}, [&con](){
+			if (con.has_sel_unit()) {
+				con.clear_unit_cmds(con.get_sel_unit_id());
+			}
+		});
+				
+		finish_popup_at(con, s, pos);	
+	}
+
+
 	void show_order_menu(Console & con, v2s pos) 
 	{	
 		auto & s = con.replace_widget<Select>();
@@ -3444,8 +3697,7 @@ namespace col {
 				con.clear_unit_cmds(con.get_sel_unit_id());
 			}
 		});
-		
-		
+				
 		finish_popup_at(con, s, pos);	
 	}
 	

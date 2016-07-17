@@ -19,7 +19,7 @@ namespace col{
 		Id id;
 		int slots;
 		Item proditem{ItemNone};
-		Item itemcons{ItemNone};
+		Item itemcons{ItemNone};   // <- lol naming
 		int cost_hammers;
 		int cost_tools;
 		int min_colony;
@@ -61,6 +61,11 @@ namespace col{
 		
 		Amount get_cost() const { return cost_hammers; }
 		Class get_class() const { return ClassBuildType; }
+		
+		
+		BuildType & set_slots(int slots) { this->slots = slots; return *this; }
+		BuildType & set_prod(Item item, Amount a) { proditem = item; prod = a; return *this; }
+		BuildType & set_cons(Item item, Amount a) { itemcons = item; cons = a; return *this;  }
 		
 		//BuildType & set_name(string const& name) { this->name = name; return *this; }
 
@@ -149,6 +154,7 @@ namespace col{
 
 
 		BuildType::Id get_type_id() const {
+			assert(type != nullptr);
 			return type->id;
 		}
 		
@@ -199,8 +205,8 @@ namespace col{
 		}
 
 
-		Item const& get_proditem() const override {
-			return type->proditem;
+		Item const& get_proditem() const override {			
+			return type ? type->proditem : ItemNone;
 		}
 		
 		bool assign(bool const& exec=1) {

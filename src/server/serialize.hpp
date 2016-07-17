@@ -4,7 +4,7 @@
 
 #include "col.hpp"
 #include "env.hpp"
-#include "nation.hpp"
+#include "control.hpp"
 #include "objs.hpp"
 
 
@@ -170,22 +170,6 @@ namespace col {
 				
 
 
-	template<typename A>
-	void read(A & ar, col::NationColor & c) {
-		read(ar, c.r);
-		read(ar, c.g);
-		read(ar, c.b);
-		read(ar, c.a);
-	}
-
-	template<typename A>
-	void write(A & ar, col::NationColor const& c) {
-		write(ar, c.r);
-		write(ar, c.g);
-		write(ar, c.b);
-		write(ar, c.a);
-	}
-
 
 	template<typename T, typename A>
 	T read(A & ar) {
@@ -245,11 +229,9 @@ namespace col {
 	}
 
 	template<typename A>
-	void write(A & ar, col::Env const& env, col::Nation const& x) {
+	void write(A & ar, col::Env const& env, col::Faction const& x) {
 		write(ar, x.id);
 		write(ar, x.name);
-		write(ar, x.color);
-		write(ar, x.flag_id);
 	}
 
 	template<typename A>
@@ -257,10 +239,9 @@ namespace col {
 		// unit
 		write(ar, x.id);
 		write(ar, x.type->id);
-		write(ar, x.nation->id);
+		write(ar, x.control);
 		//write(ar, x.space_left);
 		write(ar, x.time_left);
-		write(ar, x.transported);		
 		write(ar, x.prof_dir);
 		write(ar, x.prof_num);
 		
@@ -294,11 +275,9 @@ namespace col {
 
 
 	template<typename A>
-	void read(A & ar, col::Env & env, col::Nation & x) {
+	void read(A & ar, col::Env & env, col::Faction & x) {
 		read(ar, x.id);
-		read(ar, x.name);
-		read(ar, x.color);
-		read(ar, x.flag_id);
+		read(ar, x.name);		
 	}
 
 
@@ -308,14 +287,13 @@ namespace col {
 
 		read(ar, unit.id);
 		unit.type = & env.get<UnitType> ( read<col::UnitType::Id> (ar) );
-		unit.nation = & env.get<Nation> ( read<col::Nation::Id> (ar) );
+		read(ar, unit.control);
 		read(ar, unit.time_left);
-		read(ar, unit.transported);
 		read(ar, unit.prof_dir);
 		read(ar, unit.prof_num);
 
 		// terr
-		env.init(env.get_terr(read<col::Coords>(ar)), unit);
+		env.put(env.get_terr(read<col::Coords>(ar)), unit);
 
 		auto build_id = read<int>(ar);
 		auto field_id = read<int>(ar);
@@ -337,34 +315,6 @@ namespace col {
 		unit.space_left -= unit.store.total();		
 	}
 
-	template<typename A>
-	void read(A & ar, Env & env, Unit & x) {
-
-		read(ar, x.id);
-		x.type = & env.get<UnitType> ( read<UnitType::Id> (ar) );
-		x.nation = & env.get<Nation> ( read<Nation::Id> (ar) );
-		read(ar, x.space_left);
-		read(ar, x.time_left);
-		read(ar, x.transported);
-
-		auto& unit = x;
-
-		// terr
-		env.init(env.get_terr(read<Coords>(ar)), unit);
-
-		auto build_id = read<int>(ar);
-		auto field_id = read<int>(ar);
-
-		if (build_id) {
-			env.work_build(build_id - 1, unit);
-		}
-
-		if (field_id) {
-			env.work_field(field_id - 1, unit);
-		}
-
-		assert(unit.type != nullptr);
-	}
 
 	template<typename A>
 	void write(A & ar, Env const& env, Terr const& x) {
@@ -400,7 +350,7 @@ namespace col {
 		{
 			if (verbose) print("save nations\n");
 			
-			auto & ps = env.get_cont<Nation>();
+			auto & ps = env.get_cont<Faction>();
 			
 			// num of nations
 			write(ar, ps.size());
@@ -497,16 +447,9 @@ namespace col {
 		write(ar, env.next_id);
 		// state
 		write(ar, env.state);
-		// current nation
-		if (env.state == 1) {
-			if (verbose) print("save current nation id = %||\n", env.get_current_nation().id);			
-			write(ar, env.get_current_nation().id);
-		}
-		else {
-			if (verbose) print("save current nation INV STATE: %||\n", env.state);
-			write<Nation::Id>(ar, -1);
-		}
-
+		// current control
+		write(ar, env.get_current_control());
+		
 	}
 
     template<class Archive>
@@ -518,15 +461,15 @@ namespace col {
 		// version
 		read(ar, ver);
 
-		// nations
+		// factions
 		{
-			if (verbose) print("load nations\n");
+			if (verbose) print("load factions\n");
 			
-			auto& ps = env.get_cont<Nation>();
+			auto& ps = env.get_cont<Faction>();
 			
 			auto num = read<size_t>(ar);
 			for (size_t i=0; i<num; ++i) {
-				auto id = read<Nation::Id>(ar);
+				auto id = read<Faction::Id>(ar);
 				read(ar, env, ps[id]);
 			}
 		}
@@ -609,7 +552,7 @@ namespace col {
 
 
 				// location
-				env.init(env.get_terr(read<Coords>(ar)), (*p).second);
+				env.put(env.get_terr(read<Coords>(ar)), (*p).second);
 
 			}
 		}
@@ -636,18 +579,9 @@ namespace col {
 		read(ar, env.next_id);
 		// state
 		read(ar, env.state);
-		// current nation
-		if (env.state == 1) {
-			env.set_current_nation(
-				env.get<Nation>(
-					read<Nation::Id>(ar) 
-				) 
-			);
-		}
-		else {
-			read<Nation::Id>(ar);
-		}
-
+		// current control
+		env.set_current_control(read<Control>(ar));
+	
 		// current nation
 		//l += write(f, env.current_nation_id);
 

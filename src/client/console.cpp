@@ -13,22 +13,7 @@ namespace col {
 
 
 	
-	NationColor make_color_by_name(const string &s) {
-		if (s == "red") {
-			return NationColor(255,0,0);
-		}
-		else
-		if (s == "green") {
-			return NationColor(0,255,0);
-		}
-		else
-		if (s == "blue") {
-			return NationColor(0,0,255);
-		}
-		else {
-			return NationColor(0,0,0);
-		}
-	}
+
 
 	uint8 flag_id4color_name(const string &s) {
 		if (s == "red") {
@@ -197,9 +182,8 @@ namespace col {
 	
 	void Console::load_cargo(Item const& item, Amount const& num) {
 		if (auto unit_id = get_sel_unit_id()) {
-			get_server().apply_inter(
-				inter::load_cargo(unit_id, item, num), auth
-			);
+			auto & e = get_server();
+			e.load_cargo(e.get<Unit>(unit_id), item, num);
 		}
 	}
 	
@@ -337,12 +321,12 @@ namespace col {
 	}
 	
 	template <class AI>
-	void Console::add_ai(Nation::Id nation_id) {
+	void Console::add_ai(Control control) {
 		if (not runner) {
 			fail("ERROR: cannot add AI: no runner\n");
 		}
 		else {
-			runner->add_agent<AI>(env, env.get<Nation>(nation_id));
+			runner->add_agent<AI>(env, control);
 		}
 	}
 	
@@ -364,8 +348,8 @@ namespace col {
 		auto& con = *this;
 		
 		if (cmd == "list-nations") {
-			for (auto &item: env.nations) {
-				put("%||", item.second);
+			for (auto & item: env.factions) {
+				put("%||", item.second.get_name());
 			}
 		}
 		else if (cmd == "print") {
@@ -475,59 +459,6 @@ namespace col {
 					break;
 			}
 		}		
-		
-		else if (cmd == "info") {
-			switch (es.size()) {
-				default:
-					put("Usage: info");
-					break;
-				case 1:
-					put("Turn: " + to_string(env.get_turn_no()) + "; " +
-						"Nation: " + env.get_current_nation().name  + "; " +
-						"State: " + to_string(env.state)
-					);
-					break;
-			}
-		}		
-		else if (cmd == "score") {
-			switch (es.size()) {
-				default:
-					put("Usage: score <nation_id>");
-					break;
-				case 2:
-					auto f = env.get_result(stoi(es.at(1)));
-					put(to_string(f));
-					break;
-			}
-		}
-		else if (cmd == "set-biome") {
-			switch (es.size()) {
-				default:
-					put("Usage: set-biome <biome-name>");
-					break;
-				case 2:
-					Biome b = get_biome_by_name(es.at(1));
-					if (b == BiomeNone)
-						put("selected unknown biome");
-					
-					for (auto tp: con.get_sel_terrs()) {
-						tp->set_biome(b);	
-					}					
-					break;
-			}
-		}
-		else if (cmd == "set-alt") {
-			switch (es.size()) {
-				default:
-					put("Usage: set-alt <0,1,2,3,4>");
-					break;
-				case 2:
-					for (auto tp: get_sel_terrs()) {
-						tp->set_alt(stoi(es.at(1)));						
-					}
-					break;
-			}
-		}
 		else if (cmd == "turn") {
 			env.turn();
 			put(format("Turn %||", env.turn_no));
@@ -545,34 +476,6 @@ namespace col {
 				}
 			}
 		}		
-		else if (cmd == "start") {
-			switch (es.size()) {
-				default: {
-					output.push_back("Usage: start\n");
-					break;
-				}
-				case 1: {
-					env.start();
-					put("Game started!");
-					select_next_unit();
-					break;
-				}
-			}
-		}
-		else if (cmd == "ready") {
-			switch (es.size()) {
-				default: {
-					output.push_back("Usage: ready [nation_id]\n");
-					break;
-				}
-				case 1: {
-					//exec(Ready(env.get_current_nation().id));
-					env.ready(env.get_current_nation());					
-					select_next_unit();
-					break;
-				}
-			}
-		}
 		else if (cmd == "list-units") {
 			for (auto &item: env.units) {
 				put(format("%||", item.second));
@@ -594,32 +497,18 @@ namespace col {
 					break;
 				}
 				case 3: {
-					auto& c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
-					auto& p = env.get<Nation>(std::stoi(es.at(2)));  // nation_id
-					auto& t = *get_sel_terr(); 
-					auto& u = env.create<Unit>(c, p);
-					env.init(t, u);
+					auto & c = env.get<UnitType>(std::stoi(es.at(1))); // type_id					
+					auto cc = std::stoi(es.at(2));  // control
+					auto & t = *get_sel_terr(); 
+					
+					auto& u = env.create<Unit>(c, cc);
+					env.put(t, u);
+					
 					if (compatible(u.get_travel(), TravelLand) and
 						!compatible(u.get_travel(), t.get_travel())) 
 					{
-						u.transported = true;
+						//u.transported = true;
 					}
-					break;
-				}
-			}
-		}
-		else if (cmd == "create-nation") {
-			switch (es.size()) {
-				default: {
-					put("Usage: create-nation <nation-name> <color-name>");
-					break;
-				}
-				case 3: {
-					env.create<Nation>(
-						string(es[1]), // name
-						make_color_by_name(string(es[2])), // color
-						flag_id4color_name(string(es[2]))  // flag_id
-					);
 					break;
 				}
 			}
@@ -675,9 +564,6 @@ namespace col {
 				}
 			}
 		}
-		else if (es[0] == "del-nation") {
-			env.del_nation(std::stoi(es[1]));
-		}
 		else if (cmd == "save") {
 			switch (es.size()) {
 				default:
@@ -700,12 +586,6 @@ namespace col {
 					break;
 			}
 		}
-		else if (es[0] == "set_owner") {
-			env.set_owner(
-				stoi(es[1]),
-				stoi(es[2])
-			);
-		}
 		else if (cmd == "add-item") {
 			switch (es.size()) {
 				default:
@@ -718,25 +598,6 @@ namespace col {
 					auto &terr = *get_sel_terr();
 					env.get_store(terr).add(item, number);
 					break;
-			}
-		}
-		else if (cmd == "load-cargo") {
-			switch (es.size()) {
-				default:
-					put("Usage: load-cargo <item-id> <amount>");
-					break;
-				case 3:
-					if (auto unit_id = get_sel_unit_id()) {
-						auto item = stoi(es.at(1));
-						auto num = stoi(es.at(2));
-
-						r_env.apply_inter(inter::load_cargo(unit_id, item, num), auth);
-
-						break;
-					}
-					else {
-						put("no selected unit");
-					}
 			}
 		}
 		else if (cmd == "construct") {			
@@ -883,30 +744,6 @@ namespace col {
 			}
 
 		}
-		else if (cmd == "move") {
-			switch (es.size()) {
-				default:
-					put("Usage: move <dx> <dy>");
-					break;
-				case 3:
-					if (Unit* u = get_sel_unit()) {
-						env.apply_inter(
-							inter::move_unit(
-								stoi(es.at(1)), // dx
-								stoi(es.at(2)), //dy
-								env.get_id(*u)  // unit_id							
-							),
-							auth
-						);
-						
-						select_next_unit();						 
-					}
-					else {
-						put("no selected unit");
-					}
-					break;
-			}
-		}		
 		else if (es.at(0) == "enter") {
 			switch (es.size()) {
 				default: {
@@ -1056,7 +893,7 @@ namespace col {
 			}										
 			case InsMove: {
 				auto dir = (Dir)cmd.arg;
-				auto r = env.move_unit(dir, unit);
+				auto r = env.move_unit(unit, dir);
 				handle_error();
 				if (r) {
 					ext.pop_cmd();

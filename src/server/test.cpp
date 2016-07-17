@@ -228,75 +228,49 @@ TEST_CASE( "tree2", "" ) {
  */
 
 
-TEST_CASE( "serialize_base", "" ) {
-	SECTION("serialize_int16") {
-
+TEST_CASE( "serialize", "" ) {
+	
+	SECTION("int16") {
 		std::stringstream s;
 
-		int16_t x = 12;
+		int16_t x = 0x4063;
 		write(s, x);
 		int16_t y;
 		read(s, y);
 		
-		REQUIRE(x == y);
-
-	}	
-}
-
-
-TEST_CASE( "sys", "" ) {
-	SECTION("env_clean_units") {
-		Env env;		
-		env.resize({1,1});
-		auto& u = env.create<Unit>(
-			env.create<UnitType>(),
-			env.create<Nation>()
-		);
-		REQUIRE_NOTHROW(env.init(env.get_terr({0,0}), u));
-		REQUIRE_NOTHROW(env.clear_units());
-		REQUIRE(env.units.size() == 0);
-		REQUIRE(env.get_terr({0,0}).units.size() == 0);
-	}	
+		REQUIRE(x == y);		
+	}
 }
 
 
 TEST_CASE( "env", "" ) {
-	Env env;
-	
-	// resize
-	REQUIRE_NOTHROW(env.resize({1,1}));
-	
-	auto& t = env.get_terr({0,0});
-	
-	// fill
-	REQUIRE_NOTHROW(env.fill(Terr{AltSea, BiomeTundra}));
-	REQUIRE(env.get_terr({0,0}).get_alt() == AltSea);
-	REQUIRE(env.get_terr({0,0}).get_biome() == BiomeTundra);
-	
-	// get<Terr>
-	REQUIRE_NOTHROW(env.get<Terr>({0,0}));
+
+	SECTION("constructor") {
+		Env env({1,1}, Terr{AltSea, BiomeTundra});
 		
+		auto & t = env.get_terr({0,0});
+
+		REQUIRE(t.get_alt() == AltSea);
+		REQUIRE(t.get_biome() == BiomeTundra);
+	}
+	
+	SECTION("clean_units") {
+		Env env({1,1}, Terr{AltFlat, BiomePlains});
+		
+		auto & u = env.create<Unit>(env.create<UnitType>());
+		
+		env.put(env.get_terr({0,0}), u);
+		env.clear_units();
+		
+		REQUIRE(env.units.size() == 0);
+		REQUIRE(env.get_terr({0,0}).units.size() == 0);
+	}
 	
 }
-
-
-TEST_CASE( "inter", "" ) {
-	
-	REQUIRE(inter::type_name<inter::build_colony>::get() == "build_colony");
-	
-	//Env env;
-	
-	//inter::Any a;
-	//a = inter::noa(1);
-	//REQUIRE_NOTHROW(env.apply_inter(a, 0));
-	
-	
-}
-
-
 
 TEST_CASE( "terr", "" ) {
 	Terr t(AltFlat, BiomePlains, PhysForest);
+	
 	REQUIRE(t.has_phys(PhysForest));
 	
 	SECTION("phys: worker does not change forest") {
@@ -315,8 +289,7 @@ TEST_CASE( "load_cargo", "" ) {
 	Env env;
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_slots(1),
-		env.create<Nation>()
+		env.create<UnitType>().set_slots(1)
 	);
 	
 	u.add(ItemOre, 23);
@@ -326,31 +299,36 @@ TEST_CASE( "load_cargo", "" ) {
 	
 }
 
-TEST_CASE( "env::move_unit", "" ) {
 
-	Env env;
+void require_no_error(Env & env) {
+	if (env.has_error()) {
+		print("INFO: %||\n", env.read_error());	
+		REQUIRE(false);	// env.has_error() should be false
+	}	
+}
 
-	env.resize({2,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
-	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
+TEST_CASE( "compatible", "[env][misc][regress]" ) {		
+	REQUIRE(compatible(TravelLand,TravelSea) == false);
+	REQUIRE(compatible(TravelSea,TravelLand) == false);
+	REQUIRE(compatible(TravelLand,TravelLand) == true);
+	REQUIRE(compatible(TravelSea,TravelSea) == true);
+}
 
-	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1),
-		env.create<Nation>()
+TEST_CASE( "move_unit", "[env][order]" ) 
+{
+	Env env({2,1}, Terr{AltFlat, BiomePlains});
+	
+	auto & u = env.create<Unit>(
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
 	);
 
-	// init
-	REQUIRE_NOTHROW(env.init(env.get_terr({0,0}), u));
-	REQUIRE(env.get_coords(u) == Coords(0,0));
-	
-	REQUIRE_NOTHROW(env.start());
+	env.put(env.get_terr({0,0}), u);
 
-	env.set_random_gen(replay({0}));
-	// move/board
-	REQUIRE(env.move_unit(1, 0, u) == true);
+	REQUIRE(env.get_coords(u) == Coords(0,0));	
+	CHECK(env.move_unit(u, DirD) == ResOk);
+	require_no_error(env);
 	REQUIRE(env.get_coords(u) == Coords(1,0));
-
-
+	
 }
 
 
@@ -363,21 +341,19 @@ TEST_CASE( "equip unit", "" ) {
 	auto& t = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50),
-		env.create<Nation>()
+		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50)
 	);
-	env.init(t, u);
+	env.put(t, u);
 	
 	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
 	
 	auto& c = env.create<Colony>();
-	env.init(t, c);
+	env.put(t, c);
 	
 	Store & st = env.get_store(t);
 	
 	REQUIRE_NOTHROW(st.add(ItemMuskets, 50));	
 	
-	REQUIRE_NOTHROW(env.start());
 	REQUIRE_NOTHROW(env.equip(u, ut));	
 	REQUIRE(u.get_type() == ut);
 	REQUIRE(st.get(ItemMuskets) == 0);
@@ -385,7 +361,7 @@ TEST_CASE( "equip unit", "" ) {
 }
 
 
-
+/*
 TEST_CASE( "board ship", "" ) {
 
 	Env env;
@@ -394,72 +370,70 @@ TEST_CASE( "board ship", "" ) {
 	env.set_terr({1,0}, Terr(AltSea, BiomePlains));
 	env.set_terr({2,0}, Terr(AltSea, BiomePlains));
 		
-	auto& p = env.create<Nation>();
-	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1),
-		p
+		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
 	);
-	env.init(env.get_terr({0,0}), u);
+	
+	env.put(env.get_terr({0,0}), u);
 	
 	auto& s = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelSea).set_speed(2).set_slots(2),
-		p
+		env.create<UnitType>().set_travel(TravelSea).set_speed(2).set_slots(2)
 	);
-	env.init(env.get_terr({1,0}), s);
+	env.put(env.get_terr({1,0}), s);
 		
-	REQUIRE(env.get_transport_space(env.get_terr({1,0}), p) == 200);	
-	REQUIRE(env.has_transport(env.get_terr({1,0}), u) == true);
 	
-	REQUIRE_NOTHROW(env.start());
-	REQUIRE(env.move_unit(1,0,u) == true);
+	REQUIRE(env.find_transport(env.get_terr({1,0}), u) != nullptr);
+	
+	REQUIRE(env.move_unit(u, {1,0}) == ResOk);
 
 	REQUIRE(env.get_coords(u) == Coords(1,0));
-	REQUIRE(u.transported == true);
+	REQUIRE(u.is_transported() == true);
 	
-	REQUIRE(env.move_unit(1,0,s) == true);
+	REQUIRE(env.move_unit(s, {1,0}) == ResOk);
 	
 	REQUIRE(env.get_coords(s) == Coords(2,0));
 	REQUIRE(env.get_coords(u) == Coords(2,0));
-	REQUIRE(u.transported == true);
+	REQUIRE(u.is_transported() == true);
 	
 	//env.order_board(u, {1,0});
 	
 	//REQUIRE(env.get_pos(u) == Coords(1,0));
 
-}
+}*/
 
 TEST_CASE( "turn sequence", "" ) {
 
 	Env env;
 
-	auto& p1 = env.create<Nation>();
-
-	env.start();
-
-	SECTION("1p") {
+	SECTION("0p") {
 		auto t = env.turn_no;
 
-		REQUIRE(env.get_current_nation().id == p1.id);
-		env.ready(p1);
-		REQUIRE(env.get_current_nation().id == p1.id);
+		REQUIRE(env.get_current_control() == ControlNone);
+		env.ready();
+		REQUIRE(env.get_current_control() == ControlNone);
+		REQUIRE(env.turn_no == t + 1);
+
+	}
+
+	auto & p1 = env.create<Faction>("England");
+
+	SECTION("1p") {
+	
+		auto t = env.turn_no;
+
+		REQUIRE(env.get_current_control() == ControlNone);
+		
+		env.ready();
+		REQUIRE(env.get_current_control() == p1.get_control());
+		REQUIRE(env.turn_no == t);
+
+		env.ready();
+		REQUIRE(env.get_current_control() == p1.get_control());
 		REQUIRE(env.turn_no == t + 1);
 
 
 	}
 
-	auto& p2 = env.create<Nation>();
-
-	SECTION("2p") {
-		auto t = env.turn_no;
-
-		REQUIRE(env.get_current_nation().id == p1.id);
-		env.ready(p1);
-		env.ready(p2);
-		REQUIRE(env.get_current_nation().id == p1.id);
-		REQUIRE(env.turn_no == t+1);
-
-	}
 
 }
 
@@ -481,21 +455,20 @@ TEST_CASE( "can_make", "" ) {
 
 TEST_CASE( "food_prod", "" ) {
 	
-	Env env;
+	Env env({1,1}, Terr(AltFlat, BiomePlains));
 	env.loads<BuildType>("res/csv/builds.csv");
-	env.resize({1,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+	
 	auto & terr = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand),
-		env.create<Nation>()
+		env.create<UnitType>().set_travel(TravelLand)		
 	);
 
 	auto& t = env.get_terr({0,0});	
-	REQUIRE_NOTHROW( env.init(t, u) );
-	REQUIRE_NOTHROW( env.init_colony(t) );
-	REQUIRE_NOTHROW( env.work_field(0, u) );
+	env.put(t, u);
+	env.init_colony(t);
+	REQUIRE( env.work_field(0, u) == ResOk );
+	
 	auto& f = env.get_field(t, 0);
 	REQUIRE_NOTHROW( f.set_proditem(ItemFood) );
 	auto & c = t.get_colony();
@@ -528,16 +501,15 @@ TEST_CASE( "food_prod", "" ) {
 
 
 TEST_CASE("construct_build") {
-	Env env;
-	env.resize({1,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
+
+	Env env({1,1}, Terr(AltFlat, BiomePlains));
 	
 	auto& unit = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand),
-		env.create<Nation>()
+		env.create<UnitType>().set_travel(TravelLand)
 	);
+	
 	auto& t = env.get_terr({0,0});	
-	env.init(t, unit);
+	env.put(t, unit);
 			
 	env.loads<BuildType>("res/csv/builds.csv");
 	
@@ -575,30 +547,30 @@ TEST_CASE( "is_expert", "" ) {
 	REQUIRE(is_expert(unit, ItemHammers) == true);
 }
 
+
+
 TEST_CASE( "colony_workplace_production", "" ) {
 	
 	Env env({1,1}, Terr(AltFlat, BiomePlains));	
 		
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand),
-		env.create<Nation>()
+		env.create<UnitType>().set_travel(TravelLand)
 	);
 
 	auto& t = env.get_terr({0,0});	
-	env.init(t, u);
+	env.put(t, u);
 		
-	env.loads<BuildType>("res/csv/builds.csv");
-	REQUIRE(env.get<BuildType>(BuildFurTradersHouse).get_proditem() == ItemCoats);
-	
-	REQUIRE_NOTHROW(env.start());
+		
+	auto& bt = env.create<BuildType>()
+		.set_slots(3)
+		.set_prod(ItemCoats, 3)
+		.set_cons(ItemFurs, 3);
+		
+	// REQUIRE_NOTHROW(env.start());
 
 	SECTION("Build.get_prod") {
-		auto& u = env.create<Unit>(
-			env.create<UnitType>(),
-			env.create<Nation>()
-		);
+		auto& u = env.create<Unit>(env.create<UnitType>());
 		
-		auto & bt = env.get<BuildType>(BuildFurTradersHouse);
 		auto b = Build(bt);
 		b.add(u);
 		
@@ -616,30 +588,32 @@ TEST_CASE( "colony_workplace_production", "" ) {
 	SECTION("build") {
 		env.set_random_gen(replay({0}));
 		
+		env.put(t, env.create<Colony>());
+		env.get_build(t, 0).set_type(bt);
+		t.get_colony().add_field(Field(env.get_terr({0,0})));
 		
 		
-		REQUIRE_NOTHROW(env.colonize(u, "aaa"));
-		REQUIRE(t.colony != nullptr);
-
-		auto& c = t.get_colony();
 		auto & st = env.get_store(t);
+	
+		
 	
 		SECTION("non_worker_on_colony_hangup") {
 			// regress
 			// non working unit on colony square causes hangup when turn ends
 			REQUIRE_NOTHROW(env.turn());
-		}
+		}		
+		
 		
 		
 		SECTION("multiple assign to same workplace") {
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));
-			REQUIRE_NOTHROW(env.work_build(0, u));			
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);
+			REQUIRE(env.work_build(0, u) == ResOk);			
 		}
 		
 		SECTION("work_field") {
@@ -657,9 +631,11 @@ TEST_CASE( "colony_workplace_production", "" ) {
 
 		SECTION("work_build") {
 			
-			REQUIRE_NOTHROW( env.put_build(t, 0, BuildFurTradersHouse)   );
-			REQUIRE( env.get_build(t, 0).get_proditem() == ItemCoats );
-			REQUIRE_NOTHROW( env.work_build(0, u) );
+			auto & b = env.get_build(t, 0);
+			REQUIRE_NOTHROW( b.set_type(bt) );
+			REQUIRE( b.get_proditem() == ItemCoats );
+			REQUIRE( env.work_build(0, u) == ResOk );
+			
 
 			SECTION("just_enough") {
 				REQUIRE_NOTHROW(st.add(ItemFood, 2));
@@ -705,38 +681,9 @@ TEST_CASE( "colony_workplace_production", "" ) {
 
 
 
-TEST_CASE( "scoring", "" ) {
-
-	Env env;
-
-	env.resize({2,1});
-	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
-	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
-
-	auto& p1 = env.create<Nation>();
-	auto& p2 = env.create<Nation>();
-
-	auto& ut = env.create<UnitType>();
-
-	REQUIRE(env.get_result(p1.id) == 0.0f);
-	REQUIRE(env.get_result(p2.id) == 0.0f);
 
 
-	env.create<Unit>(ut, p1);
-
-	REQUIRE(env.get_result(p1.id) == 1.0f);
-	REQUIRE(env.get_result(p2.id) == 0.0f);
-
-	env.create<Unit>(ut, p2);
-
-	REQUIRE(env.get_result(p1.id) == 0.5f);
-	REQUIRE(env.get_result(p2.id) == 0.5f);
-
-}
-
-
-
-TEST_CASE( "serialize", "" ) {
+TEST_CASE( "serialize2", "" ) {
 
 	Env env;
 
@@ -746,10 +693,10 @@ TEST_CASE( "serialize", "" ) {
 
 	auto& u = env.create<Unit>(
 		env.create<UnitType>().set_travel(TravelLand),
-		env.create<Nation>()
+		env.create<Faction>()
 	);
 
-	env.init(env.get_terr({0,0}), u);
+	env.put(env.get_terr({0,0}), u);
 
 	SECTION("save_load_unstarted_game") {
 
@@ -765,8 +712,6 @@ TEST_CASE( "serialize", "" ) {
 	}
 
 	SECTION("save_load_started_game") {
-
-		env.start();
 
 		std::stringstream stream;
 
@@ -810,13 +755,13 @@ TEST_CASE( "two_units", "" ) {
 	auto& ut = env.create<UnitType>().set_travel(TravelLand);
 	ut.set_attack(2).set_combat(1);
 
-	auto& p = env.create<Nation>();
+	auto& p = env.create<Faction>();
 
 	auto& u1 = env.create<Unit>(ut, p);
-	env.init(t1, u1);
+	env.put(t1, u1);
 
 	auto& u2 = env.create<Unit>(ut, p);
-	env.init(t2, u2);
+	env.put(t2, u2);
 
 	SECTION("have diffrent id") {
 		REQUIRE(u1.id != u2.id);  // regress
@@ -835,12 +780,6 @@ TEST_CASE( "two_units", "" ) {
 }
 
 
-TEST_CASE( "compatible", "[env][misc][regress]" ) {		
-	REQUIRE(compatible(TravelLand,TravelSea) == false);
-	REQUIRE(compatible(TravelSea,TravelLand) == false);
-	REQUIRE(compatible(TravelLand,TravelLand) == true);
-	REQUIRE(compatible(TravelSea,TravelSea) == true);
-}
 
 
 TEST_CASE( "improve square", "" ) {
@@ -856,14 +795,14 @@ TEST_CASE( "improve square", "" ) {
 	
 	auto& u = env.create<Unit>(
 		ut2,
-		env.create<Nation>()
+		env.create<Faction>()
 	);
-	env.init(t, u);
+	env.put(t, u);
 
 	SECTION("build road") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE_NOTHROW(env.start());
+		//REQUIRE_NOTHROW(env.start());
 		REQUIRE_NOTHROW( env.improve(u, PhysRoad) );
 		REQUIRE( t.has_phys(PhysRoad) );
 		REQUIRE( u.get_item1() == ItemTools );
@@ -878,7 +817,7 @@ TEST_CASE( "improve square", "" ) {
 	SECTION("plow field") {
 		env.set_random_gen(replay({0}));
 
-		REQUIRE_NOTHROW(env.start());
+		//REQUIRE_NOTHROW(env.start());
 		REQUIRE_NOTHROW( env.improve(u, PhysPlow) );
 		REQUIRE( t.has_phys(PhysPlow) );
 		REQUIRE( u.get_item1() == ItemTools );

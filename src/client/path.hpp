@@ -1,8 +1,11 @@
 #pragma once
 
+#include <iostream>
+#include <iomanip>      // std::setw
 #include "base.hpp"
 #include "../server/dir.hpp"
 #include "command.hpp"
+
 
 
 namespace col {
