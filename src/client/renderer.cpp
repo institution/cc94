@@ -11,32 +11,11 @@
 #include "textrend.hpp"
 #include "layout.hpp"
 #include "simple_ai.hpp"
-#include "colordefs.hpp"
-
-
-//namespace Key = front::Key;
+#include "coldef.hpp"
+#include "widget.hpp"
 
 namespace col {
-
-
-	using namespace logic;
-	using namespace front::keys;
-
-
-	using Event = Console::Event;
-	using Button = Console::Button;
-	using Key = front::Key;
-	using Dev = Console::Dev;
-
-
-	
-	// frequent short literals lol :D
-	int16_t const
-		_0 = 0,
-		_1 = 1,
-		_2 = 2,
-		_3 = 3,
-		_4 = 4;
+	using Con = Console;
 
 
 
@@ -44,254 +23,20 @@ namespace col {
 	
 	
 	
-	// Texture get dim
+	
+	
+	/// Return dim of texture 't 
 	v2s get_dim(Texture const& t) { return t.dim; }
 
+	
 
-
-	PixFont FontTiny;
+	bool const VERBOSE = 1;
 	
 
 
 
-	
-	//ResMap const& get_unit_tex(Unit const& unit) {
-	//	return res(win, ICON, get_unit_icon_id(unit));
-	//}
-
-
-	inline
-	bool is_water(Terr const& t) {
-		return t.alt == AltSea;
-	}
-
-
-
-
-	using ResKey = uint32_t;
-	using ResCat = uint16_t;
-	using ResNum = uint16_t;
-
-	using ResMap = unordered_map<ResKey, Texture>;
-
-	ResMap res_map;
-	
-	ResKey make_reskey(ResCat cat, ResNum num) {
-		return (ResKey(cat) << 16) | ResKey(num);
-	}
-
-	ResCat get_rescat(ResKey k) {
-		return k >> 16;
-	}
-
-	ResNum get_resnum(ResKey k) {
-		return (k << 16) >> 16;
-	}
-
-	ResCat const
-		TERR = 0,
-		ICON = 1,
-		PHYS = 2,
-		ARCH = 3,
-		COLONY = 4,
-		BUILD = 5,
-		WOODTILE = 6,
-		DIFFUSE = 7,
-		COAST = 8,
-		ZZ = 9;
-		
-
-	Path get_res_dir(ResCat cat) {
-		// categories, *xxx* -- generated to memory image
-		switch (cat) {
-			case TERR: return "TERRAIN_SS";
-			case ICON: return "ICONS_SS";
-			case PHYS: return "PHYS0_SS";
-			case ARCH: return "PARCH_SS";
-			case COLONY: return "COLONY_PIK";
-			case BUILD: return "BUILDING_SS";
-			case WOODTILE: return "WOODTILE_SS";
-			case DIFFUSE: return "*DIFFUSE*";
-			case COAST: return "*COAST*";
-			case ZZ: return "ZZ";
-		}
-		fail("unknown resource category: %||\n", cat);
-	}
-
-	Path get_res_path(ResCat cat, ResNum num) {
-		return conf.tile_path / get_res_dir(cat) / format("%|03|.png", num);
-	}
-
-	Path get_res_path_key(ResKey key) {		
-		return get_res_path(get_rescat(key), get_resnum(key));
-	}
-
-
-	// Get resource from global cache (load on demand)
-	Texture const& res(Front & fr, ResCat cat, ResNum num)
-	{
-		auto key = make_reskey(cat, num);		
-		auto p = res_map.find(key);		
-		if (p != res_map.end()) {
-			return (*p).second;
-		}
-		else {
-			auto path = get_res_path(cat, num);
-			auto & img = res_map[key];
-			img = fr.make_texture(path);
-			return img;
-		}
-	}
-
-
-
-
-	void preload(ResCat cat, ResNum num, Texture && tex) {
-		auto key = make_reskey(cat, num);		
-		res_map[key] = std::move(tex);
-	}
-
-	Image replace_black(Image const& inn, Image const& tex, v2s toff) {
-		/* Create new surface
-
-		mask colors meaning:
-		 black -> take from tex
-		 else -> take from mask
-
-		 toff -- tex offset vector
-
-		*/
-
-		//print("replace_black: %|| + %|| <- %||\n", inn.dim, toff, tex.dim);
-
-		auto dim = inn.get_dim();
-		auto out = Image(dim);
-
-		for (int j = 0; j < dim[1]; ++j) {
-			for (int i = 0; i < dim[0]; ++i) {
-				auto c = inn({i,j});
-				auto pos = v2s(i,j);
-
-				//print("c = %||\n", c);
-
-				if (c.a == 0) {
-					out(pos) = Color(0,0,0,0);
-				}
-				else if (c == Color(0,0,0,255)) {
-
-					out(pos) = tex(toff + pos);
-				}
-				else {
-					out(pos) = inn(pos);
-				}
-
-			}
-		}
-
-		return out;
-	}
-
-	//void render_fields(Front &win, Env const& env, Console const& con,
-	//	v2s pix, Coords const& pos);
-
-
-	v2s get_loffset(int l) {
-		switch(l){
-			case 0: return v2s(0,0) * ly.scale;
-			case 1: return v2s(8,0) * ly.scale;
-			case 2: return v2s(8,8) * ly.scale;
-			case 3: return v2s(0,8) * ly.scale;
-		}
-		fail("invalid 'l'");
-	}
 
 	
-
-	Texture make_combined_texture(
-		Front & fr,
-		std::pair<ResCat, ResNum> p,
-		std::pair<ResCat, ResNum> b,
-		v2s off
-	) {
-		auto p_img = front::load_png(
-			get_res_path(p.first, p.second)
-		);
-
-		auto b_img = front::load_png(
-			get_res_path(b.first, b.second)
-		);
-
-		auto surf = replace_black(p_img, b_img, off);
-
-		return fr.make_texture(surf);
-	}
-
-	Color get_control_color(Control cc) 
-	{
-		switch (cc) {
-			case ControlEnglandCol: return ColorRed;
-			case ControlFranceCol: return ColorBlue;
-			case ControlSpainCol: return ColorYellow;
-			case ControlNetherlandsCol: return ColorOrange;
-		}
-		return ColorBrown;
-	}
-
-
-	void preload_coast(Front & fr, Biome bio, int start) {
-		for (int k = 0; k < 8; ++k) {
-			for (int l = 0; l < 4; ++l) {
-				int ind = (k<<2) + l;
-
-				preload(COAST, start + ind,
-					make_combined_texture(fr,
-						{PHYS, 109+ind},
-						{TERR, bio},
-						get_loffset(l)
-					)
-				);
-			}
-		}
-	}
-
-	int const TextureOceanId = 11;
-	int const TextureSeaLaneId = 11;
-
-	void preload_coast(Front & back) {
-		// 109 - 140
-
-		preload_coast(back, TextureOceanId, 0);
-		preload_coast(back, TextureSeaLaneId, 50);
-	}
-
-
-
-
-	void preload_terrain(Front & fr) {
-		for (int i=1; i<13; ++i) {
-			preload(DIFFUSE,  0+i,
-				make_combined_texture(fr, {PHYS, 105}, {TERR, i}, {0,0})
-			);
-			preload(DIFFUSE, 50+i,
-				make_combined_texture(fr, {PHYS, 106}, {TERR, i}, {0,0})
-			);
-			preload(DIFFUSE, 100+i,
-				make_combined_texture(fr, {PHYS, 107}, {TERR, i}, {0,0})
-			);
-			preload(DIFFUSE, 150+i,
-				make_combined_texture(fr, {PHYS, 108}, {TERR, i}, {0,0})
-			);
-		}
-
-		preload_coast(fr);
-	}
-
-	
-	
-	void preload_renderer(Front & fr) {
-		preload_terrain(fr);
-		FontTiny.load(fr, conf.font_tiny_path, -1 * ly.scale);
-	}
 
 	ResNum get_prof_icon_id(Prof prof, ResNum def) {
 		switch (prof) {
@@ -384,6 +129,22 @@ namespace col {
 		render_outline(win, box.pos, box.dim, c, t);
 	}
 
+	inline
+	bool is_water(Terr const& t) {
+		return t.alt == AltSea;
+	}
+
+
+	Color get_control_color(Control cc) 
+	{
+		switch (cc) {
+			case ControlEnglandCol: return ColorRed;
+			case ControlFranceCol: return ColorBlue;
+			case ControlSpainCol: return ColorYellow;
+			case ControlNetherlandsCol: return ColorOrange;
+		}
+		return ColorBrown;
+	}
 
 	void render_terr(Front &win,
 			v2s pos,
@@ -540,12 +301,19 @@ namespace col {
 	}*/
 
 	struct Col {
-		string name{""};
+		float align{0};    // 0 - left, 1 - right, 0.5 - center
 		int width{0};
-		float align{0};
-
-		Col(string n, int w, float a):
+		string name{""};  
+		
+		Col(float a, int w, string n):
 			name(n), width(w), align(a) {}
+			
+		Col(float a, int w):
+			width(w), align(a) {}
+			
+		Col(float a):
+			align(a) {}
+			
 		Col() = default;
 	};
 
@@ -573,6 +341,7 @@ namespace col {
 		vector<string> text;  // empty -> separator			
 		Action onselect;  // empty -> disabled
 		Key shortcut{KeyNone};
+		uint8_t flags; // bit 0 set -> highlight
 		
 		Elem() {}
 		Elem(vector<string> const& text, Action const& onselect, Key shortcut):
@@ -583,215 +352,436 @@ namespace col {
 	};
 
 
-	struct Cell {
-		b2s box;
-		v2f align{0.0f,0.0f};		
-		v2s pad{0,0};
-		
-		b2s const& get_outer_box() { return box; }
-		b2s get_inner_box() const { return b2s(box.pos, box.dim - pad); }
-		
-		int8_t border{0};
-		
-		void render(Console & con);
-	};
-	
-	void Cell::render(Console & con) {
-		if (border) {
-			render_inline(con.win, pos, dim, ColorLightBrown, border);
-		}
-	}
 
-	struct TextEdit: Widget, Cell
+
+
+
+
+	/*struct Frame: Widget 
 	{
-		string text;
-		uint8_t max_length{255};
+		Frame() = default;
+	
+		virtual v2s get_dim() override {
+			v2s dd{0,0};
+			if (down) {
+				dd = down->get_dim();
+			}
+			dim = v2s(2*S(2), 2*S(2)) + dd;
+			return dim;
+		}	
 		
-		void set(string const& s) { text = s; }
-		string get() const { return text; }
+		virtual void set_pos(v2s pos) override {
+			this->pos = pos;
+			if (down) {
+				down->set_pos(pos + v2s(S(3), S(3)));
+			}		
+		}
 		
-		void backspace() { if (text.size()) text.pop_back(); }
-		void clear() { text = ""; }
-		void append(char c) { if (text.size() < max_lenght) text += c; }
+		virtual void render(Console & con) override 
+		{
+			render_inline(con.win, pos, dim, ColorWhite, 1);
+			
+			if (down) {
+				down->render(con);
+			}
+		}
+
+	};
+
+
+	struct Absolute: Widget 
+	{
+
+		v2s get_dim() override {
+			return dim;
+		}	
 		
-		void render(Front & win, Console & con) override;
+		void set_pos(v2s pos) override {
+			this->pos = pos;				
+		}
+		
+		void render(Console & con) override 
+		{
+			render_inline(con.win, pos, dim, ColorWhite, 1);
+			
+			if (down) {
+				down->render(con);
+			}
+		}
+
+	};
+
+
+	template <int A, int B>
+	struct Axis: Widget {
+		
+		int16_t adv{0};
+		
+		v2s get_dim() override 
+		{
+			auto * w = down;
+			while (w) {
+				auto wdim = w->get_dim();
+				
+				dim[A] += wdim[A] + adv;
+				if (dim[B] < wdim[B]) {
+					dim[B] = wdim[B];
+				}			
+				w = w->next;
+			}
+			return dim;
+		}
+		
+		void set_pos(v2s p) override 
+		{
+			pos = p;
+			
+			auto * w = down;
+			auto c = pos;
+			while (w) {
+							
+				w->set_pos(c);
+				
+				c[A] += w->dim[A] + adv;
+				
+				w = w->next;
+			}
+		}
+		
+		void render(Console & con) override 
+		{
+			auto * x = down;
+			while (x) {
+				x->render(con.win);
+				x = x->next;
+			}
+		}
+		
 	};
 	
 	
-	col1 = 0*ex;
-	col2 = 10*ex;
-	
-	Grid()
-	
-	Frame()
-		Line()
-			Label("height", 10).set_align(100)
-			Edit("123", 6).set_align(100)
-		Line()
-			Label("width", 10).set_align(100)
-			Edit("123", 6).set_align(100)
-		Line()
-			Button("OK", 8)
+	using Line = Axis<0,1>;
+	using Cross = Axis<1,0>;
+	*/
+
+
+
+	/*
+	Shortcuts/menu/link  unit orders
+	Mod+mouse tile/unit selection
+	menu/link/shortcuts button/hyperlink
+	Fx reports
+
+	Actions on main view
+	Actions on city view
+	Actions on europe view
+	*/
+
+
+
 		
+	/*
+	struct Label: Widget {
+
+		string text{""};
+		int16_t maxlen{0};
+		v2f align{0.5f, 0.5f};
+				
+		Label(string const& text, int16_t maxlen): 
+			text(text), maxlen(maxlen)
+		{
+		}
 		
-	
-	line().put(Button("Cancel"))
-	
-	
-	Label("length")
-	Edit("123")
-	
-	
-	c.move(10,10)
-	c.set_dim(10*ex + 12*ex, 4*em)
-	c.render_outline()
-	
-	c.render(Label).move(col2).render(Edit).move(col1).br()
-	
-	c1.render(Label).br()
-	c1.render(Label).br()
-	
-	
-	
-	
-	
-	
-	void TextEdit::render(Front & win) override 
-	{	
-		render_text(win,
-			pos
-			FontTiny, ColorGreen,
-			text + "_"
-		);
+		PixFont const& get_font() const {
+			//assert(font);
+			return FontTiny;
+		}
 		
+		v2s get_dim() override 
+		{
+			dim = v2s(2*S(2), 2*S(2)) + v2s(maxlen * get_font().get_width(), get_font().get_height());
+			return dim;
+		}
 		
-		auto line_height = ly.font_tiny;
-		auto sep = ly.sep;   // cell sep
-
-
-		// esc -- cancel
-		con.on(Event::Press, KeyEsc, oncancel);
-
-		// background & outline border
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
-		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
-
-		// click on dialog -- do nothing
-		con.on(Event::Press, pos, dim, [](){});
-
-		// enter -- select under cursor
-		con.on(Event::Press, KeyEnter, 
-			[this](){ this->select(); }
-		);
-
-		// up arrow -- move cursor
-		con.on(Event::Press, KeyUp, 
-			[this](){ this->move_up(); }
-		);
-
-		// down arrow -- move cursor
-		con.on(Event::Press, KeyDown, 
-			[this](){ this->move_down(); }
-		);
+		void set_pos(v2s p) override 
+		{
+			pos = p;
+		}
 		
-		auto row_dim = v2s(dim[0] - sep[0]*2, line_height);
-		auto row_pos = pos + sep;
+		void render(Console & con) override 
+		{
+			auto & win = con.win;
+		
+			// output
+			render_inline(win, pos, dim, ColorWhite, 1);
+			
+			auto b = v2s(S(2), S(2));
+			
+			b2s inner(pos + b, dim - b - b);
+			
+			auto t = render_text(win, 
+				inner.pos, inner.dim, {0.0f, 0.0f}, 
+				FontTiny, ColorFont,
+				text
+			);
+			
+		}
+	};
 
-		for (size_t j = 0; j < rows.size(); ++j) {
-			auto & row = rows[j];
+	struct Button: Label {
 
-			auto cpos = row_pos;
+		using Action = std::function<void()>;
 
-			if (j == cursor) {
-				render_fill(win,
-					row_pos, row_dim, ColorSelectedBG
+		Action onpress{nullptr};
+		
+		Button() = default;
+		Button(string const& text, int16_t maxlen, Action onpress): 
+			Label(text, maxlen), onpress(onpress)
+		{
+		}
+		
+		void render(Console & con) override 
+		{
+			Label::render(con);
+			
+			// input
+			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
+				onpress();			
+			});
+			
+		}
+	};
+	
+	
+	struct EditStr: Label {
+	
+		EditStr(string s, int16_t w): Label(s,w) {}
+		
+		string const& get_value() const { return text; }
+		
+		void render(Console & con) override 
+		{
+			auto & win = con.win;
+		
+			// output
+			render_inline(win, pos, dim, ColorWhite, 1);
+			
+			auto b = v2s(S(2), S(2));
+			
+			b2s inner(pos + b, dim - b - b);
+			
+			auto t = render_text(win, 
+				inner.pos, inner.dim, align, 
+				get_font(), ColorFont,
+				"123"
+			);
+			
+			// render cursor
+			if (has_focus()) {
+			
+				render_text_at(win,
+					v2s(t.pos[0] + t.dim[0], t.pos[1]),
+					get_font(), ColorFont,
+					"_"
 				);
 			}
 			
-			// left click on row -- move cursor
-			con.on(Event::Press, Button::Left, row_pos, row_dim,
-				[this, j](){ 
-					this->move(j); 
+			// input
+			con.on({this, EventPress, KeyBackspace}, [this](Event & e){
+				if (text.size() > 0) {
+					text.pop_back();
 				}
-			);
+			});
+		
+			con.on({this, EventChar}, [this](Event & e) {
+				text += e.get_chr();			
+			});
 			
-			// left release on row -- select
-			con.on(Event::Release, Button::Left, row_pos, row_dim,
-				[this](){ this->select(); }
-			);
-
+			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
+				grab_focus();			
+			});
 			
-			//if (row.text.size() == 0) {
-			//	// separator
-			//}
+			// if focus and p.match(EventPress, KeyA, ModCtrl)
 			
-			auto fg = ColorFont;
-			if (not row.onselect) {
-				// disabled
-				fg = ColorFontDisabled;
-			}
-			else if (j == highlight) {
-				// highlighted
-				fg = ColorFontSelected;
-			}
-
-			// render row by cell
-			for (size_t i = 0; i < cols.size(); ++i) {
-				auto & col = cols[i];
-				auto & cell = row.text[i];
-
-				auto cdim = v2s(col.width, line_height);
-
-				render_text(win,
-					cpos, cdim, v2f(col.align, 0.5),
-					FontTiny, fg,
-					cell
-				);
-
-				cpos[0] += col.width + sep[0];
-			}
-
-			row_pos[1] += line_height + sep[1];
 		}
 		
 		
-		
-		
-	}
-	
+	};
+*/
 
-	struct Select: Widget {
+
+
+/*
+	struct FrameNum: Frame {
+
+		Widget * edit;
+		function<void(int)> onenter;
+		
+		FrameNum(function<void(int)> onenter): onenter(onenter) {
+		
+			edit = new EditStr("", 6);
+			
+			adds(
+				(new Cross())->adds(
+					(new Line())->adds(
+						new Label("Num", 5),
+						edit
+					),
+					new Button("OK", 8, [onenter](){
+						onenter(edit.get_value());
+					})
+				)
+			);
+			
+		}
+			
+		void render(Console & con) override {
+			Frame::render();
+			
+			con.on({EventPress, KeyEnter}, [this](){
+				// close ?
+				onenter(edit.get_value());
+			});
+			
+			con.on({EventPress, KeyEsc}, [](){
+				// close ?
+			});
+			
+			
+		}
+
+	};*/
+	
+	
+	
+	
+	
+	
+	struct Select: IWidget {
 			
 		v2s pos;
 		v2s dim;
 		
-		//b2s box;
-		
 		vector<Col> cols;
 		vector<Elem> rows;
+		
+		// close on select
+		using Flag = uint8_t;
+		Flag flags;
+		Flag const
+			FlagCloseOnSelect = 1,
+			FlagFrame = 2;
+			
+		//virtual void onselect() {}
 		
 		Action oncancel;
 		Action onselect;
 				
 		size_t cursor{0};
-		size_t highlight;
+		size_t highlight{size_t(-1)};
 		
-		Select() { highlight = -1; }
 		
-		void add(vector<string> const& text, Action const& onselect, Key shortcut=KeyNone) {
+		Select(int ncol) 
+		{ 
+			for (auto i = 0; i < ncol; ++i)
+			{
+				cols.push_back(Col{});	
+			}
+		}
+		
+		Select() {
+			cols.push_back(Col{});			
+		}
+		
+		void add_col(string name, int width, float align) {
+			cols.push_back(Col{align,width,name});
+		}
+		
+		void set_cols(Col c0) {
+			assert(cols.size() >= 1);
+			cols[0] = c0;
+		}
+		
+		void set_cols(Col c0, Col c1) {
+			assert(cols.size() >= 2);
+			cols[0] = c0;
+			cols[1] = c1;
+		}
+		
+		void add(vector<string> const& text, Action const& onselect, Key shortcut=KeyNone) 
+		{
+			for (size_t i = 0; i < cols.size(); ++i)
+			{
+				auto w = get_text_dim(FontTiny, text.at(i)) [0];
+				if (w > cols.at(i).width) {
+					cols.at(i).width = w;
+				}
+			}
+			
 			rows.push_back(Elem(text, onselect, shortcut));
 		}
 		
 		void add(vector<string> const& text, bool hl, Action const& onselect, Key shortcut=KeyNone) {
 			if (hl) { set_highlight(); }
-			rows.push_back(Elem(text, onselect, shortcut));
+			add(text, onselect, shortcut);
 		}
 		
 		/*void add(string const& text, Action const& onselect, Key shortcut=KeyNone) {
 			rows.push_back(Elem({text}, onselect, shortcut));
 		}*/
 		
-		void render(Front & win, Console & con) override;
+		void render(Console & con) override;
+		
+		
+		int16_t calc_width() const 
+		{
+			auto sep = ly.sep;   // cell sep
+			int width = 0;
+			for (auto & c: cols) {
+				width += c.width;
+			}
+			width += get_elems_stretch(cols.size(), 0, sep[0]);
+			return width;
+		}
+		
+		v2s calc_dim() const
+		{
+			auto line_height = ly.font_tiny;
+			auto sep = ly.sep;   // cell sep
+			
+			auto width = calc_width();
+			int height = get_elems_stretch(rows.size(), line_height, sep[1]);
+			
+			return v2s(width, height);		
+		}
+		
+		v2s get_dim() override 
+		{
+			return calc_dim();
+		}
+		
+		void set_pos(v2s pos) override	
+		{
+			// default single column
+			if (cols.size() == 0) {
+				cols.push_back(Col{});			
+			}		
+		
+			auto line_height = ly.font_tiny;
+			auto sep = ly.sep;   // cell sep
+			
+			int width = 0;
+			for (auto & c: cols) {
+				width += c.width;
+			}
+			width += get_elems_stretch(cols.size(), 0, sep[0]);
+
+			int height = get_elems_stretch(rows.size(), line_height, sep[1]);
+			
+			dim = v2s(width, height);
+			auto box = b2s{pos, {0,0}};
+			pos = calc_align(box, {0.5f, 0.5f}, dim);
+		}
 		
 		void move(size_t i) {
 			cursor = i;
@@ -825,75 +815,107 @@ namespace col {
 		}
 		
 		void set_highlight() {
-			highlight = rows.size();
-			cursor = rows.size();
+			highlight = rows.size();			
 		}
-		
-		void set_geo(b2s box, v2f align) 
-		{
-			// default single column
-			if (cols.size() == 0) {
-				cols.push_back(Col("", 400, 0.0f));			
-			}		
-		
-			auto line_height = ly.font_tiny;
-			auto sep = ly.sep;   // cell sep
-			
-			int width = 0;
-			for (auto & c: cols) {
-				width += c.width;
-			}
-			width += get_elems_stretch(cols.size(), 0, sep[0]);
 
-			int height = get_elems_stretch(rows.size(), line_height, sep[1]);
-			
-			dim = v2s(width, height);			
-			pos = calc_align(box, align, dim);
+		v2s get_row_dim() const {
+			return {calc_width(), FontTiny.get_height()};
 		}
+
+
+		virtual bool handle(Console & con, Event e) override;
 	};
 
-	void Select::render(Front & win, Console & con) {
+
+	bool Select::handle(Console & con, Event e) 
+	{
+		// KEYBOARD
+	
+		// esc -- cancel
+		if (match(e, {EventPress, KeyEsc})) {
+			oncancel();
+			return 1;
+		}
 		
+		// enter -- select under cursor
+		if (match(e, {EventPress, KeyEnter})) {
+			select();
+			return 1;
+		}
+
+		// up arrow -- move cursor
+		if (match(e, {EventPress, KeyUp})) { 
+			move_up();
+			return 1;
+		}
+
+		// down arrow -- move cursor
+		if (match(e, {EventPress, KeyDown})) { 
+			move_down();
+			return 1;
+		}
+	
+		// MOUSE
+	
+		auto row_dim = get_row_dim();
+		auto row_pos = pos + ly.sep;
+
+		for (size_t j = 0; j < rows.size(); ++j) 
+		{	
+			// left click on row -- move cursor
+			if (match(e, {EventPress, KeyLMB, row_pos, row_dim})) 
+			{
+				move(j);
+				return 1;
+			}
+			
+			// left release on row -- select
+			if (match(e, {EventRelease, KeyLMB, row_pos, row_dim})) 
+			{
+				select();
+				return 1;
+			}
+			
+			row_pos[1] += FontTiny.get_height() + ly.sep[1];
+		}
+		
+		// click anywhere -- cancel
+		if (match(e, {EventPress, KeyLMB})) { oncancel(); return 1;}
+		if (match(e, {EventPress, KeyRMB})) { oncancel(); return 1;}
+		
+		// click on dialog -- do nothing
+		if (match(e, {EventPress, KeyLMB, pos, dim})) {
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyRMB, pos, dim})) {
+			return 1;
+		}
+		
+			
+		// any event -- catch
+		return 1;
+	}
+	
+	
+	
+	
+	void Select::render(Console & con) 
+	{
+		auto & win = con.win;
+			
 		auto line_height = ly.font_tiny;
 		auto sep = ly.sep;   // cell sep
 
-		// any event -- ignore
-		con.on();
-
-		// click anywhere -- cancel
-		con.on(EventPress, KeyLMB, oncancel);
-		con.on(EventPress, KeyRMB, oncancel);
-		
-		// esc -- cancel
-		con.on(EventPress, KeyEsc, oncancel);
-		
 		// background & outline border
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
-
-		// click on dialog -- do nothing
-		con.on(EventPress, KeyLMB, pos, dim);
-		con.on(EventPress, KeyRMB, pos, dim);
-
-		// enter -- select under cursor
-		con.on(EventPress, KeyEnter, 
-			[this](){ this->select(); }
-		);
-
-		// up arrow -- move cursor
-		con.on(EventPress, KeyUp, 
-			[this](){ this->move_up(); }
-		);
-
-		// down arrow -- move cursor
-		con.on(EventPress, KeyDown, 
-			[this](){ this->move_down(); }
-		);
 		
-		auto row_dim = v2s(dim[0] - sep[0]*2, line_height);
+		auto row_dim = get_row_dim(); // dim[0] - sep[0]*2
 		auto row_pos = pos + sep;
 
-		for (size_t j = 0; j < rows.size(); ++j) {
+		for (size_t j = 0; j < rows.size(); ++j) 
+		{
 			auto & row = rows[j];
 
 			auto cpos = row_pos;
@@ -905,14 +927,14 @@ namespace col {
 			}
 			
 			// left click on row -- move cursor
-			con.on(EventPress, KeyLMB, row_pos, row_dim,
+			con.on({EventPress, KeyLMB, row_pos, row_dim},
 				[this, j](){ 
 					this->move(j); 
 				}
 			);
 			
 			// left release on row -- select
-			con.on(EventRelease, KeyLMB, row_pos, row_dim,
+			con.on({EventRelease, KeyLMB, row_pos, row_dim},
 				[this](){ this->select(); }
 			);
 
@@ -1003,25 +1025,25 @@ namespace col {
 
 
 		// click anywhere -- cancel
-		con.on(Event::Press, oncancel);
+		con.on({EventPress}, oncancel);
 
 		// esc -- cancel
-		con.on(Event::Press, KeyEsc, oncancel);
+		con.on({EventPress, KeyEsc}, oncancel);
 
 		// background & outline border
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
 
 		// click on dialog -- do nothing
-		con.on(Event::Press, pos, dim, [](){});
+		con.on({EventPress, pos, dim});
 
 		// enter -- select under cursor
-		/*con.on(Event::Press, KeyEnter, 
+		/*con.on(EventPress, KeyEnter, 
 			[&selected,cursor,&keys,onselect](){ selected = keys.at(cursor); onselect(); }
 		);*/
 
 		// up arrow -- move cursor
-		/*con.on(Event::Press, KeyEnter, 
+		/*con.on(EventPress, KeyEnter, 
 			[cursor,onselect](){ cursor; onselect(); }
 		);*/
 
@@ -1050,7 +1072,7 @@ namespace col {
 			}
 
 			// left click on row -- select
-			con.on(Event::Press, Button::Left, row_pos, row_dim,
+			con.on({EventPress, KeyLMB, row_pos, row_dim},
 				[&selected,key,onselect](){ selected = key; onselect(); }
 			);
 
@@ -1075,6 +1097,8 @@ namespace col {
 
 	}
 
+
+	/*
 	template<typename K>
 	void render_select(Front & win, Console & con,
 		std::function<v2s(v2s dim)> cpos,
@@ -1091,7 +1115,7 @@ namespace col {
 		v2s pos = cpos(dim);
 
 		// click anywhere -- cancel
-		con.on(Event::Press, oncancel);
+		con.on(EventPress, oncancel);
 
 		// background
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
@@ -1099,7 +1123,7 @@ namespace col {
 
 
 		// click on dialog -- do nothing
-		con.on(Event::Press, pos, dim, [](){});
+		con.on(EventPress, pos, dim, [](){});
 
 		// entries
 		for (size_t i = 0; i < kvs.size(); ++i) {
@@ -1129,12 +1153,12 @@ namespace col {
 			);
 
 			// left click on entry -- select
-			con.on(Event::Press, Button::Left, p, d,
+			con.on(EventPress, KeyLMB, p, d,
 				[&selected,key,onselect](){ selected = key; onselect(); }
 			);
 		}
 
-	}
+	}*/
 
 
 	void render_unit_cargo(Front &win, Console & con, 
@@ -1187,7 +1211,7 @@ namespace col {
 				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
 
 				// left click on cargo -- start drag cargo unload
-				con.on(Event::Press, Button::Left, cpos, tile_dim,
+				con.on({EventPress, KeyLMB, cpos, tile_dim},
 					[item,num,&con](){ con.drag_cargo(item, num, -1); }
 				);
 
@@ -1220,7 +1244,7 @@ namespace col {
 		// unit cargo area frame
 		if (con.drag_item) {
 			// left release -- drop cargo
-			con.on(Event::Release, Button::Left, pos, dim,
+			con.on({EventRelease, KeyLMB, pos, dim},
 				[&con](){ con.drop_cargo(+1); }
 			);
 		}
@@ -1229,17 +1253,24 @@ namespace col {
 
 
 
+	
 
 
-
-	void show_select_makeable(Env const& env, Console & con, Colony & colony, Build & factory, b2s box, v2f const& align) {
+	void show_select_makeable(Env const& env, Console & con, Colony & colony, Build & factory, b2s box, v2f const& align) 
+	{
 		
-		auto & select = con.replace_widget<Select>();
+		//auto & select = con.replace_widget<Select>();
+		
+		
+		
+		auto & select = con.push_widget<Select>(2);
 					
 		// cols format			
-		select.cols.push_back({"Name", ly.S(1) * 24 * 4, 0.0f});
-		select.cols.push_back({"Cost", ly.S(1) * 7 * 4, 1.0f});
-
+		select.set_cols(
+			{0, ly.S(1) * 24 * 4, "Name"},
+			{1, ly.S(1) * 7 * 4,  "Cost"}
+		);
+		
 		auto gen_row = [&factory](Makeable const& mk) -> vector<string>
 		{
 			string cost;
@@ -1283,6 +1314,7 @@ namespace col {
 					factory.task.reset(&mk);
 				});
 				
+				
 			}
 		}
 
@@ -1302,18 +1334,21 @@ namespace col {
 			}
 		}
 		
-		select.oncancel = [&con](){
-			con.clear_widget();
+		select.oncancel = [&con](){			
+			con.pop_widget();
 		};   // oncancel
 		
 		select.onselect = [&con](){
-			con.clear_widget();
+			con.pop_widget();
 		};   // onselect
 		
 		
 
-		select.set_geo(box, align);
+		select.dim = select.get_dim();
+		
+		select.pos = calc_align(ly.scr, select.dim);
 
+		
 		
 	}
 
@@ -1324,7 +1359,7 @@ namespace col {
 		auto const& supp_reg = env.get_store(terr);
 
 		Register prod_reg, cons_reg;
-		fill_colony_regs(env, terr, prod_reg, cons_reg);
+		logic::fill_colony_regs(env, terr, prod_reg, cons_reg);
 
 		// render supply nums bg
 		render_area(win,
@@ -1337,7 +1372,7 @@ namespace col {
 
 		if (con.drag_item) {
 			// left release city store -- unload cargo
-			con.on(Event::Release, Button::Left, pos, dim,
+			con.on({EventRelease, KeyLMB, pos, dim},
 				[&con](){ con.drop_cargo(-1); }
 			);
 		}
@@ -1364,7 +1399,7 @@ namespace col {
 			);
 
 			// left click on item -- start drag cargo load
-			con.on(Event::Press, Button::Left, tile_pos, tile_dim,
+			con.on({EventPress, KeyLMB, tile_pos, tile_dim},
 				[item,supp_num,&con](){ con.drag_cargo(item, supp_num, +1); }
 			);
 
@@ -1437,7 +1472,9 @@ namespace col {
 		/// Render unit icon with terrain icon in background
 		
 		auto & unit_tex = res(win, ICON, get_icon_id(unit));
-		auto & bgs_tex = res(win, COLONY, 1);
+		
+		// terrain fragments taken from colony background
+		auto & bgs_tex = res(win, COLONY, 1);  
 
 		// determine terrain icon: land or water
 		b2s src_box;
@@ -1494,7 +1531,7 @@ namespace col {
 		// render buildings
 		{
 			// hover anywhere -- clear label on building
-			con.on(Event::Hover,
+			con.on({EventMotion},
 				[&con]() { con.sel_colony_slot_id = -1; }
 			);
 
@@ -1570,7 +1607,7 @@ namespace col {
 					
 
 					// left click on button -- select production
-					con.on(Event::Press, Button::Left, button_pos, button_dim,
+					con.on({EventPress, KeyLMB, button_pos, button_dim},
 						[&env, &con, &colony, &build]() {
 							show_select_makeable(env, con, colony, build,
 								{ly.scr.pos, ly.scr.dim}, v2f{0.5f, 0.5f}
@@ -1595,7 +1632,7 @@ namespace col {
 				}
 
 				// left click on building -- assign worker
-				con.on(Event::Press, Button::Left, build_pos, build_dim,
+				con.on({EventPress, KeyLMB, build_pos, build_dim},
 					[&con, workplace_id]() {
 						if (con.get_sel_unit()) {
 							con.command(format("work-build %||", workplace_id));
@@ -1625,7 +1662,7 @@ namespace col {
 
 
 				// hover on building -- show label with building name (select buildplace)
-				con.on(Event::Hover, build_pos, build_dim,
+				con.on({EventMotion, build_pos, build_dim},
 					[&con, i]() { con.sel_colony_slot_id = i; }
 				);
 
@@ -1662,7 +1699,7 @@ namespace col {
 					}
 					else {
 						// left click on unit -- select this unit
-						con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+						con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 							[&con,unit_id]() {
 								con.command("sel " + to_string(unit_id));
 							}
@@ -1712,7 +1749,7 @@ namespace col {
 				if (field.units.size() == 0) {
 					// left click on field -- assign unit to work there
 					string cmd = format("work-field %||", field_id);
-					con.on(Event::Press, Button::Left, field_pos, field_dim,
+					con.on({EventPress, KeyLMB, field_pos, field_dim},
 						[&con,cmd](){ con.command(cmd); }
 					);
 				}
@@ -1766,7 +1803,7 @@ namespace col {
 							render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
 
 							// left click on field with selected worker -- switch to next proditem
-							/*con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+							/*con.on(EventPress, KeyLMB, sel_pos, sel_dim,
 								[&con,field_id]() {
 									con.command("prodnext-field " + to_string(field_id));
 								}
@@ -1775,7 +1812,7 @@ namespace col {
 
 
 							// left click on field with selected worker -- show select proditem menu
-							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 								[&con, &field]() {
 									con.prod_to_workplace = &field;
 									con.selected_id = field.get_proditem();
@@ -1787,7 +1824,7 @@ namespace col {
 						}
 						else {
 							// left click on field with worker -- select this worker
-							con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 								[&con,unit_id]() {
 									con.command("sel " + to_string(unit_id));
 								}
@@ -1808,7 +1845,7 @@ namespace col {
 
 		// right click anywhere - unselect selected unit
 		if (con.get_sel_unit()) {
-			con.on(Event::Press, Button::Right,
+			con.on({EventPress, KeyRMB},
 				[&con]() {
 					con.unselect_unit();
 				}
@@ -1818,8 +1855,8 @@ namespace col {
 		
 		// left click on city terrain area with selected unit -- unwork that unit
 		if (con.get_sel_unit()) {
-			con.on2(Event::Press, Button::Left, ly.city_units.pos, ly.city_units.dim,
-				"work-none"
+			con.on({EventPress, KeyLMB, ly.city_units.pos, ly.city_units.dim},
+				[&con](){con.command("work-none");}
 			);
 		}
 
@@ -1857,7 +1894,7 @@ namespace col {
 					render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
 
 					// left click on selected unit (on terr) -- show equip select
-					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 						[&con,&unit]() {
 							con.equip_to_unit_id = unit.id;
 							con.selected_id = unit.get_type_id();
@@ -1870,7 +1907,7 @@ namespace col {
 				}
 				else {
 					// left click on unselected unit -- select unit
-					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 						[&con,&env,unit_id]() {
 							con.select_unit(unit_id);
 						}
@@ -1905,7 +1942,7 @@ namespace col {
 		);
 
 		// left click on exit button -- exit city screen
-		con.on(Event::Press, Button::Left, ly.city_exit.pos, ly.city_exit.dim,
+		con.on({EventPress, KeyLMB, ly.city_exit.pos, ly.city_exit.dim},
 			[&con, &terr](){ con.command("exit"); }
 		);
 
@@ -1917,7 +1954,7 @@ namespace col {
 			vector<int> keys;
 			vector<vector<string>> rows;
 
-			for (auto const* ut: equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
+			for (auto const* ut: logic::equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
 				auto item1 = ut->get_item1();
 				auto item2 = ut->get_item2();
 				auto num1 = ut->get_num1();
@@ -1942,8 +1979,8 @@ namespace col {
 
 			// cols
 			vector<Col> cols;
-			cols.push_back({"Name", ly.S(1) * 16 * 4, 0.0f});
-			cols.push_back({"Equip", ly.S(1) * 24 * 4, 1.0f});
+			cols.push_back({0.0f, ly.S(1) * 16 * 4, "Name"});
+			cols.push_back({1.0f, ly.S(1) * 24 * 4, "Equip"});
 
 
 
@@ -1985,7 +2022,7 @@ namespace col {
 			rows.push_back(row);
 
 			// prod items
-			for (auto& item: get_all_items(env)) {
+			for (auto& item: logic::get_all_items(env)) {
 
 				auto prod = logic::get_nominal_prod(env, wp, item);
 
@@ -2001,8 +2038,8 @@ namespace col {
 			}
 
 			// cols
-			cols.push_back({"Item", 14 * 4 * ly.S(1), 0.0f});
-			cols.push_back({"Prod", 5 * 4 * ly.S(1), 1.0f});
+			cols.push_back({0.0f, 14 * 4 * ly.S(1), "Item"});
+			cols.push_back({1.0f, 5 * 4 * ly.S(1),  "Prod"});
 
 			// onclick -> assign proditem to wp
 			render_select_f(win, con,
@@ -2062,7 +2099,7 @@ namespace col {
 				}
 				else {
 					// left click on unselected unit -- select unit
-					con.on(Event::Press, Button::Left, sel_pos, sel_dim,
+					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
 						[&con,unit_id]() {
 							con.command("sel " + to_string(unit_id));
 						}
@@ -2406,14 +2443,6 @@ namespace col {
 			// render colony
 			render_sprite(win, pos, res(win, ICON, 4));
 
-			// left click on colony (on map) -- enter colony screen
-			con.on(Event::Press, Button::Left, pos, v2s(conf.tile_dim, conf.tile_dim),
-				[&con, coords](){
-					con.select_terr(coords);
-					con.command("enter");
-				}
-			);
-
 			// colony flag
 			{
 				auto p = env.get_control(terr);
@@ -2434,14 +2463,6 @@ namespace col {
 			render_sprite(win,
 				calc_align({pos, ly.terr_dim}, get_dim(icon)),
 				icon
-			);
-
-			// left click on unit -- select unit
-			auto unit_id = unit.id;
-			con.on(Event::Press, Button::Left, pos, ly.terr_dim,
-				[&con,unit_id](){
-					con.select_unit(unit_id);
-				}
 			);
 
 		}
@@ -2478,80 +2499,80 @@ namespace col {
 		// selected unit keyboard shortcuts 
 		
 		// numpad move
-		con.on(Event::Press, KeyNumpad2,
+		con.on({EventPress, KeyNumpad2},
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
-		con.on(Event::Press, KeyNumpad8,
+		con.on({EventPress, KeyNumpad8},
 			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
-		con.on(Event::Press, KeyNumpad6,
+		con.on({EventPress, KeyNumpad6},
 			[&con,unit_id](){ con.command("move 1 0"); }
 		);
-		con.on(Event::Press, KeyNumpad4,
+		con.on({EventPress, KeyNumpad4},
 			[&con,unit_id](){ con.command("move -1 0"); }
 		);
-		con.on(Event::Press, KeyNumpad3,
+		con.on({EventPress, KeyNumpad3},
 			[&con,unit_id](){ con.command("move 1 1"); }
 		);
-		con.on(Event::Press, KeyNumpad7,
+		con.on({EventPress, KeyNumpad7},
 			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
-		con.on(Event::Press, KeyNumpad1,
+		con.on({EventPress, KeyNumpad1},
 			[&con,unit_id](){ con.command("move -1 1"); }
 		);
-		con.on(Event::Press, KeyNumpad9,
+		con.on({EventPress, KeyNumpad9},
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
 
 		// alpha move
-		con.on(Event::Press, KeyX,
+		con.on({EventPress, KeyX},
 			[&con,unit_id](){ con.command("move 0 1"); }
 		);
-		con.on(Event::Press, KeyW,
+		con.on({EventPress, KeyW},
 			[&con,unit_id](){ con.command("move 0 -1"); }
 		);
-		con.on(Event::Press, KeyD,
+		con.on({EventPress, KeyD},
 			[&con,unit_id](){ con.command("move 1 0"); }
 		);
-		con.on(Event::Press, KeyA,
+		con.on({EventPress, KeyA},
 			[&con,unit_id](){ con.command("move -1 0"); }
 		);
-		con.on(Event::Press, KeyC,
+		con.on({EventPress, KeyC},
 			[&con,unit_id](){ con.command("move 1 1"); }
 		);
-		con.on(Event::Press, KeyQ,
+		con.on({EventPress, KeyQ},
 			[&con,unit_id](){ con.command("move -1 -1"); }
 		);
-		con.on(Event::Press, KeyZ,
+		con.on({EventPress, KeyZ},
 			[&con,unit_id](){ con.command("move -1 1"); }
 		);
-		con.on(Event::Press, KeyE,
+		con.on({EventPress, KeyE},
 			[&con,unit_id](){ con.command("move 1 -1"); }
 		);
 
 		// build colony
-		con.on(Event::Press, KeyB,
+		con.on({EventPress, KeyB},
 			[&con](){ con.command("build-colony Unnamed"); }
 		);
 		// build road
-		con.on(Event::Press, KeyR,
+		con.on({EventPress, KeyR},
 			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsRoad)); }
 		);
 		// plow fields
-		con.on(Event::Press, KeyP,
+		con.on({EventPress, KeyP},
 			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsPlow)); }
 		);
 		// clear forest
-		con.on(Event::Press, KeyO,
+		con.on({EventPress, KeyO},
 			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsClear)); }
 		);
 		// space - skip unit
-		con.on(Event::Press, KeySpace,
+		con.on({EventPress, KeySpace},
 			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsWait, 1)); }
 		);
 		
 		// esc - clear orders
-		con.on(Event::Press, KeyEsc,
+		con.on({EventPress, KeyEsc},
 			[&con,unit_id](){ 
 				con.clear_unit_cmds(unit_id); 
 				con.set_input_mode(con.InputModeDefault);
@@ -2559,7 +2580,7 @@ namespace col {
 		);
 		
 		// press enter -- execute current orders
-		con.on(Event::Press, KeyEnter,
+		con.on({EventPress, KeyEnter},
 			[&con](){
 				if (auto * u = con.get_sel_unit_ext()) {
 					con.exec_unit_cmds(*u);
@@ -2570,7 +2591,7 @@ namespace col {
 		);
 		
 		// M - enter move mode
-		con.on(Event::Press, KeyM,
+		con.on({EventPress, KeyM},
 			[&con](){ con.set_input_mode(con.InputModeMove); }
 		);
 		
@@ -2696,42 +2717,30 @@ namespace col {
 	}
 	
 	
+		
 	
+	struct MapView: IWidget 
+	{
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+		
+		bool handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e);
 
+
+		
+
+
+	};
+	
+	
+	
+	
 	
 	void render_map(Front & win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
 	{
 		auto w = con.view_dim[0];
 		auto h = con.view_dim[1];
-		
-		// left arrow -- scroll map
-		con.on(Event::Press, KeyLeft, 
-			[&con](){
-				con.move_view({-1,0});
-			}
-		);
-
-		// right arrow -- scroll map
-		con.on(Event::Press, KeyRight, 
-			[&con](){
-				con.move_view({+1,0});
-			}
-		);
-
-		// up arrow -- scroll map
-		con.on(Event::Press, KeyUp, 
-			[&con](){
-				con.move_view({0,-1});
-			}
-		);
-
-		// down arrow -- scroll map
-		con.on(Event::Press, KeyDown, 
-			[&con](){
-				con.move_view({0,+1});
-			}
-		);
 
 		auto vpos = con.view_pos;
 		auto vdim = v2s(w,h);
@@ -2760,72 +2769,7 @@ namespace col {
 
 					auto dim = ly.terr_dim;
 
-					// right click on terr -- center view
-					con.on(Event::Press, Button::Right, pos, dim,
-						[&con,coords](){
-							con.center_view_on(coords);
-						}
-					);
-
-					if (con.get_input_mode() == con.InputModeDefault) {						
-						// left press on terr -- select terr					
-						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords);
-							}
-						);
-
-						// left press on terr with shift -- add select terr
-						con.on(Event::Press, Button::Left, halo::ModButtonLeft|halo::ModShift, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords, +1);
-							}
-						);
-
-						// left press on terr with ctrl -- sub select terr
-						con.on(Event::Press, Button::Left, halo::ModButtonLeft|halo::ModCtrl, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords, -1);
-							}
-						);
-
-						// hover with button down over terr -- select set
-						con.on(Event::Hover, halo::ModButtonLeft, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords);
-							}
-						);
-
-						// hover with button down with shift over terr -- select add
-						con.on(Event::Hover, halo::ModButtonLeft|halo::ModShift, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords, +1);
-							}
-						);
-
-						// hover with button down with ctrl over terr -- select sub
-						con.on(Event::Hover, halo::ModButtonLeft|halo::ModCtrl, pos, ly.terr_dim,
-							[&con,coords](){
-								con.select_terr(coords, -1);
-							}
-						);
-					}
-					else if (con.get_input_mode() == con.InputModeMove) 
-					{
-						// left press on terr -- show path
-						con.on(Event::Press, Button::Left, pos, ly.terr_dim,
-							[&con,coords](){
-								if (auto * u = con.get_sel_unit_ext()) {																		
-									auto path = con.find_path(con.get_coords(*u), coords, *u);
-									u->cmds.clear();
-									if (path.exists()) {
-										u->cmds.adds(path.cmds);
-									}				
-								}
-							}
-						);
-						
-					}
+					// handle
 
 
 				}
@@ -2859,7 +2803,7 @@ namespace col {
 
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 
-					auto& terr = env.get_terr(coords);
+					auto & terr = env.get_terr(coords);
 
 					if (con.has_vision(terr)) {
 						render_stack(win, con, pos, env, terr);
@@ -2904,6 +2848,8 @@ namespace col {
 				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
 					if (overlap(view_box, coords)) {
+					
+						
 						render_inline(win,
 							vmul(coords - vpos, ly.terr_dim) + pos,
 							ly.terr_dim,
@@ -2926,52 +2872,207 @@ namespace col {
 	}
 	
 	
-
-	void render_bar(Front &win,
-		Env const& env,
-		Console const& con,
-		v2s pos,
-		v2s dim
-	) {
-		// pos - left top pix
-		// dim - size
-
-		
-		
-
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
-
+	
+	void MapView::render(Console & con) {
+	
+		render_map(con.win, con.env, con, ly.map.pos, Coords(0,0));
+	
 	}
+	
+	bool MapView::handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e) 
+	{
+	
+		
+	
+		// right click on terr -- center view
+		if (match(e, {EventPress, KeyRMB, pos, dim})) {
+			con.center_view_on(coords);
+			return 1;
+		}
+
+		if (con.get_input_mode() == con.InputModeDefault)
+		{
+			if (e.match_box({pos,dim}))
+			{
+				auto & terr = con.env.get_terr(coords);
+				
+				// left press on terr with shift -- add select terr				
+				if (match(e, {EventPress, KeyLMB, ModLShift, pos, dim})) {
+					con.select_terr(coords, +1);
+					return 1;
+				}
+
+				// left press on terr with ctrl -- sub select terr
+				if (match(e, {EventPress, KeyLMB, ModLCtrl, pos, dim})) {
+					con.select_terr(coords, -1);
+					return 1;
+				}
+				
+				// hover with button down with shift over terr -- select add
+				if (match(e, {EventMotion, ModLMB|ModLShift, pos, dim})) {
+					con.select_terr(coords, +1);
+					return 1;
+				}
+
+				// hover with button down with ctrl over terr -- select sub
+				if (match(e, {EventMotion, ModLMB|ModLCtrl, pos, dim})) {
+					con.select_terr(coords, -1);
+					return 1;
+				}
+				
+				// hover with button down over terr -- select set
+				if (match(e, {EventMotion, ModLMB, pos, dim})) {
+					con.select_terr(coords);
+					return 1;
+				}
+
+				
+				// left press -- city enter OR select unit OR select terr
+				if (match(e, {EventPress, KeyLMB, pos, dim})) 
+				{
+					if (terr.has_colony()) 
+					{
+						con.enter(coords);
+						return 1;
+					}
+					else if (terr.has_units()) 
+					{
+						print("select unit\n");
+						con.select_unit(terr.units.at(0));
+						return 1;
+					}
+					else 
+					{
+						print("select terr\n");
+						con.select_terr(coords);
+						return 1;
+					}
+				}
+				
+				
+				
+			}
+		}
+		else if (con.get_input_mode() == con.InputModeMove) 
+		{
+			// left press on terr -- show path
+			if (match(e, {EventPress, KeyLMB, pos, dim})) 
+			{
+				if (auto * u = con.get_sel_unit_ext()) {																		
+					auto path = con.find_path(con.get_coords(*u), coords, *u);
+					u->cmds.clear();
+					if (path.exists()) {
+						u->cmds.adds(path.cmds);
+					}				
+				}
+				return 1;	
+			}
+			
+		}
+		
+		return 0;
+	}
+	
+	bool MapView::handle(Console & con, Event e) 
+	{
+		// left arrow -- scroll map
+		if (match(e, {EventPress, KeyLeft})) { 
+			con.move_view({-1,0});	
+			return 1;		
+		}
+
+		// right arrow -- scroll map
+		if (match(e, {EventPress, KeyRight})) {
+			con.move_view({+1,0});
+			return 1;
+		}
+
+		// up arrow -- scroll map
+		if (match(e, {EventPress, KeyUp})) {
+			con.move_view({0,-1});
+			return 1;
+		}
+
+		// down arrow -- scroll map
+		if (match(e, {EventPress, KeyDown})) {
+			con.move_view({0,+1});
+			return 1;
+		}
+	
+	
+		auto w = con.view_dim[0];
+		auto h = con.view_dim[1];
+		
+		auto vpos = con.view_pos;
+		auto vdim = v2s(w,h);
+
+		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
+		
+		auto & env = con.get_env();
+		
+		for (int j = 0; j < h; ++j) 
+		{
+			for (int i = 0; i < w; ++i) 
+			{		
+				auto coords = Coords(i,j) + vpos;
+				if (env.in_bounds(coords)) {
+				
+					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
+					auto dim = ly.terr_dim;
+
+					// handle terr
+					if (handle_terr(con, coords, pos, dim, e)) {
+						return 1;
+					}
+				}
+			}
+		}
+		return 0;
+	}
+	
+	
+	
+	
 
 	void finish_popup(Console & con, Select & s) 
 	{
 		s.oncancel = [&con](){
-			con.clear_widget();
+			con.pop_widget();
 		};   // oncancel
 		
 		s.onselect = [&con](){
-			con.clear_widget();
+			con.pop_widget();
 		};   // onselect
 				
-		s.set_geo({ly.scr.pos, ly.scr.dim}, v2f(0.5f, 0.5f));
+		s.dim = s.get_dim();
+		s.pos = calc_align(ly.scr, s.dim);
+		
+		
+		
 	}
 	
 	void finish_popup_at(Console & con, Select & s, v2s pos) 
 	{
 		s.oncancel = [&con](){
-			con.clear_widget();
+			con.pop_widget();
 		};   // oncancel
 		
 		s.onselect = [&con](){
-			con.clear_widget();
+			con.pop_widget();
 		};   // onselect
-				
-		s.set_geo({pos, v2s(0,0)}, v2f(0.0f, 0.0f));
+		
+		s.dim = s.get_dim();
+		s.pos = pos;
+		
+		
 	}
 
 	void show_select_biome(Env const& env, Console & con, Terr const& terr) {
 		auto current = terr.get_biome();
-		auto & s = con.replace_widget<Select>();
+	
+		auto & s = con.push_widget<Select>(1);
+		//s.set_cols({0, 16 * FontTiny.get_width(), "Biome"});
+		
 		
 		for (auto i = BiomeNone+1; i < BiomeEnd; ++i)
 		{
@@ -2980,12 +3081,27 @@ namespace col {
 			});			
 		}
 		
-		finish_popup(con, s);
+		s.oncancel = [&con](){
+			con.pop_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.pop_widget();
+		};   // onselect
+				
+		s.dim = s.get_dim();
+		s.pos = calc_align(ly.scr, s.dim);
+		
+		
+		
 	}
 	
-	void show_select_alt(Env const& env, Console & con, Terr const& terr) {
-		auto current = terr.get_alt();
-		auto & s = con.replace_widget<Select>();
+	void show_select_alt(Env const& env, Console & con, Terr const& terr) 
+	{
+	
+		auto current = con.get_alt();
+			
+		auto & s = con.push_widget<Select>(1);
 		
 		for (auto i = AltNone+1; i < AltEnd; ++i)
 		{
@@ -2994,12 +3110,22 @@ namespace col {
 			});			
 		}
 		
-		finish_popup(con, s);
+		s.oncancel = [&con](){
+			con.pop_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.pop_widget();
+		};   // onselect
+				
+		s.dim = s.get_dim();
+		s.pos = calc_align(ly.scr, s.dim);
+		
 	}
 	
 	void show_select_river(Console & con, Terr & terr) {
 		auto current = terr.get_phys(PhysRiver);
-		auto & s = con.replace_widget<Select>();
+		auto & s = con.push_widget<Select>(1);
 		
 		auto lst = std::array<Phys,3>{PhysNone, PhysMinorRiver, PhysMajorRiver};
 		
@@ -3015,7 +3141,7 @@ namespace col {
 	
 	void show_select_flora(Console & con, Terr & terr) {
 		auto current = terr.get_phys(PhysForestPlow);
-		auto & s = con.replace_widget<Select>();
+		auto & s = con.push_widget<Select>(1);
 		
 		auto lst = std::array<Phys,3>{PhysNone, PhysForest, PhysPlow};
 		
@@ -3032,7 +3158,7 @@ namespace col {
 
 
 	void show_select_unit_type(Env const& env, Console & con) {
-		auto & s = con.replace_widget<Select>();
+		auto & s = con.push_widget<Select>(1);
 		auto * u = con.get_sel_unit();
 		
 		
@@ -3056,7 +3182,7 @@ namespace col {
 
 	void show_select_speciality(Console & con) {
 		
-		auto & s = con.replace_widget<Select>();
+		auto & s = con.push_widget<Select>(1);
 		
 		auto * u = con.get_sel_unit();
 		
@@ -3109,7 +3235,7 @@ namespace col {
 
 	struct Menu : Widget {
 		int cursor{-1};
-		void render(Front & win, Console & con) override;
+		void render(Front & win, Console & con);
 			
 		int size() { return 2; }
 				
@@ -3184,8 +3310,15 @@ namespace col {
 	
 	}
 
+	struct SelectFaction 
+	{
+		void render(Con & con);
+		bool handle(Con & con, Event e);
+	};
+
 	void show_select_nation(Console & con) {
-		auto & s = con.replace_widget<Select>();
+		
+		auto & s = con.push_widget<Select>();
 		
 		for (auto & faction: list_values(con.env.factions)) 
 		{			
@@ -3194,26 +3327,34 @@ namespace col {
 				con.set_control(id);
 			});			
 		}		
-		finish_popup(con, s);	
+		
+		s.oncancel = [&con](){
+			con.pop_widget();
+		};   // oncancel
+		
+		s.onselect = [&con](){
+			con.pop_widget();
+		};   // onselect
+				
+		s.dim = s.get_dim();
+		s.pos = calc_align(ly.scr, s.dim);
+		
 	}
-
-	void render_panel(Front & win,
-			Env const& env,
-			Console & con,
-			v2s pos,
-			v2s dim
-		) {
+	
+	struct SidePanel: IWidget
+	{
+		void render(Con & con);
+		bool handle(Con & con, Event e);
+	};
+	
+	void SidePanel::render(Con & con) 
+	{
+		auto & win = con.win;
+		auto & env = con.env;
+		auto pos = ly.pan.pos;
+		auto dim = ly.pan.dim;	
 
 		//front::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
-
-		con.on(Event::Press, KeyF12,
-			[&con](){ 
-				con.editing = !con.editing; 
-				con.put("EDITING = %||", int(con.editing));
-			}
-		);
-	
-		
 
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 
@@ -3229,11 +3370,6 @@ namespace col {
 			auto & f = env.get<Faction>(env.get_current_control());
 			faction_name = f.get_name();
 		}
-		
-		
-		
-		
-		
 		
 		
 		
@@ -3366,7 +3502,7 @@ namespace col {
 				int(TIME_UNIT)
 			));
 
-			cur.text(format("moves: %||\n", get_moves(*u)));
+			cur.text(format("moves: %||\n", logic::get_moves(*u)));
 			// cur.text(format("transported: %||\n", u->get_transported()));
 			cur.text(format("space left: %||\n", u->get_space_left()));
 
@@ -3383,8 +3519,8 @@ namespace col {
 
 
 		// top right: nation indicator
-		if (env.has_current_control()) {
-			
+		if (env.has_current_control()) 
+		{
 			render_fill(win,
 				pos + v2s(dim[0]-ly.S(1),0),
 				v2s(ly.S(1), ly.S(1)),
@@ -3392,11 +3528,9 @@ namespace col {
 			);
 		}
 
-		//auto ren = Renderer(win, env);
-
-
-
-		if (auto t = con.get_sel_terr()) {
+		// unit list
+		if (auto t = con.get_sel_terr()) 
+		{
 			v2s pos = ly.pan.pos + v2s(0,ly.S(100));
 			v2s dim = v2s(ly.pan.dim[0], ly.terr_dim[1]*3);
 
@@ -3427,15 +3561,12 @@ namespace col {
 				);
 
 				// left click -> select next idle
-				con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
+				con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
 					[&con](){ con.select_next_unit(); }
 				);
 				
 			}
 		}
-		
-		
-		
 		
 		
 		
@@ -3459,7 +3590,7 @@ namespace col {
 
 
 				// left click -> select idle
-				con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
+				con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
 					[&con,terr](){ con.select_terr(terr); con.mode = Console::Mode::COLONY; }
 				);
 				
@@ -3485,7 +3616,7 @@ namespace col {
 					if (con.get_input_mode() == con.InputModeDefault) 
 					{
 						// Ctrl + Enter -> move all
-						/*con.on(Event::Press, halo::ModCtrl, KeyEnter,
+						/*con.on(EventPress, halo::ModCtrl, KeyEnter,
 							[&con](){ 						
 								print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
 								con.repeat_all(); 
@@ -3502,7 +3633,7 @@ namespace col {
 					if (con.get_input_mode() == con.InputModeDefault) 
 					{
 						// Ctrl + Enter -> end turn	
-						/*con.on(Event::Press, halo::ModCtrl, KeyEnter,
+						/*con.on(EventPress, halo::ModCtrl, KeyEnter,
 							[&con](){ con.command("ready"); }
 						);*/
 					}
@@ -3519,81 +3650,32 @@ namespace col {
 			);
 
 			// left click -> start/ready
-			con.on(Event::Press, Button::Left, text_box.pos, text_box.dim,
+			con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
 				[&con,cmd](){ con.command(cmd); }
 			);
 
 		}
-
-
-
-	}
-
-
-
-
-
-
-
-
-
-	void render_cmd(Front & app, col::Console & con) {
-
-		auto ln = con.output.size();
-		v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
-
-		for (auto& line: boost::adaptors::reverse(con.output)) {
-
-
-			auto text_box = render_text(app,
-				pos, {0,0}, {0,0},
-				FontTiny, ColorFont, {0,0,0,128},
-				line
-			);
-
-			pos[1] += text_box.dim[1];
-		}
-
-		// command line with cursor
-		render_text(app,
-			ly.scr.pos, {0,0}, {0,0},
-			FontTiny, ColorFont, ColorNone,
-			con.buffer + "_"
-		);
-
-		// trap all keyboard
-		con.on(Dev::Keyboard);
-
-		// char entered
-		con.on(Event::Char, [&con](halo::Pattern const& p){
-			con.handle_char(*p.unicode);
-		});
-
-		// history up
-		con.on(Event::Press, KeyUp, [&con](){
-			con.history_up();
-		});
-
-		// history down
-		con.on(Event::Press, KeyDown, [&con](){
-			con.history_down();
-		});
-
-		// enter
-		con.on(Event::Press, KeyReturn, [&con](){
-			con.handle_char(u'\r');
-		});
-
-		// backspace
-		con.on(Event::Press, KeyBackspace, [&con](){
-			con.handle_char(u'\b');
-		});
-
-
-
-
 		
 	}
+	
+	bool SidePanel::handle(Con & con, Event e) 
+	{
+		// F12 -- toogle edit mode
+		if (match(e, {EventPress, KeyF12})) 
+		{
+			con.editing = !con.editing; 
+			return 1;
+			//con.put("EDITING = %||", int(con.editing));		
+		}
+		return 0;
+	}
+
+
+
+
+
+
+
 
 
 
@@ -3601,8 +3683,8 @@ namespace col {
 	void render_cursor(Front & win, Console const& con) {
 		if (con.drag_item) {
 
-			auto mouse = front::get_mouse();
-			auto pos = v2s(get_logical_pos(win, mouse.pos));
+			
+			auto pos = v2s(get_logical_pos(win, con.mouse.pos));
 			//print("cursor: %||, %||\n", mp.x, mp.y);
 
 			render_sprite(win, pos, res(win, ICON, get_item_icon_id(con.drag_item)));
@@ -3614,7 +3696,7 @@ namespace col {
 	void render_drag_clear(Console & con) {
 		if (con.drag_item) {
 			// left release anywhere -- end drag cargo
-			con.on(Event::Release, Button::Left,
+			con.on({EventRelease, KeyLMB},
 				[&con](){ con.drop_cargo(0); }
 			);
 		}
@@ -3645,40 +3727,90 @@ namespace col {
 
 
 
-	void show_edit_menu(Console & con, v2s pos) 
-	{	
-		auto & s = con.replace_widget<Select>();
 
+
+
+	struct EditMenu: IWidget{
+		void render(Con & con) override;
+		bool handle(Con & con, Event e) override;
+		void init(Con & con, v2s pos);
+		void showhide() { visible = not visible; }
 		
+		
+		bool visible{0};
+		Select s;
+	};
+	
+	void EditMenu::render(Con & con) {
+		if (visible) {
+			s.render(con);
+		}
+	}
+	
+	bool EditMenu::handle(Con & con, Event e) {
+		if (visible) {
+			if (s.handle(con, e)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	
+	void EditMenu::init(Con & con, v2s pos) 
+	{
 		s.add({"Add faction"}, [&con](){
-			show_add_faction_widget();
-			if (con.has_sel_unit()) {
-				con.set_input_mode(con.InputModeMove);
-			}
+			
 		});
 		
-		s.add({"Exec (Enter)"}, [&con](){
-			if (auto * u = con.get_sel_unit_ext()) {
-				con.exec_unit_cmds(*u);
-				con.select_next_unit();
-			}
+		s.add({"Ready"}, [&con](){
+			con.env.ready();
 		});
 		
-		s.add({"Clear (Esc)"}, [&con](){
-			if (con.has_sel_unit()) {
-				con.clear_unit_cmds(con.get_sel_unit_id());
-			}
+		s.add({"Turn"}, [&con](){
+			con.env.turn();
 		});
 				
-		finish_popup_at(con, s, pos);	
+		s.oncancel = [this](){
+			this->showhide();
+		};   // oncancel
+		
+		s.onselect = [this](){
+			this->showhide();
+		};   // onselect
+		
+		s.dim = s.get_dim();
+		s.pos = pos;		
 	}
 
-
-	void show_order_menu(Console & con, v2s pos) 
-	{	
-		auto & s = con.replace_widget<Select>();
-
+	struct OrderMenu: IWidget{
+		void render(Con & con) override;
+		bool handle(Con & con, Event e) override;
+		void init(Con & con, v2s pos);
+		void showhide() { visible = not visible; }
 		
+		
+		bool visible{0};
+		Select s;
+	};
+	
+	void OrderMenu::render(Con & con) {
+		if (visible) {
+			s.render(con);
+		}
+	}
+	
+	bool OrderMenu::handle(Con & con, Event e) {
+		if (visible) {
+			if (s.handle(con, e)) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	
+	
+	void OrderMenu::init(Con & con, v2s pos) 
+	{
 		s.add({"Move (M)"}, [&con](){
 			if (con.has_sel_unit()) {
 				con.set_input_mode(con.InputModeMove);
@@ -3698,33 +3830,296 @@ namespace col {
 			}
 		});
 				
-		finish_popup_at(con, s, pos);	
+		s.oncancel = [this](){
+			this->showhide();
+		};   // oncancel
+		
+		s.onselect = [this](){
+			this->showhide();
+		};   // onselect
+		
+		s.dim = s.get_dim();
+		s.pos = pos;
 	}
 	
 	
-	void render_menu(Console & con) 
+	struct Link: IWidget {
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+		
+		string text;
+		Action act;
+		b2s box;
+		
+		Link() = default;
+		Link(string const& text, Action act): text(text), act(act) {
+			box.dim = get_text_dim(FontTiny, text);	
+		}
+		
+		void set_text(string const& t) {
+			text = t;
+			box.dim = get_text_dim(FontTiny, text);	
+		}
+		
+		v2s get_sub_pos() const {
+			return {box.pos[0], box.end()[1]};
+		}
+	};
+	
+	void Link::render(Console & con)
 	{
-		auto cur = TextRend2(con.win, con, ly.bar, FontTiny, StyleMenu);
-
-		auto pos = cur.get_pos() + v2s(0, cur.get_height() + ly.line);		
-
-		cur.link("Order", true, [&con, pos](){
-			show_order_menu(con, pos);
-		});
-
+		render_text_at(con.win, box.pos, FontTiny, StyleMenu.hl, text);
+	}
+	
+	bool Link::handle(Console & con, Event e)
+	{	
+		if (match(e, {EventPress, KeyLMB, box.pos, box.dim})) 
+		{
+			act();
+			return 1;
+		}
+		return 0;
+	}
+	
+	struct MainMenu: IWidget{
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+		
+		Link order;
+		Link edit;
+		
+		OrderMenu order_menu;
+		EditMenu edit_menu;
+		
+		
+		MainMenu(Console & con) {
+					
+			auto pos = ly.bar.pos;
+			
+			order.set_text("Order");
+			order.act = [this](){
+				order_menu.showhide();
+			};
+			order.box.pos = pos;
+			
+			order_menu.init(con, order.get_sub_pos());
+			
+			
+			pos[0] += 24 * ex;
+			
+			edit.set_text("Edit");
+			edit.act = [this](){
+				edit_menu.showhide();
+			};
+			edit.box.pos = pos;
+			
+			edit_menu.init(con, edit.get_sub_pos());
+					
+			pos[0] += 24 * ex;
+			
+		}
+	};
+	
+	bool MainMenu::handle(Console & con, Event e) {
+		
+		// F9 -> focus
+		
+		// click -> open submenu
+		if (order.handle(con, e)) {
+			return 1;
+		}
+		
+		if (edit.handle(con, e)) {
+			return 1;
+		}
+		
+		if (order_menu.handle(con, e)) {
+			return 1;
+		}
+		
+		if (edit_menu.handle(con, e)) {
+			return 1;
+		}
+		
+		// if focused
+			// focused -- submenu is always opened when focused 
+			// arrow left/right
+		
+			// right click -- close menu
+		
+		
+		return 0;
+	}
+	
+	void MainMenu::render(Console & con) 
+	{
+		order.render(con);
+		edit.render(con);
+		order_menu.render(con);
+		edit_menu.render(con);		
 	}
 	
 
-
-	void render(Front & app, col::Env & env, col::Console & con, int verbose) {
+	struct Command: IWidget{
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+	};
 	
-		con.sync_widget();
+	bool Command::handle(Console & con, Event e) 
+	{
+
+		// history up
+		if (match(e, {EventPress, KeyUp})) {
+			con.history_up();
+			return 1;
+		}
+
+		// history down
+		if (match(e, {EventPress, KeyDown})) {
+			con.history_down();
+			return 1;
+		}
+
+		// enter
+		if (match(e, {EventPress, KeyEnter})) {
+			con.handle_char(u'\r');
+			return 1;
+		}
+
+		// backspace
+		if (match(e, {EventPress, KeyBackspace})) {
+			con.handle_char(u'\b');
+			return 1;
+		}
+
+		// char entered
+		if (match(e, {EventChar})) {
+			con.handle_char(e.get_chr());
+			return 1;
+		}
+
+		// trap all keyboard
+		// ??? how to
+	
+		return 0;
+	}
+	
+	
+	void Command::render(Console & con) 
+	{
+		auto & app = con.win;
+
+		auto ln = con.output.size();
+		v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
+
+		for (auto& line: boost::adaptors::reverse(con.output)) {
+
+			auto text_box = render_text(app,
+				pos, {0,0}, {0,0},
+				FontTiny, ColorFont, {0,0,0,128},
+				line
+			);
+
+			pos[1] += text_box.dim[1];
+		}
+
+		// command line with cursor
+		render_text(app,
+			ly.scr.pos, {0,0}, {0,0},
+			FontTiny, ColorFont, ColorNone,
+			con.buffer + "_"
+		);
+		
+	}
+	
+	
+	
+	struct MainFrame: IWidget{
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+		
+		Command command;
+		MainMenu main_menu;
+		MapView map_view;
+		SidePanel side_panel;
+		
+		MainFrame(Console & con): main_menu(con) {}
+	};
+	
+	void MainFrame::render(Console & con) 
+	{
+		auto & win = con.win;
+	
+		// map-view
+		map_view.render(con);
+	
+
+		// top-bar background
+		render_area(win, ly.bar.pos, ly.bar.dim, res(win, WOODTILE, 1));
+
+		// black hline under the top-bar
+		render_fill(win,
+			{ly.bar.pos[0], ly.bar.end()[1]},
+			{ly.bar.dim[0], ly.line},
+			{0,0,0,255}
+		);
+	
+		// top-bar content: cmd or menu
+		if (con.is_active()) 
+		{
+			command.render(con);
+		}
+		else {
+			main_menu.render(con);
+		}
+		
+		// side panel
+		side_panel.render(con);
+
+	}
+	
+	bool MainFrame::handle(Console & con, Event e) 
+	{
+
+		// toogle terminal
+		if (match(e, {EventChar, '`'})) 
+		{
+			con.set_active(not con.is_active());
+			return 1;
+		}
+		
+		if (con.is_active()) {
+			if (command.handle(con, e)) {
+				return 1;
+			}
+		}
+		else {
+			if (main_menu.handle(con, e)) {
+				return 1;
+			}
+		}
+		
+		if (map_view.handle(con, e)) {
+			return 1;
+		}
+		
+		
+		if (side_panel.handle(con, e)) {
+			return 1;
+		}
+		
+		return 0;
+	}
+
+
+	void render(Front & app, col::Env & env, col::Console & con, int verbose) 
+	{
 	
 		if (verbose >= 2) print("render: {\n");
 
 		app.clear();
 
-		con.reset_hotspots();
+		con.reg.clear();
 
 		int w = app.get_ctx_dim()[0];
 		int h = app.get_ctx_dim()[1];
@@ -3733,19 +4128,7 @@ namespace col {
 		render_drag_clear(con);
 
 
-		// bar top
-		render_bar(app, env, con, ly.bar.pos, ly.bar.dim);
-
-		// hline under the bar
-		render_fill(app,
-			{ly.bar.pos[0], ly.bar.end()[1]},
-			{ly.bar.dim[0], ly.line},
-			{0,0,0,255}
-		);
-
-
 		
-
 
 		if (con.mode == Console::Mode::COLONY) {
 			render_city(app, env, con);
@@ -3755,13 +4138,13 @@ namespace col {
 			if (verbose >= 2) print("render: render_map\n");
 
 			// map
-			render_map(app, env, con, ly.map.pos, Coords(0,0));
+			//render_map(app, env, con, ly.map.pos, Coords(0,0));
 
 			// panel right
-			render_panel(app, env, con,
+			/*render_panel(app, env, con,
 				ly.pan.pos,
 				ly.pan.dim
-			);
+			);*/
 
 			// vline left of the panel
 			render_fill(app,
@@ -3780,39 +4163,18 @@ namespace col {
 
 		if (verbose >= 2) print("render: render_cmd\n");
 
+		// top bar
+		// moved to MainFrame
 
-		if (con.is_active()) {
-
-			render_cmd(app, con);
-
-			// deactivate terminal
-			con.on(Event::Char, u'`', [&con](){
-				con.set_active(false);
-			});
-
+		
+		// render widgets stack
+		for (auto * w: con.widgets) {
+			w->render(con);
 		}
-		else {
-			render_menu(con);
 		
-			// activate terminal
-			con.on(Event::Char, u'`', [&con](){
-				con.set_active(true);
-			});
-		}
-
-		
-		
-
-		
-
 		render_cursor(app, con);
-
-
-		// render current widget
-		if (con.widget) {
-			con.widget->render(app, con);
-		}
-
+		
+		
 		//app.render_line(ly.scr.pos, ly.scr.end(), ColorRed, 5);
 
 
@@ -3824,7 +4186,15 @@ namespace col {
 	}
 
 
-
+	void init_renderer(Console & con) 
+	{
+		front::input::print_mod_table();
+		
+		con.push_widget<MainFrame>(con);
+		
+		
+	}
+	
 
 
 }

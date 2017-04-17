@@ -42,9 +42,31 @@ namespace col {
 	// using Nations = unordered_map<Nation::Id, Nation>;
 	using Factions = unordered_map<Faction::Id, Faction>;
 
-
-
 	
+	template<class T, class K>
+	K get_free_id(unordered_map<K,T> const& xs) 
+	{
+		K i = 0;		
+		auto p = xs.cbegin();
+		auto end = xs.cend();
+		
+		while (p != end and i == p->first)
+        { 
+			++p;
+			++i;
+		}
+		
+		return i;
+	}
+	
+	template<class T, class K>
+	T & get_memory(unordered_map<K,T> & xs, K i) 
+	{
+		// assert i is unused
+		return &xs[i];
+	}
+	
+
 
 
 	struct Core {
@@ -131,9 +153,6 @@ namespace col {
 		template <typename T>
 		Terr const& get_terr(T const& u) const;
 
-		template<class... A> inline
-		Faction & create_faction(A&&... args);
-		
 		template <typename T> inline
 		T * opt(typename T::Id const& id);
 	
@@ -234,20 +253,6 @@ namespace col {
 	}
 
 	
-	template<class... A> inline
-	Faction & Core::create_faction(A&&... args) 
-	{		
-		auto id = Faction::Id(factions.size());
-		
-		auto p = factions.emplace(piecewise_construct,
-			forward_as_tuple(id),
-			forward_as_tuple(id, std::forward<A>(args)...)
-		).first;
-
-		return (*p).second;
-	}
-
-	
 	
 	template<class T, class... A> inline
 	T& Core::create(A&&... args) {
@@ -294,7 +299,7 @@ namespace col {
 		auto it = get_cont<T>().find(id);
 
 		if (it == get_cont<T>().end()) {
-			print("ERROR: no %|| with id=%||\n", type_name<T>::get(), id);
+			print("ERROR: no %|| with id=%||\n", type_name<T>::get(), int(id));
 			assert(false);
 		}
 

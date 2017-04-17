@@ -12,7 +12,7 @@ namespace col {
 
 
 	template <class T, class U>
-	void print_table(ostream & o, darray2::darray2<T,U> const& a) 
+	void print_table(ostream & o, darray::darray2<T,U> const& a) 
 	{	
 		
 		for (U j = 0; j < a.dim[1]; ++j) {

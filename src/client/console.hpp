@@ -10,7 +10,6 @@
 #include "layout.hpp"
 #include "player.hpp"
 #include "logic.hpp"
-#include "halo.hpp"
 #include "player.hpp"
 #include "runner.hpp"
 #include "random_module.hpp"
@@ -19,7 +18,8 @@
 #include "exts.hpp"
 #include "marks.hpp"
 #include "path.hpp"
-
+#include "event.hpp"
+#include "widget.hpp"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -40,7 +40,7 @@ namespace col {
 	std::u16string const CHARSET = u" !\"#$%'()+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUWXYZ[\\]^_`vabcdefghijklmnopqrstuwxyz{|}@~\r\b";
 
 	struct Console;
-
+	struct MainFrame;
 
 	
 
@@ -63,11 +63,14 @@ namespace col {
 
 	struct Console;
 	
-	struct Widget{
+	struct Widget_0
+	{
 		virtual void render(Front & win, Console & con) {
 			print(std::cerr, "default widget render");
 		}
 	};
+	
+	struct IWidget;
 
 
 
@@ -118,6 +121,13 @@ namespace col {
 
 		Env & env;
 
+		Env & get_env() {
+			return env;
+		}
+
+		Keyboard keyboard;
+		Mouse mouse;
+
 		uint32_t mod;
 
 		Auth auth{0};
@@ -144,11 +154,7 @@ namespace col {
 		// selected unit
 		Unit * sel_unit{nullptr};
 
-		v2s view_pos{0,0};		
 		
-		b2c get_view_box() const { return b2c(view_pos, view_dim); }
-		v2c get_view_pos() const { return view_pos; }		
-		v2c get_view_dim() const { return view_dim; }
 
 		Runner * runner{nullptr};
 		
@@ -218,6 +224,8 @@ namespace col {
 			return step_GUI();
 		}
 		
+		void handle_events();
+
 		
 	
 		Class get_class() const override { return ClassConsole; }
@@ -227,44 +235,46 @@ namespace col {
 		//Makeable const* selprod_makeable{nullptr};
 		
 
-		using Event = halo::Event;
-		using Button = halo::Button;
-		using Key = halo::Key;
-		using Pattern = halo::Pattern;
-		using Dev = halo::Dev;
-
-
-		halo::Patterns hts;
+		
+		Rules reg;
+		
 
 		// active screen
 		enum class Mode{
 			AMERICA, COLONY, EUROPE, REPORT
 		};
 
-		Widget * widget{nullptr};
+		//Widget * widget{nullptr};
 		//Widget * widget_next{nullptr};
 		
-		template <class T, class ... Args>
-		T & replace_widget(Args && ... args) {
-			if (widget) {
-				delete widget;
-			}		
-			T * t = new T(std::forward<Args>(args)...);	
-			widget = t; 
-			return *t;
-		}
+		
+		void handle_event(Event e);
 
-		void clear_widget() {
-			if (widget) {
-				delete widget;
-			}			
-			widget = nullptr;			
+		
+		//std::vector<std::function<void(Console&)>> grs;
+		
+		
+		// gui render stack
+		std::vector<IWidget*> widgets;
+		
+		template <class T, class ...Args>
+		T & push_widget(Args&&... args) {
+			auto * w = new T(std::forward<Args>(args)...);
+			widgets.push_back(w);
+			return *w;
 		}
+		
+		void pop_widget() {
+			if (widgets.size()) {				
+				IWidget * w = widgets.at(widgets.size() - 1);
+				widgets.pop_back();
+				delete w;
+			}
+		}
+		
 
-		// call this at the begining of render function
-		void sync_widget() {
-			
-		}
+		void init_demo();
+		
 		
 
 		// is console active - keyboard focus
@@ -287,9 +297,7 @@ namespace col {
 		Env *server{nullptr};   // wtf?
 
 
-		/// map view position
-		v2s view_dim{15,12};
-
+		
 
 		Console(Env & env, Runner * runner = nullptr):
 			env(env), server(&env), runner(runner), verbose(0)
@@ -332,32 +340,8 @@ namespace col {
 
 		
 		
-		void limit_view() {
-			auto max_pos = env.get_dim() - view_dim;
-			auto min_pos = v2s{0,0};
-			
-			for (int i=0; i<2; ++i) {
-				if (view_pos[i] > max_pos[i]) {
-					view_pos[i] = max_pos[i];
-				}
-				
-				if (view_pos[i] < min_pos[i]) {
-					view_pos[i] = min_pos[i];
-				}				
-			}
-		}
+		MainFrame & get_main_frame();
 		
-		void move_view(v2s delta) {			
-			view_pos += delta;			
-			limit_view();			
-		}
-		
-		void center_view_on(v2c pos) {			
-			view_pos = pos - v2c(view_dim[0]/2, view_dim[1]/2);			
-			limit_view();			
-		}
-
-
 		bool is_selected(Terr * terr) {
 			if (terr) {
 				return sel_terrs.count(terr);
@@ -456,11 +440,45 @@ namespace col {
 			return nullptr;
 		}
 		
+		// view box
+		v2s view_pos{0,0};		
+		v2s view_dim{15,12};
+		
+		b2c get_view_box() const { return b2c(view_pos, view_dim); }
+		v2c get_view_pos() const { return view_pos; }		
+		v2c get_view_dim() const { return view_dim; }
+
+		
+		void limit_view() {
+			auto max_pos = env.get_dim() - view_dim;
+			auto min_pos = v2s{0,0};
+			
+			for (int i=0; i<2; ++i) {
+				if (view_pos[i] > max_pos[i]) {
+					view_pos[i] = max_pos[i];
+				}
+				
+				if (view_pos[i] < min_pos[i]) {
+					view_pos[i] = min_pos[i];
+				}				
+			}
+		}
+		
+		void move_view(v2s delta) {			
+			view_pos += delta;			
+			limit_view();			
+		}
+		
+		void center_view_on(v2c pos) {			
+			view_pos = pos - v2c(view_dim[0]/2, view_dim[1]/2);			
+			limit_view();			
+		}
+		
 		
 		void center_on(Unit const* u) {
 			if (u) {
 				auto unit_pos = env.get_coords(*u);
-				auto view_box = b2c(view_pos, view_dim);
+				auto view_box = get_view_box();
 				//print("view_box = %||; unit_pos = %||\n", view_box, unit_pos);
 				if (not overlap(view_box, unit_pos)) 
 				{
@@ -471,6 +489,12 @@ namespace col {
 				}
 			}
 		}
+		
+		
+		
+		
+		
+		
 		
 		void select_next_unit() {
 			select_unit(
@@ -490,6 +514,13 @@ namespace col {
 			for (auto tp: get_sel_terrs()) {
 				tp->set_alt(alt);
 			}
+		}
+		
+		Alt get_alt() {
+			if (auto t = get_sel_terr()) {
+				return t->get_alt();
+			}
+			return AltNone;
 		}
 		
 		void set_phys(Phys mask, Phys value) {
@@ -610,8 +641,19 @@ namespace col {
 			}
 		}
 
-
-
+		void enter(Coords c) 
+		{
+			select_terr(c);
+			mode = Mode::COLONY;
+			mod++;
+		}
+		
+		void exit() 
+		{
+			mode = Mode::AMERICA;
+			mod++;
+		}
+		
 		bool has_sel_unit() const {
 			return sel_unit != nullptr;
 		}
@@ -651,14 +693,7 @@ namespace col {
 			return Terr::Id(-1,-1);
 		}
 
-
-
-
-
-		void reset_hotspots() {
-			hts.clear();
-		}
-
+		
 		void click_colony_field(Terr const& terr) {
 			cout << "click_colony_field: " << env.get_coords(terr) << endl;
 		}
@@ -818,6 +853,11 @@ namespace col {
 		}
 
 
+		bool redraw{1};
+
+		
+		
+
 		void load_cargo(Item const& item, Amount const& num);
 
 
@@ -847,43 +887,19 @@ namespace col {
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
 
 		void trapall() {
-			hts.clear();
-		}
-
-		template<typename... T>
-		void on(T&&... t) {
-			hts.push_back(halo::Pattern(std::forward<T>(t)...));
-		}
-
-		// mouse button over area - string command
-		void on2(Event t, Button b, v2s pos, v2s dim, std::string const& cmd) {
-			on(t, b, pos, dim, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse button anywhere - string command
-		void on2(Event t, Button b, std::string const& cmd) {
-			on(t, b, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse hover over area - string command
-		void on2(Event t, v2s pos, v2s dim, std::string const& cmd) {
-			on(t, pos, dim, [this,cmd](){
-				command(cmd);
-			});
-		}
-
-		// mouse hover anywhere - string command
-		void on2(Event t, std::string const& cmd) {
-			on(t, [this,cmd](){
-				command(cmd);
-			});
+			assert(0);
 		}
 
 
+
+		void on(Event const& p) {
+			reg.on(p);
+		}
+
+		template<typename F>
+		void on(Event const& p, F f) {
+			reg.on(p, f);
+		}
 
 
 
@@ -897,42 +913,7 @@ namespace col {
 		Console const& operator=(Console const&) = delete;
 
 
-		void handle_events(Front & app) {
-			if (verbose >= 2) print("Console.handle_events: {\n");
-			
-			Console &con = *this;
-			front::Event ev;
-			while (app.pool_event(ev)) {
-				if (verbose >= 2) print("Console.handle_events: some event;\n");
-				
-				switch (ev.type) {
-					/*case front::EventKeyDown:
-						if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
-							app.stop();
-						}
-						break;*/
-					case front::EventQuit:
-						if (verbose >= 1) {
-							print("EventQuit\n");
-						}						
-						app.stop();
-						break;
-					case front::EventWindowEvent:
-						if (verbose >= 1) {
-							front::print_window_event(ev);
-						}
-						break;					
-					default:
-						break;
-						
-				}
-					
-				con.handle(app, ev);
-			}
-			
-			if (verbose >= 2) print("Console.handle_events: }\n");
-		}
-
+		
 
 		void clear() {
 			output.clear();
@@ -953,7 +934,11 @@ namespace col {
 
 		void handle_char(char16_t code);
 
-		void handle(Front &, front::Event const&);
+		void handle();
+		void handle_window_event(SDL_Event const& o);
+		Event SDLEvent_to_event(SDL_Event const& o, Front const& win);
+
+
 
 		void command(string const& line);
 		void do_command(string const& line);

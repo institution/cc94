@@ -8,6 +8,7 @@ namespace col {
 		using Id = Control;
 		Id id;
 		string name;
+		int coins{0};
 		// TODO: faction traits
 		
 		Faction() = default;

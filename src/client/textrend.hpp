@@ -25,6 +25,8 @@ namespace col{
 		bool has_sh() const { return sh.a != 0; }
 	};
 	
+	
+	
 	/** Return render dim of text line (trimmed by '\n')
 	*/
 	inline v2s get_text_dim(PixFont const& font, string const& text) {
@@ -135,6 +137,12 @@ namespace col{
 		
 		int get_height() const { return font.get_height(); }
 		
+		v2s get_ddmenu_pos() const {
+			// drop down menu position
+			return get_pos() + v2s(0, get_height() + ly.line);		
+		}
+
+		
 		
 		void set_tabs(
 			int16_t a0 = 120, int16_t a1 = 120, int16_t a2 = 120, int16_t a3 = 120, 
@@ -183,18 +191,7 @@ namespace col{
 			}
 		}
 		
-		/*
-		b2s get_current_box() {
-		
-		}
-		
-		TextRend2 & backlight(bool b) {
-			win.render_fill()
-		}
-		
-		TextRend2 & on(Event e, Button b, Action a) {
-			con.on(e, b, a);
-		}*/
+	
 		
 		
 		

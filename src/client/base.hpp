@@ -40,6 +40,14 @@ namespace col{
 			return h1 ^ (h2 << 1); // or use boost::hash_combine
 		}
 	};
-	 
+	
+	// frequent short literals lol :D
+	int16_t const
+		_0 = 0,
+		_1 = 1,
+		_2 = 2,
+		_3 = 3,
+		_4 = 4;
+
 	
 }

@@ -48,6 +48,10 @@ namespace front {
 		int get_height() const { 
 			return height; 
 		}
+		
+		int get_width() const { 
+			return height/2; 
+		}
 
 		void load(Front & front, filesys::Path const& path_png, int adv) {
 			load_pixfont(front, *this, path_png);

@@ -14,7 +14,8 @@ namespace col{
 
 
 
-	void Runner::init(std::string const& file_map, std::string const& dir_tile, int ver) {
+	void Runner::init(std::string const& file_map, std::string const& dir_tile, int ver) 
+	{
 		this->verbose = ver;
 
 		// read client conf
@@ -54,7 +55,9 @@ namespace col{
 				
 	}
 	
-
+	
+	
+	
 	bool Runner::step() {
 		
 		if (verbose >= 2) {

@@ -83,7 +83,7 @@ void myShowShader(GLuint shader) {
 
 	print(buf);
 
-	delete buf;
+	delete [] buf;
 	
 }
 

@@ -107,7 +107,7 @@ namespace col{
 		TurnNo turn_no{0};
 		TurnNo turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
 		
-		Control current_control{ControlNone}; // current faction
+		Control current_control{ControlNone}; // current faction (turn)
 		
 		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
@@ -127,7 +127,14 @@ namespace col{
 			this->state = state;
 		}
 
-
+		void init_default_factions() 
+		{
+			for (Control i = 0; i < ControlEnd; ++i)
+			{	
+				new (&factions[i]) 
+					Faction(i, get_control_name(i));			
+			}
+		}
 
 		void clear_all() {
 			clear_units();
@@ -281,6 +288,7 @@ namespace col{
 		Env(int verbose = 1): Core(), verbose(verbose) {
 			set_random_gen(roll::roll1);
 			clear_misc();
+			//init_default_factions();
 		}
 		
 		explicit
@@ -289,6 +297,7 @@ namespace col{
 			clear_misc();
 			resize(dim);
 			fill(def);
+			//init_default_factions();
 		}
 
 
@@ -366,7 +375,9 @@ namespace col{
 		
 		
 
-		void turn(Terr & t) {
+		void turn(Terr & t) 
+		{
+			
 
 			if (!t.has_colony()) {
 				return;
@@ -427,6 +438,7 @@ namespace col{
 					t,
 					create<Unit>(get<UnitType>(1), control)
 				);
+				
 			}
 
 			// decay of non-storageable resources
@@ -458,6 +470,8 @@ namespace col{
 				new colonists creation
 				items decay (due to non-storageable nature or lack of storage space)
 			*/
+
+			current_control = ControlNone;
 
 			// time progress
 			turn_no++;
@@ -1297,9 +1311,7 @@ namespace col{
 			auto p = get_coords(u);
 			auto id = u.get_control();
 			
-			if (0 < id and id <= 32) {
-				uint32_t vid = 1 << (id - 1);
-				
+			if (0 <= id and id < 32) {
 				Coord r = 2;
 				auto dim = get_dim();
 				
@@ -1313,7 +1325,7 @@ namespace col{
 				{
 					for (Coord i = i0; i <= i1; ++i)
 					{
-						get_terr({i,j}).mark_vision(vid);
+						get_terr({i,j}).mark_vision(id);
 					}				
 				}
 				
@@ -1402,10 +1414,10 @@ namespace col{
 				
 					current_control += 1;	
 					
-					if (current_control > 31) {
+					if (current_control >= ControlEnd) {
 						// TURN HERE
-						turn();     
-						current_control = 0;
+						current_control = ControlNone;
+						turn();						
 					}
 					
 				} while (factions.find(current_control) == factions.end());

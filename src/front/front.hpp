@@ -97,7 +97,7 @@ namespace front {
 		
 
 
-		bool pool_event(Event & event);
+		bool pool_event(SDL_Event & event);
 
 		Texture make_texture(filesys::Path const& path);
 		Texture make_texture(Image const& img);
@@ -159,7 +159,7 @@ namespace front {
 		#endif
 	}
 
-	inline bool Front::pool_event(Event & event) {
+	inline bool Front::pool_event(SDL_Event & event) {
 		return SDL_PollEvent(&event);
 	}
 

@@ -9,7 +9,7 @@ namespace col {
 	
 	
 	using Control = uint8_t;
-	Control const ControlNone = 255;
+	
 	Control const 
 		ControlEnglandCol = 0,
 		ControlEnglandMet = 1,
@@ -19,6 +19,7 @@ namespace col {
 		ControlSpainMet = 5,
 		ControlNetherlandsCol = 6,
 		ControlNetherlandsMet = 7,
+		
 		ControlArwak = 8,
 		ControlAztec = 9,
 		ControlInca = 10,
@@ -26,7 +27,13 @@ namespace col {
 		ControlCherokee = 12,
 		ControlIroquois = 13,
 		ControlSioux = 14,
-		ControlApache = 15;
+		ControlApache = 15,
+		
+		ControlEnd = 16,
+		ControlNone = 255;
+		
+	
+	
 	
 
 	string get_control_name(Control cc);	

@@ -1,30 +1,28 @@
 #define CATCH_CONFIG_MAIN
 #include "../catch/catch.hpp"
 
-#include "halo.hpp"
+#include "event.hpp"
 #include "console.hpp"
 
 using namespace col;
 
-TEST_CASE( "halo", "" ) {
+TEST_CASE( "rules", "" ) {
 	
-	using halo::Pattern;
-	
-	halo::Patterns ps;
-	
-	SECTION("empty_patterns") {
-		Pattern q;
-		REQUIRE( halo::handle_event(ps, q) == false );
+	SECTION("empty_patterns") 
+	{
+		Event e;
+		Event p;
+		REQUIRE( match(e,p) == true );
 	}
 	
-	SECTION("catch_all_regress") {
-		ps.push_back(Pattern());
-		Pattern q;		
-		REQUIRE( halo::handle_event(ps, q) == true );
+	SECTION("event") 
+	{
+		auto e = Event(EventPress, KeyLMB, {38,46}, {0,0});
+		auto p = Event(EventPress, KeyLMB, {0,32}, {64,64});
+		REQUIRE(match(e, p) == true);		
 	}
-	
-	
 }
+
 
 TEST_CASE( "console.get_letter", "" ) {
 	

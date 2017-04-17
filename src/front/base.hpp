@@ -16,7 +16,7 @@ namespace front {
 
 	struct Color;
 
-	using Image = darray2::darray2<Color, int16_t>;
+	using Image = darray::darray2<Color, int16_t>;
 
 	struct Front;
 	struct Texture;

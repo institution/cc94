@@ -2,6 +2,7 @@
 
 namespace col{
 	
+	
 	string get_control_name(Control cc) 
 	{ 
 		switch (cc) {
@@ -9,6 +10,20 @@ namespace col{
 			case ControlFranceCol: return "France";
 			case ControlSpainCol: return "Spain";
 			case ControlNetherlandsCol: return "Netherlands";
+			
+			case ControlEnglandMet: return "England (London)";
+			case ControlFranceMet: return "France (Paris)";
+			case ControlSpainMet: return "Spain (Madrit)";
+			case ControlNetherlandsMet: return "Netherlands (Amsterdam)";
+			
+			case ControlArwak: return "Arwak";
+			case ControlAztec: return "Aztec";
+			case ControlInca: return "Inca";
+			case ControlTupi: return "Tupi";
+			case ControlCherokee: return "Cherokee";
+			case ControlIroquois: return "Iroquois";
+			case ControlSioux: return "Sioux";
+			case ControlApache: return "Apache";		
 		}
 		return "NoName";
 	}

@@ -3,7 +3,8 @@
 
 namespace col{
 	
-	
+
+
 
 	/* 
 	i -- start position
@@ -225,21 +226,13 @@ namespace col{
 
 	
 	
-	using Event = Console::Event;
-	using Button = Console::Button;
-	using Key = front::Key;
-	using Dev = Console::Dev;
-
-	
-	
-	
 	TextRend2 & TextRend2::link(string const& text, Action act) {
 		b2s area;
 		area.pos = cpos;
 		cpos = render_text_at2(win, box, cpos, font, style.hl, text);
 		area.dim = v2s(cpos[0] - area.pos[0], font.get_height());
 		
-		con.on(Event::Press, Button::Left, area.pos, area.dim, act);
+		con.on({EventPress, KeyLMB, area.pos, area.dim}, act);
 		return *this;
 	}
 	

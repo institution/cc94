@@ -6,6 +6,7 @@
 #include "null_ai.hpp"
 #include "simple_ai.hpp"
 #include "../front/front.hpp"
+//#include "widget.hpp"
 
 namespace col {
 	using boost::str;
@@ -15,7 +16,7 @@ namespace col {
 	
 
 
-	uint8 flag_id4color_name(const string &s) {
+	uint8_t flag_id4color_name(const string &s) {
 		if (s == "red") {
 			return 119;
 		}
@@ -40,145 +41,138 @@ namespace col {
 		}
 	}
 
-	halo::Mod get_mod() {
-		halo::Mod mod = 0;
-		
-		auto keys = front::get_keyboard_state();
-		
-		if (keys[SDL_SCANCODE_LSHIFT] or keys[SDL_SCANCODE_RSHIFT]) {
-			mod = mod | halo::ModShift;
+	/*void Console::set_root(IWidget * w) {
+		if (root) {
+			delete root;
 		}
-		if (keys[SDL_SCANCODE_LCTRL] or keys[SDL_SCANCODE_RCTRL]) {
-			mod = mod | halo::ModCtrl;
-		}
-		
-		auto mouse = front::get_mouse();
-				
-		if (mouse[front::ButtonLeft]) 
-		{
-			mod = mod | halo::ModButtonLeft;
-		}
-		
-		if (mouse[front::ButtonRight]) 
-		{
-			mod = mod | halo::ModButtonRight;
-		}
-		
-		
-		return mod;	
-	}
-	
-	void Console::handle(Front & app, front::Event const& event) {
-		
-		if (verbose) print("Console.handle: {\n");
-		
-		auto type = event.type;
-
-		// prepare pattern
-		Pattern p;
-
-		if (type == front::EventWindowEvent) {
-			
-			front::print_window_event(event);
-			
-			switch (event.window.event) {
-				case front::WindowEventSizeChanged:
-				case front::WindowEventResized: {
-				
-					auto new_dim = v2s(event.window.data1, event.window.data2);
-					if (old_dim != new_dim) {					
-						app.set_ctx_dim();
-						old_dim = new_dim;
-					}
-					break;
-				}
-						
-			}
-		
-		}
-		else if (type == front::EventKeyDown) {
-			p.dev = Dev::Keyboard;
-			p.event = Event::Press;
-			p.key = event.key.keysym.sym;
-			//print("key = %||(%||)\n", event.key.keysym.sym, char16_t(event.key.keysym.sym));			
-		}
-		else if (type == front::EventTextInput) {
-			p.dev = Dev::Keyboard;
-			p.event = Event::Char;
-			p.unicode = event.text.text[0];
-		}
-		else if (type == front::EventMouseMotion)			
-		{	
-			auto mp = get_logical_pos(app, 
-				{event.motion.x, event.motion.y}
-			);
-			
-			p.dev = Dev::Mouse;
-			p.event = Event::Hover;
-			p.mod = get_mod();
-			p.area = b2s(v2s(mp), {0,0});
-		}		
-		else if (type == front::EventMouseButtonDown)
-		{			
-			auto mp = get_logical_pos(app, 
-				{event.button.x, event.button.y}
-			);
-			
-			p.dev = Dev::Mouse;
-			p.event = Event::Press;
-			p.mod = get_mod();
-			p.area = b2s(v2s(mp), {0,0});
-			
-			
-			if (event.button.button == front::ButtonLeft) {
-				p.button = Button::Left;
-			}			
-			else if (event.button.button == front::ButtonRight) {
-				p.button = Button::Right;
-			}
-		}
-		else if (type == front::EventMouseButtonUp)
-		{	
-			auto mp = get_logical_pos(app, 
-				{event.button.x, event.button.y}
-			);
-			
-			p.dev = Dev::Mouse;
-			p.event = Event::Release;
-			p.mod = get_mod();
-			p.area = b2s(v2s(mp), {0,0});
-			
-			if (event.button.button == front::ButtonLeft) {
-				p.button = Button::Left;
-			}			
-			else if (event.button.button == front::ButtonRight) {
-				p.button = Button::Right;
-			}
-		}
-		
-		
-		
-		if (verbose) print("Console.handle: halo\n");
-		
-		// handle
-		if (halo::handle_event(hts, p)) {
-			modified();
-		}
-		
-		if (verbose) print("Console.handle: }\n");
-	}
-
-	
-	
-	/*
-	struct NotEnoughArgs: std::runtime_error {}
-	
-	string const& arg(vector<string> const& es, int n) {
-		if (n >= es.size()) {
-			throw NotEnoughArgs();
-		}
-		return es[n];
+		root = w;		
 	}*/
+	
+	
+	Event Console::SDLEvent_to_event(SDL_Event const& o, Front const& win) 
+	{	
+		Event p;
+		
+		keyboard.refresh();
+		mouse.refresh();
+		
+		Mod kmod = keyboard.get_mod();
+		Mod mmod = mouse.get_mod();
+		Mod mod = kmod | mmod;
+
+		switch(o.type) 
+		{
+			case SDL_KEYDOWN:
+				p.set_type(EventPress);
+				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));			
+				p.set_mod(mmod | SDLKeymod_to_mod(o.key.keysym.mod));
+				break;
+			
+			case SDL_KEYUP:
+				p.set_type(EventRelease);
+				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));			
+				p.set_mod(mmod | SDLKeymod_to_mod(o.key.keysym.mod));
+				break;
+			
+			case SDL_TEXTINPUT:
+				p.set_type(EventChar);
+				p.set_chr(o.text.text[0]);
+				break;
+				
+			case SDL_MOUSEMOTION:
+				p.set_type(EventMotion);
+				p.set_mod(mod);
+				p.set_pos(v2s(
+					get_logical_pos(win, {o.motion.x, o.motion.y})
+				));
+				break;
+				
+			case SDL_MOUSEBUTTONDOWN:
+				p.set_type(EventPress);
+				p.set_mod(mod);			
+				p.set_pos(v2s(
+					get_logical_pos(win, {o.motion.x, o.motion.y})
+				));
+				p.set_key(SDLButton_to_key(o.button.button));
+				break;
+			
+			case SDL_MOUSEBUTTONUP:
+				p.set_type(EventRelease);
+				p.set_mod(mod);			
+				p.set_pos(v2s(
+					get_logical_pos(win, {o.motion.x, o.motion.y})
+				));
+				p.set_key(SDLButton_to_key(o.button.button));
+				break;
+		}
+		
+		return p;	
+	}
+
+
+	void Console::handle_window_event(SDL_Event const& o) 
+	{
+		// print_window_event(o);
+		
+		switch (o.window.event) {
+			case SDL_WINDOWEVENT_SIZE_CHANGED:
+			case SDL_WINDOWEVENT_RESIZED: {				
+				auto new_dim = v2s(o.window.data1, o.window.data2);
+				if (old_dim != new_dim) {					
+					win.set_ctx_dim();
+					old_dim = new_dim;
+				}
+				break;
+			}					
+		}
+	}
+
+
+	void Console::handle_event(Event e) 
+	{
+		//print("event = %||\n", p);
+		if (e.has_type()) {
+		
+			for (auto i = widgets.size(); i-- > 0;)
+			{
+				
+				auto * w = widgets.at(i);
+				if (w->handle(*this, e)) 
+				{
+					//print("event handled by widget\n");
+					return;
+				}
+			}
+			
+		
+			reg.handle_event(e);
+		}
+	}
+
+	void Console::handle_events() 
+	{
+		SDL_Event o;
+		while (win.pool_event(o)) 
+		{
+			switch (o.type) {
+				case SDL_QUIT:
+					win.stop();
+					break;
+				case SDL_WINDOWEVENT:
+					handle_window_event(o);
+					break;					
+				default: {
+					auto p = SDLEvent_to_event(o, win);
+					
+					handle_event(p);
+					
+					break;
+					
+				}	
+			} // switch
+		}
+	}
+
 	
 	void Console::load_cargo(Item const& item, Amount const& num) {
 		if (auto unit_id = get_sel_unit_id()) {
@@ -243,20 +237,27 @@ namespace col {
 
 		last_tick = win.get_ticks();
 		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
+		
+		keyboard.init();
+		mouse.init();
+		
+		
+		// widgets
+		init_renderer(*this);
+		
+		
 	}
 	
 	bool Console::step_GUI() 
 	{	
-		sync();
 		
-		if (verbose >= 2) print("GUILoop.step: {; app.done=%||\n", win.done);
+		//if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
 		
-		if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
-			//cout << "RENDER:" << con.mod << ',' << env.mod << endl;
-			time = win.get_ticks();
-			last_tick = time;
-
-			if (verbose >= 2) print("GUILoop.step: render; tick=%||\n", last_tick);
+		//print("last_tick %||, %||\n", last_tick + 100, win.get_ticks());
+		if (last_tick + 67 < win.get_ticks()) 
+		{
+			last_tick = win.get_ticks(); 
+			this->time = last_tick;
 			
 			render(win, env, *this, verbose);
 
@@ -264,11 +265,7 @@ namespace col {
 			last_mod_con = mod;
 		}
 
-		if (verbose >= 2) print("GUILoop.step: handle_events;\n");
-
-		handle_events(win);
-					
-		if (verbose >= 2) print("GUILoop.step: }\n");
+		handle_events();
 					
 		return !win.done;		
 		
@@ -331,6 +328,11 @@ namespace col {
 	}
 	
 	
+	/*MainFrame & Console::get_main_frame()
+	{
+		return (MainFrame)widgets.at(0);
+	}*/
+
 	void Console::do_command(string const& line) {
 		
 		auto & env = get_server();
@@ -349,7 +351,7 @@ namespace col {
 		
 		if (cmd == "list-nations") {
 			for (auto & item: env.factions) {
-				put("%||", item.second.get_name());
+				put("%|| %||", item.second.get_name(), int(item.second.id));
 			}
 		}
 		else if (cmd == "print") {
@@ -365,7 +367,7 @@ namespace col {
 			put("list-nations");
 			put("list-units");
 			put("list-unit-types");
-			put("create-nation");
+			put("create-faction");
 			put("create-unit");
 			put("create-colony");
 			put("delete-colony");
@@ -406,6 +408,8 @@ namespace col {
 			put("score");
 			put("cls");
 			put("print");
+			put("init-demo");
+			
 		}
 		else if (cmd == "reset") {
 			switch (es.size()) {
@@ -414,6 +418,16 @@ namespace col {
 					break;
 				case 3:	
 					env.reset(v2s(stoi(es.at(1)), stoi(es.at(2))));
+					break;
+			}
+		}
+		else if (cmd == "init-demo") {
+			switch (es.size()) {
+				default:
+					put("Usage: init-demo");
+					break;
+				case 1:	
+					init_demo();
 					break;
 			}
 		}
@@ -862,7 +876,26 @@ namespace col {
 
 
 
-
+	void Console::init_demo()
+	{
+		if (env.factions.size() == 0) 
+		{
+			new (&env.factions[ControlEnglandCol])
+				Faction(ControlEnglandCol, "England (You)");
+			
+			set_control(ControlEnglandCol);
+			
+			new (&env.factions[ControlFranceCol])
+				Faction(ControlFranceCol, "France (SimpleAI)");
+				
+			add_ai<simple_ai::SimpleAi>(ControlFranceCol);
+		}
+		else {
+			print("Game already initialized\n");
+		}
+		
+	}
+	
 
 
 

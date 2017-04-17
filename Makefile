@@ -10,11 +10,11 @@ CC:=clang++
 #CC:=emcc
 
 # output files
-OUTS:=client/main server/test client/test
+OUTS:=client/main server/test client/test ext/test
 
 # targets
-debug: client/main server/test client/test
-release: client/main server/test client/test
+debug: client/main server/test client/test ext/test
+release: client/main server/test client/test ext/test
 
 # em opts
 EMOPTS:= 
@@ -27,7 +27,7 @@ EMOPTS+=-s ASSERTIONS=1
 
 # compiler options
 CCOPTS:=
-CCOPTS+=-std=c++14
+CCOPTS+=-std=c++1z
 CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null -Wno-vla-extension
 #CCOPTS+=-ferror-limit=3

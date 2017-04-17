@@ -14,13 +14,17 @@ namespace col {
 		if (x.has_key()) {
 			print(o, "%||,", get_key_name(x.get_key()));
 		}
-		if (x.has_mod()) {
-			for (uint32_t i=0; i<16; ++i) {
-				auto m = x.get_mod() & uint32_t(0 << i);
-				if (m) {
-					print(o, "%||,", get_mod_name(m));
+		{
+			print(o, "[");
+		
+			for (uint32_t i=0; i<32; ++i) {
+				auto f = uint32_t(1 << i);				
+				if (x.get_mod() & f) {
+					print(o, "%||,", get_mod_name(f));
 				}
 			}			
+			
+			print(o, "],");
 		}
 		if (x.has_pos()) {
 			print(o, "pos=%||,", x.get_pos());
@@ -41,36 +45,62 @@ namespace col {
 
 
 	/// Match event 'e to pattern 'p
-	bool match(Event const& e, Event const& p) {
-		if (not (not p.has_fkb() or (e.has_fkb() and p.get_fkb() == e.get_fkb()))) return false;
-		if (not (not p.has_type() or (e.has_type() and p.get_type() == e.get_type()))) return false;
-		if (not (not p.has_key() or (e.has_key() and p.get_key() == e.get_key()))) return false;
-		if (not (not p.has_mod() or (e.has_mod() and p.get_mod() == e.get_mod()))) return false;
-		if (not (not p.has_chr() or (e.has_chr() and p.get_chr() == e.get_chr()))) return false;
-		if (not (not p.has_box() or (e.has_pos() and geo2::overlap(p.get_box(), e.get_pos())))) return false;
+	bool match(Event const& e, Event const& p, bool verbose) {
+		
+		if (verbose) print("matching %||\n", e);
+		
+		if (p.has_type() and not e.match_type(p.get_type())) {
+			if (verbose) print("bad type\n");
+			return false;		
+		}
+		
+		if (p.has_key() and not e.match_key(p.get_key())) {
+			if (verbose) print("bad key\n");
+			return false;			
+		}
+		
+		if (not e.match_mod(p.get_mod())) {
+			if (verbose) print("bad mod\n");
+			return false;		
+		}
+		
+		if (p.has_chr() and not e.match_chr(p.get_chr())) {
+			if (verbose) print("bad chr\n");
+			return false;		
+		}
+		
+		if (p.has_box() and not e.match_box(p.get_box())) {
+			if (verbose) print("bad box\n");
+			return false;			
+		}
+		
+		if (verbose) print("match!\n");
 		return true;
 	}
 	
 	
 	
-	bool handle_event(Rules const& rs, Event const& e, bool verbose) {
+	bool Rules::handle_event(Event & e, bool verbose) {
 		
-		if (verbose) {
+		if (verbose and e.get_type() != EventMotion) {
 			print("event is %||\n", e);
 		}
 		
-		for (int i = rs.size(); 0 < i; --i) 
+		for (int i = xs.size(); 0 < i; --i) 
 		{
-			auto & rule = rs[i-1];
+			auto & rule = xs[i-1];
 			auto & p = rule.pattern;
 			
-			if (verbose) {
-				print("pattern is %||\n", p);
+			if (verbose and e.get_type() != EventMotion) {
+				//print("pattern is %||\n", p);
 			}
+				
+			
 			
 			if (match(e,p)) 
 			{
 				if (verbose) {
+					
 					print("match\n");
 				}
 			

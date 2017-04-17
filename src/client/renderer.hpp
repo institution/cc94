@@ -4,6 +4,7 @@
 #include "env.hpp"
 #include "console.hpp"
 #include "layout.hpp"
+#include "renderer-pre.hpp"
 
 namespace col {
 
@@ -11,6 +12,9 @@ namespace col {
 	
 
 	void preload_renderer(Front &app);
+
+	void init_renderer(Console & con);
+
 
 }
 
