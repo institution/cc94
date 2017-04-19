@@ -23,16 +23,18 @@ namespace col {
 	{
 		virtual void render(Console & con) {}
 				
-		/// return minimal dim
-		virtual v2s get_dim() { return v2s(11,11); }
-		
-		/// set position
-		virtual void set_pos(v2s pos) { }
-		
 		virtual bool handle(Console & con, Event e) { return 0; }
 		
 		virtual ~IWidget() {}
 	};
+	
+	
+	
+	/// return minimal dim
+	//virtual v2s get_dim() { return v2s(11,11); }
+	
+	/// set position
+	//virtual void set_pos(v2s pos) { }
 	
 	
 	struct Node
@@ -127,8 +129,8 @@ namespace col {
 		}
 		
 		virtual void render(Console & con) override {}
-		virtual v2s get_dim() override  { return dim; }
-		virtual void set_pos(v2s pos) override { this->pos = pos; }
+		virtual v2s get_dim() { return dim; }
+		virtual void set_pos(v2s pos) { this->pos = pos; }
 		
 		//void grab_focus() { g_focus = this; }	
 		//void clear_focus() { g_focus = nullptr; }

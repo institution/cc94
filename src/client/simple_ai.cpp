@@ -458,6 +458,7 @@ namespace simple_ai{
 		
 		sync();
 		
+		
 		if (env.in_progress() and env.get_current_control() == cc) 
 		{
 			marks.clear();

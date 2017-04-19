@@ -109,7 +109,7 @@ namespace col{
 		
 		Control current_control{ControlNone}; // current faction (turn)
 		
-		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
+		State state{StatePlay}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
 		// misc non game state
 		TurnNo mod;
@@ -679,7 +679,13 @@ namespace col{
 		}
 
 
+
+
+
+		/*Res move_unit_offmap(Unit & u, RemotePort & loc) 
+		{
 		
+		}*/
 
 		
 		Res move_unit(Unit & u, int8_t dx, int8_t dy) {

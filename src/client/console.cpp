@@ -6,6 +6,7 @@
 #include "null_ai.hpp"
 #include "simple_ai.hpp"
 #include "../front/front.hpp"
+#include "serialize2.hpp"
 //#include "widget.hpp"
 
 namespace col {
@@ -411,6 +412,16 @@ namespace col {
 			put("init-demo");
 			
 		}
+		else if (cmd == "list-agents") 
+		{
+			if (runner)
+			{
+				for (auto * a: runner->agents)
+				{
+					put("%||", a->get_name());					
+				}
+			}			
+		}		
 		else if (cmd == "reset") {
 			switch (es.size()) {
 				default:
@@ -583,8 +594,13 @@ namespace col {
 				default:
 					put("Usage: save <filename>");
 					break;
-				case 2: {						
-						write_file(es.at(1), env);
+				case 2: {					
+						if (runner) {
+							write_file(es.at(1), *runner);
+						}
+						else {
+							print("WARNING: no runner to save game\n");
+						}
 					}
 					break;
 			}
@@ -595,7 +611,12 @@ namespace col {
 					put("Usage: load <filename>");
 					break;
 				case 2: {
-						read_file(es.at(1), env);
+						if (runner) {
+							read_file(es.at(1), *runner);
+						}
+						else {
+							print("WARNING: no runner to load game\n");
+						}
 					}
 					break;
 			}

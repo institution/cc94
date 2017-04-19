@@ -15,7 +15,6 @@ namespace col{
 		virtual ~Agent() {}
 		
 		
-		
 		// visualisation
 		virtual string get_name() const { return "-"; }		
 		//virtual Cmds const& get_unit_cmds(Unit::Id id);

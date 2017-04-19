@@ -755,12 +755,12 @@ namespace col {
 			return v2s(width, height);		
 		}
 		
-		v2s get_dim() override 
+		v2s get_dim()
 		{
 			return calc_dim();
 		}
 		
-		void set_pos(v2s pos) override	
+		void set_pos(v2s pos)
 		{
 			// default single column
 			if (cols.size() == 0) {
@@ -1498,7 +1498,27 @@ namespace col {
 		render_sprite(win, box, {0.5f, 0.5f}, unit_tex);
 	}
 
-	void render_city(Front &win, Env const& env, Console & con) {
+	struct CityView: IWidget 
+	{
+		void render(Con & con) override;
+		bool handle(Con & con, Event e) override;
+	};
+
+	
+	
+	bool CityView::handle(Con & con, Event e) 
+	{
+		return 0;
+	}
+
+
+	void CityView::render(Con & con) 
+	{
+	
+		auto & win = con.win;
+		auto const& env = con.env;
+	
+	
 		/*
 			// panel right
 			render_panel(app, env, con,
@@ -1546,7 +1566,7 @@ namespace col {
 				
 				auto& build_tex = res(win, BUILD, build.get_type_id());
 				auto build_pos = ly.city_builds.pos + pixs.at(i);
-				auto build_dim = get_dim(build_tex);
+				auto build_dim = ::col::get_dim(build_tex);
 
 				render_sprite(win, build_pos, build_tex);
 
@@ -1643,7 +1663,7 @@ namespace col {
 				// number of produced items
 				if (int y = nominal_prod) {
 					auto& item_tex = res(win, ICON, get_item_icon_id(build.get_proditem()));
-					auto item_dim = get_dim(item_tex);
+					auto item_dim = ::col::get_dim(item_tex);
 
 					// item icon
 					render_sprite(win, build_pos, item_tex);
@@ -1679,11 +1699,11 @@ namespace col {
 						{
 							build_pos + build_dim - units_frame + ly.S(v2s(1,1)), units_frame
 						},
-						get_dim(unit_tex),
+						::col::get_dim(unit_tex),
 						v2f(float(i+1)/float(n+1), 1)
 					);
 
-					v2s unit_dim = get_dim(unit_tex);
+					v2s unit_dim = ::col::get_dim(unit_tex);
 
 					v2s sel_pos = unit_pos;
 					v2s sel_dim = unit_dim;
@@ -1776,7 +1796,7 @@ namespace col {
 							// render produced item
 							auto& item_tex = res(win, ICON, get_item_icon_id(proditem));
 							render_sprite(win,
-								calc_align({item_pos, item_dim}, get_dim(item_tex)),
+								calc_align({item_pos, item_dim}, ::col::get_dim(item_tex)),
 								item_tex
 							);
 
@@ -1792,7 +1812,7 @@ namespace col {
 
 						// render unit on field
 						render_sprite(win,
-							calc_align({unit_pos, unit_dim}, get_dim(unit_tex)),
+							calc_align({unit_pos, unit_dim}, ::col::get_dim(unit_tex)),
 							unit_tex
 						);
 
@@ -4042,6 +4062,7 @@ namespace col {
 		MainMenu main_menu;
 		MapView map_view;
 		SidePanel side_panel;
+		CityView city_view;
 		
 		MainFrame(Console & con): main_menu(con) {}
 	};
@@ -4049,32 +4070,69 @@ namespace col {
 	void MainFrame::render(Console & con) 
 	{
 		auto & win = con.win;
-	
-		// map-view
-		map_view.render(con);
-	
+		
+		con.reg.clear();
 
-		// top-bar background
-		render_area(win, ly.bar.pos, ly.bar.dim, res(win, WOODTILE, 1));
+		
+		// int w = app.get_ctx_dim()[0];
+		// int h = app.get_ctx_dim()[1];
 
-		// black hline under the top-bar
-		render_fill(win,
-			{ly.bar.pos[0], ly.bar.end()[1]},
-			{ly.bar.dim[0], ly.line},
-			{0,0,0,255}
-		);
-	
-		// top-bar content: cmd or menu
-		if (con.is_active()) 
+
+		render_drag_clear(con);
+
+
+		
+
+		if (con.mode == Console::Mode::COLONY) 
 		{
-			command.render(con);
+			// city
+			city_view.render(con);
 		}
 		else {
-			main_menu.render(con);
+		
+			// map-view
+			map_view.render(con);
+			
+			
+			// side panel
+			side_panel.render(con);
+			
+			// vline left of the panel
+			render_fill(win,
+				{ly.pan.pos[0] - ly.line, ly.pan.pos[1]},
+				{ly.line, ly.pan.dim[1]},
+				ColorBlack
+			);
+
+
 		}
 		
-		// side panel
-		side_panel.render(con);
+
+		// top-bar
+		{
+			// top-bar background
+			render_area(win, ly.bar.pos, ly.bar.dim, res(win, WOODTILE, 1));
+
+			// black hline under the top-bar
+			render_fill(win,
+				{ly.bar.pos[0], ly.bar.end()[1]},
+				{ly.bar.dim[0], ly.line},
+				{0,0,0,255}
+			);
+		
+			// top-bar content: cmd or menu
+			if (con.is_active()) 
+			{
+				command.render(con);
+			}
+			else {
+				main_menu.render(con);
+			}
+		}
+
+		
+		
+		render_cursor(win, con);
 
 	}
 	
@@ -4099,86 +4157,44 @@ namespace col {
 			}
 		}
 		
-		if (map_view.handle(con, e)) {
-			return 1;
+		if (con.mode == Console::Mode::COLONY) 
+		{
+			if (city_view.handle(con, e)) {
+				return 1;
+			}
 		}
-		
-		
-		if (side_panel.handle(con, e)) {
-			return 1;
+		else {
+			
+			if (map_view.handle(con, e)) {
+				return 1;
+			}
+					
+			if (side_panel.handle(con, e)) {
+				return 1;
+			}
 		}
 		
 		return 0;
 	}
 
 
+
+
 	void render(Front & app, col::Env & env, col::Console & con, int verbose) 
 	{
-	
 		if (verbose >= 2) print("render: {\n");
 
 		app.clear();
-
-		con.reg.clear();
-
-		int w = app.get_ctx_dim()[0];
-		int h = app.get_ctx_dim()[1];
-
-
-		render_drag_clear(con);
-
-
-		
-
-		if (con.mode == Console::Mode::COLONY) {
-			render_city(app, env, con);
-		}
-		else {
-
-			if (verbose >= 2) print("render: render_map\n");
-
-			// map
-			//render_map(app, env, con, ly.map.pos, Coords(0,0));
-
-			// panel right
-			/*render_panel(app, env, con,
-				ly.pan.pos,
-				ly.pan.dim
-			);*/
-
-			// vline left of the panel
-			render_fill(app,
-				{ly.pan.pos[0] - ly.line, ly.pan.pos[1]},
-				{ly.line, ly.pan.dim[1]},
-				{0,0,0,255}
-			);
-
-		}
-
-		//if (env.curr_nation) {
-		//	render_nationind(app, 0, 0, env.curr_nation->color);
-		//}
-
-		// BACKGROUND
-
+	
 		if (verbose >= 2) print("render: render_cmd\n");
-
-		// top bar
-		// moved to MainFrame
-
-		
+	
 		// render widgets stack
 		for (auto * w: con.widgets) {
 			w->render(con);
 		}
-		
-		render_cursor(app, con);
-		
-		
-		//app.render_line(ly.scr.pos, ly.scr.end(), ColorRed, 5);
-
-
-		if (verbose >= 2) print("render: app.flip\n");
+	
+	
+		if (verbose >= 2) print("render: app.flip\n");	
 
 		app.flip();
 

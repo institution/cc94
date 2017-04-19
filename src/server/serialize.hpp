@@ -38,19 +38,56 @@ namespace col {
 	}
 	
 	
+
 	
-	
+	/*template<class T, class A>
+	void write_block(A & f, Mark mark, T const& obj) 
+	{
+		write(f, mark);
+    
+		uint32_t p0 = f.tell();
+		write_uint32(f, 0);
 		
+		write(f, obj);
+    
+		uint32_t p1 = f.tell()
+		f.seek(p0);
+		write_uint32(p1 - p0 - 4);
+		f.seek(p1);    
+	}
+	
+	
+	template<class T, class A>
+	void read_block(A & f, char const* block_id, T & obj) 
+	{
+		auto id = read_string(f);
+		if (id != block_id) {
+			fail("bad block id; got='%||'; expected='%||'\n", id, block_id);
+		}
+    
+		uint32_t len = read_uint32(f);
+		uint32_t p0 = f.tell();
+		
+		read(f, obj);
+    
+		uint32_t p1 = f.tell()
+		if (p1 - p0 != len) {
+			fail("block length incorrect; got='%||'; expected='%||'\n", p1 - p0, len);
+		}
+	}*/
 	
 	
 	template<class T, typename A>
-	void read(A & ar, T & r) {
+	void read(A & ar, T & r) 
+	{
 		T t;
 		r = 0;
-		unsigned i = 0;
+		uint16_t i = 0;
 		
-		// read size, int has diffrent size on diffrent platforms
-		auto size = read_byte(ar);  
+		// use only for fixed size types acr platforms like: uint16_t
+		uint16_t size = sizeof(T);  
+		
+		//print("aaa = %||\n", ar.tellg());
 		
 		while (i < size*8) {
 			t = read_byte(ar);
@@ -60,11 +97,10 @@ namespace col {
 	}
 
 	template<class T, typename A>
-	void write(A & ar, T const& t) {		
+	void write(A & ar, T const& t) 
+	{
+		// use with: int16_t uint32_t -- only types with same size on all platforms
 		unsigned i = 0;
-		
-		// write size, int has diffrent size on diffrent platforms
-		write_byte(ar, uint8_t(sizeof(T)));
 		
 		while (i < sizeof(T)*8) {
 			write_byte(ar, (t >> i) & 0xFF);
@@ -129,8 +165,6 @@ namespace col {
 	}
 
 
-	
-
 
 	template<typename A>
 	void read(A & ar, Env const& env, col::Task & t) {
@@ -178,27 +212,49 @@ namespace col {
 		return tmp;
 	}
 
+	template<typename A>
+	void read_mark(A & f, char const* expect)
+	{
+		auto m = read<Mark>(f);
+		if (m != make_mark(expect)) {
+			fail("read_mark: expected %||; fpos=%||\n", expect, f.tellg());
+		}
+		else {
+			print("read_mark: mark=%|| at fpos=%||\n", expect, f.tellg());
+		}
+	}
+	
+	template<typename A>
+	void write_mark(A & f, char const* c)
+	{
+		write<Mark>(f, make_mark(c));		
+	}
+
 	
 
 	template<typename K, typename T, typename Archive>
 	void write_map(Archive & ar, std::unordered_map<K, T> const& xs) {
+		write_mark(ar, "MAP=");
 		write(ar, xs.size());
 		for (auto & x: xs) {
 			write(ar, x.first);
 			write(ar, x.second);
-		}
+		}		
+		write_mark(ar, "END=");
 	}
 
 	template<typename K, typename T, typename Archive>
 	void read_map(Archive & ar, std::unordered_map<K, T> & xs) {
 		using Size = decltype(xs.size());
 		
+		read_mark(ar, "MAP=");
 		auto size = read<Size>(ar);
 		for (Size i = 0; i < size; ++i) {			
 			auto key = read<K>(ar);
 			auto val = read<T>(ar);
 			xs[key] = val;
 		}
+		read_mark(ar, "END=");
 	}
 	
 	
@@ -347,6 +403,7 @@ namespace col {
 		write(ar, ver);
 
 		// nations
+		write_mark(ar, "FACS");
 		{
 			if (verbose) print("save nations\n");
 			
@@ -362,7 +419,8 @@ namespace col {
 			}
 		}
 
-		// terrain		
+		// terrain
+		write_mark(ar, "TERS");
 		{
 			if (verbose) print( "save terrain\n");
 			
@@ -380,7 +438,8 @@ namespace col {
 			}
 		}
 
-		// colonies		
+		// colonies
+		write_mark(ar, "COLS");
 		{
 			if (verbose) print("save colonies\n");
 						
@@ -427,7 +486,8 @@ namespace col {
 			}
 		}
 
-		// units		
+		// units	
+		write_mark(ar, "UNIS");	
 		{
 			if (verbose) print("save units\n");
 			
@@ -440,6 +500,7 @@ namespace col {
 			}
 		}
 
+		write_mark(ar, "MISC");
 		if (verbose) print("save misc\n");
 		// turn info
 		write(ar, env.turn_no);
@@ -462,6 +523,7 @@ namespace col {
 		read(ar, ver);
 
 		// factions
+		read_mark(ar, "FACS");
 		{
 			if (verbose) print("load factions\n");
 			
@@ -475,6 +537,7 @@ namespace col {
 		}
 
 		// terrain
+		read_mark(ar, "TERS");
 		{
 			if (verbose) print("load terrain\n");
 			
@@ -500,6 +563,7 @@ namespace col {
 		
 
 		// colonies
+		read_mark(ar, "COLS");
 		{
 			// section mark
 			/*if (read_byte(ar) != 'C') {
@@ -559,6 +623,7 @@ namespace col {
 
 
 		// units
+		read_mark(ar, "UNIS");
 		{
 			if (verbose) print("load units\n");
 			
@@ -573,6 +638,7 @@ namespace col {
 
 		if (verbose) print("load misc\n");
 		
+		read_mark(ar, "MISC");
 		// turn info
 		read(ar, env.turn_no);
 		// next id

@@ -91,7 +91,19 @@ namespace col {
 		ClassBuildType = 7,
 		ClassUnitType = 8;
 		
+	using Mark = uint32_t;
 	
+	constexpr
+	Mark make_mark(char const* c) 
+	{
+		uint32_t x = 0;
+		x |= uint32_t(c[0]) <<  0;
+		x |= uint32_t(c[1]) <<  8;
+		x |= uint32_t(c[2]) << 16;
+		x |= uint32_t(c[3]) << 24;
+		return x;
+	}
+		
 
 	struct Placeable;
 

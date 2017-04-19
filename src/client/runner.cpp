@@ -4,7 +4,7 @@
 #include "env.hpp"
 #include "csv.hpp"
 #include "console.hpp"
-#include "server/serialize.hpp"
+#include "client/serialize2.hpp"
 #include "../ext/format.hpp"
 
 
@@ -37,22 +37,23 @@ namespace col{
 		env.loads<col::BuildType>((conf.csv_path/"builds.csv").c_str());
 		env.loads<col::UnitType>((conf.csv_path/"units.csv").c_str());
 
+		(*this).add_agent<col::Console>(env, this);
+
 		// load state from file
-		if (file_map == "") {
-			read_file("res/default.mp", env);
+		if (file_map == "-") {
+			read_file("res/default.mp", *this);
 		}
-		else if (file_map == "-") {
+		else if (file_map == "") {
 			env.resize({15,12});
-			//env.fill(Terr{AltSea, BiomeDesert});
 			env.fill(col::Terr{col::AltSea, col::BiomeDesert});
 		}
 		else {
-			read_file(file_map, env);
+			read_file(file_map, *this);
 		}
 
 		
-		(*this).add_agent<col::Console>(env, this);	
-				
+		
+		
 	}
 	
 	
