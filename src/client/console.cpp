@@ -14,7 +14,7 @@ namespace col {
 
 
 
-	
+
 
 
 	uint8_t flag_id4color_name(const string &s) {
@@ -46,40 +46,40 @@ namespace col {
 		if (root) {
 			delete root;
 		}
-		root = w;		
+		root = w;
 	}*/
-	
-	
-	Event Console::SDLEvent_to_event(SDL_Event const& o, Front const& win) 
-	{	
+
+
+	Event Console::SDLEvent_to_event(SDL_Event const& o, Front const& win)
+	{
 		Event p;
-		
+
 		keyboard.refresh();
 		mouse.refresh();
-		
+
 		Mod kmod = keyboard.get_mod();
 		Mod mmod = mouse.get_mod();
 		Mod mod = kmod | mmod;
 
-		switch(o.type) 
+		switch(o.type)
 		{
 			case SDL_KEYDOWN:
 				p.set_type(EventPress);
-				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));			
+				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));
 				p.set_mod(mmod | SDLKeymod_to_mod(o.key.keysym.mod));
 				break;
-			
+
 			case SDL_KEYUP:
 				p.set_type(EventRelease);
-				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));			
+				p.set_key(SDLKeycode_to_key(o.key.keysym.sym));
 				p.set_mod(mmod | SDLKeymod_to_mod(o.key.keysym.mod));
 				break;
-			
+
 			case SDL_TEXTINPUT:
 				p.set_type(EventChar);
 				p.set_chr(o.text.text[0]);
 				break;
-				
+
 			case SDL_MOUSEMOTION:
 				p.set_type(EventMotion);
 				p.set_mod(mod);
@@ -87,73 +87,73 @@ namespace col {
 					get_logical_pos(win, {o.motion.x, o.motion.y})
 				));
 				break;
-				
+
 			case SDL_MOUSEBUTTONDOWN:
 				p.set_type(EventPress);
-				p.set_mod(mod);			
+				p.set_mod(mod);
 				p.set_pos(v2s(
 					get_logical_pos(win, {o.motion.x, o.motion.y})
 				));
 				p.set_key(SDLButton_to_key(o.button.button));
 				break;
-			
+
 			case SDL_MOUSEBUTTONUP:
 				p.set_type(EventRelease);
-				p.set_mod(mod);			
+				p.set_mod(mod);
 				p.set_pos(v2s(
 					get_logical_pos(win, {o.motion.x, o.motion.y})
 				));
 				p.set_key(SDLButton_to_key(o.button.button));
 				break;
 		}
-		
-		return p;	
+
+		return p;
 	}
 
 
-	void Console::handle_window_event(SDL_Event const& o) 
+	void Console::handle_window_event(SDL_Event const& o)
 	{
 		// print_window_event(o);
-		
+
 		switch (o.window.event) {
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
-			case SDL_WINDOWEVENT_RESIZED: {				
+			case SDL_WINDOWEVENT_RESIZED: {
 				auto new_dim = v2s(o.window.data1, o.window.data2);
-				if (old_dim != new_dim) {					
+				if (old_dim != new_dim) {
 					win.set_ctx_dim();
 					old_dim = new_dim;
 				}
 				break;
-			}					
+			}
 		}
 	}
 
 
-	void Console::handle_event(Event e) 
+	void Console::handle_event(Event e)
 	{
 		//print("event = %||\n", p);
 		if (e.has_type()) {
-		
+
 			for (auto i = widgets.size(); i-- > 0;)
 			{
-				
+
 				auto * w = widgets.at(i);
-				if (w->handle(*this, e)) 
+				if (w->handle(*this, e))
 				{
 					//print("event handled by widget\n");
 					return;
 				}
 			}
-			
-		
+
+
 			reg.handle_event(e);
 		}
 	}
 
-	void Console::handle_events() 
+	void Console::handle_events()
 	{
 		SDL_Event o;
-		while (win.pool_event(o)) 
+		while (win.pool_event(o))
 		{
 			switch (o.type) {
 				case SDL_QUIT:
@@ -161,33 +161,33 @@ namespace col {
 					break;
 				case SDL_WINDOWEVENT:
 					handle_window_event(o);
-					break;					
+					break;
 				default: {
 					auto p = SDLEvent_to_event(o, win);
-					
+
 					handle_event(p);
-					
+
 					break;
-					
-				}	
+
+				}
 			} // switch
 		}
 	}
 
-	
+
 	void Console::load_cargo(Item const& item, Amount const& num) {
 		if (auto unit_id = get_sel_unit_id()) {
 			auto & e = get_server();
 			e.load_cargo(e.get<Unit>(unit_id), item, num);
 		}
 	}
-	
+
 	void Console::handle_char(char16_t code) {
-		
+
 		if (!is_active()) {
 			throw Error("console not active");
 		}
-		
+
 		if (charset.find(code) == charset.end()) {
 			return;
 		}
@@ -201,7 +201,7 @@ namespace col {
 		else if (code == u'\r') {
 			// return
 			command(buffer);
-			
+
 			history.push_front(buffer);
 			buffer = "";
 			chi = history.begin();
@@ -215,51 +215,51 @@ namespace col {
 		//cout.flush();
 		++mod;
 	}
-	
-	
 
-	void Console::init_GUI() 
+
+
+	void Console::init_GUI()
 	{
 		if (verbose >= 1) print("GUILoop: app.init\n");
 		win.init(
 			"cc94",
 			{conf.screen_w, conf.screen_h}
 		);
-		
+
 		if (verbose >= 1) print("GUILoop: preload renderer\n");
 		preload_renderer(win);
-		
+
 		if (verbose) print("GUILoop: set_logical_dim\n");
 		win.set_ctx_dim({conf.screen_w, conf.screen_h});
-					
+
 		last_mod_env = env.mod - 1;
 		last_mod_con = mod - 1;
-		
+
 
 		last_tick = win.get_ticks();
 		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
-		
+
 		keyboard.init();
 		mouse.init();
-		
-		
+
+
 		// widgets
 		init_renderer(*this);
-		
-		
+
+
 	}
-	
-	bool Console::step_GUI() 
-	{	
-		
+
+	bool Console::step_GUI()
+	{
+
 		//if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
-		
+
 		//print("last_tick %||, %||\n", last_tick + 100, win.get_ticks());
-		if (last_tick + 67 < win.get_ticks()) 
+		if (last_tick + 67 < win.get_ticks())
 		{
-			last_tick = win.get_ticks(); 
+			last_tick = win.get_ticks();
 			this->time = last_tick;
-			
+
 			render(win, env, *this, verbose);
 
 			last_mod_env = env.mod;
@@ -267,14 +267,14 @@ namespace col {
 		}
 
 		handle_events();
-					
-		return !win.done;		
-		
+
+		return !win.done;
+
 	}
-	
+
 	Item Console::get_next_workitem_field(Env const& env, Field const& f) const {
 		// return next item availbe for production in this workplace
-		
+
 		// ble :P
 		auto lst = vector<Item>{ItemNone,
 			ItemFood,ItemFish,ItemSugar,ItemTobacco,ItemCotton,ItemFurs,
@@ -285,9 +285,9 @@ namespace col {
 			ItemHammers,ItemCross,
 			ItemBell
 		};
-		
+
 		size_t curr_pos = find(lst.begin(), lst.end(), f.get_proditem()) - lst.begin();
-		
+
 		size_t i = curr_pos + 1;
 		while (i < lst.size()) {
 			if (env.get_prod(f.get_terr(), false, lst.at(i))) {
@@ -295,7 +295,7 @@ namespace col {
 			}
 			++i;
 		}
-		
+
 		i = 0;
 		while (i < curr_pos) {
 			if (env.get_prod(f.get_terr(), false, lst.at(i))) {
@@ -303,11 +303,11 @@ namespace col {
 			}
 			++i;
 		}
-		
+
 		return ItemNone;
 	}
-	
-	
+
+
 	void Console::command(string const& line) {
 		try {
 			do_command(line);
@@ -315,9 +315,9 @@ namespace col {
 		catch (Error const& e) {
 			put(e.what());
 		}
-		
+
 	}
-	
+
 	template <class AI>
 	void Console::add_ai(Control control) {
 		if (not runner) {
@@ -327,29 +327,29 @@ namespace col {
 			runner->add_agent<AI>(env, control);
 		}
 	}
-	
-	
+
+
 	/*MainFrame & Console::get_main_frame()
 	{
 		return (MainFrame)widgets.at(0);
 	}*/
 
 	void Console::do_command(string const& line) {
-		
+
 		auto & env = get_server();
 		auto & r_env = get_server();
-		
+
 		vector<string> es;
 		split(es, line, is_any_of(" "));
-		
+
 		Unit::Id sel_unit_id = get_sel_unit_id();
 		Terr::Id sel = get_sel_terr_id();
-		
+
 		auto& cmd = es[0];
 
 		// put(line);
 		auto& con = *this;
-		
+
 		if (cmd == "list-nations") {
 			for (auto & item: env.factions) {
 				put("%|| %||", item.second.get_name(), int(item.second.id));
@@ -362,7 +362,7 @@ namespace col {
 			// save/load
 			put("save");
 			put("load");
-			
+
 			// editor
 			put("reset");
 			put("list-nations");
@@ -376,7 +376,7 @@ namespace col {
 			put("add-phys");
 			put("sub-phys");
 			put("set-alt");
-			
+
 			// orders
 			put("build-colony");
 			put("clear-forest");
@@ -387,48 +387,70 @@ namespace col {
 			put("work-field");
 			put("work-none");
 			put("prod-build");
-			put("prod-field");			
+			put("prod-field");
 			put("construct");
-			
+
 			// game turn sequence
 			put("start");
 			put("ready");
 			put("turn");
 			put("info");
-			
+
 			// ai
 			put("attach-ai");
 			//put("exec-ai");
 			//put("list-ais");
-			
+
 			// gui
 			put("enter");
 			put("exit");
-			
+
 			// misc
 			put("score");
 			put("cls");
 			put("print");
 			put("init-demo");
-			
+
 		}
-		else if (cmd == "list-agents") 
+		else if (cmd == "list-agents")
 		{
 			if (runner)
 			{
 				for (auto * a: runner->agents)
 				{
-					put("%||", a->get_name());					
+					put("%||", a->get_name());
 				}
-			}			
-		}		
+			}
+		}
 		else if (cmd == "reset") {
 			switch (es.size()) {
 				default:
 					put("Usage: reset <width> <height>");
 					break;
-				case 3:	
+				case 3:
 					env.reset(v2s(stoi(es.at(1)), stoi(es.at(2))));
+					break;
+			}
+		}
+		else if (cmd == "info") {
+			switch (es.size()) {
+				default:
+					put("Usage: info");
+					break;
+				case 1:
+					put("env.current_control %||", int(env.get_current_control()));
+					put("env.in_progress %||", int(env.in_progress()));
+					break;
+			}
+		}
+		else if (cmd == "play") {
+
+			switch (es.size()) {
+				default:
+					put("Usage: play");
+					break;
+				case 1:
+					env.set_state(Env::StatePlay);
 					break;
 			}
 		}
@@ -437,7 +459,7 @@ namespace col {
 				default:
 					put("Usage: init-demo");
 					break;
-				case 1:	
+				case 1:
 					init_demo();
 					break;
 			}
@@ -447,10 +469,10 @@ namespace col {
 				default:
 					put("Usage: add-phys <sealane|road|forest|minorriver|majorriver|plow>");
 					break;
-				case 2:	
+				case 2:
 					Phys p = get_phys_by_name(es.at(1));
 					for (auto tp: get_sel_terrs()) {
-						tp->add_phys(p);						
+						tp->add_phys(p);
 					}
 					break;
 			}
@@ -463,16 +485,16 @@ namespace col {
 				case 2:
 					Phys p = get_phys_by_name(es.at(1));
 					for (auto tp: get_sel_terrs()) {
-						tp->sub_phys(p);						
+						tp->sub_phys(p);
 					}
 					break;
 			}
-		}		
+		}
 		else if (cmd == "cls") {
 			output.clear();
 		}
-		
-		
+
+
 		else if (cmd == "attach-ai") {
 			switch (es.size()) {
 				default:
@@ -483,7 +505,7 @@ namespace col {
 					put("Simple AI attached");
 					break;
 			}
-		}		
+		}
 		else if (cmd == "turn") {
 			env.turn();
 			put(format("Turn %||", env.turn_no));
@@ -495,12 +517,12 @@ namespace col {
 					break;
 				}
 				case 2: {
-					auto nation_id = std::stoi(es.at(1));						
-					add_ai<null_ai::NullAi>(nation_id);										
+					auto nation_id = std::stoi(es.at(1));
+					add_ai<null_ai::NullAi>(nation_id);
 					break;
 				}
 			}
-		}		
+		}
 		else if (cmd == "list-units") {
 			for (auto &item: env.units) {
 				put(format("%||", item.second));
@@ -513,7 +535,7 @@ namespace col {
 			}
 		}
 		else if (es[0] == "remove-unit") {
-			env.remove<Unit>(std::stoi(es[1]));			    
+			env.remove<Unit>(std::stoi(es[1]));
 		}
 		else if (cmd == "create-unit") {
 			switch (es.size()) {
@@ -522,15 +544,15 @@ namespace col {
 					break;
 				}
 				case 3: {
-					auto & c = env.get<UnitType>(std::stoi(es.at(1))); // type_id					
+					auto & c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
 					auto cc = std::stoi(es.at(2));  // control
-					auto & t = *get_sel_terr(); 
-					
+					auto & t = *get_sel_terr();
+
 					auto& u = env.create<Unit>(c, cc);
 					env.put(t, u);
-					
+
 					if (compatible(u.get_travel(), TravelLand) and
-						!compatible(u.get_travel(), t.get_travel())) 
+						!compatible(u.get_travel(), t.get_travel()))
 					{
 						//u.transported = true;
 					}
@@ -572,7 +594,7 @@ namespace col {
 					}
 					catch (Error const& e) {
 						put(e.what());
-					}					
+					}
 					break;
 				}
 			}
@@ -594,7 +616,7 @@ namespace col {
 				default:
 					put("Usage: save <filename>");
 					break;
-				case 2: {					
+				case 2: {
 						if (runner) {
 							write_file(es.at(1), *runner);
 						}
@@ -635,7 +657,7 @@ namespace col {
 					break;
 			}
 		}
-		else if (cmd == "construct") {			
+		else if (cmd == "construct") {
 			switch (es.size()) {
 				default:
 					put("Usage: construct <place-number> <building-id>");
@@ -644,7 +666,7 @@ namespace col {
 					if (auto tp = get_sel_terr()) {
 						Build::Id place_id = stoi(es.at(1));
 						BuildType::Id buildtype_id = stoi(es.at(2));
-						
+
 						env.apply(inter::construct_build(env.get_id(*tp), place_id, buildtype_id));
 					}
 					break;
@@ -652,7 +674,7 @@ namespace col {
 			}
 		}
 		else if (cmd == "work-build") {
-			
+
 			switch (es.size()) {
 				default:
 					put("Usage: work-build <build-num>");
@@ -662,14 +684,14 @@ namespace col {
 					auto unit_id = get_sel_unit_id();
 					auto& unit = env.get<Unit>(unit_id);
 					env.work_build(number, unit);
-					
+
 					break;
 				}
-				
+
 			}
 		}
 		else if (cmd == "equip") {
-			
+
 			switch (es.size()) {
 				default:
 					put("Usage: equip <unit-type-id>");
@@ -677,16 +699,16 @@ namespace col {
 				case 2: {
 					auto id = stoi(es.at(1));
 					env.equip(
-						*get_sel_unit(), 
+						*get_sel_unit(),
 						env.get<UnitType>(id)
 					);
 					break;
 				}
-				
+
 			}
 		}
 		else if (cmd == "work-field") {
-			
+
 			switch (es.size()) {
 				default:
 					put("Usage: work-field <field-num>");
@@ -702,7 +724,7 @@ namespace col {
 					}
 					break;
 				}
-				
+
 			}
 		}
 		else if (cmd == "work-none") {
@@ -717,13 +739,13 @@ namespace col {
 					}
 					else {
 						print("WARNING: no selected unit on work-none command\n");
-					}					
+					}
 					break;
 				}
-				
+
 			}
 		}
-		else if (cmd == "prodnext-field") {			
+		else if (cmd == "prodnext-field") {
 			switch (es.size()) {
 				default:
 					put("Usage: prodnext-field <field-num>");
@@ -731,15 +753,15 @@ namespace col {
 				case 2: {
 					auto number = stoi(es.at(1));
 					auto const& item = get_next_workitem_field(
-						env, 
+						env,
 						env.get_field(env.get_terr(sel), number)
 					);
 					env.set_proditem_field(env.get_terr(sel), number, item);
 					break;
 				}
-				
+
 			}
-		}		
+		}
 		else if (cmd == "sel-place") {
 			switch (es.size()) {
 				default:
@@ -747,7 +769,7 @@ namespace col {
 					break;
 				case 2:
 					auto number = stoi(es.at(1));
-					
+
 					if (-1 <= number and number <= 16) {
 						sel_colony_slot_id = number;
 					}
@@ -768,8 +790,8 @@ namespace col {
 							env.get_defender(env.get_terr(sel)),
 							es.at(1)
 						);
-						
-						
+
+
 						//select_next_unit();
 					}
 					else {
@@ -838,13 +860,13 @@ namespace col {
 				}
 				case 1: {
 					//env.get_state(stoi(es[1]))
-					
+
 					break;
 				}
 			}
 		}
 		else if (es.at(0) == "") {
-			
+
 		}
 		else {
 			put("No such command: %||", cmd);
@@ -853,12 +875,12 @@ namespace col {
 
 
 	}
-	
-	
+
+
 	Time Console::get_move_cost(v2c p1, v2c p0, Unit const& u) const {
 		auto const& t0 = env.get_terr(p0);
 		auto const& t1 = env.get_terr(p1);
-		
+
 		if (is_discovered(t1) and is_discovered(t0)) {
 			return env.get_move_cost(t1, t0, u);
 		}
@@ -866,14 +888,14 @@ namespace col {
 			return TimeInf;
 		}
 	}
-	
 
 
-	PathRes Console::find_path(v2c src, v2c trg, UnitExt const& ue) 
+
+	PathRes Console::find_path(v2c src, v2c trg, UnitExt const& ue)
 	{
 		auto const& u = get_unit(ue);
-	
-		return col::find_path(env, src, trg, [this,&u](v2c w1, v2c w0) {		
+
+		return col::find_path(env, src, trg, [this,&u](v2c w1, v2c w0) {
 			auto c = get_move_cost(w1, w0, u);
 			if (c == TimeInf) {
 				return std::numeric_limits<float>::infinity();
@@ -881,7 +903,7 @@ namespace col {
 			else {
 				return c + rm.random_float(0.0f, 0.01f);
 			}
-		});	
+		});
 	}
 
 
@@ -889,34 +911,34 @@ namespace col {
 	/*
 		Esc -- cancel current orders
 		Enter -- execute current orders
-		
-		
-			
-	
+
+
+
+
 	*/
 
 
 
 	void Console::init_demo()
 	{
-		if (env.factions.size() == 0) 
+		if (env.factions.size() == 0)
 		{
 			new (&env.factions[ControlEnglandCol])
 				Faction(ControlEnglandCol, "England (You)");
-			
+
 			set_control(ControlEnglandCol);
-			
+
 			new (&env.factions[ControlFranceCol])
 				Faction(ControlFranceCol, "France (SimpleAI)");
-				
+
 			add_ai<simple_ai::SimpleAi>(ControlFranceCol);
 		}
 		else {
 			print("Game already initialized\n");
 		}
-		
+
 	}
-	
+
 
 
 
@@ -925,26 +947,26 @@ namespace col {
 	/// Make 'unit do current command.
 	/// return true when unit is ready to execute next command
 	/// return false when current command wasn't finished yet
-	bool Console::exec_unit_cmd(UnitExt & ext) 
-	{	
+	bool Console::exec_unit_cmd(UnitExt & ext)
+	{
 		print("exec_unit_cmd: id=%||, cmd=%||\n", ext.id, ext.get_curr_cmd());
-	
+
 		Unit & unit = env.get_unit(ext.id);
 
 		// assert(ext.cmds.has());
-	
+
 		auto cmd = ext.cmds.get();
-		
+
 		switch (cmd.ins) {
 			case InsNone: {
 				ext.pop_cmd();
 				ext.can_cont = 1;
 				return 1;
-			}					
+			}
 			case InsWait: {
 				ext.can_cont = false;
 				return 0;
-			}										
+			}
 			case InsMove: {
 				auto dir = (Dir)cmd.arg;
 				auto r = env.move_unit(unit, dir);
@@ -966,7 +988,7 @@ namespace col {
 				ext.can_cont = bool(r);
 				return r;
 			}
-			case InsBuild: {					
+			case InsBuild: {
 				auto r = env.colonize(unit);
 				handle_error();
 				if (r) { ext.pop_cmd(); }
@@ -985,7 +1007,7 @@ namespace col {
 				handle_error();
 				if (r) { ext.pop_cmd(); }
 				ext.can_cont = bool(r);
-				return r;					
+				return r;
 			}
 			case InsPlow: {
 				auto r = env.improve(unit, PhysPlow);
@@ -1008,5 +1030,5 @@ namespace col {
 	}
 
 
-	
+
 }

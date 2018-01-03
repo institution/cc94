@@ -40,11 +40,11 @@ namespace col{
 
 	/// Command result: 1 Ok, 0 Try next turn, -1 Not possible
 	using Res = int8_t;
-	Res const 
+	Res const
 		ResErr = -1,
 		ResCont = 0,
 		ResOk = 1;
-	
+
 
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x & y;
@@ -69,7 +69,7 @@ namespace col{
 
 	template<class Archive>
     void write(Archive & ar, Env const& env);
-    
+
     template<class Archive>
     void read(Archive & ar, Env & env);
 
@@ -85,20 +85,20 @@ namespace col{
 	using TurnNo = int32_t;
 
 	struct Env: Core {
-	
-		/** 
+
+		/**
 			Has 2 kinds of interface
 			restricted - availble to players - actions allowed by game rules
 			full - availble when map editing
-			
+
 			interface should be enforced by Agent himself?
-			
+
 		**/
 
 		using State = uint8_t;
-		
+
 		static
-		State const 
+		State const
 			StateEdit,
 			StatePlay,
 			StateExit;
@@ -106,10 +106,10 @@ namespace col{
 		// turn system
 		TurnNo turn_no{0};
 		TurnNo turn_limit{0}; // nonzero => end game when turn_no >= turn_limit
-		
+
 		Control current_control{ControlNone}; // current faction (turn)
-		
-		State state{StatePlay}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
+
+		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
 
 		// misc non game state
 		TurnNo mod;
@@ -118,21 +118,21 @@ namespace col{
 		// opts
 		int8_t verbose{0};
 		uint32_t action_count{0};
-		
+
 		State get_state() const {
 			return state;
 		}
-		
+
 		void set_state(State state) {
 			this->state = state;
 		}
 
-		void init_default_factions() 
+		void init_default_factions()
 		{
 			for (Control i = 0; i < ControlEnd; ++i)
-			{	
-				new (&factions[i]) 
-					Faction(i, get_control_name(i));			
+			{
+				new (&factions[i])
+					Faction(i, get_control_name(i));
 			}
 		}
 
@@ -152,26 +152,26 @@ namespace col{
 
 
 		/*void update_terr(Terr::Id id, Alt alt, Biome biome, Phys phys) {
-		
+
 		}
-		
+
 		void update_unit(Unit::Id id, ) {
-		
+
 		}*/
 
 		/// for visible unit
-		void for_unit(Control cc, std::function<void(Unit const&)> block) {			
-			for (auto & p: units) 
-			{				
+		void for_unit(Control cc, std::function<void(Unit const&)> block) {
+			for (auto & p: units)
+			{
 				if (has_vision(cc, p.second.get_terr())) {
 					block(p.second);
 				}
 			}
 		}
-		
+
 		void for_unit(std::function<void(Unit &)> block) {
-			for (auto & p: units) 
-			{				
+			for (auto & p: units)
+			{
 				block(p.second);
 			}
 		}
@@ -188,11 +188,11 @@ namespace col{
 		}
 
 
-		bool has_current_control() const 
+		bool has_current_control() const
 		{
-			return current_control != ControlNone;			
+			return current_control != ControlNone;
 		}
-		
+
 		Control get_current_control() const
 		{
 			return current_control;
@@ -210,8 +210,8 @@ namespace col{
 		void set_current_control(Control cc) {
 			current_control = cc;
 		}
-	
-		
+
+
 
 		//Storage & get_store(Unit & x) { return x.store; }
 		Storage & get_store(Colony & x) { return x.store; }
@@ -239,12 +239,12 @@ namespace col{
 			Amount free_num = u.get_space_left();
 
 			assert(free_num >= 0);
-			
+
 			auto mod_num = std::min({terr_num, free_num, want_num});
 
 			unit_set_item(u, item, u.get(item) + mod_num);
 			terr_set_item(t, item, terr_num - mod_num);
-			
+
 			return ResOk;
 		}
 
@@ -258,17 +258,17 @@ namespace col{
 
 			unit_set_item(u, item, unit_num - mod_num);
 			terr_set_item(t, item, st.get(item) + mod_num);
-			
+
 			return ResOk;
 		}
 
-		
+
 		Faction * get_current_faction() {
 			auto c = get_current_control();
 			if (c != ControlNone) {
 				return & get<Faction>(c);
 			}
-			return nullptr;			
+			return nullptr;
 		}
 
 
@@ -290,7 +290,7 @@ namespace col{
 			clear_misc();
 			//init_default_factions();
 		}
-		
+
 		explicit
 		Env(Coords dim, Terr const& def): Core(), verbose(1) {
 			set_random_gen(roll::roll1);
@@ -319,8 +319,8 @@ namespace col{
 
 
 
-		
-		
+
+
 		// Execute production on given storage and workplace
 		// * food consumed by workers are substracted from storage (no food = no production)
 		// * workers APs are used (time left <- zero)
@@ -328,9 +328,9 @@ namespace col{
 		// * consumed items are substracted from store
 		// * progress is increased on workplace task
 		void produce(Store & st, Workplace & wp);
-		
 
-		
+
+
 		void resolve_builds(Terr & terr);
 		void resolve_teaching(Store & st, Workplace & b, Terr & t);
 
@@ -339,11 +339,11 @@ namespace col{
 		template <class F, int i, int j>
 		void resolve(Colony & c) {
 			// resolve production of items inside [i,j) range
-			
+
 			// basket sort fields/builds by produced item
 			array<vector<F*>, j-i> ws;
 
-			for (auto& wp: c.get_cont<F>()) 
+			for (auto& wp: c.get_cont<F>())
 			{
 				auto v = wp.get_proditem();
 				if (v != ItemNone) { // may produce None
@@ -357,7 +357,7 @@ namespace col{
 			// produce items in order; items produced earlier can be used by produced later
 			// iterate by items
 			for (size_t item_id = i; item_id < j; ++item_id) {
-				for (F* wp: ws.at(item_id-i)) {					
+				for (F* wp: ws.at(item_id-i)) {
 					produce(get_store(c), *wp);
 				}
 			}
@@ -365,19 +365,19 @@ namespace col{
 
 			// teaching
 			resolve_builds(c.get_terr());
-			
+
 		}
 
-		
+
 		bool can_construct(Build const& b) const {
-			return b.get_proditem() == ItemHammers;			
+			return b.get_proditem() == ItemHammers;
 		}
-		
-		
 
-		void turn(Terr & t) 
+
+
+		void turn(Terr & t)
 		{
-			
+
 
 			if (!t.has_colony()) {
 				return;
@@ -391,8 +391,8 @@ namespace col{
 			resolve<Field, 1, 10>(c);
 			resolve<Build, 10, 22>(c);
 
-			
-			
+
+
 			// construction
 			for (auto& b: c.builds) {
 				resolve_construction(t, b);
@@ -400,7 +400,7 @@ namespace col{
 			for (auto& f: c.fields) {
 				resolve_construction(t, f);
 			}
-			
+
 
 			// food consumption/starvation
 			/*vector<Unit*> starve;
@@ -414,7 +414,7 @@ namespace col{
 						// starvation
 						starve.push_back(u);
 					}
-					
+
 					u.time_left = 0;
 				}
 			}*/
@@ -428,17 +428,17 @@ namespace col{
 			*/
 
 			// new colonists creation
-			
+
 			auto control = get_control(t);
-			
-			if (control != ControlNone and st.get(ItemFood) >= 100) 
+
+			if (control != ControlNone and st.get(ItemFood) >= 100)
 			{
-				st.sub(ItemFood, 100);				
+				st.sub(ItemFood, 100);
 				put(
 					t,
 					create<Unit>(get<UnitType>(1), control)
 				);
-				
+
 			}
 
 			// decay of non-storageable resources
@@ -461,7 +461,7 @@ namespace col{
 
 			 [global]
 				increase turn counter
-				
+
 			 [per tile]
 				time reset on units
 				colony production
@@ -482,8 +482,8 @@ namespace col{
 			// time reset on units and vision recalc
 			for (auto& item: units) {
 				Unit & u = item.second;
-				
-				u.time_left = TIME_UNIT;				
+
+				u.time_left = TIME_UNIT;
 				update_vision(u);
 			}
 
@@ -527,7 +527,7 @@ namespace col{
 			return t.get_vision(c);
 		}
 
-		
+
 
 
 		void reset(Coords const& dim) {
@@ -541,7 +541,7 @@ namespace col{
 
 		}
 
-		
+
 		Env & fill(Terr const& t) {
 
 			for (Coord j = 0; j < h; ++j) {
@@ -575,7 +575,7 @@ namespace col{
 			}
 
 			auto time_left = u.time_left;
-			
+
 			if (time_left < time_cost) {
 				u.time_left = 0;
 				return check(time_left, time_cost);
@@ -620,7 +620,7 @@ namespace col{
 			return space;
 		}*/
 
-		bool can_load(Unit const& transport, Unit const& passenger) const 
+		bool can_load(Unit const& transport, Unit const& passenger) const
 		{
 			assert(0);
 		}
@@ -628,7 +628,7 @@ namespace col{
 		Time get_movement_cost(Terr const& dest, Terr const& orig, Travel const&) const;
 
 
-		
+
 
 
 		bool has_tools(Unit const& u) {
@@ -641,15 +641,15 @@ namespace col{
 		}
 
 		string error_message;
-		
+
 		bool has_error() const {
 			return error_message.size() > 0;
 		}
-		
+
 		void set_error(string const& s) {
 			error_message = s;
 		}
-		
+
 		string read_error() {
 			auto s = error_message;
 			error_message = "";
@@ -663,11 +663,11 @@ namespace col{
 
 		/// return movment cost in time units (TimeInf -- movment impossible)
 		Time get_move_cost(Terr const& dest, Terr const& orig, Unit const& u);
-		
-		
 
-		
-		Unit * find_transport(Terr const& terr, Unit const& passenger) 
+
+
+
+		Unit * find_transport(Terr const& terr, Unit const& passenger)
 		{
 			for (auto * transport: terr.get_units())
 			{
@@ -675,19 +675,19 @@ namespace col{
 					return transport;
 				}
 			}
-			return nullptr;			
+			return nullptr;
 		}
 
 
 
 
 
-		/*Res move_unit_offmap(Unit & u, RemotePort & loc) 
+		/*Res move_unit_offmap(Unit & u, RemotePort & loc)
 		{
-		
+
 		}*/
 
-		
+
 		Res move_unit(Unit & u, int8_t dx, int8_t dy) {
 			/// Move/board unit on adjacent square/ship
 
@@ -719,19 +719,19 @@ namespace col{
 			auto & dest = get_terr(dest_coords);
 
 			Unit * transport = nullptr;
-			if (not compatible(u.get_travel(), dest.get_travel())) 
+			if (not compatible(u.get_travel(), dest.get_travel()))
 			{
 				transport = find_transport(dest, u);
-				
-				if (transport == nullptr) {			
+
+				if (transport == nullptr) {
 					set_error("cannot travel through this terrain");
 					return ResErr;
 				}
 			}
-			
-			
+
+
 			// dynamic check
-			
+
 			auto dc = get_control(dest);
 			if (dc != ControlNone and dc != u.get_control()) {
 				set_error("destination occupied by enemy");
@@ -749,7 +749,7 @@ namespace col{
 			else {
 				time_cost = get_move_cost(dest, orig, u);
 			}
-			
+
 			if (time_cost <= 0) {
 				ext::fail("time_cost == 0???");
 			}
@@ -757,7 +757,7 @@ namespace col{
 
 			if (run_map_task(u, time_cost)) {
 				t_move(dest, u);
-				update_vision(u);   // only main unit, transported units dont have vision 
+				update_vision(u);   // only main unit, transported units dont have vision
 				return ResOk; // success
 			}
 			return ResCont; // try next turn
@@ -768,7 +768,7 @@ namespace col{
 			auto v = dir2vec(dir);
 			return move_unit(u, v[0], v[1]);
 		}
-		
+
 		Res move_unit(Unit & u, v2c v) {
 			return move_unit(u, v[0], v[1]);
 		}
@@ -862,8 +862,8 @@ namespace col{
 					if (verbose) {
 						print(" -------- combat -------- \n");
 						print("attack = %|| + %||\n", attack_base, attack_base * 0.5);
-						print("combat = %|| + %||\n", 
-							combat_base, 
+						print("combat = %|| + %||\n",
+							combat_base,
 							combat_base * get_defense_bonus(dest, defender.get_travel())
 						);
 						print("odds   %|| : %||\n", attack * 10, combat*10);
@@ -890,7 +890,7 @@ namespace col{
 		}
 
 
-		Res destroy(Unit & u, Phys const& feat) 
+		Res destroy(Unit & u, Phys const& feat)
 		{
 			// unit checks
 			if (!has_tools(u)) {
@@ -1049,10 +1049,10 @@ namespace col{
 			u.time_left = tp;
 		}
 
-		
+
 		/// How much of 'item can be produced by 'unit in 'build
 		Amount get_prod(Build const& build, Unit const& unit, Item const& item) const;
-		
+
 		/// How much of raw materials needed to produce 'item will be consumed by 'unit in 'build
 		Amount get_cons(Build const& build, Unit const& unit, Item const& item) const;
 
@@ -1063,33 +1063,33 @@ namespace col{
 		/// Can colony be build on 'terr
 		bool is_colonizable(Terr const& terr) const {
 			auto alt = terr.get_alt();
-			return 
-				not terr.has_colony() 
-				and AltFlat <= alt and alt <= AltHill;			
+			return
+				not terr.has_colony()
+				and AltFlat <= alt and alt <= AltHill;
 		}
-		
-		
-		
+
+
+
 		/// Is 'unit capable of building colony
 		bool is_colonist(Unit const& unit) {
 			return unit.get_type().id <= UnitTypeCavalry;
 			// return compatible(unit.get_travel(), TravelLand)
 		}
 
-		
-		
-		Res colonize(Unit &u, string const& name = "") 
+
+
+		Res colonize(Unit &u, string const& name = "")
 		{
 			if (not is_colonist(u)) {
 				set_error("this unit cannot colonize");
-				return ResErr;				
+				return ResErr;
 			}
 
 			auto& t = get_terr(u);
 
 			if (not is_colonizable(t)) {
 				set_error("cannot colonize here");
-				return ResErr;				
+				return ResErr;
 			}
 
 			auto time_cost = TIME_UNIT;
@@ -1105,7 +1105,7 @@ namespace col{
 		bool can_make(Build const& build, BuildType const& bt) const;
 		bool can_make(Build const& build, UnitType const& ut) const;
 
-		void construct(Build & build, BuildType const& mk) {			
+		void construct(Build & build, BuildType const& mk) {
 			if (can_make(build, mk)) {
 				build.task.reset(&mk);
 			}
@@ -1114,7 +1114,7 @@ namespace col{
 				assert(0);
 			}
 		}
-			
+
 		void construct(Build & build, UnitType const& mk) {
 			if (can_make(build, mk)) {
 				build.task.reset(&mk);
@@ -1123,10 +1123,10 @@ namespace col{
 				// TODO: error
 				assert(0);
 			}
-						
+
 		}
-		
-		
+
+
 
 
 		//vector<BuildType*> const& get_allowed_builds(Terr const& t, int slot_id) {
@@ -1180,7 +1180,7 @@ namespace col{
 			return ControlNone;
 		}
 
-		
+
 		int consume_part(Terr & t, Item const& item, Amount const& num) {
 			Store & st = get_store(t);
 			auto real = std::min(st.get(item), num);
@@ -1198,7 +1198,7 @@ namespace col{
 		}
 
 
-		
+
 		void resolve_construction(Terr & terr, Workplace & f);
 
 		bool has_control(Terr const& terr, Control control) const {
@@ -1226,20 +1226,20 @@ namespace col{
 		bool has_field(Terr const& terr, uint8_t field_id) const {
 			return terr.has_colony();
 		}
-		
-		Field const& get_field(Terr const& terr, uint8_t field_id) const {			
-			return terr.get_colony().fields.at(field_id);			
+
+		Field const& get_field(Terr const& terr, uint8_t field_id) const {
+			return terr.get_colony().fields.at(field_id);
 		}
 
 		Field & get_field(Terr & terr, uint8_t field_id) {
-			return terr.get_colony().fields.at(field_id);			
+			return terr.get_colony().fields.at(field_id);
 		}
-		
+
 		Res work_none(Unit & u) {
 			if (u.workplace) {
 				u.workplace->sub(u);
 				u.workplace = nullptr;
-			}			
+			}
 			return ResOk;
 		}
 
@@ -1291,57 +1291,57 @@ namespace col{
 			t.add(x);
 			x.terr = &t;
 		}
-		
-		
+
+
 
 
 		void clear_vision() {
 			auto dim = get_dim();
-			
-			for (int j = 0; j < dim[1]; j++)
+
+			for (int16_t j = 0; j < dim[1]; j++)
 			{
-				for (int i = 0; i < dim[0]; i++)
+				for (int16_t i = 0; i < dim[0]; i++)
 				{
 					get_terr({i,j}).clear_vision();
 				}
-			}			
+			}
 		}
-		
+
 
 
 		void update_vision(Unit const& u) {
 			if (not u.has_control()) {
 				return;
 			}
-			
+
 			auto p = get_coords(u);
 			auto id = u.get_control();
-			
+
 			if (0 <= id and id < 32) {
 				Coord r = 2;
 				auto dim = get_dim();
-				
+
 				auto i0 = std::max<Coord>(0, p[0]-r);
 				auto i1 = std::min<Coord>(p[0]+r, dim[0]-1);
-				
+
 				auto j0 = std::max<Coord>(0, p[1]-r);
 				auto j1 = std::min<Coord>(p[1]+r, dim[1]-1);
-				
+
 				for (Coord j = j0; j <= j1; ++j)
 				{
 					for (Coord i = i0; i <= i1; ++i)
 					{
 						get_terr({i,j}).mark_vision(id);
-					}				
+					}
 				}
-				
+
 			}
 			else {
 				print(std::cerr, "WARNING: update_vision: id=%||; not in range\n", id);
 			}
 		}
-		
-		
+
+
 
 
 		void put(Terr & t, Unit & u) {
@@ -1349,13 +1349,13 @@ namespace col{
 			u.terr = &t;
 			update_vision(u);
 		}
-		
+
 		bool has_build(Terr & terr, Build::Id build_id) {
 			return terr.has_colony() and 0 <= build_id and build_id <= 15;
 		}
-		
+
 		Build & get_build(Terr & terr, int build_id) {
-			return terr.get_colony().builds.at(build_id);			
+			return terr.get_colony().builds.at(build_id);
 		}
 
 		Res work_field(Field::Id field_id, Unit & u) {
@@ -1373,7 +1373,7 @@ namespace col{
 
 		Res work_build(Build::Id build_id, Unit & u) {
 			Terr & terr = get_terr(u);
-		
+
 			if (has_build(terr, build_id)) {
 				auto& f = get_build(terr, build_id);
 				return work_workplace(f, u);
@@ -1389,16 +1389,16 @@ namespace col{
 
 
 
-		
-		Res work_workplace(Workplace & wp, Unit & u) 
-		{			
+
+		Res work_workplace(Workplace & wp, Unit & u)
+		{
 			if (wp.get_space_left() >= u.get_size()) {
 				t_move(wp, u);
 				return ResOk;
 			}
 			else {
 				set_error("no space left");
-				return ResErr;				
+				return ResErr;
 			}
 		}
 
@@ -1409,7 +1409,7 @@ namespace col{
 
 
 
-		Res ready() 
+		Res ready()
 		{
 			if (factions.size() == 0) {
 				current_control = ControlNone;
@@ -1417,18 +1417,18 @@ namespace col{
 			}
 			else {
 				do {
-				
-					current_control += 1;	
-					
+
+					current_control += 1;
+
 					if (current_control >= ControlEnd) {
 						// TURN HERE
 						current_control = ControlNone;
-						turn();						
+						turn();
 					}
-					
+
 				} while (factions.find(current_control) == factions.end());
 			}
-			
+
 			return ResOk;
 		}
 
@@ -1459,8 +1459,8 @@ namespace col{
 
 
 		Amount get_base_prod(Terr const& terr, Item const& item) const;
-		
-		
+
+
 
 		void set_turn(uint32 turn_no) {
 			this->turn_no = turn_no;
@@ -1496,7 +1496,7 @@ namespace col{
 
 
 
-		
+
 
 		void set_owner(Unit::Id & uid, Control control) {
 			units.at(uid).set_control(control);
@@ -1508,12 +1508,12 @@ namespace col{
 		}
 
 
-		
+
 
 	};
 
-	
-	
+
+
 
 
 

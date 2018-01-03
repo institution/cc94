@@ -10,10 +10,10 @@ namespace col{
 
 	Amount Build::get_prod(Env const& env, Unit const& unit, Item const& item) const {
 		return env.get_prod(*this, unit, item);
-	};
+	}
 	
 	Amount Build::get_cons(Env const& env, Unit const& unit, Item const& item) const { 
 		return env.get_cons(*this, unit, item);
-	};
+	}
 	
 }
