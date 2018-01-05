@@ -20,23 +20,23 @@ namespace col {
 
 
 	Style const StyleMenu(ColorFont, ColorNone, ColorFontSelected, ColorFontDisabled);
-	
-	
-	
-	
-	
-	/// Return dim of texture 't 
+
+
+
+
+
+	/// Return dim of texture 't
 	v2s get_dim(Texture const& t) { return t.dim; }
 
-	
+
 
 	bool const VERBOSE = 1;
-	
 
 
 
 
-	
+
+
 
 	ResNum get_prof_icon_id(Prof prof, ResNum def) {
 		switch (prof) {
@@ -65,28 +65,28 @@ namespace col {
 		return def;
 	}
 
-	
+
 	ResNum get_icon_id(Unit const& unit) {
 		ResNum const IconErrorId = 56;
-		
-		auto prof = unit.get_prof();		
-				
+
+		auto prof = unit.get_prof();
+
 		if (prof == ProfNone) {
-			auto icon_gray_id = unit.get_icon();		
+			auto icon_gray_id = unit.get_icon();
 			return icon_gray_id;
 		}
 		else {
 			auto icon_expert_id = unit.get_icon_expert();
-			
+
 			if (icon_expert_id != 0) {
 				return icon_expert_id;
-			}			
-		
+			}
+
 			// colonist
 			return get_prof_icon_id(unit.get_prof(), IconErrorId);
 		}
 	}
-	
+
 
 
 	void render_fill(Front & fr,
@@ -100,11 +100,11 @@ namespace col {
 	void render_inline(Front & win, v2s pos, v2s dim, Color c, int8_t t) {
 		/* Draw inside border of pos,dim box; t -- thickness
 		*/
-		
+
 		auto wh = dim - v2s(t,t);
 		auto w = wh[0];
 		auto h = wh[1];
-		
+
 		// top
 		render_fill(win, pos + v2s{0,0}, {w,t}, c);
 		// right
@@ -135,7 +135,7 @@ namespace col {
 	}
 
 
-	Color get_control_color(Control cc) 
+	Color get_control_color(Control cc)
 	{
 		switch (cc) {
 			case ControlEnglandCol: return ColorRed;
@@ -193,14 +193,14 @@ namespace col {
 		win.render(img, pix);
 	}
 
-	void render_sprite(Front & win, 
+	void render_sprite(Front & win,
 		b2s box, v2f const& align,
 		Texture const& img
 	) {
 		win.render(img, calc_align(box, align, get_dim(img)));
 	}
 
-	void render_sprite(Front & win, 
+	void render_sprite(Front & win,
 		v2s pos, v2s dim, v2f const& align,
 		Texture const& img
 	) {
@@ -223,8 +223,8 @@ namespace col {
 		render_fill(win, pos, dim, color);
 	}
 
-	
-	
+
+
 
 	void render_area(
 		Front & win,
@@ -303,17 +303,17 @@ namespace col {
 	struct Col {
 		float align{0};    // 0 - left, 1 - right, 0.5 - center
 		int width{0};
-		string name{""};  
-		
+		string name{""};
+
 		Col(float a, int w, string n):
 			name(n), width(w), align(a) {}
-			
+
 		Col(float a, int w):
 			width(w), align(a) {}
-			
+
 		Col(float a):
 			align(a) {}
-			
+
 		Col() = default;
 	};
 
@@ -323,32 +323,32 @@ namespace col {
 		return nelem * elem_space + (nelem + 2) * sep;
 	}
 
-	
+
 	template <class T>
 	T limit(T x, T a, T b) {
 		if (x < a) return a;
 		if (b < x) return b;
 		return x;
 	}
-	
-	
-	
 
-	
-	
-	
+
+
+
+
+
+
 	struct Elem {
-		vector<string> text;  // empty -> separator			
+		vector<string> text;  // empty -> separator
 		Action onselect;  // empty -> disabled
 		Key shortcut{KeyNone};
 		uint8_t flags; // bit 0 set -> highlight
-		
+
 		Elem() {}
 		Elem(vector<string> const& text, Action const& onselect, Key shortcut):
 			text(text),
 			onselect(onselect),
-			shortcut(shortcut)				
-		{}		
+			shortcut(shortcut)
+		{}
 	};
 
 
@@ -357,10 +357,10 @@ namespace col {
 
 
 
-	/*struct Frame: Widget 
+	/*struct Frame: Widget
 	{
 		Frame() = default;
-	
+
 		virtual v2s get_dim() override {
 			v2s dd{0,0};
 			if (down) {
@@ -368,19 +368,19 @@ namespace col {
 			}
 			dim = v2s(2*S(2), 2*S(2)) + dd;
 			return dim;
-		}	
-		
+		}
+
 		virtual void set_pos(v2s pos) override {
 			this->pos = pos;
 			if (down) {
 				down->set_pos(pos + v2s(S(3), S(3)));
-			}		
+			}
 		}
-		
-		virtual void render(Console & con) override 
+
+		virtual void render(Console & con) override
 		{
 			render_inline(con.win, pos, dim, ColorWhite, 1);
-			
+
 			if (down) {
 				down->render(con);
 			}
@@ -389,21 +389,21 @@ namespace col {
 	};
 
 
-	struct Absolute: Widget 
+	struct Absolute: Widget
 	{
 
 		v2s get_dim() override {
 			return dim;
-		}	
-		
-		void set_pos(v2s pos) override {
-			this->pos = pos;				
 		}
-		
-		void render(Console & con) override 
+
+		void set_pos(v2s pos) override {
+			this->pos = pos;
+		}
+
+		void render(Console & con) override
 		{
 			render_inline(con.win, pos, dim, ColorWhite, 1);
-			
+
 			if (down) {
 				down->render(con);
 			}
@@ -414,41 +414,41 @@ namespace col {
 
 	template <int A, int B>
 	struct Axis: Widget {
-		
+
 		int16_t adv{0};
-		
-		v2s get_dim() override 
+
+		v2s get_dim() override
 		{
 			auto * w = down;
 			while (w) {
 				auto wdim = w->get_dim();
-				
+
 				dim[A] += wdim[A] + adv;
 				if (dim[B] < wdim[B]) {
 					dim[B] = wdim[B];
-				}			
+				}
 				w = w->next;
 			}
 			return dim;
 		}
-		
-		void set_pos(v2s p) override 
+
+		void set_pos(v2s p) override
 		{
 			pos = p;
-			
+
 			auto * w = down;
 			auto c = pos;
 			while (w) {
-							
+
 				w->set_pos(c);
-				
+
 				c[A] += w->dim[A] + adv;
-				
+
 				w = w->next;
 			}
 		}
-		
-		void render(Console & con) override 
+
+		void render(Console & con) override
 		{
 			auto * x = down;
 			while (x) {
@@ -456,10 +456,10 @@ namespace col {
 				x = x->next;
 			}
 		}
-		
+
 	};
-	
-	
+
+
 	using Line = Axis<0,1>;
 	using Cross = Axis<1,0>;
 	*/
@@ -479,52 +479,52 @@ namespace col {
 
 
 
-		
+
 	/*
 	struct Label: Widget {
 
 		string text{""};
 		int16_t maxlen{0};
 		v2f align{0.5f, 0.5f};
-				
-		Label(string const& text, int16_t maxlen): 
+
+		Label(string const& text, int16_t maxlen):
 			text(text), maxlen(maxlen)
 		{
 		}
-		
+
 		PixFont const& get_font() const {
 			//assert(font);
 			return FontTiny;
 		}
-		
-		v2s get_dim() override 
+
+		v2s get_dim() override
 		{
 			dim = v2s(2*S(2), 2*S(2)) + v2s(maxlen * get_font().get_width(), get_font().get_height());
 			return dim;
 		}
-		
-		void set_pos(v2s p) override 
+
+		void set_pos(v2s p) override
 		{
 			pos = p;
 		}
-		
-		void render(Console & con) override 
+
+		void render(Console & con) override
 		{
 			auto & win = con.win;
-		
+
 			// output
 			render_inline(win, pos, dim, ColorWhite, 1);
-			
+
 			auto b = v2s(S(2), S(2));
-			
+
 			b2s inner(pos + b, dim - b - b);
-			
-			auto t = render_text(win, 
-				inner.pos, inner.dim, {0.0f, 0.0f}, 
+
+			auto t = render_text(win,
+				inner.pos, inner.dim, {0.0f, 0.0f},
 				FontTiny, ColorFont,
 				text
 			);
-			
+
 		}
 	};
 
@@ -533,79 +533,79 @@ namespace col {
 		using Action = std::function<void()>;
 
 		Action onpress{nullptr};
-		
+
 		Button() = default;
-		Button(string const& text, int16_t maxlen, Action onpress): 
+		Button(string const& text, int16_t maxlen, Action onpress):
 			Label(text, maxlen), onpress(onpress)
 		{
 		}
-		
-		void render(Console & con) override 
+
+		void render(Console & con) override
 		{
 			Label::render(con);
-			
+
 			// input
 			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
-				onpress();			
+				onpress();
 			});
-			
+
 		}
 	};
-	
-	
+
+
 	struct EditStr: Label {
-	
+
 		EditStr(string s, int16_t w): Label(s,w) {}
-		
+
 		string const& get_value() const { return text; }
-		
-		void render(Console & con) override 
+
+		void render(Console & con) override
 		{
 			auto & win = con.win;
-		
+
 			// output
 			render_inline(win, pos, dim, ColorWhite, 1);
-			
+
 			auto b = v2s(S(2), S(2));
-			
+
 			b2s inner(pos + b, dim - b - b);
-			
-			auto t = render_text(win, 
-				inner.pos, inner.dim, align, 
+
+			auto t = render_text(win,
+				inner.pos, inner.dim, align,
 				get_font(), ColorFont,
 				"123"
 			);
-			
+
 			// render cursor
 			if (has_focus()) {
-			
+
 				render_text_at(win,
 					v2s(t.pos[0] + t.dim[0], t.pos[1]),
 					get_font(), ColorFont,
 					"_"
 				);
 			}
-			
+
 			// input
 			con.on({this, EventPress, KeyBackspace}, [this](Event & e){
 				if (text.size() > 0) {
 					text.pop_back();
 				}
 			});
-		
+
 			con.on({this, EventChar}, [this](Event & e) {
-				text += e.get_chr();			
+				text += e.get_chr();
 			});
-			
+
 			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
-				grab_focus();			
+				grab_focus();
 			});
-			
+
 			// if focus and p.match(EventPress, KeyA, ModCtrl)
-			
+
 		}
-		
-		
+
+
 	};
 */
 
@@ -616,11 +616,11 @@ namespace col {
 
 		Widget * edit;
 		function<void(int)> onenter;
-		
+
 		FrameNum(function<void(int)> onenter): onenter(onenter) {
-		
+
 			edit = new EditStr("", 6);
-			
+
 			adds(
 				(new Cross())->adds(
 					(new Line())->adds(
@@ -632,83 +632,83 @@ namespace col {
 					})
 				)
 			);
-			
+
 		}
-			
+
 		void render(Console & con) override {
 			Frame::render();
-			
+
 			con.on({EventPress, KeyEnter}, [this](){
 				// close ?
 				onenter(edit.get_value());
 			});
-			
+
 			con.on({EventPress, KeyEsc}, [](){
 				// close ?
 			});
-			
-			
+
+
 		}
 
 	};*/
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	struct Select: IWidget {
-			
+
 		v2s pos;
 		v2s dim;
-		
+
 		vector<Col> cols;
 		vector<Elem> rows;
-		
+
 		// close on select
 		using Flag = uint8_t;
 		Flag flags;
 		Flag const
 			FlagCloseOnSelect = 1,
 			FlagFrame = 2;
-			
+
 		//virtual void onselect() {}
-		
+
 		Action oncancel;
 		Action onselect;
-				
+
 		size_t cursor{0};
 		size_t highlight{size_t(-1)};
-		
-		
-		Select(int ncol) 
-		{ 
+
+
+		Select(int ncol)
+		{
 			for (auto i = 0; i < ncol; ++i)
 			{
-				cols.push_back(Col{});	
+				cols.push_back(Col{});
 			}
 		}
-		
+
 		Select() {
-			cols.push_back(Col{});			
+			cols.push_back(Col{});
 		}
-		
+
 		void add_col(string name, int width, float align) {
 			cols.push_back(Col{align,width,name});
 		}
-		
+
 		void set_cols(Col c0) {
 			assert(cols.size() >= 1);
 			cols[0] = c0;
 		}
-		
+
 		void set_cols(Col c0, Col c1) {
 			assert(cols.size() >= 2);
 			cols[0] = c0;
 			cols[1] = c1;
 		}
-		
-		void add(vector<string> const& text, Action const& onselect, Key shortcut=KeyNone) 
+
+		void add(vector<string> const& text, Action const& onselect, Key shortcut=KeyNone)
 		{
 			for (size_t i = 0; i < cols.size(); ++i)
 			{
@@ -717,23 +717,23 @@ namespace col {
 					cols.at(i).width = w;
 				}
 			}
-			
+
 			rows.push_back(Elem(text, onselect, shortcut));
 		}
-		
+
 		void add(vector<string> const& text, bool hl, Action const& onselect, Key shortcut=KeyNone) {
 			if (hl) { set_highlight(); }
 			add(text, onselect, shortcut);
 		}
-		
+
 		/*void add(string const& text, Action const& onselect, Key shortcut=KeyNone) {
 			rows.push_back(Elem({text}, onselect, shortcut));
 		}*/
-		
+
 		void render(Console & con) override;
-		
-		
-		int16_t calc_width() const 
+
+
+		int16_t calc_width() const
 		{
 			auto sep = ly.sep;   // cell sep
 			int width = 0;
@@ -743,33 +743,33 @@ namespace col {
 			width += get_elems_stretch(cols.size(), 0, sep[0]);
 			return width;
 		}
-		
+
 		v2s calc_dim() const
 		{
 			auto line_height = ly.font_tiny;
 			auto sep = ly.sep;   // cell sep
-			
+
 			auto width = calc_width();
 			int height = get_elems_stretch(rows.size(), line_height, sep[1]);
-			
-			return v2s(width, height);		
+
+			return v2s(width, height);
 		}
-		
+
 		v2s get_dim()
 		{
 			return calc_dim();
 		}
-		
+
 		void set_pos(v2s pos)
 		{
 			// default single column
 			if (cols.size() == 0) {
-				cols.push_back(Col{});			
-			}		
-		
+				cols.push_back(Col{});
+			}
+
 			auto line_height = ly.font_tiny;
 			auto sep = ly.sep;   // cell sep
-			
+
 			int width = 0;
 			for (auto & c: cols) {
 				width += c.width;
@@ -777,12 +777,12 @@ namespace col {
 			width += get_elems_stretch(cols.size(), 0, sep[0]);
 
 			int height = get_elems_stretch(rows.size(), line_height, sep[1]);
-			
+
 			dim = v2s(width, height);
 			auto box = b2s{pos, {0,0}};
 			pos = calc_align(box, {0.5f, 0.5f}, dim);
 		}
-		
+
 		void move(size_t i) {
 			cursor = i;
 			if (cursor <= 0) {
@@ -797,7 +797,7 @@ namespace col {
 			if (cursor <= 0) {
 				cursor = rows.size();
 			}
-			cursor -= 1;			
+			cursor -= 1;
 		}
 
 		void move_down() {
@@ -806,16 +806,16 @@ namespace col {
 				cursor = 0;
 			}
 		}
-		
+
 		void select() {
 			if (cursor < rows.size()) {
 				rows.at(cursor).onselect();
 			}
-			onselect();				
+			onselect();
 		}
-		
+
 		void set_highlight() {
-			highlight = rows.size();			
+			highlight = rows.size();
 		}
 
 		v2s get_row_dim() const {
@@ -827,16 +827,16 @@ namespace col {
 	};
 
 
-	bool Select::handle(Console & con, Event e) 
+	bool Select::handle(Console & con, Event e)
 	{
 		// KEYBOARD
-	
+
 		// esc -- cancel
 		if (match(e, {EventPress, KeyEsc})) {
 			oncancel();
 			return 1;
 		}
-		
+
 		// enter -- select under cursor
 		if (match(e, {EventPress, KeyEnter})) {
 			select();
@@ -844,77 +844,77 @@ namespace col {
 		}
 
 		// up arrow -- move cursor
-		if (match(e, {EventPress, KeyUp})) { 
+		if (match(e, {EventPress, KeyUp})) {
 			move_up();
 			return 1;
 		}
 
 		// down arrow -- move cursor
-		if (match(e, {EventPress, KeyDown})) { 
+		if (match(e, {EventPress, KeyDown})) {
 			move_down();
 			return 1;
 		}
-	
+
 		// MOUSE
-	
+
 		auto row_dim = get_row_dim();
 		auto row_pos = pos + ly.sep;
 
-		for (size_t j = 0; j < rows.size(); ++j) 
-		{	
+		for (size_t j = 0; j < rows.size(); ++j)
+		{
 			// left click on row -- move cursor
-			if (match(e, {EventPress, KeyLMB, row_pos, row_dim})) 
+			if (match(e, {EventPress, KeyLMB, row_pos, row_dim}))
 			{
 				move(j);
 				return 1;
 			}
-			
+
 			// left release on row -- select
-			if (match(e, {EventRelease, KeyLMB, row_pos, row_dim})) 
+			if (match(e, {EventRelease, KeyLMB, row_pos, row_dim}))
 			{
 				select();
 				return 1;
 			}
-			
+
 			row_pos[1] += FontTiny.get_height() + ly.sep[1];
 		}
-		
+
 		// click anywhere -- cancel
 		if (match(e, {EventPress, KeyLMB})) { oncancel(); return 1;}
 		if (match(e, {EventPress, KeyRMB})) { oncancel(); return 1;}
-		
+
 		// click on dialog -- do nothing
 		if (match(e, {EventPress, KeyLMB, pos, dim})) {
 			return 1;
 		}
-		
+
 		if (match(e, {EventPress, KeyRMB, pos, dim})) {
 			return 1;
 		}
-		
-			
+
+
 		// any event -- catch
 		return 1;
 	}
-	
-	
-	
-	
-	void Select::render(Console & con) 
+
+
+
+
+	void Select::render(Console & con)
 	{
 		auto & win = con.win;
-			
+
 		auto line_height = ly.font_tiny;
 		auto sep = ly.sep;   // cell sep
 
 		// background & outline border
 		render_area(win, pos, dim, res(win, WOODTILE, 1));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
-		
+
 		auto row_dim = get_row_dim(); // dim[0] - sep[0]*2
 		auto row_pos = pos + sep;
 
-		for (size_t j = 0; j < rows.size(); ++j) 
+		for (size_t j = 0; j < rows.size(); ++j)
 		{
 			auto & row = rows[j];
 
@@ -925,24 +925,24 @@ namespace col {
 					row_pos, row_dim, ColorSelectedBG
 				);
 			}
-			
+
 			// left click on row -- move cursor
 			con.on({EventPress, KeyLMB, row_pos, row_dim},
-				[this, j](){ 
-					this->move(j); 
+				[this, j](){
+					this->move(j);
 				}
 			);
-			
+
 			// left release on row -- select
 			con.on({EventRelease, KeyLMB, row_pos, row_dim},
 				[this](){ this->select(); }
 			);
 
-			
+
 			//if (row.text.size() == 0) {
 			//	// separator
 			//}
-			
+
 			auto fg = ColorFont;
 			if (not row.onselect) {
 				// disabled
@@ -975,10 +975,10 @@ namespace col {
 	}
 
 
-	
 
 
-	
+
+
 	template<class Key>
 	void render_select_f(Front & win, Console & con,
 		v2s g_pos,
@@ -1009,7 +1009,7 @@ namespace col {
 
 		// init cursor position if not specified
 		/*int cursor = limit(cursor, 0, keys.size() - 1);
-		
+
 		if (cursor < 0 or cursor_max < cursor) {
 			cursor = 0;
 			for (size_t i=0; i < keys.size(); ++i) {
@@ -1018,7 +1018,7 @@ namespace col {
 					break;
 				}
 			}
-		}*/		
+		}*/
 
 		v2s dim = v2s(width, height);
 		auto pos = calc_align({g_pos, g_dim}, dim, align);
@@ -1038,17 +1038,17 @@ namespace col {
 		con.on({EventPress, pos, dim});
 
 		// enter -- select under cursor
-		/*con.on(EventPress, KeyEnter, 
+		/*con.on(EventPress, KeyEnter,
 			[&selected,cursor,&keys,onselect](){ selected = keys.at(cursor); onselect(); }
 		);*/
 
 		// up arrow -- move cursor
-		/*con.on(EventPress, KeyEnter, 
+		/*con.on(EventPress, KeyEnter,
 			[cursor,onselect](){ cursor; onselect(); }
 		);*/
 
 		// down arrow -- move cursor
-		
+
 		auto row_dim = v2s(dim[0] - sep[0]*2, line_height);
 		auto row_pos = pos + sep;
 
@@ -1066,7 +1066,7 @@ namespace col {
 					row_pos, row_dim, ColorSelectedBG
 				);
 			}
-			
+
 			if (key == selected) {
 				fgind = ColorFontSelected;
 			}
@@ -1161,9 +1161,9 @@ namespace col {
 	}*/
 
 
-	void render_unit_cargo(Front &win, Console & con, 
-		v2s pos, 
-		v2s dim, 
+	void render_unit_cargo(Front &win, Console & con,
+		v2s pos,
+		v2s dim,
 		Unit const& unit
 	) {
 		// render unit cargo
@@ -1171,17 +1171,17 @@ namespace col {
 
 		// render unit items
 		auto cpos = pos;
-		auto item_dim = v2s(ly.S(12), dim[1]);		
+		auto item_dim = v2s(ly.S(12), dim[1]);
 		auto text_dim = v2s(ly.S(4) * 3 + ly.S(2), dim[1]);
 		auto tile_dim = v2s(item_dim[0] + text_dim[0], dim[1]);
-		
+
 		auto & box_tex = res(win, ICON, 123);
-		
+
 		// empty space
 		{
 			int num = unit.get_space_left();
 			if (num) {
-				
+
 				// frame
 				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
 				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
@@ -1194,17 +1194,17 @@ namespace col {
 				render_text(win,
 					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
 					FontTiny, ColorWhite, ColorNone,
-					to_string(num)				
+					to_string(num)
 				);
 
 				cpos[0] += tile_dim[0] - ly.S(1);
 			}
 		}
-		
+
 		// items
 		for (auto item: COLONY_ITEMS) {
 			Amount num = unit.get(item);
-			
+
 			if (num) {
 				// frame
 				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
@@ -1222,7 +1222,7 @@ namespace col {
 
 				// item icon
 				auto & item_tex = res(win, ICON, get_item_icon_id(item));
-				
+
 				render_sprite(win,
 					cpos, item_dim, v2f(0.5, 0.5),
 					item_tex
@@ -1232,14 +1232,14 @@ namespace col {
 				render_text(win,
 					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
 					FontTiny, ColorWhite, ColorNone,
-					to_string(num)				
+					to_string(num)
 				);
 
 				cpos[0] += tile_dim[0] - ly.S(1);;
 			}
 		}
 
-	
+
 
 		// unit cargo area frame
 		if (con.drag_item) {
@@ -1253,39 +1253,39 @@ namespace col {
 
 
 
-	
 
 
-	void show_select_makeable(Env const& env, Console & con, Colony & colony, Build & factory, b2s box, v2f const& align) 
+
+	void show_select_makeable(Env const& env, Console & con, Colony & colony, Build & factory, b2s box, v2f const& align)
 	{
-		
+
 		//auto & select = con.replace_widget<Select>();
-		
-		
-		
+
+
+
 		auto & select = con.push_widget<Select>(2);
-					
-		// cols format			
+
+		// cols format
 		select.set_cols(
 			{0, ly.S(1) * 24 * 4, "Name"},
 			{1, ly.S(1) * 7 * 4,  "Cost"}
 		);
-		
+
 		auto gen_row = [&factory](Makeable const& mk) -> vector<string>
 		{
 			string cost;
 			string name;
-			
+
 			if (&mk == factory.task.what) {
 				name = format("%||", get_name(mk));
 				cost = format("%||", mk.get_cost() - factory.task.get());
-				
+
 			}
 			else {
 				name = format("%||", get_name(mk));
-				cost = format("%||", mk.get_cost());	
+				cost = format("%||", mk.get_cost());
 			}
-			
+
 			vector<string> row;
 			row.push_back(name);
 			row.push_back(cost);
@@ -1296,25 +1296,25 @@ namespace col {
 		if (factory.task.what == nullptr) {
 			select.set_highlight();
 		}
-		
+
 		select.add({"(no production)", ""}, [&factory](){
 			factory.task.reset(nullptr);
 		});
-		
+
 		// construct building
 		for (auto& p: *env.bts) {
 			auto & mk = p.second;
 			if (env.can_make(factory, mk) and colony.select_place_for(mk)) {
-				
+
 				if (factory.task.what == &mk) {
 					select.set_highlight();
 				}
-				
+
 				select.add(gen_row(mk), [&factory, &mk](){
 					factory.task.reset(&mk);
 				});
-				
-				
+
+
 			}
 		}
 
@@ -1322,34 +1322,34 @@ namespace col {
 		for (auto& p: *env.uts) {
 			auto & mk = p.second;
 			if (env.can_make(factory, mk)) {
-				
+
 				if (factory.task.what == &mk) {
 					select.set_highlight();
 				}
-				
+
 				select.add(gen_row(mk), [&factory, &mk](){
 					factory.task.reset(&mk);
 				});
-				
+
 			}
 		}
-		
-		select.oncancel = [&con](){			
+
+		select.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		select.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-		
-		
+
+
 
 		select.dim = select.get_dim();
-		
+
 		select.pos = calc_align(ly.scr, select.dim);
 
-		
-		
+
+
 	}
 
 
@@ -1387,9 +1387,9 @@ namespace col {
 
 			auto supp_num = supp_reg.get(item);
 			auto prod_num = prod_reg.get(item);
-			auto cons_num = cons_reg.get(item);			
+			auto cons_num = cons_reg.get(item);
 			auto delta = prod_num - cons_num;
-			
+
 			auto tile_pos = cpos;
 			auto tile_dim = v2s(tile_width, ly.S(12));
 
@@ -1407,7 +1407,7 @@ namespace col {
 			{
 				auto pos = cpos + v2s(0, tile_dim[1]);
 				auto dim = v2s(tile_width, line_height);
-					
+
 				auto proj = supp_num - cons_num + prod_num;
 				if (proj < 0) {
 					render_text(win,
@@ -1418,13 +1418,13 @@ namespace col {
 				}
 				else {
 					render_text(win,
-						pos, cell_dim, v2f(0.5f, 0),				
+						pos, cell_dim, v2f(0.5f, 0),
 						FontTiny, ColorWhite, ColorNone,
 						std::to_string(supp_num)
 					);
 				}
 			}
-		
+
 			// render prod num
 			if (prod_num) {
 				render_text(win,
@@ -1442,7 +1442,7 @@ namespace col {
 					format("-%||", cons_num)
 				);
 			}
-		
+
 			// render delta
 			if (delta > 0) {
 				render_text(win,
@@ -1458,28 +1458,28 @@ namespace col {
 					format("%||", delta)
 				);
 			}
-		
-			
+
+
 			cpos[0] += tile_width;
 		}
 	}
 
-	
 
-	
+
+
 	void render_unit_tile(Front & win, b2s box, Unit const& unit)
-	{		
+	{
 		/// Render unit icon with terrain icon in background
-		
+
 		auto & unit_tex = res(win, ICON, get_icon_id(unit));
-		
+
 		// terrain fragments taken from colony background
-		auto & bgs_tex = res(win, COLONY, 1);  
+		auto & bgs_tex = res(win, COLONY, 1);
 
 		// determine terrain icon: land or water
 		b2s src_box;
 		if (unit.get_travel() == TravelSea) {
-			// water src box			
+			// water src box
 			src_box = b2s({141, 29}, {16, 3}) * ly.scale;
 		}
 		else {
@@ -1493,32 +1493,32 @@ namespace col {
 			calc_align(box, {0.5f, 1.0f}, src_box.dim),
 			src_box
 		);
-		
+
 		// render unit
 		render_sprite(win, box, {0.5f, 0.5f}, unit_tex);
 	}
 
-	struct CityView: IWidget 
+	struct CityView: IWidget
 	{
 		void render(Con & con) override;
 		bool handle(Con & con, Event e) override;
 	};
 
-	
-	
-	bool CityView::handle(Con & con, Event e) 
+
+
+	bool CityView::handle(Con & con, Event e)
 	{
 		return 0;
 	}
 
 
-	void CityView::render(Con & con) 
+	void CityView::render(Con & con)
 	{
-	
+
 		auto & win = con.win;
 		auto const& env = con.env;
-	
-	
+
+
 		/*
 			// panel right
 			render_panel(app, env, con,
@@ -1563,7 +1563,7 @@ namespace col {
 				auto workplace_id = i;
 
 				auto & build = colony.builds.at(i);
-				
+
 				auto& build_tex = res(win, BUILD, build.get_type_id());
 				auto build_pos = ly.city_builds.pos + pixs.at(i);
 				auto build_dim = ::col::get_dim(build_tex);
@@ -1579,7 +1579,7 @@ namespace col {
 					auto button_pos = build_pos + v2s(0, build_dim[1]);
 					auto button_dim = v2s(build_dim[0], ly.font_tiny);
 
-					
+
 					int blink = 0;
 					string label, progress;
 					if (build.task) {
@@ -1596,7 +1596,7 @@ namespace col {
 						}
 						progress = "";
 					}
-					
+
 					if (blink) {
 						render_text(win,
 							button_pos, button_dim, {0.5,0.5},
@@ -1624,7 +1624,7 @@ namespace col {
 					);
 
 
-					
+
 
 					// left click on button -- select production
 					con.on({EventPress, KeyLMB, button_pos, button_dim},
@@ -1872,7 +1872,7 @@ namespace col {
 			);
 		}
 
-		
+
 		// left click on city terrain area with selected unit -- unwork that unit
 		if (con.get_sel_unit()) {
 			con.on({EventPress, KeyLMB, ly.city_units.pos, ly.city_units.dim},
@@ -1891,7 +1891,7 @@ namespace col {
 			ly.city_unit_cargo.pos, ly.city_unit_cargo.dim,
 			ColorLightBrown
 		);
-		
+
 		// render standing units
 		int i = 0;
 		for (auto& p: terr.units) {
@@ -1906,7 +1906,7 @@ namespace col {
 				v2s sel_dim = unit_dim;
 
 				render_unit_tile(win, {unit_pos, unit_dim}, unit);
-				
+
 				auto unit_id = unit.id;
 
 				if (unit_id == con.get_sel_unit_id()) {
@@ -1941,7 +1941,7 @@ namespace col {
 		}
 
 
-		
+
 
 		render_city_store(win, con, ly.city_resources.pos, ly.city_resources.dim, terr);
 
@@ -2022,8 +2022,8 @@ namespace col {
 				}   // oncancel
 			);
 		}
-		
-		
+
+
 
 
 		if (con.prod_to_workplace != nullptr) {
@@ -2254,9 +2254,9 @@ namespace col {
 		Dir d,
 		int offset
 	) {
-		auto b = get(loc, d).biome;		
+		auto b = get(loc, d).biome;
 		if (b != BiomeNone) {
-			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );	
+			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );
 		}
 		else {
 			// no diffuse from unexplored terrain (TODO: looks bad)
@@ -2434,9 +2434,9 @@ namespace col {
 
 
 	Color get_unit_color(Unit const& u) {
-		
+
 		auto c = get_control_color(u.get_control());
-		
+
 		if (u.get_time_left() == 0) {
 			return Color(c.r/2, c.g/2, c.b/2, c.a);
 		}
@@ -2503,7 +2503,7 @@ namespace col {
 			case DirW: return 1;
 			case DirE: return 2;
 			case DirA: return 7;
-			
+
 			case DirD: return 3;
 			case DirZ: return 6;
 			case DirX: return 5;
@@ -2512,12 +2512,12 @@ namespace col {
 		assert(false);
 	}
 
-	void handle_selected_unit(Front & win, Console & con, Unit & unit) 
+	void handle_selected_unit(Front & win, Console & con, Unit & unit)
 	{
 		auto unit_id = unit.id;
-	
-		// selected unit keyboard shortcuts 
-		
+
+		// selected unit keyboard shortcuts
+
 		// numpad move
 		con.on({EventPress, KeyNumpad2},
 			[&con,unit_id](){ con.command("move 0 1"); }
@@ -2590,15 +2590,15 @@ namespace col {
 		con.on({EventPress, KeySpace},
 			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsWait, 1)); }
 		);
-		
+
 		// esc - clear orders
 		con.on({EventPress, KeyEsc},
-			[&con,unit_id](){ 
-				con.clear_unit_cmds(unit_id); 
+			[&con,unit_id](){
+				con.clear_unit_cmds(unit_id);
 				con.set_input_mode(con.InputModeDefault);
 			}
 		);
-		
+
 		// press enter -- execute current orders
 		con.on({EventPress, KeyEnter},
 			[&con](){
@@ -2609,13 +2609,13 @@ namespace col {
 				con.set_input_mode(con.InputModeDefault);
 			}
 		);
-		
+
 		// M - enter move mode
 		con.on({EventPress, KeyM},
 			[&con](){ con.set_input_mode(con.InputModeMove); }
 		);
-		
-		
+
+
 
 	}
 
@@ -2635,8 +2635,8 @@ namespace col {
 		);
 
 
-		
-	
+
+
 	}
 
 	//void select_area()
@@ -2651,111 +2651,111 @@ namespace col {
 
 
 
-	
-	
-	bool is_tile_on_screen(Console & con, Coords xy) 
+
+
+	bool is_tile_on_screen(Console & con, Coords xy)
 	{
-		return overlap(con.get_view_box(), xy);			
+		return overlap(con.get_view_box(), xy);
 	}
-	
+
 	b2s get_tile_on_screen(Console & con, Coords xy)
 	{
 		auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.get_view_pos());
 		return b2s(rpos, ly.terr_dim);
 	}
-	
-	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex) 
+
+	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex)
 	{
 		if (is_tile_on_screen(con, xy)) {
 			auto rpos = get_tile_on_screen(con, xy).pos;
 			win.render(tex, rpos);
 		}
 	}
-	
-	
-	
-	
-	void render_cmds(Console & con, v2c unit_pos, Cmds const& cmds) 
-	{		
+
+
+
+
+	void render_cmds(Console & con, v2c unit_pos, Cmds const& cmds)
+	{
 		auto pos = unit_pos;
-		
+
 		for (auto i = cmds.size(); i > 0; --i) {
 			auto cmd = cmds.at(i-1);
-		
+
 			switch (cmd.ins) {
 				case InsMove: {
 					Dir dir = cmd.arg;
-				
-					render_on_tile(con.win, con, pos, 
+
+					render_on_tile(con.win, con, pos,
 						res(con.win, ZZ, dir_res_num(dir))
 					);
-					
+
 					pos += dir2vec(dir);
-					
-					render_on_tile(con.win, con, pos, 
+
+					render_on_tile(con.win, con, pos,
 						res(con.win, ZZ, dir_res_num(turnabout(dir)))
 					);
-				
+
 					break;
-				}					
+				}
 			}
 		}
-	
+
 	}
-	
-	
+
+
 	void render_marks(Console & con, Marks const& marks) {
 		for (auto & m: marks.list()) {
-			if (is_tile_on_screen(con, m.pos)) 
+			if (is_tile_on_screen(con, m.pos))
 			{
 				auto box = get_tile_on_screen(con, m.pos);
-				
+
 				render_text(con.win,
 					box.pos, box.dim, v2f(0.5f, 0.5f),
 					FontTiny, ColorBlue, ColorBlack,
-					m.label	
+					m.label
 				);
 			}
 		}
 	}
-	
+
 	void render_debug_ai(Console & con) {
-		if (con.runner) 
+		if (con.runner)
 		{
 			auto & win = con.win;
-			
-			for (Agent * a: con.runner->agents) 
+
+			for (Agent * a: con.runner->agents)
 			{
 				auto cls = a->get_class();
-				if (cls == simple_ai::ClassSimpleAi) 
+				if (cls == simple_ai::ClassSimpleAi)
 				{
 					auto * b = static_cast<simple_ai::SimpleAi*>(a);
 					render_marks(con, b->marks);
-				}			
+				}
 			}
 		}
 	}
-	
-	
-		
-	
-	struct MapView: IWidget 
+
+
+
+
+	struct MapView: IWidget
 	{
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
-		
+
 		bool handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e);
 
 
-		
+
 
 
 	};
-	
-	
-	
-	
-	
+
+
+
+
+
 	void render_map(Front & win, Env const& env, Console & con, v2s pos,
 			Coords const& delta)
 	{
@@ -2766,15 +2766,15 @@ namespace col {
 		auto vdim = v2s(w,h);
 
 		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
-		
-		
+
+
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
-		
+
 				auto coords = Coords(i,j) + vpos;
 
 				if (env.in_bounds(coords)) {
-				
+
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 
 					auto& terr = env.get_terr(coords);
@@ -2799,22 +2799,22 @@ namespace col {
 		}
 
 		// render unit path/commands
-		if (auto * u = con.get_sel_unit_ext()) 
-		{			
+		if (auto * u = con.get_sel_unit_ext())
+		{
 			// unit is controlled by human or AI
 			// editing mode -> show unit command
 			// playing mode -> show only if ours
-			
+
 			/*auto * agn = con.get_agent(u->id);
-			
+
 			if (con.editing or agn == &con) {
 				auto const& cmds = get_unit_cmds(agn, u->id);
-			
+
 				render_cmds(con, con.get_coords(*u), cmds);
 			}*/
 			render_cmds(con, con.get_coords(*u), u->cmds);
 		}
-		
+
 		// stacks on map
 		for (int j = 0; j < h; ++j) {
 			for (int i = 0; i < w; ++i) {
@@ -2837,8 +2837,8 @@ namespace col {
 				}
 			}
 		}
-	
-		if (auto *u = con.get_sel_unit()) 
+
+		if (auto *u = con.get_sel_unit())
 		{
 			handle_selected_unit(win, con, *u);
 		}
@@ -2849,9 +2849,9 @@ namespace col {
 
 				for (auto tp: con.get_sel_terrs()) {
 					auto coords = env.get_coords(*tp);
-					
-				
-					if (overlap(view_box, coords)) 
+
+
+					if (overlap(view_box, coords))
 					{
 						render_inline(win,
 							vmul(coords - vpos, ly.terr_dim) + pos,
@@ -2863,13 +2863,13 @@ namespace col {
 				}
 
 				auto coords = env.get_coords(*tp);
-				
+
 				// blink main terr
 				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
 					if (overlap(view_box, coords)) {
-					
-						
+
+
 						render_inline(win,
 							vmul(coords - vpos, ly.terr_dim) + pos,
 							ly.terr_dim,
@@ -2882,28 +2882,28 @@ namespace col {
 
 			}
 		}
-		
+
 		if (con.editing) {
 			render_debug_ai(con);
 		}
-		
-		
-		
+
+
+
 	}
-	
-	
-	
+
+
+
 	void MapView::render(Console & con) {
-	
+
 		render_map(con.win, con.env, con, ly.map.pos, Coords(0,0));
-	
+
 	}
-	
-	bool MapView::handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e) 
+
+	bool MapView::handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e)
 	{
-	
-		
-	
+
+
+
 		// right click on terr -- center view
 		if (match(e, {EventPress, KeyRMB, pos, dim})) {
 			con.center_view_on(coords);
@@ -2915,8 +2915,8 @@ namespace col {
 			if (e.match_box({pos,dim}))
 			{
 				auto & terr = con.env.get_terr(coords);
-				
-				// left press on terr with shift -- add select terr				
+
+				// left press on terr with shift -- add select terr
 				if (match(e, {EventPress, KeyLMB, ModLShift, pos, dim})) {
 					con.select_terr(coords, +1);
 					return 1;
@@ -2927,7 +2927,7 @@ namespace col {
 					con.select_terr(coords, -1);
 					return 1;
 				}
-				
+
 				// hover with button down with shift over terr -- select add
 				if (match(e, {EventMotion, ModLMB|ModLShift, pos, dim})) {
 					con.select_terr(coords, +1);
@@ -2939,66 +2939,66 @@ namespace col {
 					con.select_terr(coords, -1);
 					return 1;
 				}
-				
+
 				// hover with button down over terr -- select set
 				if (match(e, {EventMotion, ModLMB, pos, dim})) {
 					con.select_terr(coords);
 					return 1;
 				}
 
-				
+
 				// left press -- city enter OR select unit OR select terr
-				if (match(e, {EventPress, KeyLMB, pos, dim})) 
+				if (match(e, {EventPress, KeyLMB, pos, dim}))
 				{
-					if (terr.has_colony()) 
+					if (terr.has_colony())
 					{
 						con.enter(coords);
 						return 1;
 					}
-					else if (terr.has_units()) 
+					else if (terr.has_units())
 					{
 						print("select unit\n");
 						con.select_unit(terr.units.at(0));
 						return 1;
 					}
-					else 
+					else
 					{
 						print("select terr\n");
 						con.select_terr(coords);
 						return 1;
 					}
 				}
-				
-				
-				
+
+
+
 			}
 		}
-		else if (con.get_input_mode() == con.InputModeMove) 
+		else if (con.get_input_mode() == con.InputModeMove)
 		{
 			// left press on terr -- show path
-			if (match(e, {EventPress, KeyLMB, pos, dim})) 
+			if (match(e, {EventPress, KeyLMB, pos, dim}))
 			{
-				if (auto * u = con.get_sel_unit_ext()) {																		
+				if (auto * u = con.get_sel_unit_ext()) {
 					auto path = con.find_path(con.get_coords(*u), coords, *u);
 					u->cmds.clear();
 					if (path.exists()) {
 						u->cmds.adds(path.cmds);
-					}				
+					}
 				}
-				return 1;	
+				return 1;
 			}
-			
+
 		}
-		
+
 		return 0;
 	}
-	
-	bool MapView::handle(Console & con, Event e) 
+
+	bool MapView::handle(Console & con, Event e)
 	{
 		// left arrow -- scroll map
-		if (match(e, {EventPress, KeyLeft})) { 
-			con.move_view({-1,0});	
-			return 1;		
+		if (match(e, {EventPress, KeyLeft})) {
+			con.move_view({-1,0});
+			return 1;
 		}
 
 		// right arrow -- scroll map
@@ -3018,25 +3018,25 @@ namespace col {
 			con.move_view({0,+1});
 			return 1;
 		}
-	
-	
+
+
 		auto w = con.view_dim[0];
 		auto h = con.view_dim[1];
-		
+
 		auto vpos = con.view_pos;
 		auto vdim = v2s(w,h);
 
 		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
-		
+
 		auto & env = con.get_env();
-		
-		for (int j = 0; j < h; ++j) 
+
+		for (int j = 0; j < h; ++j)
 		{
-			for (int i = 0; i < w; ++i) 
-			{		
+			for (int i = 0; i < w; ++i)
+			{
 				auto coords = Coords(i,j) + vpos;
 				if (env.in_bounds(coords)) {
-				
+
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
 					auto dim = ly.terr_dim;
 
@@ -3049,129 +3049,129 @@ namespace col {
 		}
 		return 0;
 	}
-	
-	
-	
-	
 
-	void finish_popup(Console & con, Select & s) 
+
+
+
+
+	void finish_popup(Console & con, Select & s)
 	{
 		s.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		s.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-				
+
 		s.dim = s.get_dim();
 		s.pos = calc_align(ly.scr, s.dim);
-		
-		
-		
+
+
+
 	}
-	
-	void finish_popup_at(Console & con, Select & s, v2s pos) 
+
+	void finish_popup_at(Console & con, Select & s, v2s pos)
 	{
 		s.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		s.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-		
+
 		s.dim = s.get_dim();
 		s.pos = pos;
-		
-		
+
+
 	}
 
 	void show_select_biome(Env const& env, Console & con, Terr const& terr) {
 		auto current = terr.get_biome();
-	
+
 		auto & s = con.push_widget<Select>(1);
 		//s.set_cols({0, 16 * FontTiny.get_width(), "Biome"});
-		
-		
+
+
 		for (auto i = BiomeNone+1; i < BiomeEnd; ++i)
 		{
 			s.add({get_biome_name(i)}, i == current, [&con, i](){
 				con.set_biome(i);
-			});			
+			});
 		}
-		
+
 		s.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		s.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-				
+
 		s.dim = s.get_dim();
 		s.pos = calc_align(ly.scr, s.dim);
-		
-		
-		
+
+
+
 	}
-	
-	void show_select_alt(Env const& env, Console & con, Terr const& terr) 
+
+	void show_select_alt(Env const& env, Console & con, Terr const& terr)
 	{
-	
+
 		auto current = con.get_alt();
-			
+
 		auto & s = con.push_widget<Select>(1);
-		
+
 		for (auto i = AltNone+1; i < AltEnd; ++i)
 		{
 			s.add({get_alt_name(i)}, i == current, [&con, i](){
 				con.set_alt(i);
-			});			
+			});
 		}
-		
+
 		s.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		s.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-				
+
 		s.dim = s.get_dim();
 		s.pos = calc_align(ly.scr, s.dim);
-		
+
 	}
-	
+
 	void show_select_river(Console & con, Terr & terr) {
 		auto current = terr.get_phys(PhysRiver);
 		auto & s = con.push_widget<Select>(1);
-		
+
 		auto lst = std::array<Phys,3>{PhysNone, PhysMinorRiver, PhysMajorRiver};
-		
+
 		for (auto i: lst)
 		{
 			s.add({get_phys_name(i)}, i == current, [&con, i](){
 				con.set_phys(PhysRiver, i);
-			});			
+			});
 		}
-		
+
 		finish_popup(con, s);
 	}
-	
+
 	void show_select_flora(Console & con, Terr & terr) {
 		auto current = terr.get_phys(PhysForestPlow);
 		auto & s = con.push_widget<Select>(1);
-		
+
 		auto lst = std::array<Phys,3>{PhysNone, PhysForest, PhysPlow};
-		
+
 		for (auto i: lst)
 		{
 			s.add({get_phys_name(i)}, i == current, [&con, i](){
 				con.set_phys(PhysForestPlow, i);
-			});			
+			});
 		}
-		
+
 		finish_popup(con, s);
 	}
 
@@ -3180,85 +3180,85 @@ namespace col {
 	void show_select_unit_type(Env const& env, Console & con) {
 		auto & s = con.push_widget<Select>(1);
 		auto * u = con.get_sel_unit();
-		
-		
-		for (auto i = UnitTypeNone + 1; i < UnitTypeEnd; ++i) 
+
+
+		for (auto i = UnitTypeNone + 1; i < UnitTypeEnd; ++i)
 		{
 			// TODO remove this - select should auto page
 			// skip to save space; menu too long with this
 			if (i == UnitTypePioneers20) {
 				i = UnitTypePioneers100;
 			}
-		
+
 			auto & type = env.get<UnitType>(i);
-			
-			s.add({type.get_name()}, i == u->get_type().id, [u, &type](){ 
+
+			s.add({type.get_name()}, i == u->get_type().id, [u, &type](){
 				u->set_type(type);
 			});
 		}
-		
+
 		finish_popup(con, s);
 	}
 
 	void show_select_speciality(Console & con) {
-		
+
 		auto & s = con.push_widget<Select>(1);
-		
+
 		auto * u = con.get_sel_unit();
-		
+
 		for (int i = ProfNone; i < ProfEnd; ++i)
 		{
-			s.add({get_prof_name(i)}, i == u->get_prof(), [u, i](){ 
-				u->set_prof(i);				
+			s.add({get_prof_name(i)}, i == u->get_prof(), [u, i](){
+				u->set_prof(i);
 			});
 		}
-		
+
 		finish_popup(con, s);
 	}
 
 
-	/*struct Node 
-	{		
+	/*struct Node
+	{
 		virtual v2s get_dim() const {}
 		virtual bool is_selectable() const { return false; }
-		
+
 		virtual Node * get_right() {}
 		virtual Node * get_up() {}
 		virtual Node * get_down() {}
-		
+
 		virtual void set_right(Node *) {}
 		virtual void set_up(Node *) {}
 		virtual void set_down(Node *) {}
-		
+
 		virtual void render(Front & win, Console & con) {}
-		
+
 		virtual ~Node() {}
 	};
-	
-	//Node * right_{nullptr}, 
-	//Node * up_{nullptr}, 
+
+	//Node * right_{nullptr},
+	//Node * up_{nullptr},
 	//Node * down_{nullptr};
-	
+
 	struct Cell: Node {
-	
+
 	}
-	
+
 	struct Text: Node {
-		
-	
-	
+
+
+
 		string text;
 	}*/
-	
+
 
 
 
 	struct Menu : Widget {
 		int cursor{-1};
 		void render(Front & win, Console & con);
-			
+
 		int size() { return 2; }
-				
+
 		void move(size_t i) {
 			cursor = i;
 			if (cursor <= 0) { cursor = size(); }
@@ -3273,43 +3273,43 @@ namespace col {
 		void move_down() {
 			cursor += 1;
 			if (cursor >= size()) { cursor = 0; }
-		}		
+		}
 	};
 
 	void Menu::render(Front & win, Console & con) {
 		/*TextRend2 cur(win, con, ly.bar, PixFont, StyleMenu);
-		
+
 		cur.link("Reports")
-		
+
 		Game   Unit   Reports   BlaBla
 		*/
-		
-		
-		
-		
-		
+
+
+
+
+
 		/*
-		
+
 		auto cind = 0;
-		
-		auto box = ly.bar;		
-		
+
+		auto box = ly.bar;
+
 		v2s cpos = box.pos;
 		v2s cdim = {120, box.dim[1]};
-		
-		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }		
-		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Game");		
+
+		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }
+		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Game");
 		con.on
 		cpos[0] += cdim[0];
-		
+
 		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }
 		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Reports");
 		cpos[0] += cdim[0];
 		*/
-		
-		
-		
-		
+
+
+
+
 	}
 
 	void render_nations_table() {
@@ -3317,62 +3317,62 @@ namespace col {
 		cur.set_tabs(160, 100, 40);
 		cur.set_align(0, 0, 0);
 		cur.text("Name").td().text("Power").td().text("Bla").tr();
-		
+
 		cur.set_align(-1, +1, 0);
 		cur.link("England", con.editing, [](){ }).td();
 		cur.text("88").td();
 		cur.text("bla").tr();
-		
+
 		cur.link("England", con.editing, [](){ }).tab();
 		*/
-		
-		
-	
+
+
+
 	}
 
-	struct SelectFaction 
+	struct SelectFaction
 	{
 		void render(Con & con);
 		bool handle(Con & con, Event e);
 	};
 
 	void show_select_nation(Console & con) {
-		
+
 		auto & s = con.push_widget<Select>();
-		
-		for (auto & faction: list_values(con.env.factions)) 
-		{			
+
+		for (auto & faction: list_values(con.env.factions))
+		{
 			auto id = faction.id;
 			s.add({faction.get_name()}, id == con.get_control(), [&con, id](){
 				con.set_control(id);
-			});			
-		}		
-		
+			});
+		}
+
 		s.oncancel = [&con](){
 			con.pop_widget();
 		};   // oncancel
-		
+
 		s.onselect = [&con](){
 			con.pop_widget();
 		};   // onselect
-				
+
 		s.dim = s.get_dim();
 		s.pos = calc_align(ly.scr, s.dim);
-		
+
 	}
-	
+
 	struct SidePanel: IWidget
 	{
 		void render(Con & con);
 		bool handle(Con & con, Event e);
 	};
-	
-	void SidePanel::render(Con & con) 
+
+	void SidePanel::render(Con & con)
 	{
 		auto & win = con.win;
 		auto & env = con.env;
 		auto pos = ly.pan.pos;
-		auto dim = ly.pan.dim;	
+		auto dim = ly.pan.dim;
 
 		//front::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
@@ -3390,36 +3390,36 @@ namespace col {
 			auto & f = env.get<Faction>(env.get_current_control());
 			faction_name = f.get_name();
 		}
-		
-		
-		
+
+
+
 
 		auto cur = TextRend2(win, con, ly.pan, FontTiny, StyleMenu);
 
 		// Turn 5, England
 		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + faction_name + "\n");
 
-		
-		string my_name = 
-			(con.get_control() != ControlNone) ? 
+
+		string my_name =
+			(con.get_control() != ControlNone) ?
 				env.get<Faction>(con.get_control()).get_name() :
 				"Nobody";
-				
+
 		cur.text("You are: ");
 		cur.link(my_name, con.editing, [&con](){
 			show_select_nation(con);
 		});
-		cur.text("\n");			
-	
+		cur.text("\n");
 
 
 
-		if (Terr * tp = con.get_sel_terr()) 
+
+		if (Terr * tp = con.get_sel_terr())
 		{
 			auto& t = *tp;
-			
+
 			if (con.is_discovered(t))
-			{				
+			{
 				string phys_info;
 				for (auto const& item: phys_names) {
 					auto const& phys = item.first;
@@ -3427,96 +3427,96 @@ namespace col {
 
 					if (t.has_phys(phys)) phys_info += name + ",";
 				}
-				
-				
+
+
 				cur.text("Biome: ");
-				cur.link(get_biome_name(t.biome), con.editing, 
+				cur.link(get_biome_name(t.biome), con.editing,
 					[&con, &env, &t](){
 						show_select_biome(env, con, t);
 					}
 				);
 				cur.text("\n");
-				
+
 				cur.text("Alt: ");
-				cur.link(get_alt_name(t.get_alt()), con.editing, 
+				cur.link(get_alt_name(t.get_alt()), con.editing,
 					[&con, &env, &t](){
 						show_select_alt(env, con, t);
 					}
 				);
 				cur.text("\n");
-				
-				
+
+
 				//cur.render(Textformat("[%||]\n", phys_info));
-				
+
 				auto river = t.get_phys(PhysRiver);
 				auto forest = t.get_phys(PhysForest);
 				auto plow = t.get_phys(PhysPlow);
 				auto road = t.get_phys(PhysRoad);
-				
+
 				auto get_river_name = [](Phys river){
-					switch (river) {						
+					switch (river) {
 						case PhysMinorRiver: return "MiRi";
 						case PhysMajorRiver: return "MaRi";
 					}
 					return "NoRi";
 				};
-				
+
 				cur.text("(");
 				cur.link(get_river_name(river), con.editing,
 					[&con,river](){
 						con.set_phys(PhysRiver, next_phys(PhysRiver, river));
 					}
-				);				
+				);
 				cur.text(",");
-				
+
 				cur.link((forest ? "Fore" : "NoFo"), con.editing,
 					[&con,forest](){
 						con.set_phys(PhysForest, next_phys(PhysForest, forest));
 					}
-				);				
+				);
 				cur.text(",");
-				
+
 				cur.link((plow ? "Plow" : "NoPl"), con.editing,
 					[&con,plow](){
 						con.set_phys(PhysPlow, next_phys(PhysPlow, plow));
 					}
-				);			
+				);
 				cur.text(",");
-				
-				
+
+
 				cur.link((road ? "Road" : "NoRo"), con.editing,
 					[&con, road](){
 						con.set_phys(PhysRoad, next_phys(PhysRoad, road));
 					}
 				);
 				cur.text(")\n");
-			
-			
+
+
 			}
 			else {
-				cur.text(format("Biome: %||\n", "Unknown"));			
+				cur.text(format("Biome: %||\n", "Unknown"));
 				cur.text(format("Alt: %||\n", "Unknown"));
-				cur.text(format("(%||)\n", "Unknown"));				
+				cur.text(format("(%||)\n", "Unknown"));
 			}
-			
+
 		}
 
 		cur.text("\n");
 
 		if (auto u = con.get_sel_unit()) {
-			
-			cur.link(u->get_name(), con.editing, 
+
+			cur.link(u->get_name(), con.editing,
 			[&env, &con](){
 				show_select_unit_type(env, con);
 			});
-			
-			cur.text("(");			
+
+			cur.text("(");
 			cur.link(get_prof_name(u->get_prof()), con.editing,
 			[&con](){
 				show_select_speciality(con);
-			});						
+			});
 			cur.text(")\n");
-			
+
 			cur.text(format("Time left: %||/%||\n",
 				int(u->time_left),
 				int(TIME_UNIT)
@@ -3539,7 +3539,7 @@ namespace col {
 
 
 		// top right: nation indicator
-		if (env.has_current_control()) 
+		if (env.has_current_control())
 		{
 			render_fill(win,
 				pos + v2s(dim[0]-ly.S(1),0),
@@ -3549,7 +3549,7 @@ namespace col {
 		}
 
 		// unit list
-		if (auto t = con.get_sel_terr()) 
+		if (auto t = con.get_sel_terr())
 		{
 			v2s pos = ly.pan.pos + v2s(0,ly.S(100));
 			v2s dim = v2s(ly.pan.dim[0], ly.terr_dim[1]*3);
@@ -3564,15 +3564,15 @@ namespace col {
 			);
 		}
 
-		
+
 		// Idle Unit
 		{
 			if (env.has_current_control()) {
-				
+
 				//auto & p = env.get_current_control();
-				
+
 				auto colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
-				
+
 				// show button
 				auto text_box = render_text(win,
 					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny * 2), v2f(0.5, 1.0),
@@ -3584,23 +3584,23 @@ namespace col {
 				con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
 					[&con](){ con.select_next_unit(); }
 				);
-				
+
 			}
 		}
-		
-		
-		
+
+
+
 		// Idle Factory
 		{
 			if (env.has_current_control()) {
-				
+
 				auto colind = ColorGray;
-			
+
 				auto * terr = con.get_idle_colony(env.get_current_control());
 				if (terr) {
 					colind = ColorWhite;
 				}
-				
+
 				// show button
 				auto text_box = render_text(win,
 					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny), v2f(0.5, 1.0),
@@ -3613,10 +3613,10 @@ namespace col {
 				con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
 					[&con,terr](){ con.select_terr(terr); con.mode = Console::Mode::COLONY; }
 				);
-				
+
 			}
 		}
-		
+
 		// End of turn/Start game
 		// nothing to move -> enter to ready turn
 		{
@@ -3632,35 +3632,29 @@ namespace col {
 					cmd = "move-all";
 					colind = ColorWhite;
 
-					
-					if (con.get_input_mode() == con.InputModeDefault) 
+
+					if (con.get_input_mode() == con.InputModeDefault)
 					{
 						// Ctrl + Enter -> move all
 						/*con.on(EventPress, halo::ModCtrl, KeyEnter,
-							[&con](){ 						
+							[&con](){
 								print("to repeat: %||\n", con.get_next_to_repeat(nullptr)->id);
-								con.repeat_all(); 
+								con.repeat_all();
 							}
 						);*/
 					}
 				}
 				else {
-					lab = "End of turn";
+					lab = "Ready";
 					cmd = "ready";
 					colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 
-					
-					if (con.get_input_mode() == con.InputModeDefault) 
-					{
-						// Ctrl + Enter -> end turn	
-						/*con.on(EventPress, halo::ModCtrl, KeyEnter,
-							[&con](){ con.command("ready"); }
-						);*/
-					}
+
+
 				}
 			}
-			
-			
+
+
 
 			// label
 			auto text_box = render_text(win,
@@ -3671,22 +3665,39 @@ namespace col {
 
 			// left click -> start/ready
 			con.on({EventPress, KeyLMB, text_box.pos, text_box.dim},
-				[&con,cmd](){ con.command(cmd); }
+				[&con](){ con.env.ready(); }
 			);
 
 		}
-		
+
 	}
-	
-	bool SidePanel::handle(Con & con, Event e) 
+
+	bool SidePanel::handle(Con & con, Event e)
 	{
 		// F12 -- toogle edit mode
-		if (match(e, {EventPress, KeyF12})) 
+		if (match(e, {EventPress, KeyF12}))
 		{
-			con.editing = !con.editing; 
+			con.editing = !con.editing;
 			return 1;
-			//con.put("EDITING = %||", int(con.editing));		
+			//con.put("EDITING = %||", int(con.editing));
 		}
+
+
+		//if (con.get_input_mode() == con.InputModeDefault)
+		{
+
+			// Ctrl+Enter -- ready
+			//print("%||\n", e);
+			if (match(e, {EventPress, ModLCtrl, KeyEnter}))
+			{
+				con.env.ready();
+				return 1;
+				//con.put("EDITING = %||", int(con.editing));
+			}
+		}
+
+
+
 		return 0;
 	}
 
@@ -3703,7 +3714,7 @@ namespace col {
 	void render_cursor(Front & win, Console const& con) {
 		if (con.drag_item) {
 
-			
+
 			auto pos = v2s(get_logical_pos(win, con.mouse.pos));
 			//print("cursor: %||, %||\n", mp.x, mp.y);
 
@@ -3725,23 +3736,23 @@ namespace col {
 
 
 /*
-	
+
 	struct MenuEntry
 	{
-		string label{""};		
+		string label{""};
 		function<bool()> can_run;
 		function<void()> run;
 	};
 
-	
-	
-	
+
+
+
 		s.add({"Move (M)"}, [&con](){
 			if (con.has_sel_unit()) {
 				con.set_input_mode(con.InputModeMove);
 			}
 		});
-		
+
 */
 
 
@@ -3755,18 +3766,18 @@ namespace col {
 		bool handle(Con & con, Event e) override;
 		void init(Con & con, v2s pos);
 		void showhide() { visible = not visible; }
-		
-		
+
+
 		bool visible{0};
 		Select s;
 	};
-	
+
 	void EditMenu::render(Con & con) {
 		if (visible) {
 			s.render(con);
 		}
 	}
-	
+
 	bool EditMenu::handle(Con & con, Event e) {
 		if (visible) {
 			if (s.handle(con, e)) {
@@ -3775,31 +3786,31 @@ namespace col {
 		}
 		return 0;
 	}
-	
-	void EditMenu::init(Con & con, v2s pos) 
+
+	void EditMenu::init(Con & con, v2s pos)
 	{
 		s.add({"Add faction"}, [&con](){
-			
+
 		});
-		
+
 		s.add({"Ready"}, [&con](){
 			con.env.ready();
 		});
-		
+
 		s.add({"Turn"}, [&con](){
 			con.env.turn();
 		});
-				
+
 		s.oncancel = [this](){
 			this->showhide();
 		};   // oncancel
-		
+
 		s.onselect = [this](){
 			this->showhide();
 		};   // onselect
-		
+
 		s.dim = s.get_dim();
-		s.pos = pos;		
+		s.pos = pos;
 	}
 
 	struct OrderMenu: IWidget{
@@ -3807,18 +3818,18 @@ namespace col {
 		bool handle(Con & con, Event e) override;
 		void init(Con & con, v2s pos);
 		void showhide() { visible = not visible; }
-		
-		
+
+
 		bool visible{0};
 		Select s;
 	};
-	
+
 	void OrderMenu::render(Con & con) {
 		if (visible) {
 			s.render(con);
 		}
 	}
-	
+
 	bool OrderMenu::handle(Con & con, Event e) {
 		if (visible) {
 			if (s.handle(con, e)) {
@@ -3827,165 +3838,165 @@ namespace col {
 		}
 		return 0;
 	}
-	
-	
-	void OrderMenu::init(Con & con, v2s pos) 
+
+
+	void OrderMenu::init(Con & con, v2s pos)
 	{
 		s.add({"Move (M)"}, [&con](){
 			if (con.has_sel_unit()) {
 				con.set_input_mode(con.InputModeMove);
 			}
 		});
-		
+
 		s.add({"Exec (Enter)"}, [&con](){
 			if (auto * u = con.get_sel_unit_ext()) {
 				con.exec_unit_cmds(*u);
 				con.select_next_unit();
 			}
 		});
-		
+
 		s.add({"Clear (Esc)"}, [&con](){
 			if (con.has_sel_unit()) {
 				con.clear_unit_cmds(con.get_sel_unit_id());
 			}
 		});
-				
+
 		s.oncancel = [this](){
 			this->showhide();
 		};   // oncancel
-		
+
 		s.onselect = [this](){
 			this->showhide();
 		};   // onselect
-		
+
 		s.dim = s.get_dim();
 		s.pos = pos;
 	}
-	
-	
+
+
 	struct Link: IWidget {
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
-		
+
 		string text;
 		Action act;
 		b2s box;
-		
+
 		Link() = default;
 		Link(string const& text, Action act): text(text), act(act) {
-			box.dim = get_text_dim(FontTiny, text);	
+			box.dim = get_text_dim(FontTiny, text);
 		}
-		
+
 		void set_text(string const& t) {
 			text = t;
-			box.dim = get_text_dim(FontTiny, text);	
+			box.dim = get_text_dim(FontTiny, text);
 		}
-		
+
 		v2s get_sub_pos() const {
 			return {box.pos[0], box.end()[1]};
 		}
 	};
-	
+
 	void Link::render(Console & con)
 	{
 		render_text_at(con.win, box.pos, FontTiny, StyleMenu.hl, text);
 	}
-	
+
 	bool Link::handle(Console & con, Event e)
-	{	
-		if (match(e, {EventPress, KeyLMB, box.pos, box.dim})) 
+	{
+		if (match(e, {EventPress, KeyLMB, box.pos, box.dim}))
 		{
 			act();
 			return 1;
 		}
 		return 0;
 	}
-	
+
 	struct MainMenu: IWidget{
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
-		
+
 		Link order;
 		Link edit;
-		
+
 		OrderMenu order_menu;
 		EditMenu edit_menu;
-		
-		
+
+
 		MainMenu(Console & con) {
-					
+
 			auto pos = ly.bar.pos;
-			
+
 			order.set_text("Order");
 			order.act = [this](){
 				order_menu.showhide();
 			};
 			order.box.pos = pos;
-			
+
 			order_menu.init(con, order.get_sub_pos());
-			
-			
+
+
 			pos[0] += 24 * ex;
-			
+
 			edit.set_text("Edit");
 			edit.act = [this](){
 				edit_menu.showhide();
 			};
 			edit.box.pos = pos;
-			
+
 			edit_menu.init(con, edit.get_sub_pos());
-					
+
 			pos[0] += 24 * ex;
-			
+
 		}
 	};
-	
+
 	bool MainMenu::handle(Console & con, Event e) {
-		
+
 		// F9 -> focus
-		
+
 		// click -> open submenu
 		if (order.handle(con, e)) {
 			return 1;
 		}
-		
+
 		if (edit.handle(con, e)) {
 			return 1;
 		}
-		
+
 		if (order_menu.handle(con, e)) {
 			return 1;
 		}
-		
+
 		if (edit_menu.handle(con, e)) {
 			return 1;
 		}
-		
+
 		// if focused
-			// focused -- submenu is always opened when focused 
+			// focused -- submenu is always opened when focused
 			// arrow left/right
-		
+
 			// right click -- close menu
-		
-		
+
+
 		return 0;
 	}
-	
-	void MainMenu::render(Console & con) 
+
+	void MainMenu::render(Console & con)
 	{
 		order.render(con);
 		edit.render(con);
 		order_menu.render(con);
-		edit_menu.render(con);		
+		edit_menu.render(con);
 	}
-	
+
 
 	struct Command: IWidget{
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
 	};
-	
-	bool Command::handle(Console & con, Event e) 
+
+	bool Command::handle(Console & con, Event e)
 	{
 
 		// history up
@@ -4020,12 +4031,12 @@ namespace col {
 
 		// trap all keyboard
 		// ??? how to
-	
+
 		return 0;
 	}
-	
-	
-	void Command::render(Console & con) 
+
+
+	void Command::render(Console & con)
 	{
 		auto & app = con.win;
 
@@ -4049,31 +4060,31 @@ namespace col {
 			FontTiny, ColorFont, ColorNone,
 			con.buffer + "_"
 		);
-		
+
 	}
-	
-	
-	
+
+
+
 	struct MainFrame: IWidget{
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
-		
+
 		Command command;
 		MainMenu main_menu;
 		MapView map_view;
 		SidePanel side_panel;
 		CityView city_view;
-		
+
 		MainFrame(Console & con): main_menu(con) {}
 	};
-	
-	void MainFrame::render(Console & con) 
+
+	void MainFrame::render(Console & con)
 	{
 		auto & win = con.win;
-		
+
 		con.reg.clear();
 
-		
+
 		// int w = app.get_ctx_dim()[0];
 		// int h = app.get_ctx_dim()[1];
 
@@ -4081,22 +4092,22 @@ namespace col {
 		render_drag_clear(con);
 
 
-		
 
-		if (con.mode == Console::Mode::COLONY) 
+
+		if (con.mode == Console::Mode::COLONY)
 		{
 			// city
 			city_view.render(con);
 		}
 		else {
-		
+
 			// map-view
 			map_view.render(con);
-			
-			
+
+
 			// side panel
 			side_panel.render(con);
-			
+
 			// vline left of the panel
 			render_fill(win,
 				{ly.pan.pos[0] - ly.line, ly.pan.pos[1]},
@@ -4106,7 +4117,7 @@ namespace col {
 
 
 		}
-		
+
 
 		// top-bar
 		{
@@ -4119,9 +4130,9 @@ namespace col {
 				{ly.bar.dim[0], ly.line},
 				{0,0,0,255}
 			);
-		
+
 			// top-bar content: cmd or menu
-			if (con.is_active()) 
+			if (con.is_active())
 			{
 				command.render(con);
 			}
@@ -4130,22 +4141,22 @@ namespace col {
 			}
 		}
 
-		
-		
+
+
 		render_cursor(win, con);
 
 	}
-	
-	bool MainFrame::handle(Console & con, Event e) 
+
+	bool MainFrame::handle(Console & con, Event e)
 	{
 
 		// toogle terminal
-		if (match(e, {EventChar, '`'})) 
+		if (match(e, {EventChar, '`'}))
 		{
 			con.set_active(not con.is_active());
 			return 1;
 		}
-		
+
 		if (con.is_active()) {
 			if (command.handle(con, e)) {
 				return 1;
@@ -4156,45 +4167,45 @@ namespace col {
 				return 1;
 			}
 		}
-		
-		if (con.mode == Console::Mode::COLONY) 
+
+		if (con.mode == Console::Mode::COLONY)
 		{
 			if (city_view.handle(con, e)) {
 				return 1;
 			}
 		}
 		else {
-			
+
 			if (map_view.handle(con, e)) {
 				return 1;
 			}
-					
+
 			if (side_panel.handle(con, e)) {
 				return 1;
 			}
 		}
-		
+
 		return 0;
 	}
 
 
 
 
-	void render(Front & app, col::Env & env, col::Console & con, int verbose) 
+	void render(Front & app, col::Env & env, col::Console & con, int verbose)
 	{
 		if (verbose >= 2) print("render: {\n");
 
 		app.clear();
-	
+
 		if (verbose >= 2) print("render: render_cmd\n");
-	
+
 		// render widgets stack
 		for (auto * w: con.widgets) {
 			w->render(con);
 		}
-	
-	
-		if (verbose >= 2) print("render: app.flip\n");	
+
+
+		if (verbose >= 2) print("render: app.flip\n");
 
 		app.flip();
 
@@ -4202,15 +4213,15 @@ namespace col {
 	}
 
 
-	void init_renderer(Console & con) 
+	void init_renderer(Console & con)
 	{
 		front::input::print_mod_table();
-		
+
 		con.push_widget<MainFrame>(con);
-		
-		
+
+
 	}
-	
+
 
 
 }

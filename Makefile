@@ -64,30 +64,30 @@ release: LLOPTS+=-O3
 
 
 # assert dirs
-$(shell mkdir -p b)
-$(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p b/{})
+$(shell mkdir -p obj)
+$(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p obj/{})
 $(shell mkdir -p bin)
 $(shell find src/ -type d | cut -c 5- | xargs -I{} mkdir -p bin/{})
 
-# list of compiled source b/fname.cpp.obj
+# list of compiled source obj/fname.cpp.obj
 OBJS:=$(shell find src -name '*.cpp')
-OBJS:=$(OBJS:src/%.cpp=b/%.cpp.obj)
+OBJS:=$(OBJS:src/%.cpp=obj/%.cpp.obj)
 
 -include $(OBJS:%.obj=%.d)
 
 
 # compiler
-${OBJS}: b/%.obj: src/%
+${OBJS}: obj/%.obj: src/%
 	${CC} -c -MMD -MP -o $@ $< ${CCOPTS}
 	
 # linker
 ${OUTS}: $(OBJS)
-	${CC} -o bin/$@${OUT_EXT} b/$@.cpp.obj  $(filter-out $(OUTS:%=b/%.cpp.obj),$(OBJS)) ${LLOPTS}
+	${CC} -o bin/$@${OUT_EXT} obj/$@.cpp.obj  $(filter-out $(OUTS:%=obj/%.cpp.obj),$(OBJS)) ${LLOPTS}
 	
 
 
 clean:
-	rm -rf b/* bin/*
+	rm -rf obj/* bin/*
 	
 
 
