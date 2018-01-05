@@ -19,6 +19,6 @@ struct type_name<A> {                                                           
 	static std::string get() {                                                  \
 		return #A;                                                              \
 	}                                                                           \
-};                                                                              \
+}                                                                               \
 
 

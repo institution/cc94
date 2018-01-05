@@ -44,7 +44,7 @@ namespace col{
 		ResErr = -1,
 		ResCont = 0,
 		ResOk = 1;
-
+	
 
 	inline bool compatible(Travel const& x, Travel const& y) {
 		return x & y;
@@ -69,7 +69,7 @@ namespace col{
 
 	template<class Archive>
     void write(Archive & ar, Env const& env);
-
+    
     template<class Archive>
     void read(Archive & ar, Env & env);
 

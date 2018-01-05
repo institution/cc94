@@ -5,8 +5,8 @@
 # $^ -- The names of all the prerequisites
 # $(VARS:%.cpp=%.o) -- pattern replace
 
-#CC:=g++
-CC:=clang++
+CC:=g++
+#CC:=clang++
 #CC:=emcc
 
 # output files
@@ -29,7 +29,8 @@ EMOPTS+=-s ASSERTIONS=1
 CCOPTS:=
 CCOPTS+=-std=c++1z
 CCOPTS+=-I./inc -I./src -I./src/server
-CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null -Wno-vla-extension
+CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
+#-Wno-vla-extension
 #CCOPTS+=-ferror-limit=3
 
 
