@@ -158,6 +158,14 @@ namespace front {
 			return SDL_GetTicks();
 		#endif
 	}
+	
+	inline Tick get_ticks() {
+		#ifdef __EMSCRIPTEN__
+			return emscripten_get_now();
+		#else
+			return SDL_GetTicks();
+		#endif
+	}
 
 	inline bool Front::pool_event(SDL_Event & event) {
 		return SDL_PollEvent(&event);

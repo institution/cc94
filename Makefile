@@ -1,4 +1,4 @@
-# Automatic Makefile E 15-10-23
+# Makefile
 # $@ -- The file name of the target of the rule.
 # $* -- The stem with which an implicit rule matches
 # $< -- The name of the first prerequisite.
@@ -18,6 +18,7 @@ release: client/main server/test client/test ext/test
 
 # em opts
 EMOPTS:= 
+EMOPTS+=-s WASM=1
 EMOPTS+=-s USE_SDL=2 
 EMOPTS+=-s DISABLE_EXCEPTION_CATCHING=0 
 #EMOPTS+=-s SAFE_HEAP=1 
@@ -32,8 +33,6 @@ CCOPTS+=-I./inc -I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
 #-Wno-vla-extension
 #CCOPTS+=-ferror-limit=3
-
-
 
 # linker options
 LLOPTS:=

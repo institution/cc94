@@ -152,8 +152,11 @@ namespace col {
 
 	void Console::handle_events()
 	{
-		SDL_Event o;
-		while (win.pool_event(o))
+		SDL_Event o;		
+		
+		SDL_WaitEventTimeout(&o, 30);
+		
+		do
 		{
 			switch (o.type) {
 				case SDL_QUIT:
@@ -171,7 +174,10 @@ namespace col {
 
 				}
 			} // switch
-		}
+		} while (win.pool_event(o));
+		
+
+		
 	}
 
 

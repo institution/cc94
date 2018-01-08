@@ -62,13 +62,15 @@ void myLoadShader(GLuint shader, char const* shader_src)
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
 		CHECK_GL();
 
-		char log[len];
+		char * log = new char[len];
 		
 		glGetShaderInfoLog(shader, len, nullptr, log);
 		CHECK_GL();	
 
 		print(std::cerr, shader_src);
 		ext::fail("Error while compiling shader: %||\n", log);
+		
+		delete [] log;
 	}
 	
 }
@@ -119,10 +121,12 @@ void myLinkProgram(GLuint program) {
 		GLint len = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
 
-		char log[len];
+		char * log = new char[len];
 
 		glGetProgramInfoLog(program, len, nullptr, log);
 		ext::fail("Error while linking program: %||\n", log);
+		
+		delete [] log;
 	}
 }
 

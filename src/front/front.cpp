@@ -51,19 +51,26 @@ namespace front {
 	Image load_png(filesys::Path const& path)
 	{
 		std::vector<uint8_t> pixels;
-		unsigned width, height;
-		unsigned err = lodepng::decode(pixels, width, height, path);
+		unsigned width1, height1;
+		unsigned err = lodepng::decode(pixels, width1, height1, path);
 		if (err) {
 			ext::fail("ERROR: lodepng: %||: %||\n", lodepng_error_text(err), path);		
 		}
+				
 		// TODO: find way to decode directly to adress
-
+		
+		if (width1 > 16000) ext::fail("image too big");
+		if (height1 > 16000) ext::fail("image too big");
+		
+		int16_t width = width1;
+		int16_t height = height1;
+		
 		Image r({width, height});
 
 		uint8_t * p = &pixels[0];
 		
-		for (unsigned j=0; j<height; ++j) {
-			for (unsigned i=0; i<width; ++i) {
+		for (int16_t j=0; j<height; ++j) {
+			for (int16_t i=0; i<width; ++i) {
 				Color c;
 				c.r = *p;
 				++p;
@@ -440,8 +447,8 @@ namespace front {
 		#endif
 				
 		SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 		check_sdl();

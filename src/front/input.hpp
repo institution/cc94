@@ -300,7 +300,7 @@ namespace front {
 		constexpr
 		SDLButtonMask mod_to_SDLButtonMask(Mod mod) {
 			return SDLButtonMask(mod >> 26);
-		};			
+		}
 
 		constexpr
 		SDLScancode key_to_SDLScancode(Key key) {

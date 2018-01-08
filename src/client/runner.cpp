@@ -50,10 +50,7 @@ namespace col{
 		else {
 			read_file(file_map, *this);
 		}
-
-		
-		
-		
+	
 	}
 	
 	
@@ -66,15 +63,30 @@ namespace col{
 		}
 		
 		bool cont = true;
-			
-		for (Agents::size_type i = 0; i < agents.size(); ++i) {
+		
+		uint32_t t0 = 0, t1 = 0, dt = 0;
+		
+		// run all agents
+		// one loop should take 1sec
+		t0 = front::get_ticks();
+		for (Agents::size_type i = 0; i < agents.size(); ++i) 
+		{
 			Agent *agent = agents[i];
-			
+					
 			auto r = agent->step();			
 			if (!r and i == 0) {
 				cont = false;
+				break;
 			}
-		} 
+			
+		}
+		t1 = front::get_ticks();
+		dt = t1 - t0;
+	
+		if (dt < 1000) 
+		{
+			// wait for events 
+		}
 			
 		cont = (cont and (env.get_state() != Env::StateExit));
 		

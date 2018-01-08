@@ -14,7 +14,7 @@ namespace col{
 	v2s get_text_dim(PixFont const& font, string const& text, size_t & i) {
 		
 		// render dim
-		v2s r_dim = {0, font.get_height()};
+		auto r_dim = v2s(0, font.get_height());
 
 		// current substring [i:j>
 		size_t j = i;
