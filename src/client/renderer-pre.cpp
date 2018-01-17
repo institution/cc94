@@ -51,6 +51,8 @@ namespace col {
 	// Get resource from global cache (load on demand)
 	Texture const& res(Front & fr, ResCat cat, ResNum num)
 	{
+		//print("res %|d| %|d|\n", cat, num);
+		
 		auto key = make_reskey(cat, num);		
 		auto p = res_map.find(key);		
 		if (p != res_map.end()) {
@@ -85,8 +87,8 @@ namespace col {
 		auto dim = inn.get_dim();
 		auto out = Image(dim);
 
-		for (int j = 0; j < dim[1]; ++j) {
-			for (int i = 0; i < dim[0]; ++i) {
+		for (int16_t j = 0; j < dim[1]; ++j) {
+			for (int16_t i = 0; i < dim[0]; ++i) {
 				auto c = inn({i,j});
 				auto pos = v2s(i,j);
 
@@ -178,6 +180,12 @@ namespace col {
 
 	void preload_terrain(Front & fr) {
 		for (int i=1; i<13; ++i) {
+			
+			// TODO: skip if file not exists 
+			if (i == 9 or i == 12) {
+				continue;
+			}
+			
 			preload(DIFFUSE,  0+i,
 				make_combined_texture(fr, {PHYS, 105}, {TERR, i}, {0,0})
 			);
