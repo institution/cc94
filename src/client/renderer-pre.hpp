@@ -4,6 +4,7 @@
 #include "base.hpp"
 #include "conf.hpp"
 #include "layout.hpp"
+#include "text.hpp"
 
 namespace col {
 
@@ -26,7 +27,7 @@ namespace col {
 	/// Get resource from global cache (load on demand)
 	Texture const& res(Front & fr, ResCat cat, ResNum num);
 	
-	extern PixFont FontTiny;
+	extern Font FontTiny;
 	
 	void preload_renderer(Front & fr);
 

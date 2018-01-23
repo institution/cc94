@@ -5,17 +5,18 @@
 #include "glm.hpp"
 #include "color.hpp"
 #include "input.hpp"
-
+#include "image.hpp"
 
 namespace front {
 
-
+	using namespace front::Color;
 	
-
-	struct Texture {
+	
+	struct Texture 
+	{
 		GLuint id{0};
 		v2s dim;
-		GLenum format{GL_RGBA};
+		GLenum format{0};
 
 		void create();
 		void destroy();
@@ -44,14 +45,8 @@ namespace front {
 
 		v2s get_dim() const { return dim; }
 	};
-
-	struct PixFont;
-
-
-		
-
-		
-
+	
+	
 
 	struct Front {
 		
@@ -99,24 +94,15 @@ namespace front {
 
 		bool pool_event(SDL_Event & event);
 
-		Texture make_texture(filesys::Path const& path);
-		Texture make_texture(Image const& img);
-		Texture make_texture(uint8_t const* rgba, v2s dim);
-		
-		PixFont make_font(filesys::Path const& path, int adv);
+		Texture make_texture(GLenum format, uint8_t const* data, v2s dim);
+		Texture make_texture(ImageRGBA8 const& img);
+		Texture make_texture(ImageA8 const& img);
 
-
-		void render_texture(Texture const& t, v2s pos_);
-		void render_texture(Texture const& t, v2s trg, b2s src);
-		void render_texture(Texture const& t, v2s trg, b2s src, Color fg);
-		void render(Texture const& t, v2s pos) { render_texture(t, pos); }
-		void render(Texture const& t, v2s trg, b2s src) { render_texture(t, trg, src); }
-		void render(Texture const& t, v2s trg, b2s src, Color fg) { render_texture(t, trg, src, fg); }
-
-		//void render_texture(Texture const& t, b2s trg, b2s src, Color fg);
-
-		void render_line(v2s a, v2s b, Color c, int8_t thick);
-		void render_fill(b2s box, Color c);
+		void render_texture(Texture const& tex, v2s pos);
+		void render_texture(Texture const& tex, v2s pos, b2s src);
+		void render_aamask(Texture const& tex, v2s pos, b2s src, RGBA8 color);
+		void render_fill(b2s dst, RGBA8 color);
+		void render_aaline_test(v2s a, v2s b, RGBA8 c, int8_t thick);
 		
 		Tick get_ticks();		
 		inline uint8_t const* get_keyboard_state();
@@ -126,11 +112,11 @@ namespace front {
 		void clear();
 
 	private:
-		void set_blend_font(Color c);
-		void set_blend_fill(Color c);
-		void set_blend_norm();
-		void render_subtexture(Texture const& t, v2s trg, b2s src);
-		void _render_call_GL(GLenum tex_id, GLfloat * data, size_t size);
+		//void set_blend_font(RGBA8 c);
+		//void set_blend_fill(RGBA8 c);
+		//void set_blend_norm();
+		
+		void render_call(int mode, GLint tex_unit, RGBA8 fg, b2s dst, v2f uva, v2f uvb);
 
 		void create_SDL(std::string const& title, v2s dim);
 		void destroy_SDL();
@@ -151,14 +137,7 @@ namespace front {
 		create_GL();		
 	}
 
-	inline Tick Front::get_ticks() {
-		#ifdef __EMSCRIPTEN__
-			return emscripten_get_now();
-		#else
-			return SDL_GetTicks();
-		#endif
-	}
-	
+
 	inline Tick get_ticks() {
 		#ifdef __EMSCRIPTEN__
 			return emscripten_get_now();
@@ -166,15 +145,18 @@ namespace front {
 			return SDL_GetTicks();
 		#endif
 	}
+	
+	inline Tick Front::get_ticks() {
+		return front::get_ticks();
+	}
+	
 
 	inline bool Front::pool_event(SDL_Event & event) {
 		return SDL_PollEvent(&event);
 	}
 
 
-	Image load_png(filesys::Path const& path);
 
 }
 
-#include "pixfont.hpp"
 

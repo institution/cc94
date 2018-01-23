@@ -29,10 +29,12 @@ EMOPTS+=-s ASSERTIONS=1
 # compiler options
 CCOPTS:=
 CCOPTS+=-std=c++1z
-CCOPTS+=-I./inc -I./src -I./src/server
+CCOPTS+=-I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
+CCOPTS+=-fmax-errors=3
 #-Wno-vla-extension
 #CCOPTS+=-ferror-limit=3
+
 
 # linker options
 LLOPTS:=

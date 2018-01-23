@@ -319,7 +319,7 @@ namespace col {
 
 		
 
-		Color get_color() const 
+		RGBA8 get_color() const 
 		{
 			switch (mcc) {
 				case ControlEnglandCol: return {255,0,0,255};

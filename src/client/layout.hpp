@@ -24,7 +24,7 @@ namespace col{
 		
 		vector<v2s> pixs, dims;
 
-		inline int S(int x) const {
+		inline int16_t S(int x) const {
 			return x * conf.scale;
 		}
 		

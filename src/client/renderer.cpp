@@ -8,7 +8,7 @@
 #include "props.hpp"
 #include "conf.hpp"
 #include "align.hpp"
-#include "textrend.hpp"
+#include "hypertext.hpp"
 #include "layout.hpp"
 #include "simple_ai.hpp"
 #include "coldef.hpp"
@@ -92,12 +92,12 @@ namespace col {
 	void render_fill(Front & fr,
 			v2s pos,
 			v2s dim,
-			Color c
+			RGBA8 c
 	) {
 		fr.render_fill({pos, dim}, c);
 	}
 
-	void render_inline(Front & win, v2s pos, v2s dim, Color c, int8_t t) {
+	void render_inline(Front & win, v2s pos, v2s dim, RGBA8 c, int8_t t) {
 		/* Draw inside border of pos,dim box; t -- thickness
 		*/
 
@@ -115,17 +115,17 @@ namespace col {
 		render_fill(win, pos + v2s{0,t}, {t,h}, c);
 	}
 
-	void render_inline(Front & win, b2s box, Color c, int8_t t) {
+	void render_inline(Front & win, b2s box, RGBA8 c, int8_t t) {
 		render_inline(win, box.pos, box.dim, c, t);
 	}
 
-	void render_outline(Front &win, v2s pos, v2s dim, Color c, int8_t t) {
+	void render_outline(Front &win, v2s pos, v2s dim, RGBA8 c, int8_t t) {
 		/* Draw 1px thick outline border of pos,dim box
 		*/
 		render_inline(win, pos - v2s(t,t), dim + v2s(t,t) * _2, c, t);
 	}
 
-	void render_outline(Front &win, b2s box, Color c, int8_t t) {
+	void render_outline(Front &win, b2s box, RGBA8 c, int8_t t) {
 		render_outline(win, box.pos, box.dim, c, t);
 	}
 
@@ -135,7 +135,7 @@ namespace col {
 	}
 
 
-	Color get_control_color(Control cc)
+	RGBA8 get_control_color(Control cc)
 	{
 		switch (cc) {
 			case ControlEnglandCol: return ColorRed;
@@ -153,7 +153,7 @@ namespace col {
 
 
 
-	void render_shield(Front &win, v2s pos, Color const& color, char letter) {
+	void render_shield(Front &win, v2s pos, RGBA8 const& color, char letter) {
 
 		auto inner_pos = pos + v2s(1,1) * ly.line;
 		auto inner_dim = v2s(ly.S(5), ly.font_tiny);
@@ -171,7 +171,7 @@ namespace col {
 			color
 		);
 
-		render_text_at(win,
+		render_text(win,
 			pos + v2s(1,1) * ly.line,
 			FontTiny, ColorBlack,
 			string() + letter
@@ -179,7 +179,7 @@ namespace col {
 	}
 
 
-	void render_pixel(Front &win, v2s pix, const Color &colr) {
+	void render_pixel(Front &win, v2s pix, const RGBA8 &colr) {
 		render_fill(win,
 			pix,
 			v2s(ly.S(1), ly.S(1)),
@@ -190,14 +190,14 @@ namespace col {
 
 
 	void render_sprite(Front & win, v2s pix, Texture const& img) {
-		win.render(img, pix);
+		win.render_texture(img, pix);
 	}
 
 	void render_sprite(Front & win,
 		b2s box, v2f const& align,
 		Texture const& img
 	) {
-		win.render(img, calc_align(box, align, get_dim(img)));
+		win.render_texture(img, calc_align(box, get_dim(img), align));
 	}
 
 	void render_sprite(Front & win,
@@ -219,7 +219,7 @@ namespace col {
 
 
 
-	void render_area(Front & win, v2s pos, v2s dim, Color const& color) {
+	void render_area(Front & win, v2s pos, v2s dim, RGBA8 const& color) {
 		render_fill(win, pos, dim, color);
 	}
 
@@ -235,17 +235,17 @@ namespace col {
 		auto tile_dim = tex.get_dim();
 		auto area_end = area_pos + area_dim;
 
-		int ei,ej;
+		int16_t ei,ej;
 
 		// center
 		{
-			int i,j;
+			int16_t i,j;
 			j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
 				i = area_pos[0];
 				while (i < area_end[0] - tile_dim[0]) {
 
-					win.render(tex, {i,j});
+					win.render_texture(tex, {i,j});
 
 					i += tile_dim[0];
 				}
@@ -259,11 +259,11 @@ namespace col {
 
 		// bottom
 		{
-			auto src_box = b2s({0, 0}, {tile_dim[0], area_end[1] - ej});
+			auto src_box = b2s({0, 0}, v2s(tile_dim[0], area_end[1] - ej));
 
-			int i = area_pos[0], j = ej;
+			int16_t i = area_pos[0], j = ej;
 			while (i < area_end[0] - tile_dim[0]) {
-				win.render(tex, {i, j}, src_box);
+				win.render_texture(tex, {i, j}, src_box);
 				i += tile_dim[0];
 			}
 			ei = i;
@@ -271,10 +271,10 @@ namespace col {
 
 		// right
 		{
-			auto src_box = b2s({0, 0}, {area_end[0] - ei, tile_dim[1]});
-			int i = ei, j = area_pos[1];
+			auto src_box = b2s({0, 0}, {int16_t(area_end[0] - ei), tile_dim[1]});
+			int16_t i = ei, j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
-				win.render(tex, {i, j}, src_box);
+				win.render_texture(tex, {i, j}, src_box);
 				j += tile_dim[1];
 			}
 			ej = j;
@@ -282,9 +282,9 @@ namespace col {
 
 		// corner
 		{
-			auto src_box = b2s({0, 0}, {area_end[0] - ei, area_end[1] - ej});
-			int i = ei, j = ej;
-			win.render(tex, {i, j}, src_box);
+			auto src_box = b2s({0, 0}, {int16_t(area_end[0] - ei), int16_t(area_end[1] - ej)});
+			int16_t i = ei, j = ej;
+			win.render_texture(tex, {i, j}, src_box);
 		}
 
 	}
@@ -780,7 +780,7 @@ namespace col {
 
 			dim = v2s(width, height);
 			auto box = b2s{pos, {0,0}};
-			pos = calc_align(box, {0.5f, 0.5f}, dim);
+			pos = calc_align(box, dim, {0.5f, 0.5f});
 		}
 
 		void move(size_t i) {
@@ -962,8 +962,8 @@ namespace col {
 
 				render_text(win,
 					cpos, cdim, v2f(col.align, 0.5),
-					FontTiny, fg,
-					cell
+					FontTiny, fg, ColorNone,
+					cell					
 				);
 
 				cpos[0] += col.width + sep[0];
@@ -1489,8 +1489,8 @@ namespace col {
 		// TODO: transported unit
 
 		// render terrain icon
-		win.render(bgs_tex,
-			calc_align(box, {0.5f, 1.0f}, src_box.dim),
+		win.render_texture(bgs_tex,
+			calc_align(box, src_box.dim, {0.5f, 1.0f}),
 			src_box
 		);
 
@@ -1745,7 +1745,7 @@ namespace col {
 			auto& tex_wood = res(win, WOODTILE, 1);
 			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
 
-			auto city_terr_pos = calc_align(ly.city_fields.pos, ly.city_fields.dim, ly.terr_dim);
+			auto city_terr_pos = calc_align({ly.city_fields.pos, ly.city_fields.dim}, ly.terr_dim);
 
 			auto& city_terr = terr;
 
@@ -1803,9 +1803,9 @@ namespace col {
 							// render produced item amount
 							auto text = to_string(logic::get_nominal_prod(env, field, field.get_proditem()));
 
-							render_text_at(win,
-								item_pos,
-								FontTiny, Style(ColorWhite, ColorBlack),
+							render_text(win,
+								item_pos, {0,0}, {0,0},
+								FontTiny, ColorWhite, ColorBlack,
 								text
 							);
 						}
@@ -1956,8 +1956,7 @@ namespace col {
 
 		render_text(win,
 			ly.city_exit.pos + v2s(1,1),
-			{0,0}, {0,0},
-			FontTiny, ColorFont, ColorNone,
+			FontTiny, ColorFont,
 			"RET"
 		);
 
@@ -2433,12 +2432,12 @@ namespace col {
 
 
 
-	Color get_unit_color(Unit const& u) {
+	RGBA8 get_unit_color(Unit const& u) {
 
 		auto c = get_control_color(u.get_control());
 
 		if (u.get_time_left() == 0) {
-			return Color(c.r/2, c.g/2, c.b/2, c.a);
+			return RGBA8(c.r/2, c.g/2, c.b/2, c.a);
 		}
 		return {c.r, c.g, c.b, c.a};
 	}
@@ -2468,7 +2467,7 @@ namespace col {
 				auto p = env.get_control(terr);
 				if (p != ControlNone) {
 					// render owner flag over colony (unit in garrison)
-					render_sprite(win, {pos[0] + ly.S(5), pos[1]}, res(win, ICON, get_control_flagicon(p)));
+					render_sprite(win, v2s(pos[0] + ly.S(5), pos[1]), res(win, ICON, get_control_flagicon(p)));
 				}
 			}
 
@@ -2642,7 +2641,7 @@ namespace col {
 	//void select_area()
 
 	void render_fog(Front & win, v2s pos) {
-		win.render_fill({pos,ly.terr_dim}, Color(64,64,64,64));
+		win.render_fill({pos, ly.terr_dim}, RGBA8(64,64,64,64));
 	}
 
 	void render_unknown(Front & win, v2s pos) {
@@ -2668,7 +2667,7 @@ namespace col {
 	{
 		if (is_tile_on_screen(con, xy)) {
 			auto rpos = get_tile_on_screen(con, xy).pos;
-			win.render(tex, rpos);
+			win.render_texture(tex, rpos);
 		}
 	}
 
@@ -3555,7 +3554,7 @@ namespace col {
 			v2s dim = v2s(ly.pan.dim[0], ly.terr_dim[1]*3);
 
 			render_fill(win, pos, dim,
-				Color(0,0,0,64)
+				RGBA8(0,0,0,64)
 			);
 
 			render_units(win, con, pos, dim,
@@ -3899,7 +3898,7 @@ namespace col {
 
 	void Link::render(Console & con)
 	{
-		render_text_at(con.win, box.pos, FontTiny, StyleMenu.hl, text);
+		render_text(con.win, box.pos, FontTiny, StyleMenu.hl, text);
 	}
 
 	bool Link::handle(Console & con, Event e)
@@ -4043,21 +4042,26 @@ namespace col {
 		auto ln = con.output.size();
 		v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
 
-		for (auto& line: boost::adaptors::reverse(con.output)) {
-
-			auto text_box = render_text(app,
-				pos, {0,0}, {0,0},
-				FontTiny, ColorFont, {0,0,0,128},
+		for (auto& line: boost::adaptors::reverse(con.output))
+		{
+			
+			render_fill(app,
+				pos, get_text_dim(FontTiny, line),
+				{0,0,0,128}
+			);
+			render_text(app,
+				pos,
+				FontTiny, ColorFont,
 				line
 			);
 
-			pos[1] += text_box.dim[1];
+			pos[1] += FontTiny.height;
 		}
 
 		// command line with cursor
-		render_text(app,
-			ly.scr.pos, {0,0}, {0,0},
-			FontTiny, ColorFont, ColorNone,
+		render_text(
+			app, ly.scr.pos,
+			FontTiny, ColorFont, 
 			con.buffer + "_"
 		);
 
@@ -4110,7 +4114,7 @@ namespace col {
 
 			// vline left of the panel
 			render_fill(win,
-				{ly.pan.pos[0] - ly.line, ly.pan.pos[1]},
+				v2s(ly.pan.pos[0] - ly.line, ly.pan.pos[1]),
 				{ly.line, ly.pan.dim[1]},
 				ColorBlack
 			);

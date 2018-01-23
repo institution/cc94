@@ -14,13 +14,10 @@ namespace front {
 	using b2f = ext::b2<float_t>;
 
 
-	struct Color;
-
-	using Image = darray::darray2<Color, int16_t>;
+	//using Image = darray::darray2<Color, int16_t>;
 
 	struct Front;
 	struct Texture;
-	struct PixFont;
 
 
 	using b2c = b2s;

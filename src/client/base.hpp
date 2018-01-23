@@ -1,17 +1,18 @@
 #pragma once
 
+#include "../ext/ext.hpp"
 #include "../ext/format.hpp"
 #include "../front/front.hpp"
 
 namespace col{
 	using filesys::Path;
 	
-	using front::Image;
+	using front::ImageRGBA8;
+	using front::ImageA8;
 	using front::Texture;
 	using front::Front;
-	using front::PixFont;
-	using front::Color;
-
+	using namespace front::Color;
+	
 	using front::v2s;
 	using front::v2i;
 	using front::v2f;
@@ -25,9 +26,8 @@ namespace col{
 
 	using Action = std::function<void()>;
 	
-	
-	using v2c = front::v2s;
 	using Coord = int16_t;
+	using v2c = ext::v2<Coord>;
 	
 	// custom hash can be a standalone function object:
 	template <class T> struct MyHash;

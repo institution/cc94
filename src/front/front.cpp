@@ -6,7 +6,6 @@
 
 namespace front {
 
-
 	using geo2::vdiv;
 
 	void init_glew() {
@@ -42,58 +41,25 @@ namespace front {
 		}
 	}
 
-	PixFont Front::make_font(filesys::Path const& path, int adv) {
-		return PixFont(*this, path, adv);
-	}
 
-	
 
-	Image load_png(filesys::Path const& path)
+	Texture Front::make_texture(GLenum format, uint8_t const* data, v2s dim) 
 	{
-		std::vector<uint8_t> pixels;
-		unsigned width1, height1;
-		unsigned err = lodepng::decode(pixels, width1, height1, path);
-		if (err) {
-			ext::fail("ERROR: lodepng: %||: %||\n", lodepng_error_text(err), path);		
+		if (format == GL_ALPHA) {
+			
+		}		
+		else if (format == GL_RGBA) 
+		{
+			
 		}
-				
-		// TODO: find way to decode directly to adress
-		
-		if (width1 > 16000) ext::fail("image too big");
-		if (height1 > 16000) ext::fail("image too big");
-		
-		int16_t width = width1;
-		int16_t height = height1;
-		
-		Image r({width, height});
-
-		uint8_t * p = &pixels[0];
-		
-		for (int16_t j=0; j<height; ++j) {
-			for (int16_t i=0; i<width; ++i) {
-				Color c;
-				c.r = *p;
-				++p;
-				c.g = *p;
-				++p;
-				c.b = *p;
-				++p;
-				c.a = *p;
-				++p;
-
-				r({i,j}) = c;
-			}
-
+		else {
+			ext::fail("make_texture: bad format");
 		}
-
-		return r;
-	}
-
-	Texture Front::make_texture(uint8_t const* rgba, v2s dim) {
-
+		
+	
 		Texture t;
 		t.create();
-		
+		t.format = format;		
 		t.dim = dim;
 		
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -101,29 +67,31 @@ namespace front {
 
 		glBindTexture(GL_TEXTURE_2D, t.id);
 		CHECK_GL();
-
 			
-		glTexImage2D(GL_TEXTURE_2D, 0, t.format, dim[0], dim[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, dim[0], dim[1], 0, format, GL_UNSIGNED_BYTE, data);
 		CHECK_GL();
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		
 		CHECK_GL();
 
 		return t;
 	}
 
 
-	
-
-
-	Texture Front::make_texture(Image const& img) {
+	Texture Front::make_texture(ImageRGBA8 const& img) {
 		auto data = (uint8_t*)&img({0,0});
-		return make_texture(data, img.get_dim());
+		return make_texture(GL_RGBA, data, img.get_dim());
 	}
 
-	Texture Front::make_texture(filesys::Path const& path) {
-		return make_texture(load_png(path));
+
+	Texture Front::make_texture(ImageA8 const& img) {
+		auto data = (uint8_t*)&img({0,0});
+		return make_texture(GL_ALPHA, data, img.get_dim());
 	}
 
 	void Texture::create() {
@@ -177,24 +145,17 @@ namespace front {
 	}
 
 
-
-
-	void Front::render_texture(Texture const& t, v2s trg, b2s src, Color fg) {
-		set_blend_font(fg);
-		render_subtexture(t,trg,src);
-	}
-
-
-	void Front::set_blend_font(Color c) {
-		auto v = ColorFloat(c);
+	/*
+	void Front::set_blend_font(RGBA8 c) {
+		auto v = make_RGBAf(c);
 		glBlendColor(v.r, v.g, v.b, v.a);
 		glBlendFuncSeparate(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
 		glEnable(GL_BLEND);
 	}
 
-	void Front::set_blend_fill(Color c) {
-		auto v = ColorFloat(c);
+	void Front::set_blend_fill(RGBA8 c) {
+		auto v = make_RGBAf(c);
 		glBlendColor(v.r, v.g, v.b, v.a);
 		glBlendFuncSeparate(GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_ALPHA);
 		glBlendEquation(GL_FUNC_ADD);
@@ -206,6 +167,7 @@ namespace front {
 		glBlendEquation(GL_FUNC_ADD);
 		glEnable(GL_BLEND);
 	}
+	*/
 
 	
 	/*void Front::render_texture(Texture const& t, b2s trg, b2s src, Color fg) {
@@ -214,11 +176,83 @@ namespace front {
 		
 	}*/
 
-	void Front::render_line(v2s a, v2s b, Color c, int8_t thick) 
+
+
+	/*
+		0 texture texture       pos
+		0 texture texture       pos src
+		1 aamask  texture color pos src
+		2 fill            color dst
+	*/
+	
+	void Front::render_texture(Texture const& tex, v2s pos)
+	{
+		// MODE_TEXTURE, tex_unit, dst, src
+		myBindTexture(GL_TEXTURE0, tex.id);
+		render_call(0, 0, RGBA8(0,0,0,0), {pos, tex.dim}, v2f(0,0), v2f(1,1));
+	}
+	
+	void Front::render_texture(Texture const& tex, v2s pos, b2s src)
+	{
+		// MODE_TEXTURE, tex_unit, dst, src
+		auto uva = vdiv(v2f(src.pos), v2f(tex.dim));
+		auto uvb = vdiv(v2f(src.pos + src.dim), v2f(tex.dim));
+		myBindTexture(GL_TEXTURE0, tex.id);
+		render_call(0, 0, RGBA8(0,0,0,0), {pos, src.dim}, uva, uvb);		
+	}
+	
+	void Front::render_aamask(Texture const& tex, v2s pos, b2s src, RGBA8 color)
+	{		
+		// MODE_AAMASK, tex_unit, color, dst, src
+		auto uva = vdiv(v2f(src.pos), v2f(tex.dim));
+		auto uvb = vdiv(v2f(src.pos + src.dim), v2f(tex.dim));
+		myBindTexture(GL_TEXTURE0, tex.id);
+		render_call(1, 0, color, {pos, src.dim}, uva, uvb);		
+	}
+	 
+	void Front::render_fill(b2s dst, RGBA8 color)
+	{
+		//  MODE_FILL,    color, dst		
+		render_call(2, 0, color, dst, v2f(0,0), v2f(0,0));		
+	}
+
+	void Front::render_call(int mode, GLint tex_unit, RGBA8 fg, b2s dst, v2f uva, v2f uvb)
+	{		
+		// uniforms
+		auto ff = make_RGBAf(fg);
+		
+		myUniform1i(prog[0], "u_base", tex_unit);
+		myUniform1i(prog[0], "u_mode", mode);
+		myUniform4f(prog[0], "u_rgba", ff.r, ff.g, ff.b, ff.a);
+
+		// vertex array
+		auto d_pos = v2f(dst.pos);
+		auto d_end = v2f(dst.pos + dst.dim);
+
+		GLfloat data[] = {
+			d_pos[0], d_pos[1], uva[0], uva[1],
+			d_pos[0], d_end[1], uva[0], uvb[1], 
+			d_end[0], d_end[1], uvb[0], uvb[1],
+			d_end[0], d_pos[1], uvb[0], uva[1],
+		};
+		
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+		CHECK_GL();
+
+		glBindVertexArray(vao[0]);
+		CHECK_GL();
+
+		// draw call		
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		CHECK_GL();
+	}
+
+	void Front::render_aaline_test(v2s a, v2s b, RGBA8 c, int8_t thick) 
 	{
 		// render textured quad
 		
-		set_blend_fill(c);
+		/*set_blend_fill(c);
 		
 		if (a == b) {
 			return;
@@ -238,105 +272,33 @@ namespace front {
 			bb[0], bb[1],  1.0f, 1.0f,  n[0],  n[1],
 			bb[0], bb[1],  1.0f, 0.0f, -n[0], -n[1]
 		};
-
-		_render_call_GL(line_seg.id, data, sizeof(data));
+		*/
+		//_render_call_GL(line_seg.id, data, sizeof(data));
 	}
 
 
-	void Front::render_fill(b2s box, Color c) {
-		set_blend_fill(c);
+	
 
-		auto t_pos = v2f(box.pos);
-		auto t_end = v2f(box.pos + box.dim);
-		
-		// quad as triangle fan x,y + u,v
-		GLfloat data[] = {
-			t_pos[0], t_pos[1],  0.0f, 0.0f,
-			t_pos[0], t_end[1],  0.0f, 1.0f, 
-			t_end[0], t_end[1],  1.0f, 1.0f,
-			t_end[0], t_pos[1],  1.0f, 0.0f,
-		};
-
-		_render_call_GL(white1x1.id, data, sizeof(data));		
-	}
-
-	void Front::render_subtexture(Texture const& t, v2s trg, b2s src) {
-
-		auto t_pos = v2f(trg);
-		auto t_end = v2f(trg + src.dim);
-
-		auto rs_pos = vdiv(v2f(src.pos), v2f(t.dim));
-		auto rs_end = vdiv(v2f(src.pos + src.dim), v2f(t.dim));
-		
-		// quad as triangle fan x,y + u,v
-		GLfloat data[] = {
-			t_pos[0], t_pos[1],  rs_pos[0], rs_pos[1],
-			t_pos[0], t_end[1],  rs_pos[0], rs_end[1], 
-			t_end[0], t_end[1],  rs_end[0], rs_end[1],
-			t_end[0], t_pos[1],  rs_end[0], rs_pos[1],
-		};
-
-		_render_call_GL(t.id, data, sizeof(data));
-	}
-
-	void Front::_render_call_GL(GLenum tex_id, GLfloat * data, size_t size) {
-		// set texture
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, tex_id);
-		CHECK_GL();
-
-		// update array
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-		glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW);
-		CHECK_GL();
-
-		glBindVertexArray(vao[0]);
-		CHECK_GL();
-		
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-		CHECK_GL();
-	}
 
 
 
 	
 
-	void Front::render_texture(Texture const& t, v2s trg, b2s src)
+	void Front::destroy_GL()
 	{
-		set_blend_norm();
-		render_subtexture(t,trg,src);	
-	}
-
-	void Front::render_texture(Texture const& t, v2s pos_) {
-		set_blend_norm();
-
-
-		v2f pos = v2f(pos_);
-		v2f end = pos + t.dim;
-		
-		// quad as triangle fan x,y + u,v
-		GLfloat data[] = {
-			pos[0], pos[1],  0.0f, 0.0f,
-			pos[0], end[1],  0.0f, 1.0f, 
-			end[0], end[1],  1.0f, 1.0f,
-			end[0], pos[1],  1.0f, 0.0f,
-		};
-
-		_render_call_GL(t.id, data, sizeof(data));		
-	}
-
-	void Front::destroy_GL() {
 		glDeleteBuffers(1, vbo);
 		glDeleteVertexArrays(1, vao);
 		glDeleteProgram(prog[0]);
+		glDeleteProgram(prog[1]);
 		CHECK_GL();
 	}
 
-	void Front::create_GL() {
+	void Front::create_GL()
+	{
 		init_glew();
 		CHECK_GL();
 
-		// render texture program
+		// program
 		prog[0] = glCreateProgram();
 		myAttachShader(prog[0], GL_VERTEX_SHADER, shader::vert0);
 		myAttachShader(prog[0], GL_FRAGMENT_SHADER, shader::frag0);
@@ -346,7 +308,7 @@ namespace front {
 		glUseProgram(prog[0]);
 		CHECK_GL();
 
-		
+		// vertex arrays
 		glGenVertexArrays(1, vao);
 		CHECK_GL();
 		
@@ -377,21 +339,21 @@ namespace front {
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		
-		
-		set_ctx_dim(win_dim);
-		CHECK_GL();
-		
+		// enable blending
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA);
+
+		// clear color
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		CHECK_GL();
 
-		// activate prog[0] (render texture simple)
-
-		glUniform1i(myGetUniformLocation(prog[0], "s_texture"), 0);
-		
+		// opengl resolution
+		set_ctx_dim(win_dim);
+				
+		// technical textures
 		{
 			uint8_t rgba[] = {255,255,255,255};
-			white1x1 = make_texture(rgba, {1,1});
+			white1x1 = make_texture(GL_RGBA, rgba, {1,1});
 		}
 		
 		{
@@ -402,9 +364,10 @@ namespace front {
 				127,127,127,127,
 				63,63,63,63
 			};
-			line_seg = make_texture(rgba, {1,5});
+			line_seg = make_texture(GL_RGBA, rgba, {1,5});
 		}
 
+		// clear screen
 		clear();
 		
 	}
@@ -418,7 +381,7 @@ namespace front {
 		this->proj = make_projection_matrix(ctx_dim[0], ctx_dim[1]);
 
 		glUniformMatrix4fv(
-			myGetUniformLocation(prog[0], "m_proj"),
+			myGetUniformLocation(prog[0], "u_proj"),
 			1,
 			GL_FALSE,
 			glm::value_ptr(this->proj)
@@ -463,7 +426,7 @@ namespace front {
 		this->ctx = SDL_GL_CreateContext(win);
 		check_sdl();
 
-		this->ctx_dim = dim;		
+		this->ctx_dim = dim;
 	}
 
 	void Front::destroy_SDL() {

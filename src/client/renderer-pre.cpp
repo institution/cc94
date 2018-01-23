@@ -4,7 +4,7 @@
 
 namespace col {
 
-	PixFont FontTiny;
+	Font FontTiny;
 
 	using ResMap = std::unordered_map<ResKey, Texture>;
 
@@ -61,7 +61,7 @@ namespace col {
 		else {
 			auto path = get_res_path(cat, num);
 			auto & img = res_map[key];
-			img = fr.make_texture(path);
+			img = fr.make_texture(front::load_png_RGBA8(path));
 			return img;
 		}
 	}
@@ -71,7 +71,7 @@ namespace col {
 		res_map[key] = std::move(tex);
 	}
 
-	Image replace_black(Image const& inn, Image const& tex, v2s toff) {
+	ImageRGBA8 replace_black(ImageRGBA8 const& inn, ImageRGBA8 const& tex, v2s toff) {
 		/* Create new surface
 
 		mask colors meaning:
@@ -85,7 +85,7 @@ namespace col {
 		//print("replace_black: %|| + %|| <- %||\n", inn.dim, toff, tex.dim);
 
 		auto dim = inn.get_dim();
-		auto out = Image(dim);
+		auto out = ImageRGBA8(dim);
 
 		for (int16_t j = 0; j < dim[1]; ++j) {
 			for (int16_t i = 0; i < dim[0]; ++i) {
@@ -95,9 +95,9 @@ namespace col {
 				//print("c = %||\n", c);
 
 				if (c.a == 0) {
-					out(pos) = Color(0,0,0,0);
+					out(pos) = RGBA8(0,0,0,0);
 				}
-				else if (c == Color(0,0,0,255)) {
+				else if (c == RGBA8(0,0,0,255)) {
 
 					out(pos) = tex(toff + pos);
 				}
@@ -133,11 +133,11 @@ namespace col {
 		std::pair<ResCat, ResNum> b,
 		v2s off
 	) {
-		auto p_img = front::load_png(
+		auto p_img = front::load_png_RGBA8(
 			get_res_path(p.first, p.second)
 		);
 
-		auto b_img = front::load_png(
+		auto b_img = front::load_png_RGBA8(
 			get_res_path(b.first, b.second)
 		);
 
@@ -206,8 +206,8 @@ namespace col {
 	
 	
 	void preload_renderer(Front & fr) {
-		preload_terrain(fr);
-		FontTiny.load(fr, conf.font_tiny_path, -1 * ly.scale);
+		preload_terrain(fr);		
+		load_font_ftb(fr, FontTiny, conf.font_tiny_path);
 	}
 	
 }
