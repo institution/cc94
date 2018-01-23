@@ -1,15 +1,7 @@
 bin/
-
+obj/
 res/
-!res/csv
-!res/default.mp
-
 cc94/
-
 art/
-!art/export.py
-
-b/
-
 core
 *~
