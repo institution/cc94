@@ -1,0 +1,415 @@
+image-path "fonttiny.png"
+
+sprite "FONTTINY.FF.032"
+id 32
+pos 0 0
+dim 2 6
+shift 3 6
+
+sprite "FONTTINY.FF.033"
+id 33
+pos 2 0
+dim 4 6
+shift 5
+
+sprite "FONTTINY.FF.034"
+id 34
+pos 6 0
+dim 4 6
+shift 5
+
+sprite "FONTTINY.FF.035"
+id 35
+pos 10 0
+dim 4 6
+shift 5
+
+sprite "FONTTINY.FF.036"
+id 36
+pos 14 0
+dim 4 6
+
+sprite "FONTTINY.FF.037"
+id 37
+pos 18 0
+dim 4 6
+
+sprite "FONTTINY.FF.038"
+id 38
+pos 22 0
+dim 4 6
+
+sprite "FONTTINY.FF.039"
+id 39
+pos 26 0
+dim 2 6
+
+sprite "FONTTINY.FF.040"
+id 40
+pos 28 0
+dim 4 6
+
+sprite "FONTTINY.FF.041"
+id 41
+pos 32 0
+dim 4 6
+
+sprite "FONTTINY.FF.043"
+id 43
+pos 36 0
+dim 4 6
+
+sprite "FONTTINY.FF.044"
+id 44
+pos 40 0
+dim 4 6
+
+sprite "FONTTINY.FF.045"
+id 45
+pos 44 0
+dim 4 6
+
+sprite "FONTTINY.FF.046"
+id 46
+pos 48 0
+dim 4 6
+
+sprite "FONTTINY.FF.047"
+id 47
+pos 52 0
+dim 4 6
+
+sprite "FONTTINY.FF.048"
+id 48
+pos 56 0
+dim 4 6
+
+sprite "FONTTINY.FF.049"
+id 49
+pos 60 0
+dim 4 6
+
+sprite "FONTTINY.FF.050"
+id 50
+pos 64 0
+dim 4 6
+
+sprite "FONTTINY.FF.051"
+id 51
+pos 68 0
+dim 4 6
+
+sprite "FONTTINY.FF.052"
+id 52
+pos 72 0
+dim 4 6
+
+sprite "FONTTINY.FF.053"
+id 53
+pos 76 0
+dim 4 6
+
+sprite "FONTTINY.FF.054"
+id 54
+pos 80 0
+dim 4 6
+
+sprite "FONTTINY.FF.055"
+id 55
+pos 84 0
+dim 4 6
+
+sprite "FONTTINY.FF.056"
+id 56
+pos 88 0
+dim 4 6
+
+sprite "FONTTINY.FF.057"
+id 57
+pos 92 0
+dim 4 6
+
+sprite "FONTTINY.FF.058"
+id 58
+pos 96 0
+dim 4 6
+
+sprite "FONTTINY.FF.059"
+id 59
+pos 100 0
+dim 4 6
+
+sprite "FONTTINY.FF.063"
+id 63
+pos 104 0
+dim 4 6
+
+sprite "FONTTINY.FF.065"
+id 65
+pos 108 0
+dim 4 6
+
+sprite "FONTTINY.FF.066"
+id 66
+pos 112 0
+dim 4 6
+
+sprite "FONTTINY.FF.067"
+id 67
+pos 116 0
+dim 4 6
+
+sprite "FONTTINY.FF.068"
+id 68
+pos 120 0
+dim 4 6
+
+sprite "FONTTINY.FF.069"
+id 69
+pos 124 0
+dim 4 6
+
+sprite "FONTTINY.FF.070"
+id 70
+pos 128 0
+dim 4 6
+
+sprite "FONTTINY.FF.071"
+id 71
+pos 132 0
+dim 4 6
+
+sprite "FONTTINY.FF.072"
+id 72
+pos 136 0
+dim 4 6
+
+sprite "FONTTINY.FF.073"
+id 73
+pos 140 0
+dim 4 6
+
+sprite "FONTTINY.FF.074"
+id 74
+pos 144 0
+dim 4 6
+
+sprite "FONTTINY.FF.075"
+id 75
+pos 148 0
+dim 4 6
+
+sprite "FONTTINY.FF.076"
+id 76
+pos 152 0
+dim 4 6
+
+sprite "FONTTINY.FF.077"
+id 77
+pos 156 0
+dim 6 6
+
+sprite "FONTTINY.FF.078"
+id 78
+pos 162 0
+dim 4 6
+
+sprite "FONTTINY.FF.079"
+id 79
+pos 166 0
+dim 4 6
+
+sprite "FONTTINY.FF.080"
+id 80
+pos 170 0
+dim 4 6
+
+sprite "FONTTINY.FF.081"
+id 81
+pos 174 0
+dim 4 6
+
+sprite "FONTTINY.FF.082"
+id 82
+pos 178 0
+dim 4 6
+
+sprite "FONTTINY.FF.083"
+id 83
+pos 182 0
+dim 4 6
+
+sprite "FONTTINY.FF.084"
+id 84
+pos 186 0
+dim 4 6
+
+sprite "FONTTINY.FF.085"
+id 85
+pos 190 0
+dim 4 6
+
+sprite "FONTTINY.FF.086"
+id 86
+pos 194 0
+dim 4 6
+
+sprite "FONTTINY.FF.087"
+id 87
+pos 198 0
+dim 6 6
+
+sprite "FONTTINY.FF.088"
+id 88
+pos 204 0
+dim 4 6
+
+sprite "FONTTINY.FF.089"
+id 89
+pos 208 0
+dim 4 6
+
+sprite "FONTTINY.FF.090"
+id 90
+pos 212 0
+dim 4 6
+
+sprite "FONTTINY.FF.091"
+id 91
+pos 216 0
+dim 6 6
+
+sprite "FONTTINY.FF.093"
+id 93
+pos 222 0
+dim 6 6
+
+sprite "FONTTINY.FF.097"
+id 97
+pos 228 0
+dim 4 6
+
+sprite "FONTTINY.FF.098"
+id 98
+pos 232 0
+dim 4 6
+
+sprite "FONTTINY.FF.099"
+id 99
+pos 236 0
+dim 4 6
+
+sprite "FONTTINY.FF.100"
+id 100
+pos 240 0
+dim 4 6
+
+sprite "FONTTINY.FF.101"
+id 101
+pos 244 0
+dim 4 6
+
+sprite "FONTTINY.FF.102"
+id 102
+pos 248 0
+dim 4 6
+
+sprite "FONTTINY.FF.103"
+id 103
+pos 252 0
+dim 4 6
+
+sprite "FONTTINY.FF.104"
+id 104
+pos 256 0
+dim 4 6
+
+sprite "FONTTINY.FF.105"
+id 105
+pos 260 0
+dim 2 6
+
+sprite "FONTTINY.FF.106"
+id 106
+pos 262 0
+dim 4 6
+
+sprite "FONTTINY.FF.107"
+id 107
+pos 266 0
+dim 4 6
+
+sprite "FONTTINY.FF.108"
+id 108
+pos 270 0
+dim 2 6
+
+sprite "FONTTINY.FF.109"
+id 109
+pos 272 0
+dim 6 6
+
+sprite "FONTTINY.FF.110"
+id 110
+pos 278 0
+dim 4 6
+
+sprite "FONTTINY.FF.111"
+id 111
+pos 282 0
+dim 4 6
+
+sprite "FONTTINY.FF.112"
+id 112
+pos 286 0
+dim 4 6
+
+sprite "FONTTINY.FF.113"
+id 113
+pos 290 0
+dim 4 6
+
+sprite "FONTTINY.FF.114"
+id 114
+pos 294 0
+dim 4 6
+
+sprite "FONTTINY.FF.115"
+id 115
+pos 298 0
+dim 4 6
+
+sprite "FONTTINY.FF.116"
+id 116
+pos 302 0
+dim 3 6
+
+sprite "FONTTINY.FF.117"
+id 117
+pos 305 0
+dim 4 6
+
+sprite "FONTTINY.FF.118"
+id 118
+pos 309 0
+dim 4 6
+
+sprite "FONTTINY.FF.119"
+id 119
+pos 313 0
+dim 6 6
+
+sprite "FONTTINY.FF.120"
+id 120
+pos 319 0
+dim 4 6
+
+sprite "FONTTINY.FF.121"
+id 121
+pos 323 0
+dim 4 6
+
+sprite "FONTTINY.FF.122"
+id 122
+pos 327 0
+dim 4 6

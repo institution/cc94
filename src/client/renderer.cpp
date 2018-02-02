@@ -1473,20 +1473,21 @@ namespace col {
 
 		auto & unit_tex = res(win, ICON, get_icon_id(unit));
 
-		// terrain fragments taken from colony background
-		auto & bgs_tex = res(win, COLONY, 1);
+		// terrain fragments
+		auto & bgs_tex = res(win, ZZ, 5);
 
 		// determine terrain icon: land or water
 		b2s src_box;
 		if (unit.get_travel() == TravelSea) {
 			// water src box
-			src_box = b2s({141, 29}, {16, 3}) * ly.scale;
+			src_box = b2s({0, 0}, {16, 3}) * ly.scale;
 		}
 		else {
 			// land src box
-			src_box = b2s({66, 27}, {16, 3}) * ly.scale;
+			src_box = b2s({0, 3}, {16, 3}) * ly.scale;
 		}
-		// TODO: transported unit
+		// TODO: transported unit, wooden tex
+	
 
 		// render terrain icon
 		win.render_texture(bgs_tex,
@@ -3454,10 +3455,10 @@ namespace col {
 
 				auto get_river_name = [](Phys river){
 					switch (river) {
-						case PhysMinorRiver: return "MiRi";
-						case PhysMajorRiver: return "MaRi";
+						case PhysMinorRiver: return "+R";
+						case PhysMajorRiver: return "++R";
 					}
-					return "NoRi";
+					return "-R";
 				};
 
 				cur.text("(");
@@ -3468,14 +3469,14 @@ namespace col {
 				);
 				cur.text(",");
 
-				cur.link((forest ? "Fore" : "NoFo"), con.editing,
+				cur.link((forest ? "+F" : "-F"), con.editing,
 					[&con,forest](){
 						con.set_phys(PhysForest, next_phys(PhysForest, forest));
 					}
 				);
 				cur.text(",");
 
-				cur.link((plow ? "Plow" : "NoPl"), con.editing,
+				cur.link((plow ? "+P" : "-P"), con.editing,
 					[&con,plow](){
 						con.set_phys(PhysPlow, next_phys(PhysPlow, plow));
 					}
@@ -3483,7 +3484,7 @@ namespace col {
 				cur.text(",");
 
 
-				cur.link((road ? "Road" : "NoRo"), con.editing,
+				cur.link((road ? "+R" : "-R"), con.editing,
 					[&con, road](){
 						con.set_phys(PhysRoad, next_phys(PhysRoad, road));
 					}

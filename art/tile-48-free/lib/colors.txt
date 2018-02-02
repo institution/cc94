@@ -1,0 +1,23 @@
+pastel_orange 
+FFFFDA -> D69165
+
+red 
+F20000 -> 850000
+
+pastel_brown
+FFFAEA -> C2AE85
+
+orange 
+CE9534 -> 6D3C18
+
+
+
+gray
+gray
+pastel_blue          navy
+green                olive
+orange               brown
+pastel_orange        pastel_brown
+red                  blue
+darkbrown
+yellow_gold

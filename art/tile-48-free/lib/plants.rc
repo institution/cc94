@@ -1,0 +1,12 @@
+image-path lib/plants.png
+
+
+sprite "tr1"
+pos 0 0
+dim 20 26
+shift 10 26
+
+sprite "tr2"
+pos 20 0
+dim 20 27
+shift 10 27

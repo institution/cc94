@@ -1,0 +1,5 @@
+line thickness 0.1 [mm]
+resolution base: 16 x 16 [px]
+leaf dim: 0.2 x 0.2 [mm]
+
+

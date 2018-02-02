@@ -11,6 +11,10 @@ namespace col{
 
 	struct Layout {
 
+		int16_t lt; // line thickness
+		int16_t fh; // font height
+		int16_t wh; // width height
+
 		int16_t pan_width;
 		int16_t line;
 		int16_t line_sel;   

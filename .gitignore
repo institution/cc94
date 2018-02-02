@@ -1,8 +1,14 @@
+*arch*
+*TODO*
+art/tile-16-orig*
+art/work-in-progress/*
+
+
 bin/
 obj/
 res/
 cc94/
-art/
 arch/
 core
 *~
+*.blend1

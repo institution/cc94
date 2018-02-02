@@ -1,0 +1,13 @@
+image-path 005-terrain-fragment.png
+
+sprite terrain-fragment/water
+pos 0 0
+dim 48 9
+
+sprite terrain-fragment/grass
+pos 0 9
+dim 48 9
+
+sprite terrain-fragment/wood
+pos 0 18
+dim 48 9
