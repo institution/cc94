@@ -8,9 +8,7 @@
 #include "col.hpp"
 #include "env.hpp"
 #include "layout.hpp"
-#include "player.hpp"
 #include "logic.hpp"
-#include "player.hpp"
 #include "runner.hpp"
 #include "random_module.hpp"
 #include "../front/front.hpp"
@@ -20,6 +18,7 @@
 #include "path.hpp"
 #include "event.hpp"
 #include "widget.hpp"
+#include "timer.hpp"
 
 /*
  * place biome plains|tundra|grassland|...
@@ -45,9 +44,9 @@ namespace col {
 	
 
 
-	inline v2f get_logical_pos(Front const& front, v2i p) {
-		auto l = front.get_ctx_dim();
-		auto o = front.get_win_dim();
+	inline v2f get_logical_pos(Front const& win, v2i p) {
+		auto l = win.ctx_dim;
+		auto o = win.win_dim;
 		
 		auto rx = float(l[0])/float(o[0]);
 		auto ry = float(l[1])/float(o[1]);
@@ -121,10 +120,6 @@ namespace col {
 
 		Env & env;
 
-		Env & get_env() {
-			return env;
-		}
-
 		Keyboard keyboard;
 		Mouse mouse;
 
@@ -154,11 +149,8 @@ namespace col {
 		// selected unit
 		Unit * sel_unit{nullptr};
 
-		
-
 		Runner * runner{nullptr};
-		
-		
+			
 		template <class AI>
 		void add_ai(Control cc);
 		
@@ -197,14 +189,14 @@ namespace col {
 		
 		RandomModule rm;
 
-		
+			
 		// last modification time
 		front::Tick last_mod_env;
 		front::Tick last_mod_con;
 		
 		front::Tick last_tick;
 		
-		front::Front win;
+		//front::Front win;
 		
 		int verbose{0};
 		
@@ -218,11 +210,11 @@ namespace col {
 		string get_name() const override {
 			return "GUI `Console`";
 		}
+
+		bool f_stop{false};
 		
-		bool step() override {
-			sync();
-			return step_GUI();
-		}
+		void run() override;
+		
 		
 		void handle_events();
 

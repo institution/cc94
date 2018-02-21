@@ -28,10 +28,9 @@ namespace col {
 	ENABLE_TYPENAME(Terr);
 
 
-	using BuildTypes = unordered_map<BuildType::Id, BuildType>;
-	using UnitTypes = unordered_map<UnitType::Id, UnitType>;
+	using BuildTypes = ext::darray1<BuildType, BuildType::Id>;
+	using UnitTypes = ext::darray1<UnitType, UnitType::Id>;
 
-	//using Terrs = boost::multi_array<Terr, 2>;
 	using Terrs = ext::darray2<Terr, Coord>;
 	
 	
@@ -74,6 +73,14 @@ namespace col {
 		shared_ptr<BuildTypes> bts;
 		shared_ptr<UnitTypes> uts;
 
+		UnitType & get_unittype(UnitType::Id id) { return uts->at(id); }
+		BuildType & get_buildtype(BuildType::Id id) { return bts->at(id); }
+
+		UnitType const& get_unittype(UnitType::Id id) const { return uts->at(id); }
+		BuildType const& get_buildtype(BuildType::Id id) const { return bts->at(id); }
+		
+
+		
 		// state
 		Factions factions;
 		Colonies colonies;
@@ -89,7 +96,6 @@ namespace col {
 
 		explicit
 		Core():
-			//terrs(Coords(0,0), boost::fortran_storage_order())
 			terrs(Coords(0,0))
 		{
 			bts = make_shared<BuildTypes>();
@@ -142,6 +148,7 @@ namespace col {
 		Coords get_coords(Terr const& t) const;
 		Terr::Id get_id(Terr const& t) const { return get_coords(t); }
 
+		bool has_coords(Coords c) const { return terrs.has(c); }
 		Coords get_coords(Unit const& u) const;
 
 		Terr & get_terr(Coords const& z);
@@ -386,10 +393,10 @@ namespace col {
 	template <>	inline Factions & Core::get_cont<Faction>() { return factions; }
 	template <>	inline Factions const& Core::get_cont<Faction>() const { return factions; }
 
-	template <>	inline UnitTypes & Core::get_cont<UnitType>() { return *uts; }
-	template <>	inline UnitTypes const& Core::get_cont<UnitType>() const { return *uts; }
-	template <>	inline BuildTypes & Core::get_cont<BuildType>() { return *bts; }
-	template <>	inline BuildTypes const& Core::get_cont<BuildType>() const { return *bts; }
+	//template <>	inline UnitTypes & Core::get_cont<UnitType>() { return *uts; }
+	//template <>	inline UnitTypes const& Core::get_cont<UnitType>() const { return *uts; }
+	//template <>	inline BuildTypes & Core::get_cont<BuildType>() { return *bts; }
+	//template <>	inline BuildTypes const& Core::get_cont<BuildType>() const { return *bts; }
 
 
 

@@ -5,8 +5,8 @@
 
 #include "../ext/format.hpp"
 #include "env.hpp"
-#include "player.hpp"
 #include "agent.hpp"
+#include "timer.hpp"
 
 namespace null_ai{
 	
@@ -23,18 +23,26 @@ namespace null_ai{
 
 		NullAi(Env & env, Control cc): env(env), cc(cc) {
 			
-		}
-		
-		
+		}		
 
-		bool step() {			
-			if (env.in_progress()) {
-				if (env.get_current_control() == cc) {
-					print("null_ai: ready\n");
-					env.ready();
+		void run()
+		{
+			col::Timer t(100);
+			while (1)
+			{
+				if (env.in_progress()) {
+					if (env.get_current_control() == cc) {
+						print("null_ai: ready\n");
+						env.ready();
+					}
 				}
-			}			
-			return true;
+				
+				if (env.get_state() == col::EnvStateExit) {
+					break;
+				}
+							
+				t.wait();
+			}
 		}
 
 

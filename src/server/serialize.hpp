@@ -178,10 +178,10 @@ namespace col {
 				t.what = nullptr;
 				break;
 			case ClassBuildType:
-				t.what = &env.get<BuildType>(id);
+				t.what = &env.get_buildtype(id);
 				break;
 			case ClassUnitType:
-				t.what = &env.get<UnitType>(id);
+				t.what = &env.get_buildtype(id);
 				break;
 			default:
 				assert(0);
@@ -342,7 +342,7 @@ namespace col {
 	void read_unit(A & ar, col::Env & env, col::Unit & unit) {
 
 		read(ar, unit.id);
-		unit.type = & env.get<UnitType> ( read<col::UnitType::Id> (ar) );
+		unit.type = & env.get_unittype( read<col::UnitType::Id> (ar) );
 		read(ar, unit.control);
 		read(ar, unit.time_left);
 		read(ar, unit.prof_dir);
@@ -594,7 +594,7 @@ namespace col {
 					auto build_type_id = read<BuildType::Id>(ar);
 					//cerr << "load building type id = " << build_type_id << endl;
 
-					b.type = & env.get<BuildType>( build_type_id );
+					b.type = & env.get_buildtype( build_type_id );
 					read(ar, b.free_slots);
 
 					// task

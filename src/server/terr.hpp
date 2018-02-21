@@ -111,10 +111,10 @@ namespace col{
 		bool leave(bool const& exec=1) {
 			if (!has_phys(PhysWorker)) {
 				if (!exec) {
-					throw Error("no worker to leave this place");
+					ext::fail("no worker to leave this place\n");
 				}
-				else {
-					throw Error("no worker to leave this place");
+				else {					
+					ext::fail("no worker to leave this place\n");
 				}
 			}
 			if (exec) {

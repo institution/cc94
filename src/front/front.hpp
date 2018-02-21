@@ -6,11 +6,14 @@
 #include "color.hpp"
 #include "input.hpp"
 #include "image.hpp"
+#include "my.hpp"
 
 namespace front {
 
 	using namespace front::Color;
 	
+	using TexUnit = GLint;
+
 	
 	struct Texture 
 	{
@@ -43,13 +46,18 @@ namespace front {
 			}
 		}
 
-		v2s get_dim() const { return dim; }
+		//v2s dim() const { return dim; }
 	};
 	
 	
 
-	struct Front {
-		
+	Texture make_texture(GLenum format, uint8_t const* data, v2s dim);
+	Texture make_texture(ImageRGBA8 const& img);
+	Texture make_texture(ImageR8 const& img);
+
+	
+	struct Front
+	{		
 		// window & context
 		SDL_Window * win{nullptr};
 		SDL_GLContext ctx;
@@ -63,79 +71,81 @@ namespace front {
 		GLuint prog[1];
 
 		glm::mat4 proj;
-		Texture white1x1;
-		Texture line_seg;
 		
 		// misc
 		bool verbose{false};
 		bool done{false};
 
-		// public interface
+
 		Front() = default;
-		~Front();
-		void init(std::string const& title, v2s dim);			
-		
-		void flip() { SDL_GL_SwapWindow(win); }
-
-		v2s get_ctx_dim() const { return ctx_dim; }
-		
-		v2s get_win_dim() const { 
-			int w,h;
-			SDL_GetWindowSize(win, &w, &h);
-			return v2s(w,h);
-		}
-		
-
-
-		void set_ctx_dim(v2s);
-		void set_ctx_dim();
-		
-
-
-		bool pool_event(SDL_Event & event);
-
-		Texture make_texture(GLenum format, uint8_t const* data, v2s dim);
-		Texture make_texture(ImageRGBA8 const& img);
-		Texture make_texture(ImageA8 const& img);
-
-		void render_texture(Texture const& tex, v2s pos);
-		void render_texture(Texture const& tex, v2s pos, b2s src);
-		void render_aamask(Texture const& tex, v2s pos, b2s src, RGBA8 color);
-		void render_fill(b2s dst, RGBA8 color);
-		void render_aaline_test(v2s a, v2s b, RGBA8 c, int8_t thick);
-		
-		Tick get_ticks();		
-		inline uint8_t const* get_keyboard_state();
-
-		void stop() { done = true; }
-
-		void clear();
-
-	private:
-		//void set_blend_font(RGBA8 c);
-		//void set_blend_fill(RGBA8 c);
-		//void set_blend_norm();
-		
-		void render_call(int mode, GLint tex_unit, RGBA8 fg, b2s dst, v2f uva, v2f uvb);
+		Front(Front const&) = delete;
 
 		void create_SDL(std::string const& title, v2s dim);
 		void destroy_SDL();
 
 		void create_GL();
 		void destroy_GL();
+		
+		void create(std::string const& title, v2s dim)
+		{
+			create_SDL(title, dim);
+			create_GL();
+		}
+
+		void destroy() {
+			if (win) {				
+				destroy_GL();
+				destroy_SDL();
+			}
+		}
+
+		void resize_view(v2s win_dim, v2s ctx_dim);
+		
+		v2s get_real_win_dim() const;
+
+		void stop() {
+			done = true;
+		}
+
+		void clear() {
+			glClear(GL_COLOR_BUFFER_BIT);
+			CHECK_GL();
+		}
+
+		void flip() {
+			SDL_GL_SwapWindow(win);
+		}
+
 	};
 
-	inline Front::~Front() {
-		if (win) {
-			destroy_GL();
-			destroy_SDL();
-		}
+
+	int const
+		MODE_DEBUG = 0,
+		MODE_TEXTURE = 1,
+		MODE_AAMASK = 2,
+		MODE_FILL = 3,
+		MODE_REPLACE = 4;
+
+	struct RenderCall
+	{
+		Front * win{nullptr};
+		int mode;
+		TexUnit texu{0};
+		RGBA8 color;
+		b2s dst;
+		aabb2f uv0;
+		aabb2f uv1;
+
+		void operator()();
+	};
+
+	inline void bind_texture(TexUnit texu, Texture const& tex) {
+		myBindTexture(texu, tex.id);
 	}
 
-	inline void Front::init(std::string const& title, v2s dim) {
-		create_SDL(title, dim);
-		create_GL();		
-	}
+
+		
+	
 
 
 	inline Tick get_ticks() {
@@ -145,15 +155,14 @@ namespace front {
 			return SDL_GetTicks();
 		#endif
 	}
-	
-	inline Tick Front::get_ticks() {
-		return front::get_ticks();
-	}
+
 	
 
-	inline bool Front::pool_event(SDL_Event & event) {
-		return SDL_PollEvent(&event);
-	}
+
+
+
+	// --
+	inline uint8_t const* get_keyboard_state();
 
 
 

@@ -1,8 +1,26 @@
 #pragma once
-#include "text.hpp"
+#include "render_func.hpp"
 #include "console.hpp"
 
 namespace col{
+
+	
+	struct Style
+	{
+		RGBA8 fg; // foregorund
+		RGBA8 bg; // background
+		RGBA8 hl; // highlight (highlighted font)
+		RGBA8 sh; // shaded (disabled font)
+
+		Style(RGBA8 fg, RGBA8 bg): fg(fg), bg(bg), hl(RGBA8(0,0,0,0)), sh(RGBA8(0,0,0,0)) {}
+		Style(RGBA8 fg, RGBA8 bg, RGBA8 hl, RGBA8 sh): fg(fg), bg(bg), hl(hl), sh(sh) {}
+		
+		bool has_fg() const { return fg.a != 0; }
+		bool has_bg() const { return bg.a != 0; }
+		bool has_hl() const { return hl.a != 0; }
+		bool has_sh() const { return sh.a != 0; }
+	};
+
 	
 	struct TextRend2
 	{
@@ -23,7 +41,7 @@ namespace col{
 		
 		v2s get_pos() const { return cpos; }
 		
-		int16_t get_height() const { return font.get_height(); }
+		int16_t get_height() const { return font.height; }
 		
 		v2s get_ddmenu_pos() const {
 			// drop down menu position

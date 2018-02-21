@@ -1,0 +1,8 @@
+
+conf default
+	tile_dim 48
+	line_thickness 2
+	scale 3
+	hires 1
+
+	

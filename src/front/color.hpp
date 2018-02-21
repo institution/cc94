@@ -88,31 +88,31 @@ namespace front {
 		}
 		
 		
-		// A8 ------------------------------------------------------------------
-		struct A8 {
-			uint8_t a;
+		// R8 ------------------------------------------------------------------
+		struct R8 {
+			uint8_t r;
 						
-			A8() = default;
-			A8(A8 const&) = default;
-			A8(uint8_t a): a(a) {}
+			R8() = default;
+			R8(R8 const&) = default;
+			R8(uint8_t r): r(r) {}
 		};
 
-		inline std::ostream & operator<<(std::ostream & o, A8 const& c) {
-			o << format("(0 0 0 %||)", uint(c.a));
+		inline std::ostream & operator<<(std::ostream & o, R8 const& c) {
+			o << format("(0 0 0 %||)", uint(c.r));
 			return o;
 		}
 		
-		// Af ------------------------------------------------------------------
-		struct Af {
-			float_t a;
+		// Rf ------------------------------------------------------------------
+		struct Rf {
+			float_t r;
 						
-			Af() = default;
-			Af(Af const&) = default;
-			Af(float_t a): a(a) {}
+			Rf() = default;
+			Rf(Rf const&) = default;
+			Rf(float_t r): r(r) {}
 		};
 
-		inline std::ostream & operator<<(std::ostream & o, Af const& c) {
-			o << "(0.0 0.0 0.0 " << c.a << ')';
+		inline std::ostream & operator<<(std::ostream & o, Rf const& c) {
+			o << "(0.0 0.0 0.0 " << c.r << ')';
 			return o;
 		}
 				

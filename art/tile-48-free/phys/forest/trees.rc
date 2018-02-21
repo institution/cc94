@@ -1,0 +1,6 @@
+image-path "trees.png"
+
+sprite map-tree
+pos 0 0
+dim 27 29
+shift 13 29

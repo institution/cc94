@@ -4,7 +4,8 @@ namespace col{
 
 	Layout ly;
 
-	void Layout::recalc(int16_t w, int16_t h) {
+	void Layout::recalc(int16_t w, int16_t h)
+	{
 		scale = conf.scale;
 		
 		pan_width = S(79);     // right panel

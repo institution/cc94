@@ -8,9 +8,8 @@ void check_gl(char const* fname, int line) {
 		do {
 			print(std::cerr, "ERROR: %||:%||: %|| (errno %||)\n", fname, line, get_gl_err_msg(x), x);
 			x = glGetError();
-		} while (x != GL_NO_ERROR);		
-		assert(0);
-		std::exit(-1);
+		} while (x != GL_NO_ERROR);
+		ext::fail("");		
 	}
 }
 
@@ -139,12 +138,15 @@ GLuint myGetAttribLocation(GLuint prog, char const* name) {
 	return loc;
 }
 
-GLuint myGetUniformLocation(GLuint prog, GLchar const* name) {
+GLuint myGetUniformLocation(GLuint prog, GLchar const* name)
+{
+	//print("INFO: myGetUniformLocation %|| %||\n", prog, name);
 	auto loc = glGetUniformLocation(prog, name);
-	if (loc == -1) {
-		ext::fail("Error: GL: no such uniform: %||\n", name);
-	}
 	CHECK_GL();
+	if (loc == -1) {
+		ext::fail("ERROR: GL: uniform not found: %||\n", name);
+		//print("WARNING: GL: uniform not found: %||\n", name);
+	}	
 	return loc;
 }
 
@@ -169,10 +171,9 @@ void myUniform4f(GLuint program, GLchar const* name, GLfloat v0, GLfloat v1, GLf
 }
 
 
-void myBindTexture(GLenum texture_unit, GLint texture_id)
+void myBindTexture(GLuint texture_unit, GLint texture_id)
 {
-	//GL_TEXTURE0
-	glActiveTexture(texture_unit);
+	glActiveTexture(GL_TEXTURE0 + texture_unit);
 	glBindTexture(GL_TEXTURE_2D, texture_id);
 	CHECK_GL();
 }

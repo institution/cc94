@@ -22,23 +22,13 @@ namespace col {
 	Style const StyleMenu(ColorFont, ColorNone, ColorFontSelected, ColorFontDisabled);
 
 
-
-
-
-	/// Return dim of texture 't
-	v2s get_dim(Texture const& t) { return t.dim; }
-
-
-
 	bool const VERBOSE = 1;
 
 
 
 
-
-
-
-	ResNum get_prof_icon_id(Prof prof, ResNum def) {
+	ResId get_prof_icon_id(Prof prof, ResId def)
+	{
 		switch (prof) {
 			case ProfFarmer: return 82;
 			case ProfFisherman: return 90;
@@ -66,8 +56,8 @@ namespace col {
 	}
 
 
-	ResNum get_icon_id(Unit const& unit) {
-		ResNum const IconErrorId = 56;
+	ResId get_icon_id(Unit const& unit) {
+		ResId const IconErrorId = 56;
 
 		auto prof = unit.get_prof();
 
@@ -88,49 +78,79 @@ namespace col {
 	}
 
 
-
-	void render_fill(Front & fr,
-			v2s pos,
-			v2s dim,
-			RGBA8 c
-	) {
-		fr.render_fill({pos, dim}, c);
-	}
-
-	void render_inline(Front & win, v2s pos, v2s dim, RGBA8 c, int8_t t) {
-		/* Draw inside border of pos,dim box; t -- thickness
-		*/
-
-		auto wh = dim - v2s(t,t);
+	/// Render border inside box
+	/// t -- thickness
+	void render_inline(b2s box, RGBA8 color, int8_t t)
+	{
+		auto wh = box.dim - v2s(t,t);
 		auto w = wh[0];
 		auto h = wh[1];
 
 		// top
-		render_fill(win, pos + v2s{0,0}, {w,t}, c);
+		render_fill({box.pos + v2s{0,0}, {w,t}}, color);
 		// right
-		render_fill(win, pos + v2s{w,0}, {t,h}, c);
+		render_fill({box.pos + v2s{w,0}, {t,h}}, color);
 		// bottom
-		render_fill(win, pos + v2s{t,h}, {w,t}, c);
+		render_fill({box.pos + v2s{t,h}, {w,t}}, color);
 		// left
-		render_fill(win, pos + v2s{0,t}, {t,h}, c);
+		render_fill({box.pos + v2s{0,t}, {t,h}}, color);
 	}
 
-	void render_inline(Front & win, b2s box, RGBA8 c, int8_t t) {
-		render_inline(win, box.pos, box.dim, c, t);
-	}
-
-	void render_outline(Front &win, v2s pos, v2s dim, RGBA8 c, int8_t t) {
+	void render_outline(b2s box, RGBA8 color, int8_t t) {
 		/* Draw 1px thick outline border of pos,dim box
 		*/
-		render_inline(win, pos - v2s(t,t), dim + v2s(t,t) * _2, c, t);
+		render_inline({box.pos - v2s(t,t), box.dim + v2s(t,t) * _2}, color, t);
 	}
 
-	void render_outline(Front &win, b2s box, RGBA8 c, int8_t t) {
-		render_outline(win, box.pos, box.dim, c, t);
+	Sprite make_subsprite(Sprite const& o, b2s sub)
+	{
+		auto u = ext::vdiv(o.box.dim(), v2f(o.dim));
+		Sprite s;
+		s.dim = sub.dim;
+		s.box.pos = o.box.pos + v2s(ext::vmul(u, v2f(sub.pos)));
+		s.box.end = s.box.pos + v2s(ext::vmul(u, v2f(sub.dim)));
+		return s;
 	}
 
-	inline
-	bool is_water(Terr const& t) {
+	/// Make quarter tile
+	Sprite make_subtile(int8_t sub_id, ResId terrain_id)
+	{
+		auto const& o = res(terrain_id);
+		
+		auto h = (o.box.end[0] - o.box.pos[0]) / 2.0f;
+		auto x = o.box.pos[0];
+		auto y = o.box.pos[1];
+
+		// subtile numbering: 0=NW, 1=NE, 2=SE, 3=SW
+		
+		v2f p;
+		switch (sub_id)
+		{
+		case 0:			
+			p = v2f(x,y);
+			break;
+		case 1:
+			p = v2f(x+h,y);
+			break;
+		case 2:
+			p = v2f(x+h,y+h);
+			break;
+		case 3:
+			p = v2f(x,y+h);			
+			break;
+		default:
+			ext::fail("invalid subtile_id\n");
+		}
+
+		Sprite s;		
+		s.dim = v2s(o.dim[0]/2, o.dim[1]/2); // pixel units
+		s.box.pos = p; // relative float units
+		s.box.end = p + v2f(h,h); // relative float units
+		return s;
+	}
+
+
+	inline bool is_water(Terr const& t) {
 		return t.alt == AltSea;
 	}
 
@@ -146,107 +166,76 @@ namespace col {
 		return ColorBrown;
 	}
 
-	void render_terr(Front &win,
+	void render_terr(
 			v2s pos,
 			Env const& env,
 			Terr const& terr);
 
 
 
-	void render_shield(Front &win, v2s pos, RGBA8 const& color, char letter) {
-
+	void render_shield(v2s pos, RGBA8 color, char letter)
+	{
 		auto inner_pos = pos + v2s(1,1) * ly.line;
 		auto inner_dim = v2s(ly.S(5), ly.font_tiny);
 
-		render_outline(win,
-			inner_pos,
-			inner_dim,
-			{0,0,0, 255},
+		render_outline(
+			{inner_pos, inner_dim},
+			{0, 0, 0, 255},
 			ly.line
 		);
 
-		render_fill(win,
-			inner_pos,
-			inner_dim,
+		render_fill(
+			{inner_pos, inner_dim},
 			color
 		);
 
-		render_text(win,
+		render_text(
 			pos + v2s(1,1) * ly.line,
-			FontTiny, ColorBlack,
+			font_tiny(), ColorBlack,
 			string() + letter
 		);
 	}
 
 
-	void render_pixel(Front &win, v2s pix, const RGBA8 &colr) {
-		render_fill(win,
-			pix,
-			v2s(ly.S(1), ly.S(1)),
-			colr
+	void render_pixel(v2s pos, RGBA8 color)
+	{
+		render_fill(
+			{pos, v2s(ly.S(1), ly.S(1))},
+			color
 		);
 	}
 
-
-
-	void render_sprite(Front & win, v2s pix, Texture const& img) {
-		win.render_texture(img, pix);
-	}
-
-	void render_sprite(Front & win,
-		b2s box, v2f const& align,
-		Texture const& img
-	) {
-		win.render_texture(img, calc_align(box, get_dim(img), align));
-	}
-
-	void render_sprite(Front & win,
-		v2s pos, v2s dim, v2f const& align,
-		Texture const& img
-	) {
-		render_sprite(win, {pos, dim}, align, img);
+	
+	void render_sprite(b2s box, v2f const& align, Sprite const& spr)
+	{
+		render_sprite(calc_align(box, spr.dim, align), spr);
 	}
 
 
 
-	void render_area(
-		Front & win,
-		v2s area_pos,
-		v2s area_dim,
-		Texture const& tex
-	);
-
-
-
-
-	void render_area(Front & win, v2s pos, v2s dim, RGBA8 const& color) {
-		render_fill(win, pos, dim, color);
-	}
-
-
-
-
-	void render_area(
-		Front & win,
-		v2s area_pos,
-		v2s area_dim,
-		front::Texture const& tex
-	) {
-		auto tile_dim = tex.get_dim();
-		auto area_end = area_pos + area_dim;
+	void render_area(b2s box, Sprite const& spr)
+	{
+		auto tile_dim = spr.dim;
+		auto area_pos = box.pos;
+		auto area_dim = box.dim;
+		auto area_end = box.end();
 
 		int16_t ei,ej;
+
+		assert(tile_dim[0] > 0);
+		assert(tile_dim[1] > 0);
 
 		// center
 		{
 			int16_t i,j;
 			j = area_pos[1];
-			while (j < area_end[1] - tile_dim[1]) {
+			while (j < area_end[1] - tile_dim[1])
+			{
 				i = area_pos[0];
-				while (i < area_end[0] - tile_dim[0]) {
-
-					win.render_texture(tex, {i,j});
-
+				while (i < area_end[0] - tile_dim[0])
+				{
+					//print("render_sprite i j %|| %|| d %|| %||\n", i, j, tile_dim[0], tile_dim[1]);
+					render_sprite({i,j}, spr);
 					i += tile_dim[0];
 				}
 				j += tile_dim[1];
@@ -263,7 +252,7 @@ namespace col {
 
 			int16_t i = area_pos[0], j = ej;
 			while (i < area_end[0] - tile_dim[0]) {
-				win.render_texture(tex, {i, j}, src_box);
+				render_sprite({i, j}, make_subsprite(spr, src_box));
 				i += tile_dim[0];
 			}
 			ei = i;
@@ -274,7 +263,7 @@ namespace col {
 			auto src_box = b2s({0, 0}, {int16_t(area_end[0] - ei), tile_dim[1]});
 			int16_t i = ei, j = area_pos[1];
 			while (j < area_end[1] - tile_dim[1]) {
-				win.render_texture(tex, {i, j}, src_box);
+				render_sprite({i, j}, make_subsprite(spr, src_box));
 				j += tile_dim[1];
 			}
 			ej = j;
@@ -284,7 +273,7 @@ namespace col {
 		{
 			auto src_box = b2s({0, 0}, {int16_t(area_end[0] - ei), int16_t(area_end[1] - ej)});
 			int16_t i = ei, j = ej;
-			win.render_texture(tex, {i, j}, src_box);
+			render_sprite({i, j}, make_subsprite(spr, src_box));
 		}
 
 	}
@@ -300,7 +289,8 @@ namespace col {
 		g_cursor_tex = tex;
 	}*/
 
-	struct Col {
+	struct Col
+	{
 		float align{0};    // 0 - left, 1 - right, 0.5 - center
 		int width{0};
 		string name{""};
@@ -494,12 +484,12 @@ namespace col {
 
 		PixFont const& get_font() const {
 			//assert(font);
-			return FontTiny;
+			return font_tiny();
 		}
 
 		v2s get_dim() override
 		{
-			dim = v2s(2*S(2), 2*S(2)) + v2s(maxlen * get_font().get_width(), get_font().get_height());
+			dim = v2s(2*S(2), 2*S(2)) + v2s(maxlen * get_font().get_width(), get_font().height);
 			return dim;
 		}
 
@@ -521,7 +511,7 @@ namespace col {
 
 			auto t = render_text(win,
 				inner.pos, inner.dim, {0.0f, 0.0f},
-				FontTiny, ColorFont,
+				font_tiny(), ColorFont,
 				text
 			);
 
@@ -657,6 +647,7 @@ namespace col {
 
 
 
+
 	struct Select: IWidget {
 
 		v2s pos;
@@ -712,7 +703,7 @@ namespace col {
 		{
 			for (size_t i = 0; i < cols.size(); ++i)
 			{
-				auto w = get_text_dim(FontTiny, text.at(i)) [0];
+				auto w = get_text_dim(font_tiny(), text.at(i)) [0];
 				if (w > cols.at(i).width) {
 					cols.at(i).width = w;
 				}
@@ -819,7 +810,7 @@ namespace col {
 		}
 
 		v2s get_row_dim() const {
-			return {calc_width(), FontTiny.get_height()};
+			return {calc_width(), font_tiny().height};
 		}
 
 
@@ -876,7 +867,7 @@ namespace col {
 				return 1;
 			}
 
-			row_pos[1] += FontTiny.get_height() + ly.sep[1];
+			row_pos[1] += font_tiny().height + ly.sep[1];
 		}
 
 		// click anywhere -- cancel
@@ -902,14 +893,12 @@ namespace col {
 
 	void Select::render(Console & con)
 	{
-		auto & win = con.win;
-
 		auto line_height = ly.font_tiny;
 		auto sep = ly.sep;   // cell sep
 
 		// background & outline border
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
-		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
+		render_area({pos, dim}, res(WOODTILE));
+		render_outline({pos, dim}, ColorDarkBrown, ly.line);
 
 		auto row_dim = get_row_dim(); // dim[0] - sep[0]*2
 		auto row_pos = pos + sep;
@@ -921,9 +910,7 @@ namespace col {
 			auto cpos = row_pos;
 
 			if (j == cursor) {
-				render_fill(win,
-					row_pos, row_dim, ColorSelectedBG
-				);
+				render_fill({row_pos, row_dim}, ColorSelectedBG);
 			}
 
 			// left click on row -- move cursor
@@ -960,9 +947,8 @@ namespace col {
 
 				auto cdim = v2s(col.width, line_height);
 
-				render_text(win,
-					cpos, cdim, v2f(col.align, 0.5),
-					FontTiny, fg, ColorNone,
+				render_text(cpos, cdim, v2f(col.align, 0.5),
+					font_tiny(), fg, ColorNone,
 					cell					
 				);
 
@@ -1031,8 +1017,8 @@ namespace col {
 		con.on({EventPress, KeyEsc}, oncancel);
 
 		// background & outline border
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
-		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
+		render_area({pos, dim}, res(WOODTILE));
+		render_outline({pos, dim}, ColorDarkBrown, ly.line);
 
 		// click on dialog -- do nothing
 		con.on({EventPress, pos, dim});
@@ -1062,9 +1048,7 @@ namespace col {
 			auto fgind = ColorFont;
 
 			if (key == selected) {
-				render_fill(win,
-					row_pos, row_dim, ColorSelectedBG
-				);
+				render_fill({row_pos, row_dim}, ColorSelectedBG);
 			}
 
 			if (key == selected) {
@@ -1083,9 +1067,9 @@ namespace col {
 
 				auto cdim = v2s(col.width, line_height);
 
-				render_text(win,
+				render_text(
 					cpos, cdim, v2f(col.align, 0.5),
-					FontTiny, fgind, ColorNone,
+					font_tiny(), fgind, ColorNone,
 					cell
 				);
 
@@ -1118,7 +1102,7 @@ namespace col {
 		con.on(EventPress, oncancel);
 
 		// background
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
+		render_area(win, pos, dim, res(WOODTILE));
 		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
 
 
@@ -1148,7 +1132,7 @@ namespace col {
 			// label
 			render_text(win,
 				p, d, v2f(0.5, 0.5),
-				FontTiny, fg, ColorNone,
+				font_tiny(), fg, ColorNone,
 				kvs[i].second
 			);
 
@@ -1175,7 +1159,7 @@ namespace col {
 		auto text_dim = v2s(ly.S(4) * 3 + ly.S(2), dim[1]);
 		auto tile_dim = v2s(item_dim[0] + text_dim[0], dim[1]);
 
-		auto & box_tex = res(win, ICON, 123);
+		auto & box_tex = res(ICON, 123);
 
 		// empty space
 		{
@@ -1183,17 +1167,17 @@ namespace col {
 			if (num) {
 
 				// frame
-				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
-				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
+				render_fill({cpos, tile_dim}, ColorDarkWoodBrown);
+				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line);
 
-				render_sprite(win,
-					cpos, item_dim, v2f(0.5, 0.5),
+				render_sprite(
+					{cpos, item_dim}, v2f(0.5, 0.5),
 					box_tex
 				);
 
-				render_text(win,
+				render_text(
 					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColorWhite, ColorNone,
+					font_tiny(), ColorWhite, ColorNone,
 					to_string(num)
 				);
 
@@ -1207,31 +1191,24 @@ namespace col {
 
 			if (num) {
 				// frame
-				render_fill(win, cpos, tile_dim, ColorDarkWoodBrown);
-				render_inline(win, cpos, tile_dim, ColorWoodBrown, ly.line);
+				render_fill({cpos, tile_dim}, ColorDarkWoodBrown);
+				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line);
 
 				// left click on cargo -- start drag cargo unload
 				con.on({EventPress, KeyLMB, cpos, tile_dim},
 					[item,num,&con](){ con.drag_cargo(item, num, -1); }
 				);
 
-				render_sprite(win,
-					cpos, item_dim, v2f(0.5, 0.5),
-					box_tex
-				);
+				render_sprite({cpos, item_dim}, v2f(0.5, 0.5), box_tex);
 
 				// item icon
-				auto & item_tex = res(win, ICON, get_item_icon_id(item));
+				auto & item_tex = res(ICON, get_item_icon_id(item));
 
-				render_sprite(win,
-					cpos, item_dim, v2f(0.5, 0.5),
-					item_tex
-				);
+				render_sprite({cpos, item_dim}, v2f(0.5, 0.5), item_tex);
 
 				// amount
-				render_text(win,
-					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					FontTiny, ColorWhite, ColorNone,
+				render_text(cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
+					font_tiny(), ColorWhite, ColorNone,
 					to_string(num)
 				);
 
@@ -1302,8 +1279,8 @@ namespace col {
 		});
 
 		// construct building
-		for (auto& p: *env.bts) {
-			auto & mk = p.second;
+		for (auto& mk: *env.bts)
+		{
 			if (env.can_make(factory, mk) and colony.select_place_for(mk)) {
 
 				if (factory.task.what == &mk) {
@@ -1319,8 +1296,7 @@ namespace col {
 		}
 
 		// construct unit
-		for (auto& p: *env.uts) {
-			auto & mk = p.second;
+		for (auto & mk: *env.uts) {
 			if (env.can_make(factory, mk)) {
 
 				if (factory.task.what == &mk) {
@@ -1362,13 +1338,13 @@ namespace col {
 		logic::fill_colony_regs(env, terr, prod_reg, cons_reg);
 
 		// render supply nums bg
-		render_area(win,
-			ly.city_supply_nums.pos, ly.city_supply_nums.dim,
+		render_fill(
+			{ly.city_supply_nums.pos, ly.city_supply_nums.dim},
 			{76,100,172,255}
 		);
 
 		// render storage area
-		render_area(win, pos, dim, {76,100,172,255});
+		render_fill({pos, dim}, {76,100,172,255});
 
 		if (con.drag_item) {
 			// left release city store -- unload cargo
@@ -1378,7 +1354,7 @@ namespace col {
 		}
 
 		int tile_width = ly.S(16);
-		int line_height = FontTiny.get_height();
+		int line_height = font_tiny().height;
 
 		auto cpos = pos;
 		auto cell_dim = v2s(tile_width, line_height);
@@ -1394,8 +1370,8 @@ namespace col {
 			auto tile_dim = v2s(tile_width, ly.S(12));
 
 			// render item
-			render_sprite(win, {tile_pos, tile_dim}, {0.5f, 0.5f},
-				res(win, ICON, get_item_icon_id(item))
+			render_sprite({tile_pos, tile_dim}, {0.5f, 0.5f},
+				res(ICON, get_item_icon_id(item))
 			);
 
 			// left click on item -- start drag cargo load
@@ -1410,16 +1386,16 @@ namespace col {
 
 				auto proj = supp_num - cons_num + prod_num;
 				if (proj < 0) {
-					render_text(win,
+					render_text(
 						pos, cell_dim, v2f(0.5f, 0),
-						FontTiny, ColorYellow, ColorNone,
+						font_tiny(), ColorYellow, ColorNone,
 						format("%||", supp_num)
 					);
 				}
 				else {
-					render_text(win,
+					render_text(
 						pos, cell_dim, v2f(0.5f, 0),
-						FontTiny, ColorWhite, ColorNone,
+						font_tiny(), ColorWhite, ColorNone,
 						std::to_string(supp_num)
 					);
 				}
@@ -1427,34 +1403,34 @@ namespace col {
 
 			// render prod num
 			if (prod_num) {
-				render_text(win,
+				render_text(
 					cpos + up * _3, cell_dim, v2f(1, 0),
-					FontTiny, ColorWhite, ColorNone,
+					font_tiny(), ColorWhite, ColorNone,
 					format("+%||", prod_num)
 				);
 			}
 
 			// render cons num
 			if (cons_num) {
-				render_text(win,
+				render_text(
 					cpos + up * _2, cell_dim, v2f(1, 0),
-					FontTiny, ColorWhite, ColorNone,
+					font_tiny(), ColorWhite, ColorNone,
 					format("-%||", cons_num)
 				);
 			}
 
 			// render delta
 			if (delta > 0) {
-				render_text(win,
+				render_text(
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColorGreen, ColorNone,
+					font_tiny(), ColorGreen, ColorNone,
 					format("+%||", delta)
 				);
 			}
 			else if (delta < 0) {
-				render_text(win,
+				render_text(
 					cpos + up, cell_dim, v2f(1, 0),
-					FontTiny, ColorYellow, ColorNone,
+					font_tiny(), ColorYellow, ColorNone,
 					format("%||", delta)
 				);
 			}
@@ -1467,36 +1443,26 @@ namespace col {
 
 
 
+	/// Render unit icon with terrain icon in background
 	void render_unit_tile(Front & win, b2s box, Unit const& unit)
 	{
-		/// Render unit icon with terrain icon in background
-
-		auto & unit_tex = res(win, ICON, get_icon_id(unit));
-
-		// terrain fragments
-		auto & bgs_tex = res(win, ZZ, 5);
-
-		// determine terrain icon: land or water
-		b2s src_box;
-		if (unit.get_travel() == TravelSea) {
-			// water src box
-			src_box = b2s({0, 0}, {16, 3}) * ly.scale;
-		}
-		else {
-			// land src box
-			src_box = b2s({0, 3}, {16, 3}) * ly.scale;
-		}
-		// TODO: transported unit, wooden tex
-	
+		auto & unit_tex = res(ICON, get_icon_id(unit));
 
 		// render terrain icon
-		win.render_texture(bgs_tex,
-			calc_align(box, src_box.dim, {0.5f, 1.0f}),
-			src_box
-		);
-
+		if (unit.get_travel() == TravelSea) {
+			// water
+			auto const& s = res(ZZ, 9);
+			render_sprite(calc_align(box, s.dim, {0.5f, 1.0f}), s);
+		}
+		else {
+			// grass
+			auto const& s = res(ZZ, 10);
+			render_sprite(calc_align(box, s.dim, {0.5f, 1.0f}), s);
+		}
+		// TODO: transported unit, wooden tex
+		
 		// render unit
-		render_sprite(win, box, {0.5f, 0.5f}, unit_tex);
+		render_sprite(box, {0.5f, 0.5f}, unit_tex);
 	}
 
 	struct CityView: IWidget
@@ -1515,8 +1481,6 @@ namespace col {
 
 	void CityView::render(Con & con)
 	{
-
-		auto & win = con.win;
 		auto const& env = con.env;
 
 
@@ -1539,8 +1503,8 @@ namespace col {
 
 
 		// render area
-		auto & sand_tex = res(win, ARCH, 1);
-		render_area(win, ly.city_builds.pos, ly.city_builds.dim, sand_tex);
+		auto & sand_tex = res(SANDTILE);
+		render_area(ly.city_builds, sand_tex);
 
 		auto & pixs = ly.pixs;
 		auto & dims = ly.dims;
@@ -1565,11 +1529,11 @@ namespace col {
 
 				auto & build = colony.builds.at(i);
 
-				auto& build_tex = res(win, BUILD, build.get_type_id());
+				auto const& build_tex = res(BUILDING, build.get_type_id());
 				auto build_pos = ly.city_builds.pos + pixs.at(i);
-				auto build_dim = ::col::get_dim(build_tex);
+				auto build_dim = build_tex.dim;
 
-				render_sprite(win, build_pos, build_tex);
+				render_sprite(build_pos, build_tex);
 
 				int nominal_prod = logic::get_nominal_prod(env, build, build.get_proditem());
 
@@ -1599,28 +1563,28 @@ namespace col {
 					}
 
 					if (blink) {
-						render_text(win,
+						render_text(
 							button_pos, button_dim, {0.5,0.5},
-							FontTiny, ColorGray, ColorWhite,
+							font_tiny(), ColorGray, ColorWhite,
 							label
 						);
 					}
 					else {
-						render_text(win,
+						render_text(
 							button_pos, button_dim, {0.5,0.5},
-							FontTiny, ColorWhite, ColorNone,
+							font_tiny(), ColorWhite, ColorNone,
 							label
 						);
 					}
 
-					render_outline(win,
-						button_pos, button_dim, ColorWhite, ly.S(1)
+					render_outline(
+						{button_pos, button_dim}, ColorWhite, ly.S(1)
 					);
 
 					// progress ind
-					render_text(win,
+					render_text(
 						build_pos, build_dim, {1, 0},
-						FontTiny, ColorWhite, ColorBlack,
+						font_tiny(), ColorWhite, ColorBlack,
 						progress
 					);
 
@@ -1644,9 +1608,9 @@ namespace col {
 				// render build name
 				if (con.sel_colony_slot_id == i) {
 
-					render_text(win,
+					render_text(
 						build_pos, build_dim, {0.5, 0.5},
-						FontTiny, ColorWhite, ColorBlack,
+						font_tiny(), ColorWhite, ColorBlack,
 						build.get_name()
 					);
 
@@ -1663,20 +1627,20 @@ namespace col {
 
 				// number of produced items
 				if (int y = nominal_prod) {
-					auto& item_tex = res(win, ICON, get_item_icon_id(build.get_proditem()));
-					auto item_dim = ::col::get_dim(item_tex);
+					auto const& item_tex = res(ICON, get_item_icon_id(build.get_proditem()));
+					auto item_dim = item_tex.dim;
 
 					// item icon
-					render_sprite(win, build_pos, item_tex);
+					render_sprite(build_pos, item_tex);
 
 					// number
-					render_text(win,
+					render_text(
 
 						build_pos + v2s(item_dim[0], 0),
 						v2s(0, item_dim[1]),
 						{0, 0.5},
 
-						FontTiny, ColorWhite, ColorBlack,
+						font_tiny(), ColorWhite, ColorBlack,
 						std::to_string(y)
 					);
 				}
@@ -1694,29 +1658,29 @@ namespace col {
 				int i = 0;
 				for (auto& unit_ptr: build.units) {
 					auto& unit = *unit_ptr;
-					auto& unit_tex = res(win, ICON, get_icon_id(unit));
+					auto& unit_tex = res(ICON, get_icon_id(unit));
 
 					v2s unit_pos = calc_align(
 						{
 							build_pos + build_dim - units_frame + ly.S(v2s(1,1)), units_frame
 						},
-						::col::get_dim(unit_tex),
+						unit_tex.dim,
 						v2f(float(i+1)/float(n+1), 1)
 					);
 
-					v2s unit_dim = ::col::get_dim(unit_tex);
+					v2s unit_dim = unit_tex.dim;
 
 					v2s sel_pos = unit_pos;
 					v2s sel_dim = unit_dim;
 
 					// render unit on build
-					render_sprite(win, unit_pos, unit_tex);
+					render_sprite(unit_pos, unit_tex);
 
 					auto unit_id = unit.id;
 
 					if (unit_id == con.get_sel_unit_id()) {
 						// render selection frame
-						render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line_sel);
+						render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_sel);
 					}
 					else {
 						// left click on unit -- select this unit
@@ -1743,8 +1707,8 @@ namespace col {
 
 			auto pix = ly.city_fields.pos;
 
-			auto& tex_wood = res(win, WOODTILE, 1);
-			render_area(win, ly.city_fields.pos, ly.city_fields.dim, tex_wood);
+			auto& tex_wood = res(WOODTILE);
+			render_area({ly.city_fields.pos, ly.city_fields.dim}, tex_wood);
 
 			auto city_terr_pos = calc_align({ly.city_fields.pos, ly.city_fields.dim}, ly.terr_dim);
 
@@ -1764,7 +1728,7 @@ namespace col {
 				auto field_dim = ly.terr_dim;
 
 
-				render_terr(win, field_pos, env, field_terr);
+				render_terr(field_pos, env, field_terr);
 
 
 				if (field.units.size() == 0) {
@@ -1790,30 +1754,30 @@ namespace col {
 						v2s sel_pos = field_pos;
 						v2s sel_dim = field_dim;
 
-						auto& unit_tex = res(win, ICON, get_icon_id(unit));
+						auto& unit_tex = res(ICON, get_icon_id(unit));
 
 						// field production
 						if (auto proditem = field.get_proditem()) {
 							// render produced item
-							auto& item_tex = res(win, ICON, get_item_icon_id(proditem));
-							render_sprite(win,
-								calc_align({item_pos, item_dim}, ::col::get_dim(item_tex)),
+							auto& item_tex = res(ICON, get_item_icon_id(proditem));
+							render_sprite(
+								calc_align({item_pos, item_dim}, item_tex.dim),
 								item_tex
 							);
 
 							// render produced item amount
 							auto text = to_string(logic::get_nominal_prod(env, field, field.get_proditem()));
 
-							render_text(win,
+							render_text(
 								item_pos, {0,0}, {0,0},
-								FontTiny, ColorWhite, ColorBlack,
+								font_tiny(), ColorWhite, ColorBlack,
 								text
 							);
 						}
 
 						// render unit on field
-						render_sprite(win,
-							calc_align({unit_pos, unit_dim}, ::col::get_dim(unit_tex)),
+						render_sprite(
+							calc_align({unit_pos, unit_dim}, unit_tex.dim),
 							unit_tex
 						);
 
@@ -1821,7 +1785,7 @@ namespace col {
 
 						if (unit_id == con.get_sel_unit_id()) {
 							// render selection frame
-							render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
+							render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
 
 							// left click on field with selected worker -- switch to next proditem
 							/*con.on(EventPress, KeyLMB, sel_pos, sel_dim,
@@ -1882,14 +1846,14 @@ namespace col {
 		}
 
 		// render city terr units area bg
-		render_fill(win,
-			ly.city_units.pos, ly.city_units.dim,
+		render_fill(
+			{ly.city_units.pos, ly.city_units.dim},
 			ColorSkyBlue
 		);
 
 		// render unit cargo area bg
-		render_fill(win,
-			ly.city_unit_cargo.pos, ly.city_unit_cargo.dim,
+		render_fill(
+			{ly.city_unit_cargo.pos, ly.city_unit_cargo.dim},
 			ColorLightBrown
 		);
 
@@ -1912,7 +1876,7 @@ namespace col {
 
 				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
-					render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
+					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
 
 					// left click on selected unit (on terr) -- show equip select
 					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
@@ -1953,11 +1917,11 @@ namespace col {
 
 
 		// render EXIT button
-		render_area(win, ly.city_exit.pos, ly.city_exit.dim, {140,0,140,255});
+		render_fill({ly.city_exit.pos, ly.city_exit.dim}, {140,0,140,255});
 
-		render_text(win,
+		render_text(
 			ly.city_exit.pos + v2s(1,1),
-			FontTiny, ColorFont,
+			font_tiny(), ColorFont,
 			"RET"
 		);
 
@@ -2100,7 +2064,7 @@ namespace col {
 			auto& unit = *p;
 			if (unit.in_game and !unit.is_working()) {
 
-				auto& unit_tex = res(win, ICON, get_icon_id(unit));
+				auto& unit_tex = res(ICON, get_icon_id(unit));
 				v2s unit_pos = pos + vmul(unit_dim, v2s(i,j));
 
 				v2s sel_pos = unit_pos;
@@ -2115,7 +2079,7 @@ namespace col {
 
 				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
-					render_inline(win, sel_pos, sel_dim, {255,100,100,255}, ly.line);
+					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
 				}
 				else {
 					// left click on unselected unit -- select unit
@@ -2181,7 +2145,8 @@ namespace col {
 
 	using LocalArea = array<Terr const*, 9>;
 
-	array<Terr const*, 9> make_terr_ext(Env const& env, Coords const& p) {
+	array<Terr const*, 9> make_terr_ext(Env const& env, Coords const& p)
+	{
 		array<Terr const*, 9> arr;
 		for (auto dir: AllDirs) {
 			arr[(dir)] = &get_terr_ext(env, p + dir2vec(dir));
@@ -2220,64 +2185,65 @@ namespace col {
 		return t.get_alt() == AltSea;
 	}
 
-	int get_coast_index(uint8_t const& l, Terr const& t0, Terr const& t1, Terr const& t2) {
-		uint8 k =
+
+	// phys coast encoding
+	//
+	// 00000000
+	//       ^^ subtile
+	//
+	// 00000000
+	//    ^^^ clockwise neigh
+	//
+	// subtiles
+	// 01
+	// 32
+	//
+	// example
+	//
+	//  ab
+	// 01c
+	// 32
+	//
+	// so subtile 1 with neighs a=water, b=water, c=~water
+	// is 00011001
+	//
+	// base num for phys coast sprites is 109
+	//
+
+
+	int8_t get_coast_index(uint8_t const& l, Terr const& t0, Terr const& t1, Terr const& t2)
+	{
+		uint8_t k =
 			(!looks_like_sea(t2) << 2) +
 			(!looks_like_sea(t1) << 1) +
 			(!looks_like_sea(t0) << 0);
 		return (k<<2) + l;
 	}
 
-	/*
-	Biome get_render_biome(LocalArea const& loc) {
-		auto b = get(loc, DirS).biome;
-
-		if (is_water_biome(b)) {
-			auto c = get(loc, DirA);
-			if (!is_water_biome(c)) return c;
-
-			c = get(loc, DirX);
-			if (!is_water_biome(c)) return c;
-
-			c = get(loc, DirD);
-			if (!is_water_biome(c)) return c;
-
-			c = get(loc, DirW);
-			if (!is_water_biome(c)) return c;
-		}
-		return b;
-	}*/
-
-	void render_diffuse_from(Front &win,
-		v2s pix,
-		LocalArea const& loc,
-		Dir d,
-		int offset
-	) {
-		auto b = get(loc, d).biome;
-		if (b != BiomeNone) {
-			render_sprite(win, pix, res(win, DIFFUSE, get_biome_icon_id(b) + offset) );
-		}
-		else {
-			// no diffuse from unexplored terrain (TODO: looks bad)
-		}
+	Sprite const& get_coast_subtile(uint8_t const& l, Terr const& t0, Terr const& t1, Terr const& t2)
+	{
+		return res(PHYS, 109 + get_coast_index(l, t0, t1, t2));	
 	}
 
 
+	/// Render diffused biome
+	void render_diffuse(v2s pos, Env const& env, Coords c, ResId blend_id)
+	{
+		if (env.has_coords(c))
+		{
+			auto biome = env.get_terr(c).biome;
+			render_sprite_replace(pos,
+				res(PHYS, blend_id),
+				res(TERRAIN, get_biome_icon_id(biome))
+			);
+		}
+	}
 
-	//int const TextureMountainId;
-	//int const TextureHillId;
-
-
-
-
+	
 
 
 	/// Render terrain: altitude, biome and physical features
-	void render_terr(Front &win,
-			v2s pos,
-			Env const& env,
-			Terr const& terr)
+	void render_terr(v2s pos, Env const& env, Terr const& terr)
 	{
 
 		auto& pix = pos;
@@ -2295,84 +2261,97 @@ namespace col {
 
 
 		// render biome
-		render_sprite(win, pix, res(win, TERR, get_biome_icon_id(biome)));
+		render_sprite(pix, res(TERRAIN, get_biome_icon_id(biome)));
 
 		// render neighs pattern
-		render_diffuse_from(win, pix, loc, DirW, 0);
-		render_diffuse_from(win, pix, loc, DirD, 50);
-		render_diffuse_from(win, pix, loc, DirX, 100);
-		render_diffuse_from(win, pix, loc, DirA, 150);
+		auto N = Coords(0,-1);
+		auto E = Coords(+1,0);
+		auto S = Coords(0,+1);
+		auto W = Coords(-1,0);
 
+		render_diffuse(pix, env, coords + N, 105);
+		render_diffuse(pix, env, coords + E, 106);
+		render_diffuse(pix, env, coords + S, 107);
+		render_diffuse(pix, env, coords + W, 108);
 
-
-
-		// coast
-		// 01
-	    // 32
-
-		if (is_water(terr)) {
+		
+		if (is_water(terr))
+		{
+			// base water tile
 			int base;
-
 			if (terr.has_phys(PhysSeaLane)) {
-				base = 50;
+				base = 12;
 			}
 			else {
-				base = 0;
+				base = 11;
 			}
 
-			uint8 const h = conf.tile_dim >> 1;
+			// half-tile dim
+			int16_t const h = conf.tile_dim >> 1;
 
-			render_sprite(win, pix + v2s(0,0), res(win, COAST,
-				base + get_coast_index(0, get(loc,DirA), get(loc,DirQ), get(loc,DirW))
-			));
+			// one tile is composed of 4 subtiles
+			//
+			// subtile numbering
+			// 01
+			// 32
 
-			render_sprite(win, pix + v2s(h,0), res(win, COAST,
-				base + get_coast_index(1, get(loc,DirW), get(loc,DirE), get(loc,DirD))
-			));
+			render_sprite_replace(pix + v2s(0,0),
+				get_coast_subtile(0, get(loc,DirA), get(loc,DirQ), get(loc,DirW)),
+				make_subtile(0, TERRAIN + base)
+			);
 
-			render_sprite(win, pix + v2s(h,h), res(win, COAST,
-				base + get_coast_index(2, get(loc,DirD), get(loc,DirC), get(loc,DirX))
-			));
+			render_sprite_replace(pix + v2s(h,0),
+				get_coast_subtile(1, get(loc,DirW), get(loc,DirE), get(loc,DirD)),
+				make_subtile(1, TERRAIN + base)
+			);
 
-			render_sprite(win, pix + v2s(0,h), res(win, COAST,
-				base + get_coast_index(3, get(loc,DirX), get(loc,DirZ), get(loc,DirA))
-			));
+			render_sprite_replace(pix + v2s(h,h),
+				get_coast_subtile(2, get(loc,DirD), get(loc,DirC), get(loc,DirX)),
+				make_subtile(2, TERRAIN + base)
+			);
+
+			render_sprite_replace(pix + v2s(0,h),
+				get_coast_subtile(3, get(loc,DirX), get(loc,DirZ), get(loc,DirA)),
+				make_subtile(3, TERRAIN + base)
+			);
 
 		}
 
 
 		// level
 		if (terr.get_alt() == AltMountain) {
-			render_sprite(win, pix, res(win, PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
+			//render_sprite(win, pix, res(PHYS, 33 + get_wxad_index_level(loc, terr.get_alt())));
+			render_sprite(pix, res(PHYS, 33));
 		}
 
 		if (terr.get_alt() == AltHill) {
-			render_sprite(win, pix, res(win, PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
+			// render_sprite(win, pix, res(PHYS, 49 + get_wxad_index_level(loc, terr.get_alt())));
+			render_sprite(pix, res(PHYS, 49));
 		}
 
 		// phys feats & improvments
 		if (terr.has_phys(PhysPlow)) {
-			render_sprite(win, pix, res(win, PHYS, 150));
+			render_sprite(pix, res(PHYS, 150));
 		}
 
 		if (terr.has_phys(PhysForest)) {
-			render_sprite(win, pix, res(win, PHYS, 65 + get_wxad_index(loc, PhysForest)));
+			render_sprite(pix, res(PHYS, 65 + get_wxad_index(loc, PhysForest)));
 		}
 
 		if (terr.has_phys(PhysMajorRiver)) {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
-					render_sprite(win, pix, res(win, PHYS, 1 + ind));
+					render_sprite(pix, res(PHYS, 1 + ind));
 				}
 				else {
-					render_sprite(win, pix, res(win, PHYS, 16));
+					render_sprite(pix, res(PHYS, 16));
 				}
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
 					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMajorRiver) ) {
-						render_sprite(win, pix, res(win, PHYS, 141 + (i >> 1)));
+						render_sprite(pix, res(PHYS, 141 + (i >> 1)));
 					}
 				}
 			}
@@ -2382,16 +2361,16 @@ namespace col {
 			if (!is_water(terr)) {
 				auto ind = get_wxad_index(loc, PhysMajorRiver|PhysMinorRiver);
 				if (ind) {
-					render_sprite(win, pix, res(win, PHYS, 17 + ind));
+					render_sprite(pix, res(PHYS, 17 + ind));
 				}
 				else {
-					render_sprite(win, pix, res(win, PHYS, 32));
+					render_sprite(pix, res(PHYS, 32));
 				}
 			}
 			else {
 				for (int i = 0; i < 8; i += 2) {
 					if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysMinorRiver) ) {
-						render_sprite(win, pix, res(win, PHYS, 145 + (i >> 1)));
+						render_sprite(pix, res(PHYS, 145 + (i >> 1)));
 					}
 				}
 			}
@@ -2400,13 +2379,19 @@ namespace col {
 		if (terr.has_phys(PhysRoad)) {
 			bool r = false;
 			for (int i=0; i<8; ++i) {
-				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) ) {
-					render_sprite(win, pix, res(win, PHYS, 82 + i));
+				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) )
+				{
+					if (conf.hires) {
+						render_sprite(pix-v2s(4,4), res(PHYS, 82 + i));
+					}
+					else {
+						render_sprite(pix, res(PHYS, 82 + i));
+					}
 					r = true;
 				}
 			}
 			if (!r) {
-				render_sprite(win, pix, res(win, PHYS, 81));
+				render_sprite(pix, res(PHYS, 81));
 			}
 		}
 
@@ -2424,10 +2409,10 @@ namespace col {
 			Coords const& delta)
 	{
 
-		int x = (pos[0] - delta[0]) * conf.terr_w + map_pix[0];
-		int y = (pos[1] - delta[1]) * conf.terr_h + map_pix[1];
+		int x = (pos[0] - delta[0]) * ly.terr_dim[0] + map_pix[0];
+		int y = (pos[1] - delta[1]) * ly.terr_dim[1] + map_pix[1];
 
-		render_terr(win, v2s(x,y), env, terr);
+		render_terr(v2s(x,y), env, terr);
 
 	}
 
@@ -2461,14 +2446,14 @@ namespace col {
 		// first render colony icon
 		if (terr.has_colony()) {
 			// render colony
-			render_sprite(win, pos, res(win, ICON, 4));
+			render_sprite(pos, res(ICON, 4));
 
 			// colony flag
 			{
 				auto p = env.get_control(terr);
 				if (p != ControlNone) {
 					// render owner flag over colony (unit in garrison)
-					render_sprite(win, v2s(pos[0] + ly.S(5), pos[1]), res(win, ICON, get_control_flagicon(p)));
+					render_sprite(v2s(pos[0] + ly.S(5), pos[1]), res(ICON, get_control_flagicon(p)));
 				}
 			}
 
@@ -2477,11 +2462,11 @@ namespace col {
 			// unit
 			auto & unit = env.get_defender(terr);
 
-			auto & icon = res(win, ICON, get_icon_id(unit));
+			auto & icon = res(ICON, get_icon_id(unit));
 			// render unit in field
-			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
-			render_sprite(win,
-				calc_align({pos, ly.terr_dim}, get_dim(icon)),
+			render_shield(pos, get_unit_color(unit), con.get_letter(unit));
+			render_sprite(
+				calc_align({pos, ly.terr_dim}, icon.dim),
 				icon
 			);
 
@@ -2497,7 +2482,7 @@ namespace col {
 
 
 	/// Return res num assigned to this dir
-	ResNum dir_res_num(Dir dir) {
+	ResId dir_res_num(Dir dir) {
 		switch (dir) {
 			case DirQ: return 8;
 			case DirW: return 1;
@@ -2620,17 +2605,17 @@ namespace col {
 	}
 
 	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit) {
-		auto & icon = res(win, ICON, get_icon_id(unit));
+		auto & icon = res(ICON, get_icon_id(unit));
 		auto unit_id = unit.id;
 
 		// render blinking shield
 		if (con.blink()) {
-			render_shield(win, pos, get_unit_color(unit), con.get_letter(unit));
+			render_shield(pos, get_unit_color(unit), con.get_letter(unit));
 		}
 
 		// render unit in field
-		render_sprite(win,
-			calc_align({pos, ly.terr_dim}, get_dim(icon)),
+		render_sprite(
+			calc_align({pos, ly.terr_dim}, icon.dim),
 			icon
 		);
 
@@ -2641,12 +2626,12 @@ namespace col {
 
 	//void select_area()
 
-	void render_fog(Front & win, v2s pos) {
-		win.render_fill({pos, ly.terr_dim}, RGBA8(64,64,64,64));
+	void render_fog(v2s pos) {
+		render_fill({pos, ly.terr_dim}, RGBA8(64,64,64,64));
 	}
 
-	void render_unknown(Front & win, v2s pos) {
-		render_sprite(win, pos, res(win, PHYS, 149));
+	void render_unknown(v2s pos) {
+		render_sprite(pos, res(PHYS, 149));
 	}
 
 
@@ -2664,11 +2649,11 @@ namespace col {
 		return b2s(rpos, ly.terr_dim);
 	}
 
-	void render_on_tile(Front & win, Console & con, Coords xy, Texture const& tex)
+	void render_on_tile(Console & con, Coords xy, Sprite const& tex)
 	{
 		if (is_tile_on_screen(con, xy)) {
 			auto rpos = get_tile_on_screen(con, xy).pos;
-			win.render_texture(tex, rpos);
+			render_sprite(rpos, tex);
 		}
 	}
 
@@ -2686,14 +2671,14 @@ namespace col {
 				case InsMove: {
 					Dir dir = cmd.arg;
 
-					render_on_tile(con.win, con, pos,
-						res(con.win, ZZ, dir_res_num(dir))
+					render_on_tile(con, pos,
+						res(ZZ, dir_res_num(dir))
 					);
 
 					pos += dir2vec(dir);
 
-					render_on_tile(con.win, con, pos,
-						res(con.win, ZZ, dir_res_num(turnabout(dir)))
+					render_on_tile(con, pos,
+						res(ZZ, dir_res_num(turnabout(dir)))
 					);
 
 					break;
@@ -2710,9 +2695,9 @@ namespace col {
 			{
 				auto box = get_tile_on_screen(con, m.pos);
 
-				render_text(con.win,
+				render_text(
 					box.pos, box.dim, v2f(0.5f, 0.5f),
-					FontTiny, ColorBlue, ColorBlack,
+					font_tiny(), ColorBlue, ColorBlack,
 					m.label
 				);
 			}
@@ -2722,8 +2707,6 @@ namespace col {
 	void render_debug_ai(Console & con) {
 		if (con.runner)
 		{
-			auto & win = con.win;
-
 			for (Agent * a: con.runner->agents)
 			{
 				auto cls = a->get_class();
@@ -2781,10 +2764,10 @@ namespace col {
 
 
 					if (con.is_discovered(terr)) {
-						render_terr(win, pos, env, terr);
+						render_terr(pos, env, terr);
 					}
 					else {
-						render_unknown(win, pos);
+						render_unknown(pos);
 					}
 
 					auto dim = ly.terr_dim;
@@ -2830,7 +2813,7 @@ namespace col {
 					}
 					else {
 						if (con.is_discovered(terr)) {
-							render_fog(win, pos);
+							render_fog(pos);
 						}
 					}
 
@@ -2853,9 +2836,8 @@ namespace col {
 
 					if (overlap(view_box, coords))
 					{
-						render_inline(win,
-							vmul(coords - vpos, ly.terr_dim) + pos,
-							ly.terr_dim,
+						render_inline(
+							{vmul(coords - vpos, ly.terr_dim) + pos, ly.terr_dim},
 							{128,128,128,255},
 							ly.line
 						);
@@ -2870,9 +2852,8 @@ namespace col {
 					if (overlap(view_box, coords)) {
 
 
-						render_inline(win,
-							vmul(coords - vpos, ly.terr_dim) + pos,
-							ly.terr_dim,
+						render_inline(
+							{vmul(coords - vpos, ly.terr_dim) + pos, ly.terr_dim},
 							{255,255,255,255},
 							ly.line
 						);
@@ -2893,17 +2874,13 @@ namespace col {
 
 
 
-	void MapView::render(Console & con) {
-
-		render_map(con.win, con.env, con, ly.map.pos, Coords(0,0));
-
+	void MapView::render(Console & con)
+	{
+		render_map(win, con.env, con, ly.map.pos, Coords(0,0));
 	}
 
 	bool MapView::handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e)
 	{
-
-
-
 		// right click on terr -- center view
 		if (match(e, {EventPress, KeyRMB, pos, dim})) {
 			con.center_view_on(coords);
@@ -3028,7 +3005,7 @@ namespace col {
 
 		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
 
-		auto & env = con.get_env();
+		auto & env = con.env;
 
 		for (int j = 0; j < h; ++j)
 		{
@@ -3091,7 +3068,7 @@ namespace col {
 		auto current = terr.get_biome();
 
 		auto & s = con.push_widget<Select>(1);
-		//s.set_cols({0, 16 * FontTiny.get_width(), "Biome"});
+		//s.set_cols({0, 16 * font_tiny().get_width(), "Biome"});
 
 
 		for (auto i = BiomeNone+1; i < BiomeEnd; ++i)
@@ -3190,7 +3167,7 @@ namespace col {
 				i = UnitTypePioneers100;
 			}
 
-			auto & type = env.get<UnitType>(i);
+			auto & type = env.get_unittype(i);
 
 			s.add({type.get_name()}, i == u->get_type().id, [u, &type](){
 				u->set_type(type);
@@ -3369,14 +3346,13 @@ namespace col {
 
 	void SidePanel::render(Con & con)
 	{
-		auto & win = con.win;
 		auto & env = con.env;
 		auto pos = ly.pan.pos;
 		auto dim = ly.pan.dim;
 
 		//front::Image img = res("COLONIZE/WOODTILE_SS", 1);  32x24
 
-		render_area(win, pos, dim, res(win, WOODTILE, 1));
+		render_area({pos, dim}, res(WOODTILE));
 
 		// terrain info
 		/*
@@ -3394,7 +3370,7 @@ namespace col {
 
 
 
-		auto cur = TextRend2(win, con, ly.pan, FontTiny, StyleMenu);
+		auto cur = TextRend2(win, con, ly.pan, font_tiny(), StyleMenu);
 
 		// Turn 5, England
 		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + faction_name + "\n");
@@ -3541,9 +3517,8 @@ namespace col {
 		// top right: nation indicator
 		if (env.has_current_control())
 		{
-			render_fill(win,
-				pos + v2s(dim[0]-ly.S(1),0),
-				v2s(ly.S(1), ly.S(1)),
+			render_fill(
+				{pos + v2s(dim[0]-ly.S(1),0), v2s(ly.S(1), ly.S(1))},
 				get_control_color(env.get_current_control())
 			);
 		}
@@ -3554,7 +3529,7 @@ namespace col {
 			v2s pos = ly.pan.pos + v2s(0,ly.S(100));
 			v2s dim = v2s(ly.pan.dim[0], ly.terr_dim[1]*3);
 
-			render_fill(win, pos, dim,
+			render_fill({pos, dim},
 				RGBA8(0,0,0,64)
 			);
 
@@ -3574,9 +3549,9 @@ namespace col {
 				auto colind = (con.get_next_to_order(nullptr)) ? ColorGray : ColorWhite;
 
 				// show button
-				auto text_box = render_text(win,
+				auto text_box = render_text(
 					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny * 2), v2f(0.5, 1.0),
-					FontTiny, colind, ColorNone,
+					font_tiny(), colind, ColorNone,
 					"Idle Unit"
 				);
 
@@ -3602,9 +3577,9 @@ namespace col {
 				}
 
 				// show button
-				auto text_box = render_text(win,
+				auto text_box = render_text(
 					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny), v2f(0.5, 1.0),
-					FontTiny, colind, ColorNone,
+					font_tiny(), colind, ColorNone,
 					"Idle Factory"
 				);
 
@@ -3657,9 +3632,9 @@ namespace col {
 
 
 			// label
-			auto text_box = render_text(win,
+			auto text_box = render_text(
 				ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0),
-				FontTiny, colind, ColorNone,
+				font_tiny(), colind, ColorNone,
 				lab
 			);
 
@@ -3711,21 +3686,23 @@ namespace col {
 
 
 
-	void render_cursor(Front & win, Console const& con) {
-		if (con.drag_item) {
-
-
+	void render_cursor(Console const& con)
+	{
+		if (con.drag_item)
+		{
 			auto pos = v2s(get_logical_pos(win, con.mouse.pos));
 			//print("cursor: %||, %||\n", mp.x, mp.y);
 
-			render_sprite(win, pos, res(win, ICON, get_item_icon_id(con.drag_item)));
+			render_sprite(pos, res(ICON, get_item_icon_id(con.drag_item)));
 		}
 	}
 
 
 
-	void render_drag_clear(Console & con) {
-		if (con.drag_item) {
+	void render_drag_clear(Console & con)
+	{
+		if (con.drag_item)
+		{
 			// left release anywhere -- end drag cargo
 			con.on({EventRelease, KeyLMB},
 				[&con](){ con.drop_cargo(0); }
@@ -3884,12 +3861,12 @@ namespace col {
 
 		Link() = default;
 		Link(string const& text, Action act): text(text), act(act) {
-			box.dim = get_text_dim(FontTiny, text);
+			box.dim = get_text_dim(font_tiny(), text);
 		}
 
 		void set_text(string const& t) {
 			text = t;
-			box.dim = get_text_dim(FontTiny, text);
+			box.dim = get_text_dim(font_tiny(), text);
 		}
 
 		v2s get_sub_pos() const {
@@ -3899,7 +3876,7 @@ namespace col {
 
 	void Link::render(Console & con)
 	{
-		render_text(con.win, box.pos, FontTiny, StyleMenu.hl, text);
+		render_text(box.pos, font_tiny(), StyleMenu.hl, text);
 	}
 
 	bool Link::handle(Console & con, Event e)
@@ -4038,31 +4015,29 @@ namespace col {
 
 	void Command::render(Console & con)
 	{
-		auto & app = con.win;
-
 		auto ln = con.output.size();
 		v2s pos = v2s(ly.map.pos[0], ly.map.pos[1]);
 
 		for (auto& line: boost::adaptors::reverse(con.output))
 		{
 			
-			render_fill(app,
-				pos, get_text_dim(FontTiny, line),
+			render_fill(
+				{pos, get_text_dim(font_tiny(), line)},
 				{0,0,0,128}
 			);
-			render_text(app,
+			render_text(
 				pos,
-				FontTiny, ColorFont,
+				font_tiny(), ColorFont,
 				line
 			);
 
-			pos[1] += FontTiny.height;
+			pos[1] += font_tiny().height;
 		}
 
 		// command line with cursor
 		render_text(
-			app, ly.scr.pos,
-			FontTiny, ColorFont, 
+			ly.scr.pos,
+			font_tiny(), ColorFont, 
 			con.buffer + "_"
 		);
 
@@ -4070,7 +4045,8 @@ namespace col {
 
 
 
-	struct MainFrame: IWidget{
+	struct MainFrame: IWidget
+	{
 		void render(Console & con) override;
 		bool handle(Console & con, Event e) override;
 
@@ -4085,8 +4061,6 @@ namespace col {
 
 	void MainFrame::render(Console & con)
 	{
-		auto & win = con.win;
-
 		con.reg.clear();
 
 
@@ -4114,9 +4088,8 @@ namespace col {
 			side_panel.render(con);
 
 			// vline left of the panel
-			render_fill(win,
-				v2s(ly.pan.pos[0] - ly.line, ly.pan.pos[1]),
-				{ly.line, ly.pan.dim[1]},
+			render_fill(
+				{v2s(ly.pan.pos[0] - ly.line, ly.pan.pos[1]), {ly.line, ly.pan.dim[1]}},
 				ColorBlack
 			);
 
@@ -4127,12 +4100,11 @@ namespace col {
 		// top-bar
 		{
 			// top-bar background
-			render_area(win, ly.bar.pos, ly.bar.dim, res(win, WOODTILE, 1));
+			render_area({ly.bar.pos, ly.bar.dim}, res(WOODTILE));
 
 			// black hline under the top-bar
-			render_fill(win,
-				{ly.bar.pos[0], ly.bar.end()[1]},
-				{ly.bar.dim[0], ly.line},
+			render_fill(
+				{{ly.bar.pos[0], ly.bar.end()[1]}, {ly.bar.dim[0], ly.line}},
 				{0,0,0,255}
 			);
 
@@ -4148,7 +4120,7 @@ namespace col {
 
 
 
-		render_cursor(win, con);
+		render_cursor(con);
 
 	}
 
@@ -4196,37 +4168,33 @@ namespace col {
 
 
 
-	void render(Front & app, col::Env & env, col::Console & con, int verbose)
+	void render(col::Env & env, col::Console & con, int verbose)
 	{
-		if (verbose >= 2) print("render: {\n");
-
-		app.clear();
-
-		if (verbose >= 2) print("render: render_cmd\n");
-
+		win.clear();
 		// render widgets stack
 		for (auto * w: con.widgets) {
 			w->render(con);
 		}
-
-
-		if (verbose >= 2) print("render: app.flip\n");
-
-		app.flip();
-
-		if (verbose >= 2) print("render: }\n");
+		win.flip();
 	}
 
 
-	void init_renderer(Console & con)
+
+
+	v2s get_loffset(int l) {
+		switch(l){
+			case 0: return v2s(0,0) * ly.scale;
+			case 1: return v2s(8,0) * ly.scale;
+			case 2: return v2s(8,8) * ly.scale;
+			case 3: return v2s(0,8) * ly.scale;
+		}
+		fail("invalid 'l'");
+	}
+
+	
+	void start_gui(Console & con)
 	{
-		front::input::print_mod_table();
-
 		con.push_widget<MainFrame>(con);
-
-
 	}
-
-
 
 }

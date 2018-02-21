@@ -5,16 +5,16 @@
 # $^ -- The names of all the prerequisites
 # $(VARS:%.cpp=%.o) -- pattern replace
 
-CC:=g++
-#CC:=clang++
+#CC:=g++
+CC:=clang++
 #CC:=emcc
 
 # output files
-OUTS:=client/main server/test client/test ext/test
+OUTS:=client/main server/test client/test ext/test front/main
 
 # targets
-debug: client/main server/test client/test ext/test
-release: client/main server/test client/test ext/test
+debug: client/main server/test client/test ext/test front/main
+release: client/main server/test client/test ext/test front/main
 
 # em opts
 EMOPTS:= 
@@ -28,12 +28,13 @@ EMOPTS+=-s ASSERTIONS=1
 
 # compiler options
 CCOPTS:=
-CCOPTS+=-std=c++1z
+CCOPTS+=-std=c++14
+#CCOPTS+=-stdlib=libc++
 CCOPTS+=-I./src -I./src/server
 CCOPTS+=-Wsign-compare -Wreturn-type -Wparentheses -Wpedantic -Wconversion-null 
-CCOPTS+=-fmax-errors=3
+#CCOPTS+=-fmax-errors=8
 #-Wno-vla-extension
-#CCOPTS+=-ferror-limit=3
+CCOPTS+=-ferror-limit=16
 
 
 # linker options
@@ -50,6 +51,7 @@ else
 	LLOPTS+=-L./lib 
 	LLOPTS+=-lSDL2
 	LLOPTS+=-lGL -lGLEW 
+	LLOPTS+=-lpthread
 	OUT_EXT:=
 endif
 

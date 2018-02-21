@@ -1,0 +1,574 @@
+font 0
+name "Libris ADF Std-Regular-16"
+height 16
+
+sprite 32
+name " "
+box 4 24 0 0
+delta 0 16
+adv 5
+
+sprite 33
+name "!"
+box 13 12 4 13
+delta 0 4
+adv 4
+
+sprite 34
+name "\""
+box 21 12 5 4
+delta 0 4
+adv 6
+
+sprite 35
+name "#"
+box 31 12 9 12
+delta 0 4
+adv 8
+
+sprite 36
+name "$"
+box 43 10 8 16
+delta 0 2
+adv 7
+
+sprite 37
+name "%"
+box 54 12 13 13
+delta 0 4
+adv 13
+
+sprite 38
+name "&"
+box 71 12 10 12
+delta 0 4
+adv 9
+
+sprite 39
+name "'"
+box 84 13 3 4
+delta 0 5
+adv 3
+
+sprite 40
+name "("
+box 91 12 4 15
+delta 0 4
+adv 4
+
+sprite 41
+name ")"
+box 99 12 4 15
+delta 0 4
+adv 4
+
+sprite 42
+name "*"
+box 107 12 5 5
+delta 0 4
+adv 5
+
+sprite 43
+name "+"
+box 116 16 8 8
+delta 0 8
+adv 8
+
+sprite 44
+name ","
+box 128 22 3 4
+delta 0 14
+adv 3
+
+sprite 45
+name "-"
+box 135 19 5 2
+delta 0 11
+adv 6
+
+sprite 46
+name "."
+box 145 21 3 3
+delta 0 13
+adv 4
+
+sprite 47
+name "/"
+box 153 12 5 12
+delta 0 4
+adv 5
+
+sprite 48
+name "0"
+box 162 12 8 12
+delta 0 4
+adv 9
+
+sprite 49
+name "1"
+box 176 12 2 12
+delta 1 4
+adv 4
+
+sprite 50
+name "2"
+box 183 12 8 12
+delta 0 4
+adv 8
+
+sprite 51
+name "3"
+box 195 12 8 13
+delta 0 4
+adv 8
+
+sprite 52
+name "4"
+box 207 12 8 12
+delta 0 4
+adv 8
+
+sprite 53
+name "5"
+box 219 12 8 12
+delta 0 4
+adv 8
+
+sprite 54
+name "6"
+box 231 12 9 12
+delta 0 4
+adv 9
+
+sprite 55
+name "7"
+box 244 12 8 12
+delta 0 4
+adv 7
+
+sprite 56
+name "8"
+box 4 39 8 12
+delta 0 4
+adv 8
+
+sprite 57
+name "9"
+box 16 39 8 13
+delta 0 4
+adv 8
+
+sprite 58
+name ":"
+box 28 43 3 8
+delta 0 8
+adv 4
+
+sprite 59
+name ";"
+box 36 43 3 11
+delta 0 8
+adv 3
+
+sprite 60
+name "<"
+box 43 43 8 8
+delta 0 8
+adv 8
+
+sprite 61
+name "="
+box 55 45 9 5
+delta 0 10
+adv 9
+
+sprite 62
+name ">"
+box 68 43 8 8
+delta 0 8
+adv 8
+
+sprite 63
+name "?"
+box 80 39 7 12
+delta 0 4
+adv 7
+
+sprite 64
+name "@"
+box 91 39 15 14
+delta 0 4
+adv 15
+
+sprite 65
+name "A"
+box 109 39 11 12
+delta -1 4
+adv 10
+
+sprite 66
+name "B"
+box 124 39 9 12
+delta 0 4
+adv 9
+
+sprite 67
+name "C"
+box 137 39 10 13
+delta 0 4
+adv 10
+
+sprite 68
+name "D"
+box 151 39 10 12
+delta 0 4
+adv 10
+
+sprite 69
+name "E"
+box 165 39 9 12
+delta 0 4
+adv 9
+
+sprite 70
+name "F"
+box 178 39 8 12
+delta 0 4
+adv 8
+
+sprite 71
+name "G"
+box 190 39 10 12
+delta 0 4
+adv 10
+
+sprite 72
+name "H"
+box 204 39 9 12
+delta 0 4
+adv 10
+
+sprite 73
+name "I"
+box 218 39 3 12
+delta 0 4
+adv 3
+
+sprite 74
+name "J"
+box 224 39 6 12
+delta -1 4
+adv 6
+
+sprite 75
+name "K"
+box 235 39 10 13
+delta 0 4
+adv 9
+
+sprite 76
+name "L"
+box 4 66 8 12
+delta 0 4
+adv 7
+
+sprite 77
+name "M"
+box 15 66 12 12
+delta 0 4
+adv 13
+
+sprite 78
+name "N"
+box 32 66 10 12
+delta 0 4
+adv 11
+
+sprite 79
+name "O"
+box 47 66 11 12
+delta 0 4
+adv 11
+
+sprite 80
+name "P"
+box 62 66 9 12
+delta 0 4
+adv 9
+
+sprite 81
+name "Q"
+box 75 66 11 13
+delta 0 4
+adv 11
+
+sprite 82
+name "R"
+box 90 66 10 13
+delta 0 4
+adv 9
+
+sprite 83
+name "S"
+box 103 66 8 12
+delta 0 4
+adv 8
+
+sprite 84
+name "T"
+box 114 66 10 12
+delta -1 4
+adv 9
+
+sprite 85
+name "U"
+box 128 66 10 12
+delta 0 4
+adv 10
+
+sprite 86
+name "V"
+box 142 66 10 12
+delta 0 4
+adv 9
+
+sprite 87
+name "W"
+box 155 66 14 12
+delta 0 4
+adv 14
+
+sprite 88
+name "X"
+box 172 66 11 12
+delta -1 4
+adv 9
+
+sprite 89
+name "Y"
+box 185 66 11 13
+delta -1 4
+adv 10
+
+sprite 90
+name "Z"
+box 200 66 9 12
+delta 0 4
+adv 9
+
+sprite 91
+name "["
+box 213 66 4 15
+delta 0 4
+adv 4
+
+sprite 92
+name "\\"
+box 221 66 5 12
+delta 0 4
+adv 5
+
+sprite 93
+name "]"
+box 230 66 4 15
+delta 0 4
+adv 4
+
+sprite 94
+name "^"
+box 238 66 7 7
+delta 0 4
+adv 6
+
+sprite 95
+name "_"
+box 3 107 10 1
+delta -1 18
+adv 9
+
+sprite 96
+name "`"
+box 17 93 4 3
+delta 0 4
+adv 4
+
+sprite 97
+name "a"
+box 25 97 7 8
+delta 0 8
+adv 7
+
+sprite 98
+name "b"
+box 36 93 8 12
+delta 0 4
+adv 8
+
+sprite 99
+name "c"
+box 48 97 7 8
+delta 0 8
+adv 7
+
+sprite 100
+name "d"
+box 59 93 7 12
+delta 0 4
+adv 8
+
+sprite 101
+name "e"
+box 71 97 7 8
+delta 0 8
+adv 7
+
+sprite 102
+name "f"
+box 82 93 5 12
+delta 0 4
+adv 4
+
+sprite 103
+name "g"
+box 90 96 7 12
+delta 0 7
+adv 8
+
+sprite 104
+name "h"
+box 102 93 7 12
+delta 0 4
+adv 8
+
+sprite 105
+name "i"
+box 114 93 3 12
+delta 0 4
+adv 3
+
+sprite 106
+name "j"
+box 120 93 4 15
+delta -1 4
+adv 3
+
+sprite 107
+name "k"
+box 128 93 8 13
+delta 0 4
+adv 7
+
+sprite 108
+name "l"
+box 139 93 3 12
+delta 0 4
+adv 3
+
+sprite 109
+name "m"
+box 146 97 11 8
+delta 0 8
+adv 11
+
+sprite 110
+name "n"
+box 161 97 7 8
+delta 0 8
+adv 8
+
+sprite 111
+name "o"
+box 173 97 7 8
+delta 0 8
+adv 8
+
+sprite 112
+name "p"
+box 185 96 8 12
+delta 0 7
+adv 8
+
+sprite 113
+name "q"
+box 197 97 7 11
+delta 0 8
+adv 8
+
+sprite 114
+name "r"
+box 209 97 5 8
+delta 0 8
+adv 5
+
+sprite 115
+name "s"
+box 218 97 6 8
+delta 0 8
+adv 6
+
+sprite 116
+name "t"
+box 228 95 4 10
+delta 0 6
+adv 4
+
+sprite 117
+name "u"
+box 236 96 7 9
+delta 0 7
+adv 8
+
+sprite 118
+name "v"
+box 4 124 7 8
+delta 0 8
+adv 7
+
+sprite 119
+name "w"
+box 15 124 10 8
+delta 0 8
+adv 10
+
+sprite 120
+name "x"
+box 29 124 7 8
+delta 0 8
+adv 7
+
+sprite 121
+name "y"
+box 40 124 7 11
+delta 0 8
+adv 7
+
+sprite 122
+name "z"
+box 51 124 7 8
+delta 0 8
+adv 6
+
+sprite 123
+name "{"
+box 61 120 4 15
+delta 0 4
+adv 4
+
+sprite 124
+name "|"
+box 69 120 2 15
+delta 0 4
+adv 3
+
+sprite 125
+name "}"
+box 76 120 4 15
+delta 0 4
+adv 4
+
+sprite 126
+name "~"
+box 84 125 8 3
+delta 0 9
+adv 8
+

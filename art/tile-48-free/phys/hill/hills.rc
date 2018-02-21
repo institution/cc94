@@ -1,0 +1,6 @@
+image-path hills.png
+
+sprite
+pos 0 0
+dim 46 30
+shift 22 28

@@ -73,7 +73,7 @@ namespace front {
 		return r;
 	}
 	
-	ImageA8 load_png_A8(filesys::Path const& path)
+	ImageR8 load_png_R8(filesys::Path const& path)
 	{		
 		// load
 		std::vector<unsigned char> buffer;
@@ -98,11 +98,11 @@ namespace front {
 		int16_t height = height1;
 		uint8_t * p = &image[0];
 		
-		ImageA8 r({width, height});
+		ImageR8 r({width, height});
 		for (int16_t j=0; j<height; ++j) {
 			for (int16_t i=0; i<width; ++i) {
-				A8 c;
-				c.a = *p;
+				R8 c;
+				c.r = *p;
 				++p;
 
 				r({i,j}) = c;

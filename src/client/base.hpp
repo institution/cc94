@@ -6,13 +6,17 @@
 
 namespace col{
 	using filesys::Path;
-	
+
+
+	// TODO: dont use base file ?
+		
 	using front::ImageRGBA8;
-	using front::ImageA8;
+	using front::ImageR8;
 	using front::Texture;
-	using front::Front;
 	using namespace front::Color;
-	
+
+	using front::Front;
+
 	using front::v2s;
 	using front::v2i;
 	using front::v2f;
@@ -21,8 +25,13 @@ namespace col{
 	using front::b2i;
 	using front::b2f;
 
+	using front::aabb2f;
+
+
 	using ext::v2;
 	using ext::fail;
+	using ext::vdiv;
+
 
 	using Action = std::function<void()>;
 	
@@ -49,5 +58,5 @@ namespace col{
 		_3 = 3,
 		_4 = 4;
 
-	
+
 }

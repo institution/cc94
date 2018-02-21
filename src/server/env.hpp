@@ -84,6 +84,13 @@ namespace col{
 
 	using TurnNo = int32_t;
 
+
+	using EnvState = uint8_t;
+	EnvState const
+		EnvStateEdit{0},
+		EnvStatePlay{1},
+		EnvStateExit{2};
+		
 	struct Env: Core {
 
 		/**
@@ -95,13 +102,7 @@ namespace col{
 
 		**/
 
-		using State = uint8_t;
 
-		static
-		State const
-			StateEdit,
-			StatePlay,
-			StateExit;
 
 		// turn system
 		TurnNo turn_no{0};
@@ -109,7 +110,7 @@ namespace col{
 
 		Control current_control{ControlNone}; // current faction (turn)
 
-		State state{StateEdit}; // runlevels: 0 - prepare, 1 - playing, 2 - ended; use in_progress to check
+		EnvState state{EnvStateEdit};
 
 		// misc non game state
 		TurnNo mod;
@@ -119,11 +120,11 @@ namespace col{
 		int8_t verbose{0};
 		uint32_t action_count{0};
 
-		State get_state() const {
+		EnvState get_state() const {
 			return state;
 		}
 
-		void set_state(State state) {
+		void set_state(EnvState state) {
 			this->state = state;
 		}
 
@@ -145,7 +146,7 @@ namespace col{
 		void clear_misc() {
 			turn_no = 0;
 			turn_limit = 0;
-			state = StateEdit;
+			state = EnvStateEdit;
 			//cpid = -1;
 			mod++;
 		}
@@ -231,7 +232,8 @@ namespace col{
 			get_store(t).set(item, num);
 		}
 
-		Res load_cargo(Unit & u, Item item, Amount want_num) {
+		Res load_cargo(Unit & u, Item item, Amount want_num)
+		{
 			auto & t = get_terr(u);
 			auto & st = get_store(t);
 
@@ -309,15 +311,8 @@ namespace col{
 
 
 		bool in_progress() const {
-			return state == StatePlay;
+			return state == EnvStatePlay;
 		}
-
-
-
-
-
-
-
 
 
 
@@ -436,7 +431,7 @@ namespace col{
 				st.sub(ItemFood, 100);
 				put(
 					t,
-					create<Unit>(get<UnitType>(1), control)
+					create<Unit>(get_unittype(1), control)
 				);
 
 			}
@@ -493,7 +488,7 @@ namespace col{
 			}
 
 			if (turn_limit > 0 and turn_no >= turn_limit) {
-				state = StateExit;
+				state = EnvStateExit;
 			}
 
 			++mod;
@@ -637,7 +632,7 @@ namespace col{
 
 		void use_tools(Unit & u) {
 			// special hack for pioniers only
-			u.set_type(get<UnitType>(u.get_type_id() - 1));
+			u.set_type(get_unittype(u.get_type_id() - 1));
 		}
 
 		string error_message;
@@ -816,6 +811,11 @@ namespace col{
 
 			// wow! that was radical
 		}
+
+		/*bool can_order_attack(Unit & attacker, Dir dir)
+		{
+
+		}*/
 
 		Res order_attack(Unit & attacker, Dir dir, bool exec=1) {
 			/* Order attack
@@ -1041,7 +1041,7 @@ namespace col{
 		}
 
 		void set_build(Colony & c, int i, BuildType::Id const& id) {
-			c.set_build(i, Build(get<BuildType>(id)));
+			c.set_build(i, Build(get_buildtype(id)));
 		}
 
 

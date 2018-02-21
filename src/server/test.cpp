@@ -10,6 +10,7 @@
 #include "env.hpp"
 #include "build.hpp"
 #include "serialize.hpp"
+#include "serialize3.hpp"
 
 
 using namespace col;
@@ -257,7 +258,7 @@ TEST_CASE( "env", "" ) {
 	SECTION("clean_units") {
 		Env env({1,1}, Terr{AltFlat, BiomePlains});
 		
-		auto & u = env.create<Unit>(env.create<UnitType>());
+		auto & u = env.create<Unit>(env.get_unittype(0));
 		
 		env.put(env.get_terr({0,0}), u);
 		env.clear_units();
@@ -289,7 +290,7 @@ TEST_CASE( "load_cargo", "" ) {
 	Env env;
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_slots(1)
+		env.get_unittype(1).set_slots(1)
 	);
 	
 	u.add(ItemOre, 23);
@@ -319,7 +320,7 @@ TEST_CASE( "move_unit", "[env][order]" )
 	Env env({2,1}, Terr{AltFlat, BiomePlains});
 	
 	auto & u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
 	);
 
 	env.put(env.get_terr({0,0}), u);
@@ -341,11 +342,11 @@ TEST_CASE( "equip unit", "" ) {
 	auto& t = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_base(5).set_equip2(ItemHorses, 50)
+		env.get_unittype(1).set_base(5).set_equip2(ItemHorses, 50)
 	);
 	env.put(t, u);
 	
-	auto& ut = env.create<UnitType>().set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
+	auto& ut = env.get_unittype(1).set_base(5).set_equip1(ItemMuskets, 50).set_equip2(ItemHorses, 50);
 	
 	auto& c = env.create<Colony>();
 	env.put(t, c);
@@ -371,13 +372,13 @@ TEST_CASE( "board ship", "" ) {
 	env.set_terr({2,0}, Terr(AltSea, BiomePlains));
 		
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
 	);
 	
 	env.put(env.get_terr({0,0}), u);
 	
 	auto& s = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelSea).set_speed(2).set_slots(2)
+		env.get_unittype(1).set_travel(TravelSea).set_speed(2).set_slots(2)
 	);
 	env.put(env.get_terr({1,0}), s);
 		
@@ -442,11 +443,11 @@ TEST_CASE( "turn sequence", "" ) {
 TEST_CASE( "can_make", "" ) {
 	
 	Env env;
-	env.loads<BuildType>("res/csv/builds.csv");
-	env.loads<UnitType>("res/csv/units.csv");
+
+	read_defs("res/csv/defs.rc", env);
 		
-	auto & lumber_mill = env.get<BuildType>(BuildLumberMill);
-	auto & caravel = env.get<UnitType>(18);
+	auto & lumber_mill = env.get_buildtype(BuildLumberMill);
+	auto & caravel = env.get_unittype(18);
 	
 	auto r = env.can_make(Build(lumber_mill), caravel);
 	REQUIRE(r == false);
@@ -456,12 +457,12 @@ TEST_CASE( "can_make", "" ) {
 TEST_CASE( "food_prod", "" ) {
 	
 	Env env({1,1}, Terr(AltFlat, BiomePlains));
-	env.loads<BuildType>("res/csv/builds.csv");
+	read_defs("res/csv/defs.rc", env);
 	
 	auto & terr = env.get_terr({0,0});
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand)		
+		env.get_unittype(1).set_travel(TravelLand)		
 	);
 
 	auto& t = env.get_terr({0,0});	
@@ -505,17 +506,17 @@ TEST_CASE("construct_build") {
 	Env env({1,1}, Terr(AltFlat, BiomePlains));
 	
 	auto& unit = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand)
+		env.get_unittype(1).set_travel(TravelLand)
 	);
 	
 	auto& t = env.get_terr({0,0});	
 	env.put(t, unit);
 			
-	env.loads<BuildType>("res/csv/builds.csv");
+	read_defs("res/csv/defs.rc", env);
 	
 	
 	
-	auto & bt = env.get<BuildType>(col::BuildCarpentersShop);
+	auto & bt = env.get_buildtype(col::BuildCarpentersShop);
 	REQUIRE(bt.get_proditem() == ItemHammers);
 	
 	auto fact = Build(bt);
@@ -525,7 +526,7 @@ TEST_CASE("construct_build") {
 	st.set(ItemLumber, 100);
 	st.set(ItemFood, 100);
 	
-	auto & lumber_mill = env.get<BuildType>(col::BuildLumberMill);
+	auto & lumber_mill = env.get_buildtype(col::BuildLumberMill);
 	fact.set_task(lumber_mill);	
 	
 	
@@ -554,14 +555,14 @@ TEST_CASE( "colony_workplace_production", "" ) {
 	Env env({1,1}, Terr(AltFlat, BiomePlains));	
 		
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand)
+		env.get_unittype(1).set_travel(TravelLand)
 	);
 
 	auto& t = env.get_terr({0,0});	
 	env.put(t, u);
 		
 		
-	auto& bt = env.create<BuildType>()
+	auto& bt = env.get_buildtype(1)
 		.set_slots(3)
 		.set_prod(ItemCoats, 3)
 		.set_cons(ItemFurs, 3);
@@ -569,7 +570,7 @@ TEST_CASE( "colony_workplace_production", "" ) {
 	// REQUIRE_NOTHROW(env.start());
 
 	SECTION("Build.get_prod") {
-		auto& u = env.create<Unit>(env.create<UnitType>());
+		auto& u = env.create<Unit>(env.get_unittype(1));
 		
 		auto b = Build(bt);
 		b.add(u);
@@ -692,7 +693,7 @@ TEST_CASE( "serialize2", "" ) {
 	env.set_terr({1,0}, Terr(AltFlat, BiomePlains));
 
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand),
+		env.get_unittype(1).set_travel(TravelLand),
 		env.create<Faction>()
 	);
 
@@ -752,7 +753,7 @@ TEST_CASE( "two_units", "" ) {
 	auto& t1 = env.get_terr({0,0});
 	auto& t2 = env.get_terr({1,0});
 
-	auto& ut = env.create<UnitType>().set_travel(TravelLand);
+	auto& ut = env.get_unittype(1).set_travel(TravelLand);
 	ut.set_attack(2).set_combat(1);
 
 	auto& p = env.create<Faction>();
@@ -788,12 +789,12 @@ TEST_CASE( "improve square", "" ) {
 	env.resize({1,1});
 	env.set_terr({0,0}, Terr(AltFlat, BiomePlains));
 
-	auto& t = env.get_terr({0,0});
+	auto & t = env.get_terr({0,0});
 	
-	auto& ut1 = env.create<UnitType>().set_base(11).set_equip1(ItemTools, 20);
-	auto& ut2 = env.create<UnitType>().set_base(11).set_travel(TravelLand).set_equip1(ItemTools, 40);
+	auto & ut1 = env.get_unittype(1).set_base(11).set_equip1(ItemTools, 20);
+	auto & ut2 = env.get_unittype(2).set_base(11).set_travel(TravelLand).set_equip1(ItemTools, 40);
 	
-	auto& u = env.create<Unit>(
+	auto & u = env.create<Unit>(
 		ut2,
 		env.create<Faction>()
 	);
@@ -853,7 +854,7 @@ TEST_CASE( "move cost", "" ) {
 	
 	
 	auto& u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
 	);
 	
 	REQUIRE(env.get_move_cost(t10, t00, u) == TimeInf);
@@ -873,7 +874,7 @@ TEST_CASE( "io::write<Env>", "[env]" ) {
 
 	auto u = env.create<Unit>(
 		1,
-		env.create<UnitType>(1).set_travel(TravelLand)
+		env.get_unittype(1).set_travel(TravelLand)
 	);
 
 	env.move_in(t, u);

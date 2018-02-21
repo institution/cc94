@@ -1,5 +1,5 @@
 #include "simple_ai.hpp"
-
+#include "timer.hpp"
 
 namespace simple_ai{
 
@@ -454,80 +454,84 @@ namespace simple_ai{
 
 
 
-	bool SimpleAi::step() {
-
-		sync();
-
-		if (env.in_progress() and env.get_current_control() == cc)
-		{
-			marks.clear();
-
-			print("simple_ai: units\n");
-			for (auto & unit: list_values(env.units))
+	void SimpleAi::run()
+	{
+		Timer t(100);
+		while (env.get_state() != col::EnvStateExit)
+		{			
+			if (env.in_progress() and env.get_current_control() == cc)
 			{
-				if (env.has_control(cc, unit))
+				sync();
+				marks.clear();
+
+				print("simple_ai: units\n");
+				for (auto & unit: list_values(env.units))
 				{
-					// what this unit should do?
-					auto & unit_ext = ues.get(unit);
-
-					// if no order
-					if (not unit_ext.cmds.has())
+					if (env.has_control(cc, unit))
 					{
-						if (assign_colony_work(unit)) {
-							print("simple_ai: unit(%||) assigned colony work\n", unit.id);
-						}
-						else {
+						// what this unit should do?
+						auto & unit_ext = ues.get(unit);
 
-							auto & terr = env.get_terr(unit);
-							auto unit_pos = env.get_coords(terr);
-
-							// add orders
-
-							auto col_pos = get_best_colony_spot();
-
-							marks.add(col_pos, "col");
-
-							if (env.get_terr(col_pos) == terr)
-							{
-								print("simple_ai: unit(%||) colonize at %||\n", unit.id, col_pos);
-
-								// colonize
-								env.colonize(unit);
+						// if no order
+						if (not unit_ext.cmds.has())
+						{
+							if (assign_colony_work(unit)) {
+								print("simple_ai: unit(%||) assigned colony work\n", unit.id);
 							}
 							else {
-								print("simple_ai: unit(%||) move to colonize %||\n", unit.id, col_pos);
 
-								// move to good colony spot and colonize
-								auto path = find_path(unit_pos, col_pos, unit_ext);
+								auto & terr = env.get_terr(unit);
+								auto unit_pos = env.get_coords(terr);
 
-								unit_ext.cmds.clear();
+								// add orders
 
-								if (std::isinf(path.cost)) {
-									print("cmds: %||\n", path.cmds);
-									unit_ext.cmds.adds(path.cmds);
-									unit_ext.cmds.add(Cmd(InsBuild));
+								auto col_pos = get_best_colony_spot();
+
+								marks.add(col_pos, "col");
+
+								if (env.get_terr(col_pos) == terr)
+								{
+									print("simple_ai: unit(%||) colonize at %||\n", unit.id, col_pos);
+
+									// colonize
+									env.colonize(unit);
 								}
+								else {
+									print("simple_ai: unit(%||) move to colonize %||\n", unit.id, col_pos);
+
+									// move to good colony spot and colonize
+									auto path = find_path(unit_pos, col_pos, unit_ext);
+
+									unit_ext.cmds.clear();
+
+									if (std::isinf(path.cost)) {
+										print("cmds: %||\n", path.cmds);
+										unit_ext.cmds.adds(path.cmds);
+										unit_ext.cmds.add(Cmd(InsBuild));
+									}
+								}
+
 							}
-
 						}
-					}
-					else {
-						// exec current orders
-						exec_cmds(unit_ext);
-					}
+						else {
+							// exec current orders
+							exec_cmds(unit_ext);
+						}
 
 
-					// move in random direction
-					//auto dir = Coords(rm.random_int8(-1,+1), rm.random_int8(-1,+1));
-					//env.move_unit(dir[0], dir[1], unit);
+						// move in random direction
+						//auto dir = Coords(rm.random_int8(-1,+1), rm.random_int8(-1,+1));
+						//env.move_unit(dir[0], dir[1], unit);
+					}
 				}
+
+				print("simple_ai: ready\n");
+				env.ready();
 			}
 
-			print("simple_ai: ready\n");
-			env.ready();
-		}
+			t.wait();
+		} // while
 
-		return true;
 	}
 
 

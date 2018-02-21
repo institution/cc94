@@ -21,12 +21,10 @@
 #include <vector>
 #include <map>
 
-#include "pre.hpp"
-
 //#include <boost/cstdint.hpp>
-#include <boost/multi_array.hpp>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
+//#include <boost/multi_array.hpp>
+//#include <boost/format.hpp>
+//#include <boost/algorithm/string.hpp>
 
 #include "col.hpp"
 #include "env.hpp"
@@ -39,59 +37,52 @@
 
 
 
-bool g_running = true;
 
 
-col::Runner runner;
 
-void loop_step(col::Runner* runner)
+/*
+void loop_step(col::Runner * runner)
 {
 	
-	/*try {*/
-		
-		g_running = runner->step();	
-		#ifdef __EMSCRIPTEN__
-		if (!g_running) {
-			print("emscripten_cancel_main_loop\n");
-			emscripten_cancel_main_loop();
-		}
-		#endif
-    
-	/*} catch(std::exception const& e) {
-		std::cerr << "main.cpp:loop_step: exception: " << e.what();
-		g_running = false;
-	} catch(...) {
-		std::cerr << "main.cpp:loop_step: unknown exception!\n";
-		g_running = false;
-	}*/
+	gf_stop = runner->f_stop;	
+	#ifdef __EMSCRIPTEN__
+	if (gf_stop) {
+		print("emscripten_cancel_main_loop\n");
+		emscripten_cancel_main_loop();
+	}
+	#endif
+
 	
 }
+*/
+
+col::Runner runner;
 
 
 int main(int argc, char* argv[])
 {
 	
-	#ifdef __EMSCRIPTEN__
-		// set main loop and continue main
-		emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &runner, -1, 0);
-	#endif
+	//#ifdef __EMSCRIPTEN__
+	//	// set main loop and continue main
+	//	emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &runner, -1, 0);
+	//#endif
 	
 
 	if (argc == 3) {
-		runner.init(argv[1], argv[2], 1);
+		runner.run(argv[1], argv[2], 1);
 	}
 	else if (argc == 2) {
-		runner.init(argv[1], "", 1);
+		runner.run(argv[1], "", 1);
 	}
 	else {
-		runner.init("", "", 1);
+		runner.run("", "", 1);
 	}
 		
-	#ifndef __EMSCRIPTEN__
-		while (g_running) {
-			loop_step(&runner);
-		}		
-	#endif
+	//#ifndef __EMSCRIPTEN__
+	//	while (not gf_stop) {
+	//		loop_step(&runner);
+	//	}		
+	//#endif
 	
 	print("main EXIT\n");
 	

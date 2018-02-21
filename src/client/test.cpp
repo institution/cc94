@@ -29,7 +29,7 @@ TEST_CASE( "console.get_letter", "" ) {
 	Env env({1,1}, Terr(AltFlat, BiomePlains, PhysForest));
 	
 	auto & unit = env.create<Unit>(	
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1).set_equip1(ItemTools, 20)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1).set_equip1(ItemTools, 20)
 	);
 	env.put(env.get_terr({0,0}), unit);
 			
@@ -47,7 +47,7 @@ TEST_CASE( "console.get_next_to_repeat", "" ) {
 	Env env({1,1}, Terr(AltFlat, BiomePlains, PhysForest));
 	
 	auto & unit = env.create<Unit>(	
-		env.create<UnitType>()
+		env.get_unittype(1)
 	);
 	env.put(env.get_terr({0,0}), unit);
 			
@@ -72,7 +72,7 @@ TEST_CASE( "console.cmd_unit", "" ) {
 	Env env({1,1}, Terr(AltFlat, BiomePlains, PhysForest));
 	
 	auto & unit = env.create<Unit>(	
-		env.create<UnitType>()
+		env.get_unittype(1)
 	);
 	
 	Console con(env, nullptr);
@@ -115,7 +115,7 @@ TEST_CASE( "console.find_path", "" ) {
 	Console con(env, nullptr);
 	
 	auto & u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
 	);
 	
 	auto path = con.find_path({0,0},{1,0}, u);
@@ -132,7 +132,7 @@ TEST_CASE( "console.find_path2", "" ) {
 	env.get_terr({1,1}).set_alt(AltSea);
 	
 	auto & u = env.create<Unit>(
-		env.create<UnitType>().set_travel(TravelLand).set_speed(1)
+		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
 	);
 	
 	

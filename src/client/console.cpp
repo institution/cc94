@@ -7,6 +7,7 @@
 #include "simple_ai.hpp"
 #include "../front/front.hpp"
 #include "serialize2.hpp"
+#include "timer.hpp"
 //#include "widget.hpp"
 
 namespace col {
@@ -119,9 +120,9 @@ namespace col {
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
 			case SDL_WINDOWEVENT_RESIZED: {
 				auto new_dim = v2s(o.window.data1, o.window.data2);
-				if (old_dim != new_dim) {
-					win.set_ctx_dim();
-					old_dim = new_dim;
+				if (win.win_dim != new_dim)
+				{
+					win.resize_view(new_dim, win.ctx_dim);
 				}
 				break;
 			}
@@ -151,33 +152,24 @@ namespace col {
 	}
 
 	void Console::handle_events()
-	{
-		SDL_Event o;		
-		
-		SDL_WaitEventTimeout(&o, 30);
-		
-		do
+	{				
+		SDL_Event o;
+		while (SDL_PollEvent(&o))
 		{
 			switch (o.type) {
 				case SDL_QUIT:
-					win.stop();
+					f_stop = true;
 					break;
 				case SDL_WINDOWEVENT:
 					handle_window_event(o);
 					break;
 				default: {
 					auto p = SDLEvent_to_event(o, win);
-
 					handle_event(p);
-
 					break;
-
 				}
-			} // switch
-		} while (win.pool_event(o));
-		
-
-		
+			}
+		}
 	}
 
 
@@ -188,8 +180,8 @@ namespace col {
 		}
 	}
 
-	void Console::handle_char(char16_t code) {
-
+	void Console::handle_char(char16_t code)
+	{
 		if (!is_active()) {
 			throw Error("console not active");
 		}
@@ -226,57 +218,87 @@ namespace col {
 
 	void Console::init_GUI()
 	{
-		if (verbose >= 1) print("GUILoop: app.init\n");
-		win.init(
-			"cc94",
-			{conf.screen_w, conf.screen_h}
-		);
-
-		if (verbose >= 1) print("GUILoop: preload renderer\n");
-		preload_renderer(win);
-
-		if (verbose) print("GUILoop: set_logical_dim\n");
-		win.set_ctx_dim({conf.screen_w, conf.screen_h});
-
-		last_mod_env = env.mod - 1;
-		last_mod_con = mod - 1;
+		
+	}
 
 
-		last_tick = win.get_ticks();
-		if (verbose >= 1) print("GUILoop: init; tick=%||\n", last_tick);
+	void Console::run() 
+	{
+		print("INFO: creating window; &win=%||\n", &win);
+		win.create("ReCol", {conf.screen_w, conf.screen_h});
 
+		
+		print("INFO: rendering intro screen\n");
+		Texture bg = front::make_texture(front::load_png_RGBA8(conf.tile_path / "texture2.png"));
+		front::bind_texture(2, bg);
+		RenderCall rc;
+		rc.win = &win;
+		rc.mode = front::MODE_TEXTURE;
+		rc.texu = 2;
+		rc.dst = b2s({0,0}, bg.dim);
+		rc.uv0 = aabb2f(0,0,1,1);
+		rc();
+		win.flip();
+		
+
+		print("INFO: loading resources\n");
+		load_resources();
+
+
+		render_text({0,0}, font_tiny(), RGBA8(255,0,0,255), "COLONIZATION");
+		SDL_Delay(3000);
+		win.flip();
+		
+
+		/*
+		print("INFO: test sprite display\n");
+		//print("sprite = %||; pixbox = %||\n", res(TERRAIN, 3), get_pixel_box(res(TERRAIN, 3)));
+		
+		//front::bind_texture(0, textures.at(0));
+		//front::bind_texture(1, textures.at(1));
+		
+		{
+			RenderCall rc;
+			rc.win = &win;
+			rc.mode = front::MODE_TEXTURE;
+			rc.texu = 0;
+			rc.dst = b2s({0,0}, {100,100});
+			rc.uv0 = aabb2f(0.753906, 0.167969, 0.777344, 0.191406);
+			rc();
+			win.flip();
+		}
+		SDL_Delay(5000);
+		*/
+
+
+		print("INFO: launching gui\n");		
 		keyboard.init();
 		mouse.init();
+		//front::input::print_mod_table();		
+		start_gui(*this);
 
 
-		// widgets
-		init_renderer(*this);
-
-
-	}
-
-	bool Console::step_GUI()
-	{
-
-		//if ((env.mod != last_mod_env) || (mod != last_mod_con) || (last_tick + 100 > win.get_ticks())) {
-
-		//print("last_tick %||, %||\n", last_tick + 100, win.get_ticks());
-		if (last_tick + 67 < win.get_ticks())
+		print("INFO: entering event loop\n");
+		Timer rt(33);
+		while (not f_stop)
 		{
-			last_tick = win.get_ticks();
-			this->time = last_tick;
+			if (rt.left() <= 0)
+			{
+				render(env, *this, verbose);
+				rt.wait();
+			}
 
-			render(win, env, *this, verbose);
-
-			last_mod_env = env.mod;
-			last_mod_con = mod;
+			sync();
+			SDL_WaitEventTimeout(nullptr, 33);		
+			handle_events();
 		}
 
-		handle_events();
-
-		return !win.done;
-
+		print("INFO: destroy window; &win=%||\n", &win);
+		win.destroy();
 	}
+
+		
+
 
 	Item Console::get_next_workitem_field(Env const& env, Field const& f) const {
 		// return next item availbe for production in this workplace
@@ -456,7 +478,7 @@ namespace col {
 					put("Usage: play");
 					break;
 				case 1:
-					env.set_state(Env::StatePlay);
+					env.set_state(col::EnvStatePlay);
 					break;
 			}
 		}
@@ -535,8 +557,7 @@ namespace col {
 			}
 		}
 		else if (cmd == "list-unit-types") {
-			for (auto &utp: *env.uts) {
-				auto &ut = utp.second;
+			for (auto & ut: *env.uts) {
 				put(format("%u: %s", uint16(ut.id), ut.name));
 			}
 		}
@@ -550,7 +571,7 @@ namespace col {
 					break;
 				}
 				case 3: {
-					auto & c = env.get<UnitType>(std::stoi(es.at(1))); // type_id
+					auto & c = env.get_unittype(std::stoi(es.at(1))); // type_id
 					auto cc = std::stoi(es.at(2));  // control
 					auto & t = *get_sel_terr();
 
@@ -706,7 +727,7 @@ namespace col {
 					auto id = stoi(es.at(1));
 					env.equip(
 						*get_sel_unit(),
-						env.get<UnitType>(id)
+						env.get_unittype(id)
 					);
 					break;
 				}

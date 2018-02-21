@@ -5,8 +5,7 @@ namespace col{
 
 		UnitTypes equip_to_types(Env const& env, Unit const& u) {
 			UnitTypes rs;
-			for (auto& p: env.get_cont<UnitType>()) {
-				UnitType const& ut = p.second;
+			for (auto & ut: *env.uts) {
 				if (u.get_base() == ut.get_base()) {
 					rs.push_back(&ut);
 				}

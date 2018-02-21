@@ -4,11 +4,6 @@
 namespace col {
 
 
-	Env::State const
-		Env::StateEdit = 0,
-		Env::StatePlay = 1,
-		Env::StateExit = 2;
-
 	/// Speciality name
 	Prof get_prof_by_item(Item item)
 	{

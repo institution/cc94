@@ -4,16 +4,15 @@
 #include "env.hpp"
 #include "console.hpp"
 #include "layout.hpp"
-#include "renderer-pre.hpp"
+#include "res.hpp"
+#include "render_func.hpp"
 
 namespace col {
 
-	void render(Front &app, col::Env & env, col::Console & con, int verbose);
+	void render(col::Env & env, col::Console & con, int verbose);
+
 	
-
-	void preload_renderer(Front &app);
-
-	void init_renderer(Console & con);
+	void start_gui(Console & con);
 
 
 }

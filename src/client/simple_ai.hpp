@@ -6,7 +6,6 @@
 
 #include "../ext/format.hpp"
 #include "env.hpp"
-#include "player.hpp"
 #include "agent.hpp"
 #include "random_module.hpp"
 #include "exts.hpp"
@@ -108,7 +107,7 @@ namespace simple_ai{
 			return format("Simple AI (%||)", env.get<Faction>(cc).get_name());
 		}
 
-		bool step() override;
+		void run() override;
 		
 		SimpleAi(Env & env, Control cc): env(env), cc(cc)
 		{			

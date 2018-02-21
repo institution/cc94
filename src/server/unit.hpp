@@ -21,7 +21,6 @@ namespace col{
 		using Id = Makeable::Id;
 
 		// data
-		string name{""};
 		Id id;
 		uint8_t speed{0};  // flat tiles per 1t (TIME_UNIT)
 		uint8_t attack{0}; // attack strength
@@ -36,7 +35,8 @@ namespace col{
 		Item item2{ItemNone};
 		Amount num2{0};
 		Amount cost{0};
-		uint8 icon_expert{0};
+		uint8_t icon_expert{0};
+		string name{""};
 
 		// setters
 		UnitType& set_speed(uint8 const& s) { speed = s; return *this; }
@@ -77,6 +77,8 @@ namespace col{
 
 		explicit UnitType(Id const& id): id(id) {}
 
+
+		
 		explicit UnitType(vector<string> const& xs) {
 			assert(xs.size() >= 15);
 
