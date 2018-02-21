@@ -6,7 +6,7 @@ art/work-in-progress/*
 
 bin/
 obj/
-res/
+res/tile-16-nonfree/
 cc94/
 arch/
 core

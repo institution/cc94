@@ -1,0 +1,655 @@
+sprite 1
+name "0001-zz-interface-path"
+box 0 0 48 48
+
+sprite 2
+name "0002-zz-interface-path"
+box 48 0 48 48
+
+sprite 3
+name "0003-zz-interface-path"
+box 96 0 48 48
+
+sprite 4
+name "0004-zz-interface-path"
+box 144 0 48 48
+
+sprite 5
+name "0005-zz-interface-path"
+box 192 0 48 48
+
+sprite 6
+name "0006-zz-interface-path"
+box 240 0 48 48
+
+sprite 7
+name "0007-zz-interface-path"
+box 288 0 48 48
+
+sprite 8
+name "0008-zz-interface-path"
+box 336 0 48 48
+
+sprite 9
+name "0009-zz-bgterrain-water"
+box 384 0 48 9
+
+sprite 10
+name "0010-zz-bgterrain-grass"
+box 432 0 48 9
+
+sprite 11
+name "0011-zz-bgterrain-deck"
+box 480 0 48 9
+
+sprite 20
+name "0020-zz-woodtile-woodtile"
+box 528 0 96 72
+
+sprite 21
+name "0021-zz-parch-sandtile"
+box 624 0 96 72
+
+sprite 1001
+name "1001-building-stockade"
+box 720 0 219 54
+
+sprite 1004
+name "1004-building-armory"
+box 939 0 132 66
+
+sprite 1007
+name "1007-building-docks"
+box 1071 0 225 144
+
+sprite 1010
+name "1010-building-townhall"
+box 1296 0 159 111
+
+sprite 1017
+name "1017-building-fence"
+box 1455 0 219 54
+
+sprite 1036
+name "1036-building-carpenters-shop"
+box 1674 0 132 66
+
+sprite 1043
+name "1043-building-trees-big"
+box 1806 0 159 111
+
+sprite 1044
+name "1044-building-trees-medium"
+box 0 144 132 66
+
+sprite 1045
+name "1045-building-trees-small"
+box 132 144 69 81
+
+sprite 1046
+name "1046-building-coast"
+box 201 144 225 144
+
+sprite 2001
+name "2001-icon-stockade"
+box 426 144 48 48
+
+sprite 2004
+name "2004-icon-colony"
+box 474 144 48 48
+
+sprite 2006
+name "2006-icon-caravel"
+box 522 144 48 48
+
+sprite 2009
+name "2009-icon-wagon-train"
+box 570 144 48 48
+
+sprite 2023
+name "2023-icon-food"
+box 618 144 24 36
+
+sprite 2024
+name "2024-icon-sugar"
+box 642 144 36 36
+
+sprite 2025
+name "2025-icon-tobacco"
+box 678 144 24 36
+
+sprite 2026
+name "2026-icon-cotton"
+box 702 144 30 36
+
+sprite 2027
+name "2027-icon-furs"
+box 732 144 27 36
+
+sprite 2028
+name "2028-icon-lumber"
+box 759 144 30 36
+
+sprite 2029
+name "2029-icon-ore"
+box 789 144 30 36
+
+sprite 2030
+name "2030-icon-silver"
+box 819 144 30 36
+
+sprite 2031
+name "2031-icon-horse"
+box 849 144 48 48
+
+sprite 2032
+name "2032-icon-rum"
+box 897 144 21 36
+
+sprite 2033
+name "2033-icon-cigars"
+box 918 144 27 36
+
+sprite 2034
+name "2034-icon-cloth"
+box 945 144 24 36
+
+sprite 2035
+name "2035-icon-coat"
+box 969 144 24 36
+
+sprite 2036
+name "2036-icon-tradegoods"
+box 993 144 27 36
+
+sprite 2037
+name "2037-icon-tool"
+box 1020 144 30 36
+
+sprite 2038
+name "2038-icon-musket"
+box 1050 144 30 36
+
+sprite 2055
+name "2055-icon-hammer"
+box 1080 144 24 36
+
+sprite 2056
+name "2056-icon-x"
+box 1104 144 36 36
+
+sprite 2063
+name "2063-icon-bell"
+box 1140 144 36 36
+
+sprite 2065
+name "2065-icon-cancel"
+box 1176 144 48 48
+
+sprite 2101
+name "2101-icon-colonist"
+box 1224 144 20 48
+
+sprite 2119
+name "2119-icon-flag-red"
+box 1244 144 18 15
+
+sprite 2120
+name "2120-icon-flag-blue"
+box 1262 144 18 15
+
+sprite 2121
+name "2121-icon-flag-yellow"
+box 1280 144 18 15
+
+sprite 2122
+name "2122-icon-flag-orange"
+box 1298 144 18 15
+
+sprite 3002
+name "3002-phys-river-major"
+box 1316 144 48 48
+
+sprite 3003
+name "3003-phys-river-major"
+box 1364 144 48 48
+
+sprite 3004
+name "3004-phys-river-major"
+box 1412 144 48 48
+
+sprite 3005
+name "3005-phys-river-major"
+box 1460 144 48 48
+
+sprite 3006
+name "3006-phys-river-major"
+box 1508 144 48 48
+
+sprite 3007
+name "3007-phys-river-major"
+box 1556 144 48 48
+
+sprite 3008
+name "3008-phys-river-major"
+box 1604 144 48 48
+
+sprite 3009
+name "3009-phys-river-major"
+box 1652 144 48 48
+
+sprite 3010
+name "3010-phys-river-major"
+box 1700 144 48 48
+
+sprite 3011
+name "3011-phys-river-major"
+box 1748 144 48 48
+
+sprite 3012
+name "3012-phys-river-major"
+box 1796 144 48 48
+
+sprite 3013
+name "3013-phys-river-major"
+box 1844 144 48 48
+
+sprite 3014
+name "3014-phys-river-major"
+box 1892 144 48 48
+
+sprite 3015
+name "3015-phys-river-major"
+box 1940 144 48 48
+
+sprite 3016
+name "3016-phys-river-major"
+box 1988 144 48 48
+
+sprite 3018
+name "3018-phys-river-minor"
+box 0 288 48 48
+
+sprite 3019
+name "3019-phys-river-minor"
+box 48 288 48 48
+
+sprite 3020
+name "3020-phys-river-minor"
+box 96 288 48 48
+
+sprite 3021
+name "3021-phys-river-minor"
+box 144 288 48 48
+
+sprite 3022
+name "3022-phys-river-minor"
+box 192 288 48 48
+
+sprite 3023
+name "3023-phys-river-minor"
+box 240 288 48 48
+
+sprite 3024
+name "3024-phys-river-minor"
+box 288 288 48 48
+
+sprite 3025
+name "3025-phys-river-minor"
+box 336 288 48 48
+
+sprite 3026
+name "3026-phys-river-minor"
+box 384 288 48 48
+
+sprite 3027
+name "3027-phys-river-minor"
+box 432 288 48 48
+
+sprite 3028
+name "3028-phys-river-minor"
+box 480 288 48 48
+
+sprite 3029
+name "3029-phys-river-minor"
+box 528 288 48 48
+
+sprite 3030
+name "3030-phys-river-minor"
+box 576 288 48 48
+
+sprite 3031
+name "3031-phys-river-minor"
+box 624 288 48 48
+
+sprite 3032
+name "3032-phys-river-minor"
+box 672 288 48 48
+
+sprite 3033
+name "3033-phys-m"
+box 720 288 16 16
+
+sprite 3049
+name "3049-phys-hill"
+box 736 288 48 48
+
+sprite 3065
+name "3065-phys-forest"
+box 784 288 48 48
+
+sprite 3066
+name "3066-phys-forest"
+box 832 288 48 48
+
+sprite 3067
+name "3067-phys-forest"
+box 880 288 48 48
+
+sprite 3068
+name "3068-phys-forest"
+box 928 288 48 48
+
+sprite 3069
+name "3069-phys-forest"
+box 976 288 48 48
+
+sprite 3070
+name "3070-phys-forest"
+box 1024 288 48 48
+
+sprite 3071
+name "3071-phys-forest"
+box 1072 288 48 48
+
+sprite 3072
+name "3072-phys-forest"
+box 1120 288 48 48
+
+sprite 3073
+name "3073-phys-forest"
+box 1168 288 48 48
+
+sprite 3074
+name "3074-phys-forest"
+box 1216 288 48 48
+
+sprite 3075
+name "3075-phys-forest"
+box 1264 288 48 48
+
+sprite 3076
+name "3076-phys-forest"
+box 1312 288 48 48
+
+sprite 3077
+name "3077-phys-forest"
+box 1360 288 48 48
+
+sprite 3078
+name "3078-phys-forest"
+box 1408 288 48 48
+
+sprite 3079
+name "3079-phys-forest"
+box 1456 288 48 48
+
+sprite 3080
+name "3080-phys-forest"
+box 1504 288 48 48
+
+sprite 3081
+name "3081-phys-road"
+box 1552 288 56 56
+
+sprite 3082
+name "3082-phys-road"
+box 1608 288 56 56
+
+sprite 3083
+name "3083-phys-road"
+box 1664 288 56 56
+
+sprite 3084
+name "3084-phys-road"
+box 1720 288 56 56
+
+sprite 3085
+name "3085-phys-road"
+box 1776 288 56 56
+
+sprite 3086
+name "3086-phys-road"
+box 1832 288 56 56
+
+sprite 3087
+name "3087-phys-road"
+box 1888 288 56 56
+
+sprite 3088
+name "3088-phys-road"
+box 1944 288 56 56
+
+sprite 3089
+name "3089-phys-road"
+box 0 344 56 56
+
+sprite 3105
+name "3105-phys-terrain-blend"
+box 56 344 48 48
+
+sprite 3106
+name "3106-phys-terrain-blend"
+box 104 344 48 48
+
+sprite 3107
+name "3107-phys-terrain-blend"
+box 152 344 48 48
+
+sprite 3108
+name "3108-phys-terrain-blend"
+box 200 344 48 48
+
+sprite 3109
+name "3109-phys-coast"
+box 248 344 24 24
+
+sprite 3110
+name "3110-phys-coast"
+box 272 344 24 24
+
+sprite 3111
+name "3111-phys-coast"
+box 296 344 24 24
+
+sprite 3112
+name "3112-phys-coast"
+box 320 344 24 24
+
+sprite 3113
+name "3113-phys-coast"
+box 344 344 24 24
+
+sprite 3114
+name "3114-phys-coast"
+box 368 344 24 24
+
+sprite 3115
+name "3115-phys-coast"
+box 392 344 24 24
+
+sprite 3116
+name "3116-phys-coast"
+box 416 344 24 24
+
+sprite 3117
+name "3117-phys-coast"
+box 440 344 24 24
+
+sprite 3118
+name "3118-phys-coast"
+box 464 344 24 24
+
+sprite 3119
+name "3119-phys-coast"
+box 488 344 24 24
+
+sprite 3120
+name "3120-phys-coast"
+box 512 344 24 24
+
+sprite 3121
+name "3121-phys-coast"
+box 536 344 24 24
+
+sprite 3122
+name "3122-phys-coast"
+box 560 344 24 24
+
+sprite 3123
+name "3123-phys-coast"
+box 584 344 24 24
+
+sprite 3124
+name "3124-phys-coast"
+box 608 344 24 24
+
+sprite 3125
+name "3125-phys-coast"
+box 632 344 24 24
+
+sprite 3126
+name "3126-phys-coast"
+box 656 344 24 24
+
+sprite 3127
+name "3127-phys-coast"
+box 680 344 24 24
+
+sprite 3128
+name "3128-phys-coast"
+box 704 344 24 24
+
+sprite 3129
+name "3129-phys-coast"
+box 728 344 24 24
+
+sprite 3130
+name "3130-phys-coast"
+box 752 344 24 24
+
+sprite 3131
+name "3131-phys-coast"
+box 776 344 24 24
+
+sprite 3132
+name "3132-phys-coast"
+box 800 344 24 24
+
+sprite 3133
+name "3133-phys-coast"
+box 824 344 24 24
+
+sprite 3134
+name "3134-phys-coast"
+box 848 344 24 24
+
+sprite 3135
+name "3135-phys-coast"
+box 872 344 24 24
+
+sprite 3136
+name "3136-phys-coast"
+box 896 344 24 24
+
+sprite 3137
+name "3137-phys-coast"
+box 920 344 24 24
+
+sprite 3138
+name "3138-phys-coast"
+box 944 344 24 24
+
+sprite 3139
+name "3139-phys-coast"
+box 968 344 24 24
+
+sprite 3140
+name "3140-phys-coast"
+box 992 344 24 24
+
+sprite 3141
+name "3141-phys-river-major"
+box 1016 344 48 48
+
+sprite 3142
+name "3142-phys-river-major"
+box 1064 344 48 48
+
+sprite 3143
+name "3143-phys-river-major"
+box 1112 344 48 48
+
+sprite 3144
+name "3144-phys-river-major"
+box 1160 344 48 48
+
+sprite 3145
+name "3145-phys-river-minor"
+box 1208 344 48 48
+
+sprite 3146
+name "3146-phys-river-minor"
+box 1256 344 48 48
+
+sprite 3147
+name "3147-phys-river-minor"
+box 1304 344 48 48
+
+sprite 3148
+name "3148-phys-river-minor"
+box 1352 344 48 48
+
+sprite 3150
+name "3150-phys-plow"
+box 1400 344 48 48
+
+sprite 4001
+name "4001-terrain-tundra"
+box 1448 344 48 48
+
+sprite 4002
+name "4002-terrain-dessert"
+box 1496 344 48 48
+
+sprite 4003
+name "4003-terrain-plains"
+box 1544 344 48 48
+
+sprite 4004
+name "4004-terrain-prairie"
+box 1592 344 48 48
+
+sprite 4005
+name "4005-terrain-grassland"
+box 1640 344 48 48
+
+sprite 4006
+name "4006-terrain-savannah"
+box 1688 344 48 48
+
+sprite 4007
+name "4007-terrain-march"
+box 1736 344 48 48
+
+sprite 4008
+name "4008-terrain-swamp"
+box 1784 344 48 48
+
+sprite 4010
+name "4010-terrain-arctic"
+box 1832 344 48 48
+
+sprite 4011
+name "4011-terrain-water"
+box 1880 344 48 48
