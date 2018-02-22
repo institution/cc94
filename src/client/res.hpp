@@ -73,7 +73,14 @@ namespace col {
 	{
 		ResId base{0};
 		int16_t height{0};
+		int16_t ascender{0};
+		int16_t descender{0};
+		v2s pad{0,0};
 		TexUnit texu{0};
+
+		v2s get_glyph_rpos(v2s cpos, Sprite const& g) const {
+			return cpos + g.delta + v2s(0, ascender);
+		}
 	};
 
 	

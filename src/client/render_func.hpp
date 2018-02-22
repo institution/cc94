@@ -98,6 +98,9 @@ namespace col
 	
 	/// Return text dim
 	v2s get_text_dim(Font const& font, string const& text);
+
+	/// Return text dim with padding
+	v2s get_text_dim_pad(Font const& font, string const& text);
 	
 	
 	/// Render text at pos (top-left)

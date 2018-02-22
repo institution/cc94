@@ -50,8 +50,8 @@ namespace col
 				cpos[1] += font.height;				
 			}
 			else {				
-				auto & g = res(font.base, t);			
-				render_aamask(font.texu, cpos + g.delta, g, style.fg);
+				auto & g = res(font.base, t);				
+				render_aamask(font.texu, font.get_glyph_rpos(cpos, g), g, style.fg);
 				cpos[0] += g.adv; // move to next position
 			}			
 		}		

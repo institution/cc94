@@ -1,574 +1,577 @@
 font 0
-name "Libris ADF Std-Regular-16"
-height 16
+name "Libris ADF Std-Regular-15"
+height 18
+ascender 13
+descender -3
+pad 3 0
 
 sprite 32
 name " "
-box 4 24 0 0
-delta 0 16
+box 4 23 0 0
+bearing 0 0
 adv 5
 
 sprite 33
 name "!"
-box 13 12 4 13
-delta 0 4
+box 13 12 3 12
+bearing 0 11
 adv 4
 
 sprite 34
 name "\""
 box 21 12 5 4
-delta 0 4
-adv 6
+bearing 0 11
+adv 5
 
 sprite 35
 name "#"
-box 31 12 9 12
-delta 0 4
+box 30 13 8 10
+bearing 0 10
 adv 8
 
 sprite 36
 name "$"
-box 43 10 8 16
-delta 0 2
+box 42 10 7 15
+bearing 0 13
 adv 7
 
 sprite 37
 name "%"
-box 54 12 13 13
-delta 0 4
-adv 13
+box 53 12 12 12
+bearing 0 11
+adv 12
 
 sprite 38
 name "&"
-box 71 12 10 12
-delta 0 4
+box 69 12 9 11
+bearing 0 11
 adv 9
 
 sprite 39
 name "'"
-box 84 13 3 4
-delta 0 5
+box 82 12 3 4
+bearing 0 11
 adv 3
 
 sprite 40
 name "("
-box 91 12 4 15
-delta 0 4
+box 89 12 4 14
+bearing 0 11
 adv 4
 
 sprite 41
 name ")"
-box 99 12 4 15
-delta 0 4
+box 97 12 4 14
+bearing 0 11
 adv 4
 
 sprite 42
 name "*"
-box 107 12 5 5
-delta 0 4
+box 105 12 5 5
+bearing 0 11
 adv 5
 
 sprite 43
 name "+"
-box 116 16 8 8
-delta 0 8
-adv 8
+box 114 15 8 8
+bearing 0 8
+adv 7
 
 sprite 44
 name ","
-box 128 22 3 4
-delta 0 14
+box 125 21 3 4
+bearing 0 2
 adv 3
 
 sprite 45
 name "-"
-box 135 19 5 2
-delta 0 11
-adv 6
+box 132 18 5 2
+bearing 0 5
+adv 5
 
 sprite 46
 name "."
-box 145 21 3 3
-delta 0 13
-adv 4
+box 141 20 3 3
+bearing 0 3
+adv 3
 
 sprite 47
 name "/"
-box 153 12 5 12
-delta 0 4
-adv 5
+box 148 12 5 11
+bearing 0 11
+adv 4
 
 sprite 48
 name "0"
-box 162 12 8 12
-delta 0 4
-adv 9
+box 156 12 8 11
+bearing 0 11
+adv 8
 
 sprite 49
 name "1"
-box 176 12 2 12
-delta 1 4
+box 168 12 3 11
+bearing 0 11
 adv 4
 
 sprite 50
 name "2"
-box 183 12 8 12
-delta 0 4
+box 176 12 7 11
+bearing 0 11
 adv 8
 
 sprite 51
 name "3"
-box 195 12 8 13
-delta 0 4
-adv 8
+box 188 12 7 12
+bearing 0 11
+adv 7
 
 sprite 52
 name "4"
-box 207 12 8 12
-delta 0 4
-adv 8
+box 199 12 8 11
+bearing 0 11
+adv 7
 
 sprite 53
 name "5"
-box 219 12 8 12
-delta 0 4
+box 210 12 7 11
+bearing 0 11
 adv 8
 
 sprite 54
 name "6"
-box 231 12 9 12
-delta 0 4
-adv 9
+box 222 12 8 11
+bearing 0 11
+adv 8
 
 sprite 55
 name "7"
-box 244 12 8 12
-delta 0 4
+box 234 12 7 11
+bearing 0 11
 adv 7
 
 sprite 56
 name "8"
-box 4 39 8 12
-delta 0 4
+box 4 38 7 11
+bearing 0 11
 adv 8
 
 sprite 57
 name "9"
-box 16 39 8 13
-delta 0 4
+box 16 38 8 12
+bearing 0 11
 adv 8
 
 sprite 58
 name ":"
-box 28 43 3 8
-delta 0 8
-adv 4
+box 28 41 3 8
+bearing 0 8
+adv 3
 
 sprite 59
 name ";"
-box 36 43 3 11
-delta 0 8
+box 35 41 3 10
+bearing 0 8
 adv 3
 
 sprite 60
 name "<"
-box 43 43 8 8
-delta 0 8
+box 42 41 8 8
+bearing 0 8
 adv 8
 
 sprite 61
 name "="
-box 55 45 9 5
-delta 0 10
+box 54 44 8 4
+bearing 0 5
 adv 9
 
 sprite 62
 name ">"
-box 68 43 8 8
-delta 0 8
+box 67 41 8 8
+bearing 0 8
 adv 8
 
 sprite 63
 name "?"
-box 80 39 7 12
-delta 0 4
+box 79 38 7 11
+bearing 0 11
 adv 7
 
 sprite 64
 name "@"
-box 91 39 15 14
-delta 0 4
-adv 15
+box 90 38 14 13
+bearing 0 11
+adv 14
 
 sprite 65
 name "A"
-box 109 39 11 12
-delta -1 4
-adv 10
+box 107 38 10 11
+bearing -1 11
+adv 9
 
 sprite 66
 name "B"
-box 124 39 9 12
-delta 0 4
+box 121 38 9 11
+bearing 0 11
 adv 9
 
 sprite 67
 name "C"
-box 137 39 10 13
-delta 0 4
-adv 10
+box 134 38 9 12
+bearing 0 11
+adv 9
 
 sprite 68
 name "D"
-box 151 39 10 12
-delta 0 4
+box 147 38 10 11
+bearing 0 11
 adv 10
 
 sprite 69
 name "E"
-box 165 39 9 12
-delta 0 4
-adv 9
+box 161 38 8 11
+bearing 0 11
+adv 8
 
 sprite 70
 name "F"
-box 178 39 8 12
-delta 0 4
-adv 8
+box 173 38 8 11
+bearing 0 11
+adv 7
 
 sprite 71
 name "G"
-box 190 39 10 12
-delta 0 4
-adv 10
+box 184 38 9 11
+bearing 0 11
+adv 9
 
 sprite 72
 name "H"
-box 204 39 9 12
-delta 0 4
-adv 10
+box 197 38 9 11
+bearing 0 11
+adv 9
 
 sprite 73
 name "I"
-box 218 39 3 12
-delta 0 4
+box 210 38 3 11
+bearing 0 11
 adv 3
 
 sprite 74
 name "J"
-box 224 39 6 12
-delta -1 4
-adv 6
+box 216 38 6 11
+bearing -1 11
+adv 5
 
 sprite 75
 name "K"
-box 235 39 10 13
-delta 0 4
+box 226 38 9 12
+bearing 0 11
 adv 9
 
 sprite 76
 name "L"
-box 4 66 8 12
-delta 0 4
+box 239 38 7 11
+bearing 0 11
 adv 7
 
 sprite 77
 name "M"
-box 15 66 12 12
-delta 0 4
-adv 13
+box 4 64 11 11
+bearing 0 11
+adv 12
 
 sprite 78
 name "N"
-box 32 66 10 12
-delta 0 4
-adv 11
+box 20 64 10 11
+bearing 0 11
+adv 10
 
 sprite 79
 name "O"
-box 47 66 11 12
-delta 0 4
-adv 11
+box 34 64 10 11
+bearing 0 11
+adv 10
 
 sprite 80
 name "P"
-box 62 66 9 12
-delta 0 4
-adv 9
+box 48 64 8 11
+bearing 0 11
+adv 8
 
 sprite 81
 name "Q"
-box 75 66 11 13
-delta 0 4
-adv 11
+box 60 64 10 12
+bearing 0 11
+adv 10
 
 sprite 82
 name "R"
-box 90 66 10 13
-delta 0 4
+box 74 64 9 12
+bearing 0 11
 adv 9
 
 sprite 83
 name "S"
-box 103 66 8 12
-delta 0 4
-adv 8
+box 87 64 7 11
+bearing 0 11
+adv 7
 
 sprite 84
 name "T"
-box 114 66 10 12
-delta -1 4
-adv 9
+box 97 64 10 11
+bearing -1 11
+adv 8
 
 sprite 85
 name "U"
-box 128 66 10 12
-delta 0 4
+box 110 64 9 11
+bearing 0 11
 adv 10
 
 sprite 86
 name "V"
-box 142 66 10 12
-delta 0 4
+box 124 64 9 11
+bearing 0 11
 adv 9
 
 sprite 87
 name "W"
-box 155 66 14 12
-delta 0 4
-adv 14
+box 137 64 14 11
+bearing 0 11
+adv 13
 
 sprite 88
 name "X"
-box 172 66 11 12
-delta -1 4
+box 153 64 10 11
+bearing -1 11
 adv 9
 
 sprite 89
 name "Y"
-box 185 66 11 13
-delta -1 4
-adv 10
+box 166 64 10 12
+bearing -1 11
+adv 9
 
 sprite 90
 name "Z"
-box 200 66 9 12
-delta 0 4
-adv 9
+box 180 64 8 11
+bearing 0 11
+adv 8
 
 sprite 91
 name "["
-box 213 66 4 15
-delta 0 4
+box 192 64 4 14
+bearing 0 11
 adv 4
 
 sprite 92
 name "\\"
-box 221 66 5 12
-delta 0 4
-adv 5
+box 200 64 5 11
+bearing 0 11
+adv 4
 
 sprite 93
 name "]"
-box 230 66 4 15
-delta 0 4
+box 208 64 3 14
+bearing 0 11
 adv 4
 
 sprite 94
 name "^"
-box 238 66 7 7
-delta 0 4
+box 216 64 6 6
+bearing 0 11
 adv 6
 
 sprite 95
 name "_"
-box 3 107 10 1
-delta -1 18
-adv 9
+box 225 77 10 1
+bearing -1 -2
+adv 8
 
 sprite 96
 name "`"
-box 17 93 4 3
-delta 0 4
+box 238 64 4 3
+bearing 0 11
 adv 4
 
 sprite 97
 name "a"
-box 25 97 7 8
-delta 0 8
+box 4 94 6 7
+bearing 0 7
 adv 7
 
 sprite 98
 name "b"
-box 36 93 8 12
-delta 0 4
-adv 8
+box 15 90 7 11
+bearing 0 11
+adv 7
 
 sprite 99
 name "c"
-box 48 97 7 8
-delta 0 8
-adv 7
+box 26 94 7 7
+bearing 0 7
+adv 6
 
 sprite 100
 name "d"
-box 59 93 7 12
-delta 0 4
-adv 8
+box 36 90 7 11
+bearing 0 11
+adv 7
 
 sprite 101
 name "e"
-box 71 97 7 8
-delta 0 8
+box 47 94 7 7
+bearing 0 7
 adv 7
 
 sprite 102
 name "f"
-box 82 93 5 12
-delta 0 4
+box 58 90 4 11
+bearing 0 11
 adv 4
 
 sprite 103
 name "g"
-box 90 96 7 12
-delta 0 7
-adv 8
+box 66 93 7 11
+bearing 0 8
+adv 7
 
 sprite 104
 name "h"
-box 102 93 7 12
-delta 0 4
-adv 8
+box 77 90 7 11
+bearing 0 11
+adv 7
 
 sprite 105
 name "i"
-box 114 93 3 12
-delta 0 4
+box 88 90 3 11
+bearing 0 11
 adv 3
 
 sprite 106
 name "j"
-box 120 93 4 15
-delta -1 4
+box 94 90 4 14
+bearing -1 11
 adv 3
 
 sprite 107
 name "k"
-box 128 93 8 13
-delta 0 4
+box 102 90 7 12
+bearing 0 11
 adv 7
 
 sprite 108
 name "l"
-box 139 93 3 12
-delta 0 4
+box 113 90 3 11
+bearing 0 11
 adv 3
 
 sprite 109
 name "m"
-box 146 97 11 8
-delta 0 8
+box 120 94 10 7
+bearing 0 7
 adv 11
 
 sprite 110
 name "n"
-box 161 97 7 8
-delta 0 8
-adv 8
+box 135 94 7 7
+bearing 0 7
+adv 7
 
 sprite 111
 name "o"
-box 173 97 7 8
-delta 0 8
-adv 8
+box 146 94 7 7
+bearing 0 7
+adv 7
 
 sprite 112
 name "p"
-box 185 96 8 12
-delta 0 7
-adv 8
+box 157 93 7 11
+bearing 0 8
+adv 7
 
 sprite 113
 name "q"
-box 197 97 7 11
-delta 0 8
-adv 8
+box 168 94 7 10
+bearing 0 7
+adv 7
 
 sprite 114
 name "r"
-box 209 97 5 8
-delta 0 8
+box 179 94 5 7
+bearing 0 7
 adv 5
 
 sprite 115
 name "s"
-box 218 97 6 8
-delta 0 8
+box 188 94 6 7
+bearing 0 7
 adv 6
 
 sprite 116
 name "t"
-box 228 95 4 10
-delta 0 6
+box 198 92 4 9
+bearing 0 9
 adv 4
 
 sprite 117
 name "u"
-box 236 96 7 9
-delta 0 7
-adv 8
+box 206 93 7 8
+bearing 0 8
+adv 7
 
 sprite 118
 name "v"
-box 4 124 7 8
-delta 0 8
-adv 7
+box 217 94 7 7
+bearing 0 7
+adv 6
 
 sprite 119
 name "w"
-box 15 124 10 8
-delta 0 8
-adv 10
+box 227 94 9 7
+bearing 0 7
+adv 9
 
 sprite 120
 name "x"
-box 29 124 7 8
-delta 0 8
-adv 7
+box 240 94 6 7
+bearing 0 7
+adv 6
 
 sprite 121
 name "y"
-box 40 124 7 11
-delta 0 8
-adv 7
+box 4 119 7 11
+bearing 0 8
+adv 6
 
 sprite 122
 name "z"
-box 51 124 7 8
-delta 0 8
+box 14 120 6 7
+bearing 0 7
 adv 6
 
 sprite 123
 name "{"
-box 61 120 4 15
-delta 0 4
+box 24 116 4 14
+bearing 0 11
 adv 4
 
 sprite 124
 name "|"
-box 69 120 2 15
-delta 0 4
+box 32 116 2 14
+bearing 0 11
 adv 3
 
 sprite 125
 name "}"
-box 76 120 4 15
-delta 0 4
+box 39 116 4 14
+bearing 0 11
 adv 4
 
 sprite 126
 name "~"
-box 84 125 8 3
-delta 0 9
-adv 8
+box 47 120 7 3
+bearing 0 7
+adv 7
 

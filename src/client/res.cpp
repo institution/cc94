@@ -99,6 +99,11 @@ namespace col {
 				auto y = p.read_int16();
 				sprite.delta = v2s(x,y);
 			}
+			else if (sym == "bearing") {
+				auto x = p.read_int16();
+				auto y = p.read_int16();
+				sprite.delta = v2s(x,-y);
+			}			
 			else if (sym == "adv") {
 				sprite.adv = p.read_int16();				
 			}
@@ -123,6 +128,16 @@ namespace col {
 			}			
 			else if (sym == "height") {
 				font.height = p.read_int16();
+			}
+			else if (sym == "ascender") {
+				font.ascender = p.read_int16();
+			}
+			else if (sym == "descender") {
+				font.descender = p.read_int16();
+			}
+			else if (sym == "pad") {
+				font.pad[0] = p.read_int16();
+				font.pad[1] = p.read_int16();
 			}
 			else if (sym == "base") {
 				font.base = base = p.read_uint16();				
