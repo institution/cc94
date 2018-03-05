@@ -6,7 +6,6 @@
 #include "base.hpp"
 #include "logic.hpp"
 #include "props.hpp"
-#include "conf.hpp"
 #include "align.hpp"
 #include "hypertext.hpp"
 #include "layout.hpp"
@@ -17,6 +16,8 @@
 namespace col {
 	using Con = Console;
 
+	void set_flag(uint8_t & x, uint8_t y) { x |= y; }	
+	void unset_flag(uint8_t & x, uint8_t y) { x &= ~y; }
 
 
 	Style const StyleMenu(ColorFont, ColorNone, ColorFontSelected, ColorFontDisabled);
@@ -175,24 +176,20 @@ namespace col {
 
 	void render_shield(v2s pos, RGBA8 color, char letter)
 	{
-		auto inner_pos = pos + v2s(1,1) * ly.line;
-		auto inner_dim = v2s(ly.S(5), ly.font_tiny);
+		auto const& font = font_tiny();
+		
+		b2s inn;
+		inn.pos = pos + v2s(ly.line_th, ly.line_th);
+		inn.dim = font.upper_dim + v2s(ly.line_th*2, ly.line_th*2); 
 
-		render_outline(
-			{inner_pos, inner_dim},
-			{0, 0, 0, 255},
-			ly.line
-		);
+		render_outline(inn, {0, 0, 0, 255}, ly.line_th);
+		render_fill(inn, color);
 
-		render_fill(
-			{inner_pos, inner_dim},
-			color
-		);
-
-		render_text(
-			pos + v2s(1,1) * ly.line,
-			font_tiny(), ColorBlack,
-			string() + letter
+		auto const& g = res(font.base, letter);
+		render_aamask(TEXU_FONT0,
+			calc_align(inn, g.dim, v2f(0.5, 0.5)),
+			g,
+			ColorBlack
 		);
 	}
 
@@ -343,311 +340,280 @@ namespace col {
 
 
 
+	template <class T>
+	void set_max(T & x, T y) {
+		if (x < y) { x = y; }
+	}
 
-
-
-
-	/*struct Frame: Widget
+	using Flag8 = uint8_t;
+	Flag8 const
+		FlagCloseOnSelect = 1,
+		FlagFrame = 2,
+		FlagVisible = 4;
+		
+	
+	
+	struct SimpleSelect: IWidget
 	{
-		Frame() = default;
+		// definition
+		b2s box;
+		vector<Elem> rows;
+		Flag8 flags{0};
+		Action oncancel;
+		Action onselect;
 
-		virtual v2s get_dim() override {
-			v2s dd{0,0};
-			if (down) {
-				dd = down->get_dim();
-			}
-			dim = v2s(2*S(2), 2*S(2)) + dd;
-			return dim;
+		// state
+		int16_t cursor{0};
+		int16_t highlight{-1};
+
+		// operations
+		void clear() {
+			box = b2s{0,0,0,0};
+			rows.clear();
+		}
+		
+		void add(
+			string const& text0,
+			string const& text1,
+			Action const& onselect,
+			Key shortcut = KeyNone
+		);
+
+		void render(Console & con) override;
+		bool handle(Console & con, Event e) override;
+
+		void move(int16_t i);
+		void select();
+		void cancel();
+
+		
+		void set_highlight() {
+			highlight = size() - 1;
 		}
 
-		virtual void set_pos(v2s pos) override {
-			this->pos = pos;
-			if (down) {
-				down->set_pos(pos + v2s(S(3), S(3)));
-			}
-		}
+		void show() { flags |= FlagVisible; }
+		void hide() { flags &= ~FlagVisible; }
+		bool visible() { return flags & FlagVisible; }
+		
+		int16_t size() const { return int16_t(rows.size()); }
 
-		virtual void render(Console & con) override
-		{
-			render_inline(con.win, pos, dim, ColorWhite, 1);
+		void move_up();
+		void move_down();
 
-			if (down) {
-				down->render(con);
-			}
-		}
+		int16_t get_min_line_height(string const& t0, string const& t1);
+		int16_t get_min_line_width(string const& t0, string const& t1);
 
 	};
 
-
-	struct Absolute: Widget
+	int16_t SimpleSelect::get_min_line_height(string const& t0, string const& t1)
 	{
+		return font_tiny().height;		
+	}
 
-		v2s get_dim() override {
-			return dim;
+	int16_t SimpleSelect::get_min_line_width(string const& t0, string const& t1)
+	{
+		auto const& font = font_tiny();
+		int16_t w = font.pad[0] * -4;
+		w += get_text_dim(font, t0)[0];
+		w += get_text_dim(font, "  ")[0];
+		w += get_text_dim(font, t1)[0];
+		return w;			
+	}
+
+
+	void SimpleSelect::add(
+		string const& text0,
+		string const& text1,
+		Action const& onselect,
+		Key shortcut
+	) {
+		rows.push_back(Elem({text0, text1}, onselect, shortcut));
+		// grow box
+		box.dim[1] += get_min_line_height(text0, text1);
+		set_max(box.dim[0], get_min_line_width(text0, text1));
+	}
+
+
+	
+	
+	void SimpleSelect::move(int16_t i)
+	{
+		if (i < 0) {
+			cursor = size() - 1;
 		}
-
-		void set_pos(v2s pos) override {
-			this->pos = pos;
+		else if (i >= size()) {
+			cursor = 0;
 		}
+		else {
+			cursor = i;
+		}
+	}
 
-		void render(Console & con) override
-		{
-			render_inline(con.win, pos, dim, ColorWhite, 1);
 
-			if (down) {
-				down->render(con);
+	void SimpleSelect::move_up()
+	{		
+		if (cursor <= 0) {
+			cursor = size() - 1;
+		}
+		else {
+			cursor -= 1;
+		}
+	}
+	
+	void SimpleSelect::move_down()
+	{
+		if (cursor >= size() - 1) {
+			cursor = 0;
+		}
+		else {
+			cursor += 1;
+		}
+	}
+	
+
+	void SimpleSelect::select()
+	{
+		if (0 <= cursor < size()) {			
+			auto & r = rows.at(cursor);
+			if (r.onselect) {
+				r.onselect();
 			}
 		}
 
-	};
-
-
-	template <int A, int B>
-	struct Axis: Widget {
-
-		int16_t adv{0};
-
-		v2s get_dim() override
-		{
-			auto * w = down;
-			while (w) {
-				auto wdim = w->get_dim();
-
-				dim[A] += wdim[A] + adv;
-				if (dim[B] < wdim[B]) {
-					dim[B] = wdim[B];
-				}
-				w = w->next;
-			}
-			return dim;
+		if (onselect) {
+			onselect();
 		}
 
-		void set_pos(v2s p) override
-		{
-			pos = p;
+		hide();
+	}
 
-			auto * w = down;
-			auto c = pos;
-			while (w) {
 
-				w->set_pos(c);
+	bool SimpleSelect::handle(Console & con, Event e)
+	{
+		if (not visible()) {
+			return 0;
+		}
+		
+		// KEYBOARD
 
-				c[A] += w->dim[A] + adv;
-
-				w = w->next;
-			}
+		// esc -- cancel
+		if (match(e, {EventPress, KeyEsc})) {
+			cancel();
+			return 1;
 		}
 
-		void render(Console & con) override
-		{
-			auto * x = down;
-			while (x) {
-				x->render(con.win);
-				x = x->next;
-			}
+		// enter -- select under cursor
+		if (match(e, {EventPress, KeyEnter})) {
+			select();
+			return 1;
 		}
 
-	};
-
-
-	using Line = Axis<0,1>;
-	using Cross = Axis<1,0>;
-	*/
-
-
-
-	/*
-	Shortcuts/menu/link  unit orders
-	Mod+mouse tile/unit selection
-	menu/link/shortcuts button/hyperlink
-	Fx reports
-
-	Actions on main view
-	Actions on city view
-	Actions on europe view
-	*/
-
-
-
-
-	/*
-	struct Label: Widget {
-
-		string text{""};
-		int16_t maxlen{0};
-		v2f align{0.5f, 0.5f};
-
-		Label(string const& text, int16_t maxlen):
-			text(text), maxlen(maxlen)
-		{
+		// up arrow -- move cursor
+		if (match(e, {EventPress, KeyUp})) {
+			move_up();
+			return 1;
 		}
 
-		PixFont const& get_font() const {
-			//assert(font);
-			return font_tiny();
+		// down arrow -- move cursor
+		if (match(e, {EventPress, KeyDown})) {
+			move_down();
+			return 1;
 		}
 
-		v2s get_dim() override
+		// MOUSE
+		auto const& font = font_tiny();
+		auto rbox = b2s{box.pos, v2s(box.dim[0], font.height)};		
+		for (int16_t j = 0; j < size(); ++j)
 		{
-			dim = v2s(2*S(2), 2*S(2)) + v2s(maxlen * get_font().get_width(), get_font().height);
-			return dim;
-		}
-
-		void set_pos(v2s p) override
-		{
-			pos = p;
-		}
-
-		void render(Console & con) override
-		{
-			auto & win = con.win;
-
-			// output
-			render_inline(win, pos, dim, ColorWhite, 1);
-
-			auto b = v2s(S(2), S(2));
-
-			b2s inner(pos + b, dim - b - b);
-
-			auto t = render_text(win,
-				inner.pos, inner.dim, {0.0f, 0.0f},
-				font_tiny(), ColorFont,
-				text
-			);
-
-		}
-	};
-
-	struct Button: Label {
-
-		using Action = std::function<void()>;
-
-		Action onpress{nullptr};
-
-		Button() = default;
-		Button(string const& text, int16_t maxlen, Action onpress):
-			Label(text, maxlen), onpress(onpress)
-		{
-		}
-
-		void render(Console & con) override
-		{
-			Label::render(con);
-
-			// input
-			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
-				onpress();
-			});
-
-		}
-	};
-
-
-	struct EditStr: Label {
-
-		EditStr(string s, int16_t w): Label(s,w) {}
-
-		string const& get_value() const { return text; }
-
-		void render(Console & con) override
-		{
-			auto & win = con.win;
-
-			// output
-			render_inline(win, pos, dim, ColorWhite, 1);
-
-			auto b = v2s(S(2), S(2));
-
-			b2s inner(pos + b, dim - b - b);
-
-			auto t = render_text(win,
-				inner.pos, inner.dim, align,
-				get_font(), ColorFont,
-				"123"
-			);
-
-			// render cursor
-			if (has_focus()) {
-
-				render_text_at(win,
-					v2s(t.pos[0] + t.dim[0], t.pos[1]),
-					get_font(), ColorFont,
-					"_"
-				);
+			// left click on row -- move cursor
+			if (match(e, {EventPress, KeyLMB, rbox.pos, rbox.dim}))
+			{
+				move(j);
+				return 1;
 			}
 
-			// input
-			con.on({this, EventPress, KeyBackspace}, [this](Event & e){
-				if (text.size() > 0) {
-					text.pop_back();
-				}
-			});
-
-			con.on({this, EventChar}, [this](Event & e) {
-				text += e.get_chr();
-			});
-
-			con.on({EventPress, KeyLMB, pos, dim}, [this](Event & e) {
-				grab_focus();
-			});
-
-			// if focus and p.match(EventPress, KeyA, ModCtrl)
-
+			// left release on row -- select
+			if (match(e, {EventRelease, KeyLMB, rbox.pos, rbox.dim}))
+			{
+				select();
+				return 1;
+			}			
+			rbox.pos[1] += rbox.dim[1];
 		}
 
+		// click on dialog -- do nothing
+		if (match(e, {EventPress, KeyLMB, box.pos, box.dim})) { return 1; }
+		if (match(e, {EventPress, KeyRMB, box.pos, box.dim})) { return 1; }
 
-	};
-*/
+		// click anywhere -- cancel
+		if (match(e, {EventPress, KeyLMB})) { cancel(); return 1;}
+		if (match(e, {EventPress, KeyRMB})) { cancel(); return 1;}
+
+		// any event -- catch
+		return 1;
+	}
 
 
 
-/*
-	struct FrameNum: Frame {
 
-		Widget * edit;
-		function<void(int)> onenter;
+	void SimpleSelect::render(Console & con)
+	{
+		if (not visible()) {
+			return;
+		}
+		
+		render_area(box, res(WOODTILE));
+		render_outline(box, ColorDarkBrown, ly.line_th);
 
-		FrameNum(function<void(int)> onenter): onenter(onenter) {
+		auto const& font = font_tiny();
+		auto rbox = b2s{box.pos, v2s(box.dim[0], font.height)};		
+		for (int16_t j = 0; j < size(); ++j)
+		{
+			auto & row = rows.at(j);
 
-			edit = new EditStr("", 6);
+			auto const& s0 = row.text.at(0);
+			auto const& s1 = row.text.at(1);
 
-			adds(
-				(new Cross())->adds(
-					(new Line())->adds(
-						new Label("Num", 5),
-						edit
-					),
-					new Button("OK", 8, [onenter](){
-						onenter(edit.get_value());
-					})
-				)
-			);
+			auto fg = ColorFont;
+			if (not row.onselect) {
+				fg = ColorFontDisabled;
+			}
+			else if (j == highlight) {
+				fg = ColorFontSelected;
+			}
+						
+			if (j == cursor) {
+				render_fill(rbox, ColorSelectedBG);
+			}
+			
+			render_text(rbox, {0, 0.5}, font, fg, s0);
+			render_text(rbox, {1, 0.5}, font, fg, s1);
 
+			rbox.pos[1] += rbox.dim[1];
 		}
 
-		void render(Console & con) override {
-			Frame::render();
-
-			con.on({EventPress, KeyEnter}, [this](){
-				// close ?
-				onenter(edit.get_value());
-			});
-
-			con.on({EventPress, KeyEsc}, [](){
-				// close ?
-			});
+	}
 
 
+
+
+	void SimpleSelect::cancel()
+	{
+		if (oncancel) {
+			oncancel();
 		}
-
-	};*/
-
-
+		hide();
+	}
 
 
 
 
 
+
+
+
+
+	
 	struct Select: IWidget {
 
 		v2s pos;
@@ -657,11 +623,8 @@ namespace col {
 		vector<Elem> rows;
 
 		// close on select
-		using Flag = uint8_t;
-		Flag flags;
-		Flag const
-			FlagCloseOnSelect = 1,
-			FlagFrame = 2;
+		Flag8 flags;
+
 
 		//virtual void onselect() {}
 
@@ -712,6 +675,10 @@ namespace col {
 			rows.push_back(Elem(text, onselect, shortcut));
 		}
 
+		void set_highlight() {
+			highlight = rows.size()-1;
+		}
+
 		void add(vector<string> const& text, bool hl, Action const& onselect, Key shortcut=KeyNone) {
 			if (hl) { set_highlight(); }
 			add(text, onselect, shortcut);
@@ -737,7 +704,7 @@ namespace col {
 
 		v2s calc_dim() const
 		{
-			auto line_height = ly.font_tiny;
+			auto line_height = ly.font_height;
 			auto sep = ly.sep;   // cell sep
 
 			auto width = calc_width();
@@ -758,7 +725,7 @@ namespace col {
 				cols.push_back(Col{});
 			}
 
-			auto line_height = ly.font_tiny;
+			auto line_height = ly.font_height;
 			auto sep = ly.sep;   // cell sep
 
 			int width = 0;
@@ -774,45 +741,34 @@ namespace col {
 			pos = calc_align(box, dim, {0.5f, 0.5f});
 		}
 
-		void move(size_t i) {
-			cursor = i;
-			if (cursor <= 0) {
-				cursor = rows.size();
+		void move(size_t i)
+		{
+			auto N = rows.size();
+			if (i < 0) {
+				cursor = N - 1;
 			}
-			if (cursor >= rows.size()) {
+			else if (i >= N) {
 				cursor = 0;
+			}
+			else {
+				cursor = i;
 			}
 		}
 
-		void move_up() {
-			if (cursor <= 0) {
-				cursor = rows.size();
-			}
-			cursor -= 1;
-		}
-
-		void move_down() {
-			cursor += 1;
-			if (cursor >= rows.size()) {
-				cursor = 0;
-			}
-		}
+		void move_up() { move(cursor - 1); }
+		void move_down() { move(cursor + 1); }
 
 		void select() {
-			if (cursor < rows.size()) {
+			if (0 <= cursor and cursor < rows.size()) {
 				rows.at(cursor).onselect();
 			}
 			onselect();
 		}
 
-		void set_highlight() {
-			highlight = rows.size();
-		}
 
 		v2s get_row_dim() const {
 			return {calc_width(), font_tiny().height};
 		}
-
 
 		virtual bool handle(Console & con, Event e) override;
 	};
@@ -870,19 +826,13 @@ namespace col {
 			row_pos[1] += font_tiny().height + ly.sep[1];
 		}
 
+		// click on dialog -- do nothing
+		if (match(e, {EventPress, KeyLMB, pos, dim})) { return 1; }
+		if (match(e, {EventPress, KeyRMB, pos, dim})) { return 1; }
+
 		// click anywhere -- cancel
 		if (match(e, {EventPress, KeyLMB})) { oncancel(); return 1;}
 		if (match(e, {EventPress, KeyRMB})) { oncancel(); return 1;}
-
-		// click on dialog -- do nothing
-		if (match(e, {EventPress, KeyLMB, pos, dim})) {
-			return 1;
-		}
-
-		if (match(e, {EventPress, KeyRMB, pos, dim})) {
-			return 1;
-		}
-
 
 		// any event -- catch
 		return 1;
@@ -893,12 +843,12 @@ namespace col {
 
 	void Select::render(Console & con)
 	{
-		auto line_height = ly.font_tiny;
+		auto line_height = ly.font_height;
 		auto sep = ly.sep;   // cell sep
 
 		// background & outline border
 		render_area({pos, dim}, res(WOODTILE));
-		render_outline({pos, dim}, ColorDarkBrown, ly.line);
+		render_outline({pos, dim}, ColorDarkBrown, ly.line_th);
 
 		auto row_dim = get_row_dim(); // dim[0] - sep[0]*2
 		auto row_pos = pos + sep;
@@ -912,19 +862,6 @@ namespace col {
 			if (j == cursor) {
 				render_fill({row_pos, row_dim}, ColorSelectedBG);
 			}
-
-			// left click on row -- move cursor
-			con.on({EventPress, KeyLMB, row_pos, row_dim},
-				[this, j](){
-					this->move(j);
-				}
-			);
-
-			// left release on row -- select
-			con.on({EventRelease, KeyLMB, row_pos, row_dim},
-				[this](){ this->select(); }
-			);
-
 
 			//if (row.text.size() == 0) {
 			//	// separator
@@ -941,14 +878,17 @@ namespace col {
 			}
 
 			// render row by cell
-			for (size_t i = 0; i < cols.size(); ++i) {
+			for (size_t i = 0; i < cols.size(); ++i)
+			{
 				auto & col = cols[i];
 				auto & cell = row.text[i];
 
 				auto cdim = v2s(col.width, line_height);
 
-				render_text(cpos, cdim, v2f(col.align, 0.5),
-					font_tiny(), fg, ColorNone,
+				render_text(
+					{cpos, cdim},
+					v2f(col.align, 0.5),
+					font_tiny(), fg,
 					cell					
 				);
 
@@ -982,7 +922,7 @@ namespace col {
 		//int & cursor
 	) {
 
-		auto line_height = ly.font_tiny;
+		auto line_height = ly.font_height;
 		auto sep = v2s(ly.S(1), ly.S(1));   // cell sep
 
 		int width = 0;
@@ -1018,7 +958,7 @@ namespace col {
 
 		// background & outline border
 		render_area({pos, dim}, res(WOODTILE));
-		render_outline({pos, dim}, ColorDarkBrown, ly.line);
+		render_outline({pos, dim}, ColorDarkBrown, ly.line_th);
 
 		// click on dialog -- do nothing
 		con.on({EventPress, pos, dim});
@@ -1068,8 +1008,9 @@ namespace col {
 				auto cdim = v2s(col.width, line_height);
 
 				render_text(
-					cpos, cdim, v2f(col.align, 0.5),
-					font_tiny(), fgind, ColorNone,
+					{cpos, cdim},
+					v2f(col.align, 0.5),
+					font_tiny(), fgind,
 					cell
 				);
 
@@ -1081,68 +1022,6 @@ namespace col {
 
 	}
 
-
-	/*
-	template<typename K>
-	void render_select(Front & win, Console & con,
-		std::function<v2s(v2s dim)> cpos,
-		//Box const& par, v2f const& align,
-		vector<pair<K, string>> const& kvs,
-		K & selected,
-		std::function<void()> onselect,
-		std::function<void()> oncancel
-	) {
-
-		int const LINE_HEIGHT = ly.font_tiny;
-
-		v2s const dim = v2s(ly.scr.dim[0] * 0.5, (kvs.size()+1) * LINE_HEIGHT);
-		v2s pos = cpos(dim);
-
-		// click anywhere -- cancel
-		con.on(EventPress, oncancel);
-
-		// background
-		render_area(win, pos, dim, res(WOODTILE));
-		render_outline(win, pos, dim, ColorDarkBrown, ly.line);
-
-
-		// click on dialog -- do nothing
-		con.on(EventPress, pos, dim, [](){});
-
-		// entries
-		for (size_t i = 0; i < kvs.size(); ++i) {
-
-			auto p = pos + v2s(0, i * LINE_HEIGHT);
-			auto d = v2s(dim[0], LINE_HEIGHT);
-
-			auto & key = kvs[i].first;
-
-			auto fg = ColorFont;
-
-			// selected bg
-			if (key == selected) {
-				render_fill(win,
-					p, d,
-					ColorSelectedBG
-				);
-
-				fg = ColorFontSelected;
-			}
-
-			// label
-			render_text(win,
-				p, d, v2f(0.5, 0.5),
-				font_tiny(), fg, ColorNone,
-				kvs[i].second
-			);
-
-			// left click on entry -- select
-			con.on(EventPress, KeyLMB, p, d,
-				[&selected,key,onselect](){ selected = key; onselect(); }
-			);
-		}
-
-	}*/
 
 
 	void render_unit_cargo(Front &win, Console & con,
@@ -1168,7 +1047,7 @@ namespace col {
 
 				// frame
 				render_fill({cpos, tile_dim}, ColorDarkWoodBrown);
-				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line);
+				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line_th);
 
 				render_sprite(
 					{cpos, item_dim}, v2f(0.5, 0.5),
@@ -1176,8 +1055,9 @@ namespace col {
 				);
 
 				render_text(
-					cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					font_tiny(), ColorWhite, ColorNone,
+					{cpos + v2s(item_dim[0], 0), text_dim},
+					v2f(0, 0.5),
+					font_tiny(), ColorWhite,
 					to_string(num)
 				);
 
@@ -1192,11 +1072,13 @@ namespace col {
 			if (num) {
 				// frame
 				render_fill({cpos, tile_dim}, ColorDarkWoodBrown);
-				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line);
+				render_inline({cpos, tile_dim}, ColorWoodBrown, ly.line_th);
 
 				// left click on cargo -- start drag cargo unload
 				con.on({EventPress, KeyLMB, cpos, tile_dim},
-					[item,num,&con](){ con.drag_cargo(item, num, -1); }
+					[item,num,&con](){
+						//TODO  con.drag_cargo(item, num, -1);
+					}
 				);
 
 				render_sprite({cpos, item_dim}, v2f(0.5, 0.5), box_tex);
@@ -1207,8 +1089,10 @@ namespace col {
 				render_sprite({cpos, item_dim}, v2f(0.5, 0.5), item_tex);
 
 				// amount
-				render_text(cpos + v2s(item_dim[0], 0), text_dim, v2f(0, 0.5),
-					font_tiny(), ColorWhite, ColorNone,
+				render_text(
+					{cpos + v2s(item_dim[0], 0), text_dim},
+					v2f(0, 0.5),
+					font_tiny(), ColorWhite, 
 					to_string(num)
 				);
 
@@ -1219,12 +1103,12 @@ namespace col {
 
 
 		// unit cargo area frame
-		if (con.drag_item) {
+		/*if (con.drag_item) {
 			// left release -- drop cargo
 			con.on({EventRelease, KeyLMB, pos, dim},
-				[&con](){ con.drop_cargo(+1); }
+				//TODO  [&con](){ con.drop_cargo(+1); }
 			);
-		}
+		}*/
 
 	} // render_unit_cargo
 
@@ -1346,12 +1230,12 @@ namespace col {
 		// render storage area
 		render_fill({pos, dim}, {76,100,172,255});
 
-		if (con.drag_item) {
+		/*if (con.drag_item) {
 			// left release city store -- unload cargo
 			con.on({EventRelease, KeyLMB, pos, dim},
 				[&con](){ con.drop_cargo(-1); }
 			);
-		}
+		}*/
 
 		int tile_width = ly.S(16);
 		int line_height = font_tiny().height;
@@ -1387,15 +1271,15 @@ namespace col {
 				auto proj = supp_num - cons_num + prod_num;
 				if (proj < 0) {
 					render_text(
-						pos, cell_dim, v2f(0.5f, 0),
-						font_tiny(), ColorYellow, ColorNone,
+						{pos, cell_dim}, v2f(0.5f, 0),
+						font_tiny(), ColorYellow,
 						format("%||", supp_num)
 					);
 				}
 				else {
 					render_text(
-						pos, cell_dim, v2f(0.5f, 0),
-						font_tiny(), ColorWhite, ColorNone,
+						{pos, cell_dim}, v2f(0.5f, 0),
+						font_tiny(), ColorWhite,
 						std::to_string(supp_num)
 					);
 				}
@@ -1404,8 +1288,8 @@ namespace col {
 			// render prod num
 			if (prod_num) {
 				render_text(
-					cpos + up * _3, cell_dim, v2f(1, 0),
-					font_tiny(), ColorWhite, ColorNone,
+					{cpos + up * _3, cell_dim}, v2f(1, 0),
+					font_tiny(), ColorWhite,
 					format("+%||", prod_num)
 				);
 			}
@@ -1413,8 +1297,8 @@ namespace col {
 			// render cons num
 			if (cons_num) {
 				render_text(
-					cpos + up * _2, cell_dim, v2f(1, 0),
-					font_tiny(), ColorWhite, ColorNone,
+					{cpos + up * _2, cell_dim}, v2f(1, 0),
+					font_tiny(), ColorWhite, 
 					format("-%||", cons_num)
 				);
 			}
@@ -1422,15 +1306,15 @@ namespace col {
 			// render delta
 			if (delta > 0) {
 				render_text(
-					cpos + up, cell_dim, v2f(1, 0),
-					font_tiny(), ColorGreen, ColorNone,
+					{cpos + up, cell_dim}, v2f(1, 0),
+					font_tiny(), ColorGreen, 
 					format("+%||", delta)
 				);
 			}
 			else if (delta < 0) {
 				render_text(
-					cpos + up, cell_dim, v2f(1, 0),
-					font_tiny(), ColorYellow, ColorNone,
+					{cpos + up, cell_dim}, v2f(1, 0),
+					font_tiny(), ColorYellow, 
 					format("%||", delta)
 				);
 			}
@@ -1467,6 +1351,11 @@ namespace col {
 
 	struct CityView: IWidget
 	{
+		SimpleSelect sel_equip;
+		
+		void show_sel_equip(Console & con, Unit::Id unit_id);
+
+		
 		void render(Con & con) override;
 		bool handle(Con & con, Event e) override;
 	};
@@ -1475,579 +1364,61 @@ namespace col {
 
 	bool CityView::handle(Con & con, Event e)
 	{
+
+		if (sel_equip.handle(con, e)) {
+			return 1;
+		}		
 		return 0;
 	}
 
 
-	void CityView::render(Con & con)
+	
+
+
+	void CityView::show_sel_equip(Console & con, Unit::Id unit_id)
 	{
-		auto const& env = con.env;
+		sel_equip.clear();				
+		sel_equip.box.dim[0] = ly.S(50);		
 
-
-		/*
-			// panel right
-			render_panel(app, env, con,
-				ly.pan.pos,
-				ly.pan.dim
-			);
-			// vline left of the panel
-			render_rect(app,
-				{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1},
-				{1, h-8},
-				{0,0,0,255}
-			);
-		*/
-
-		//auto render = Renderer{win,env};
-
-
-
-		// render area
-		auto & sand_tex = res(SANDTILE);
-		render_area(ly.city_builds, sand_tex);
-
-		auto & pixs = ly.pixs;
-		auto & dims = ly.dims;
-
-
-		auto& terr = *con.get_sel_terr();
-		auto& colony = terr.get_colony();
-
-		// render buildings
+		auto & unit = con.env.get_unit(unit_id);
+			
+		for (auto const* ut: logic::equip_to_types(con.env, unit))
 		{
-			// hover anywhere -- clear label on building
-			con.on({EventMotion},
-				[&con]() { con.sel_colony_slot_id = -1; }
-			);
+			auto item1 = ut->get_item1();
+			auto item2 = ut->get_item2();
+			auto num1 = ut->get_num1();
+			auto num2 = ut->get_num2();
 
-			// render in reverse order to make sure that docks clickarea will not obscure other builds
-			int i = colony.builds.size();
-			while (i > 0) {
-				i = i - 1;
+			auto id = ut->id;
 
-				auto workplace_id = i;
-
-				auto & build = colony.builds.at(i);
-
-				auto const& build_tex = res(BUILDING, build.get_type_id());
-				auto build_pos = ly.city_builds.pos + pixs.at(i);
-				auto build_dim = build_tex.dim;
-
-				render_sprite(build_pos, build_tex);
-
-				int nominal_prod = logic::get_nominal_prod(env, build, build.get_proditem());
-
-				// production button under the building
-				if (build.get_proditem() == ItemHammers)
-				{
-
-					auto button_pos = build_pos + v2s(0, build_dim[1]);
-					auto button_dim = v2s(build_dim[0], ly.font_tiny);
-
-
-					int blink = 0;
-					string label, progress;
-					if (build.task) {
-						label = get_name(*build.task.what);
-						label = label.substr(0,11);
-
-						progress = format("%||/%||", build.task.get(), build.task.cap());
-					}
-					else {
-						label = "(empty)";
-
-						if ( nominal_prod and con.blink() ) {
-							blink = 1;
-						}
-						progress = "";
-					}
-
-					if (blink) {
-						render_text(
-							button_pos, button_dim, {0.5,0.5},
-							font_tiny(), ColorGray, ColorWhite,
-							label
-						);
-					}
-					else {
-						render_text(
-							button_pos, button_dim, {0.5,0.5},
-							font_tiny(), ColorWhite, ColorNone,
-							label
-						);
-					}
-
-					render_outline(
-						{button_pos, button_dim}, ColorWhite, ly.S(1)
-					);
-
-					// progress ind
-					render_text(
-						build_pos, build_dim, {1, 0},
-						font_tiny(), ColorWhite, ColorBlack,
-						progress
-					);
-
-
-
-
-					// left click on button -- select production
-					con.on({EventPress, KeyLMB, button_pos, button_dim},
-						[&env, &con, &colony, &build]() {
-							show_select_makeable(env, con, colony, build,
-								{ly.scr.pos, ly.scr.dim}, v2f{0.5f, 0.5f}
-							);
-						}
-					);
-
-
-				}
-
-
-
-				// render build name
-				if (con.sel_colony_slot_id == i) {
-
-					render_text(
-						build_pos, build_dim, {0.5, 0.5},
-						font_tiny(), ColorWhite, ColorBlack,
-						build.get_name()
-					);
-
-				}
-
-				// left click on building -- assign worker
-				con.on({EventPress, KeyLMB, build_pos, build_dim},
-					[&con, workplace_id]() {
-						if (con.get_sel_unit()) {
-							con.command(format("work-build %||", workplace_id));
-						}
-					}
-				);
-
-				// number of produced items
-				if (int y = nominal_prod) {
-					auto const& item_tex = res(ICON, get_item_icon_id(build.get_proditem()));
-					auto item_dim = item_tex.dim;
-
-					// item icon
-					render_sprite(build_pos, item_tex);
-
-					// number
-					render_text(
-
-						build_pos + v2s(item_dim[0], 0),
-						v2s(0, item_dim[1]),
-						{0, 0.5},
-
-						font_tiny(), ColorWhite, ColorBlack,
-						std::to_string(y)
-					);
-				}
-
-
-				// hover on building -- show label with building name (select buildplace)
-				con.on({EventMotion, build_pos, build_dim},
-					[&con, i]() { con.sel_colony_slot_id = i; }
-				);
-
-				v2s units_frame = {ly.S(25), ly.S(16)};
-
-				// units on build
-				int n = build.units.size();
-				int i = 0;
-				for (auto& unit_ptr: build.units) {
-					auto& unit = *unit_ptr;
-					auto& unit_tex = res(ICON, get_icon_id(unit));
-
-					v2s unit_pos = calc_align(
-						{
-							build_pos + build_dim - units_frame + ly.S(v2s(1,1)), units_frame
-						},
-						unit_tex.dim,
-						v2f(float(i+1)/float(n+1), 1)
-					);
-
-					v2s unit_dim = unit_tex.dim;
-
-					v2s sel_pos = unit_pos;
-					v2s sel_dim = unit_dim;
-
-					// render unit on build
-					render_sprite(unit_pos, unit_tex);
-
-					auto unit_id = unit.id;
-
-					if (unit_id == con.get_sel_unit_id()) {
-						// render selection frame
-						render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_sel);
-					}
-					else {
-						// left click on unit -- select this unit
-						con.on({EventPress, KeyLMB, sel_pos, sel_dim},
-							[&con,unit_id]() {
-								con.command("sel " + to_string(unit_id));
-							}
-						);
-					}
-
-					++i;
-				}
-
-
+			auto name = ut->get_name();
+			
+			string req;
+			if (item1 != ItemNone) {
+				req += format("(%|| %||)", num1, get_name(item1));
 			}
-		}
-
-		// render fields
-		{
-
-			/// render background
-			// render_area(win, pos, dim, res(conf.res_path + "WOODTILE_SS", 1));
-
-
-			auto pix = ly.city_fields.pos;
-
-			auto& tex_wood = res(WOODTILE);
-			render_area({ly.city_fields.pos, ly.city_fields.dim}, tex_wood);
-
-			auto city_terr_pos = calc_align({ly.city_fields.pos, ly.city_fields.dim}, ly.terr_dim);
-
-			auto& city_terr = terr;
-
-			auto pos = env.get_coords(terr);
-			auto city_coords = Coords(pos[0]-1, pos[1]-1);
-
-
-			for(size_t field_id = 0; field_id < colony.fields.size(); ++field_id) {
-				auto& field = colony.fields.at(field_id);
-
-				auto& field_terr = field.get_terr();
-
-				v2s relc = v2s(env.get_coords(*field.terr) - env.get_coords(city_terr));
-				auto field_pos = city_terr_pos + vmul(relc, ly.terr_dim);
-				auto field_dim = ly.terr_dim;
-
-
-				render_terr(field_pos, env, field_terr);
-
-
-				if (field.units.size() == 0) {
-					// left click on field -- assign unit to work there
-					string cmd = format("work-field %||", field_id);
-					con.on({EventPress, KeyLMB, field_pos, field_dim},
-						[&con,cmd](){ con.command(cmd); }
-					);
-				}
-
-
-
-				// units on field
-				for (auto& unit_p: field.units) {
-					auto& unit = *unit_p;
-					{
-						v2s unit_dim = v2s(field_dim[0]/2, field_dim[1]);
-						v2s unit_pos = field_pos + v2s(field_dim[0]/2, 0);
-
-						v2s item_dim = field_dim; //v2s(field_dim[0]/2, field_dim[1]);
-						v2s item_pos = field_pos;
-
-						v2s sel_pos = field_pos;
-						v2s sel_dim = field_dim;
-
-						auto& unit_tex = res(ICON, get_icon_id(unit));
-
-						// field production
-						if (auto proditem = field.get_proditem()) {
-							// render produced item
-							auto& item_tex = res(ICON, get_item_icon_id(proditem));
-							render_sprite(
-								calc_align({item_pos, item_dim}, item_tex.dim),
-								item_tex
-							);
-
-							// render produced item amount
-							auto text = to_string(logic::get_nominal_prod(env, field, field.get_proditem()));
-
-							render_text(
-								item_pos, {0,0}, {0,0},
-								font_tiny(), ColorWhite, ColorBlack,
-								text
-							);
-						}
-
-						// render unit on field
-						render_sprite(
-							calc_align({unit_pos, unit_dim}, unit_tex.dim),
-							unit_tex
-						);
-
-						auto unit_id = unit.id;
-
-						if (unit_id == con.get_sel_unit_id()) {
-							// render selection frame
-							render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
-
-							// left click on field with selected worker -- switch to next proditem
-							/*con.on(EventPress, KeyLMB, sel_pos, sel_dim,
-								[&con,field_id]() {
-									con.command("prodnext-field " + to_string(field_id));
-								}
-							);*/
-
-
-
-							// left click on field with selected worker -- show select proditem menu
-							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
-								[&con, &field]() {
-									con.prod_to_workplace = &field;
-									con.selected_id = field.get_proditem();
-								}
-							);
-
-
-
-						}
-						else {
-							// left click on field with worker -- select this worker
-							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
-								[&con,unit_id]() {
-									con.command("sel " + to_string(unit_id));
-								}
-							);
-						}
-					}
-				}
-
-
+			if (item2 != ItemNone) {
+				req += format("(%|| %||)", num2, get_name(item2));
 			}
 
+			sel_equip.add(name, req, [&con, id](){
+				con.command(string("equip ") + to_string(id));
+			});
+
+			if (id == unit.type->id)
+			{
+				sel_equip.set_highlight();
+			}
 
 		}
 
-
-
-		// render city terr units
-
-		// right click anywhere - unselect selected unit
-		if (con.get_sel_unit()) {
-			con.on({EventPress, KeyRMB},
-				[&con]() {
-					con.unselect_unit();
-				}
-			);
-		}
-
-
-		// left click on city terrain area with selected unit -- unwork that unit
-		if (con.get_sel_unit()) {
-			con.on({EventPress, KeyLMB, ly.city_units.pos, ly.city_units.dim},
-				[&con](){con.command("work-none");}
-			);
-		}
-
-		// render city terr units area bg
-		render_fill(
-			{ly.city_units.pos, ly.city_units.dim},
-			ColorSkyBlue
+		sel_equip.box.pos = calc_align(
+			ly.scr, sel_equip.box.dim, v2f(0.5, 0.5)
 		);
-
-		// render unit cargo area bg
-		render_fill(
-			{ly.city_unit_cargo.pos, ly.city_unit_cargo.dim},
-			ColorLightBrown
-		);
-
-		// render standing units
-		int i = 0;
-		for (auto& p: terr.units) {
-			auto& unit = *p;
-
-			if (unit.in_game and !unit.is_working()) {
-
-				v2s unit_pos = ly.city_units.pos + v2s(ly.terr_dim[0] * i, 0);
-				v2s unit_dim = ly.terr_dim;
-
-				v2s sel_pos = unit_pos;
-				v2s sel_dim = unit_dim;
-
-				render_unit_tile(win, {unit_pos, unit_dim}, unit);
-
-				auto unit_id = unit.id;
-
-				if (unit_id == con.get_sel_unit_id()) {
-					// render selection frame
-					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
-
-					// left click on selected unit (on terr) -- show equip select
-					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
-						[&con,&unit]() {
-							con.equip_to_unit_id = unit.id;
-							con.selected_id = unit.get_type_id();
-						}
-					);
-
-					// unit cargo
-					render_unit_cargo(win, con, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
-
-				}
-				else {
-					// left click on unselected unit -- select unit
-					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
-						[&con,&env,unit_id]() {
-							con.select_unit(unit_id);
-						}
-					);
-				}
-
-				++i;
-			}
-
-
-		}
-
-
-
-
-		render_city_store(win, con, ly.city_resources.pos, ly.city_resources.dim, terr);
-
-
-
-
-
-
-
-		// render EXIT button
-		render_fill({ly.city_exit.pos, ly.city_exit.dim}, {140,0,140,255});
-
-		render_text(
-			ly.city_exit.pos + v2s(1,1),
-			font_tiny(), ColorFont,
-			"RET"
-		);
-
-		// left click on exit button -- exit city screen
-		con.on({EventPress, KeyLMB, ly.city_exit.pos, ly.city_exit.dim},
-			[&con, &terr](){ con.command("exit"); }
-		);
-
-		// render fields
-		//render_fields(win, env, con, ly.city_fields.pos, );
-
-
-		if (con.equip_to_unit_id) {
-			vector<int> keys;
-			vector<vector<string>> rows;
-
-			for (auto const* ut: logic::equip_to_types(env, env.get<Unit>(con.equip_to_unit_id))) {
-				auto item1 = ut->get_item1();
-				auto item2 = ut->get_item2();
-				auto num1 = ut->get_num1();
-				auto num2 = ut->get_num2();
-
-				keys.push_back(ut->id);
-
-				string req;
-				if (item1 != ItemNone) {
-					req += format("(%|| %||)", num1, get_name(item1));
-				}
-				if (item2 != ItemNone) {
-					req += format("(%|| %||)", num2, get_name(item2));
-				}
-
-				vector<string> row;
-				row.push_back(ut->get_name());
-				row.push_back(req);
-
-				rows.push_back(row);
-			}
-
-			// cols
-			vector<Col> cols;
-			cols.push_back({0.0f, ly.S(1) * 16 * 4, "Name"});
-			cols.push_back({1.0f, ly.S(1) * 24 * 4, "Equip"});
-
-
-
-			// onclick -> equip/orders menu
-			render_select_f(win, con,
-				ly.scr.pos, ly.scr.dim, v2f(0.5, 0.5),
-
-				cols, keys, rows,
-
-				con.selected_id,
-				[&con](){
-					con.command(string("equip ") + to_string(con.selected_id));
-					con.equip_to_unit_id = 0;
-					con.selected_id = 0;
-				},  // onselect
-				[&con](){
-					con.equip_to_unit_id = 0;
-					con.selected_id = 0;
-				}   // oncancel
-			);
-		}
-
-
-
-
-		if (con.prod_to_workplace != nullptr) {
-			auto & wp = *con.prod_to_workplace;
-
-			vector<Col> cols;
-			vector<int> keys;
-			vector<Row> rows;
-
-
-			// no prod
-			keys.push_back(0);
-			Row row;
-			row.push_back("(empty)");
-			row.push_back("");
-			rows.push_back(row);
-
-			// prod items
-			for (auto& item: logic::get_all_items(env)) {
-
-				auto prod = logic::get_nominal_prod(env, wp, item);
-
-				if (prod) {
-					keys.push_back(item);
-
-					Row row;
-					row.push_back(get_name(item));
-					row.push_back(to_string(prod));
-
-					rows.push_back(row);
-				}
-			}
-
-			// cols
-			cols.push_back({0.0f, 14 * 4 * ly.S(1), "Item"});
-			cols.push_back({1.0f, 5 * 4 * ly.S(1),  "Prod"});
-
-			// onclick -> assign proditem to wp
-			render_select_f(win, con,
-				ly.scr.pos, ly.scr.dim, v2f(0.5, 0.5),
-
-				cols, keys, rows,
-
-				con.selected_id,
-				[&con,&wp]() {
-					wp.set_proditem(Item(con.selected_id));
-					con.prod_to_workplace = nullptr;
-					con.selected_id = 0;
-				},  // onselect
-				[&con](){
-					con.prod_to_workplace = nullptr;
-					con.selected_id = 0;
-				}   // oncancel
-			);
-		}
-
-
-
-
+		
+		sel_equip.show();
 	}
+
 
 
 	void render_units(Front &win, Console & con,
@@ -2079,7 +1450,7 @@ namespace col {
 
 				if (unit_id == con.get_sel_unit_id()) {
 					// render selection frame
-					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line);
+					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_th);
 				}
 				else {
 					// left click on unselected unit -- select unit
@@ -2105,7 +1476,7 @@ namespace col {
 
 	Terr const& get_terr_ext(Env const& env, Coords const& p) {
 		Coords q;
-		auto w = env.w, h = env.h;
+		auto w = env.dim[0], h = env.dim[1];
 		auto x = p[0], y = p[1];
 		if (x < 0) {
 			if (y < 0) {
@@ -2287,7 +1658,7 @@ namespace col {
 			}
 
 			// half-tile dim
-			int16_t const h = conf.tile_dim >> 1;
+			int16_t const h = ly.terr_dim[0] >> 1;
 
 			// one tile is composed of 4 subtiles
 			//
@@ -2381,7 +1752,7 @@ namespace col {
 			for (int i=0; i<8; ++i) {
 				if ( get(loc, CLOCKWISE_DIRS[i]).has_phys(PhysRoad) )
 				{
-					if (conf.hires) {
+					if (ly.hires) {
 						render_sprite(pix-v2s(4,4), res(PHYS, 82 + i));
 					}
 					else {
@@ -2397,7 +1768,7 @@ namespace col {
 
 	}
 
-	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit);
+	void render_selected_unit(Console & con, v2s pos, Unit & unit);
 
 
 
@@ -2428,7 +1799,7 @@ namespace col {
 		return {c.r, c.g, c.b, c.a};
 	}
 
-	void render_stack(Front &win,
+	void render_stack(
 			Console & con,
 			v2s pos,
 			Env const& env,
@@ -2475,7 +1846,7 @@ namespace col {
 
 		// now render selected unit
 		if (sel_unit_here) {
-			render_selected_unit(win, con, pos, *con.get_sel_unit());
+			render_selected_unit(con, pos, *con.get_sel_unit());
 		}
 
 	}
@@ -2497,114 +1868,181 @@ namespace col {
 		assert(false);
 	}
 
-	void handle_selected_unit(Front & win, Console & con, Unit & unit)
+	bool handle_selected_unit(Console & con, Event e, Unit & unit)
 	{
 		auto unit_id = unit.id;
 
 		// selected unit keyboard shortcuts
 
 		// numpad move
-		con.on({EventPress, KeyNumpad2},
-			[&con,unit_id](){ con.command("move 0 1"); }
-		);
-		con.on({EventPress, KeyNumpad8},
-			[&con,unit_id](){ con.command("move 0 -1"); }
-		);
-		con.on({EventPress, KeyNumpad6},
-			[&con,unit_id](){ con.command("move 1 0"); }
-		);
-		con.on({EventPress, KeyNumpad4},
-			[&con,unit_id](){ con.command("move -1 0"); }
-		);
-		con.on({EventPress, KeyNumpad3},
-			[&con,unit_id](){ con.command("move 1 1"); }
-		);
-		con.on({EventPress, KeyNumpad7},
-			[&con,unit_id](){ con.command("move -1 -1"); }
-		);
-		con.on({EventPress, KeyNumpad1},
-			[&con,unit_id](){ con.command("move -1 1"); }
-		);
-		con.on({EventPress, KeyNumpad9},
-			[&con,unit_id](){ con.command("move 1 -1"); }
-		);
+		if (match(e, {EventPress, KeyNumpad2}))
+		{
+			con.command("move 0 1");
+			return 1;
+		}	
+		
+		if (match(e, {EventPress, KeyNumpad8}))
+		{
+			con.command("move 0 -1");
+			return 1;
+		}	
+
+		if (match(e, {EventPress, KeyNumpad6}))
+		{
+			con.command("move 1 0");
+			return 1;
+		}
+		
+
+		if (match(e, {EventPress, KeyNumpad4}))
+		{
+			con.command("move -1 0");
+			return 1;
+		}
+		
+
+		if (match(e, {EventPress, KeyNumpad3}))
+		{
+			con.command("move 1 1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyNumpad7}))
+		{
+			con.command("move -1 -1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyNumpad1}))
+		{
+			con.command("move -1 1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyNumpad9}))
+		{
+			con.command("move 1 -1");
+			return 1;
+		}
 
 		// alpha move
-		con.on({EventPress, KeyX},
-			[&con,unit_id](){ con.command("move 0 1"); }
-		);
-		con.on({EventPress, KeyW},
-			[&con,unit_id](){ con.command("move 0 -1"); }
-		);
-		con.on({EventPress, KeyD},
-			[&con,unit_id](){ con.command("move 1 0"); }
-		);
-		con.on({EventPress, KeyA},
-			[&con,unit_id](){ con.command("move -1 0"); }
-		);
-		con.on({EventPress, KeyC},
-			[&con,unit_id](){ con.command("move 1 1"); }
-		);
-		con.on({EventPress, KeyQ},
-			[&con,unit_id](){ con.command("move -1 -1"); }
-		);
-		con.on({EventPress, KeyZ},
-			[&con,unit_id](){ con.command("move -1 1"); }
-		);
-		con.on({EventPress, KeyE},
-			[&con,unit_id](){ con.command("move 1 -1"); }
-		);
+		if (match(e, {EventPress, KeyX}))
+		{
+			con.command("move 0 1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyW}))
+		{
+			con.command("move 0 -1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyD}))
+		{
+			con.command("move 1 0");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyA}))
+		{
+			con.command("move -1 0");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyC}))
+		{
+			con.command("move 1 1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyQ}))
+		{
+			con.command("move -1 -1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyZ}))
+		{
+			con.command("move -1 1");
+			return 1;
+		}
+		
+		if (match(e, {EventPress, KeyE}))
+		{
+			con.command("move 1 -1");
+			return 1;
+		}
+		
 
 		// build colony
-		con.on({EventPress, KeyB},
-			[&con](){ con.command("build-colony Unnamed"); }
-		);
+		if (match(e, {EventPress, KeyB}))
+		{
+			con.command("build-colony Unnamed");
+			return 1;
+		}
+		
 		// build road
-		con.on({EventPress, KeyR},
-			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsRoad)); }
-		);
+		if (match(e, {EventPress, KeyR}))
+		{
+			con.cmd_unit(unit_id, Cmd(InsRoad));
+			return 1;
+		}
+		
 		// plow fields
-		con.on({EventPress, KeyP},
-			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsPlow)); }
-		);
+		if (match(e, {EventPress, KeyP}))
+		{
+			con.cmd_unit(unit_id, Cmd(InsPlow));
+			return 1;
+		}
+		
 		// clear forest
-		con.on({EventPress, KeyO},
-			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsClear)); }
-		);
+		if (match(e, {EventPress, KeyO}))
+		{
+			con.cmd_unit(unit_id, Cmd(InsClear));
+			return 1;
+		}
+		
 		// space - skip unit
-		con.on({EventPress, KeySpace},
-			[&con,unit_id](){ con.cmd_unit(unit_id, Cmd(InsWait, 1)); }
-		);
+		if (match(e, {EventPress, KeySpace}))
+		{
+			con.cmd_unit(unit_id, Cmd(InsWait, 1));
+			return 1;
+		}
+		
 
 		// esc - clear orders
-		con.on({EventPress, KeyEsc},
-			[&con,unit_id](){
-				con.clear_unit_cmds(unit_id);
-				con.set_input_mode(con.InputModeDefault);
-			}
-		);
+		if (match(e, {EventPress, KeyEsc}))
+		{
+			con.clear_unit_cmds(unit_id);
+			con.set_input_mode(con.InputModeDefault);
+			return 1;
+		}
+		
 
 		// press enter -- execute current orders
-		con.on({EventPress, KeyEnter},
-			[&con](){
-				if (auto * u = con.get_sel_unit_ext()) {
-					con.exec_unit_cmds(*u);
-					con.select_next_unit();
-				}
-				con.set_input_mode(con.InputModeDefault);
+		if (match(e, {EventPress, KeyEnter}))
+		{
+			if (auto * u = con.get_sel_unit_ext()) {
+				con.exec_unit_cmds(*u);
+				con.select_next_unit();
 			}
-		);
+			con.set_input_mode(con.InputModeDefault);
+			return 1;
+		}
+		
 
 		// M - enter move mode
-		con.on({EventPress, KeyM},
-			[&con](){ con.set_input_mode(con.InputModeMove); }
-		);
-
-
-
+		if (match(e, {EventPress, KeyM}))
+		{
+			con.set_input_mode(con.InputModeMove);
+			return 1;
+		}
+		return 0;
 	}
 
-	void render_selected_unit(Front & win, Console & con, v2s pos, Unit & unit) {
+	void render_selected_unit(Console & con, v2s pos, Unit & unit)
+	{
 		auto & icon = res(ICON, get_icon_id(unit));
 		auto unit_id = unit.id;
 
@@ -2618,9 +2056,6 @@ namespace col {
 			calc_align({pos, ly.terr_dim}, icon.dim),
 			icon
 		);
-
-
-
 
 	}
 
@@ -2640,12 +2075,12 @@ namespace col {
 
 	bool is_tile_on_screen(Console & con, Coords xy)
 	{
-		return overlap(con.get_view_box(), xy);
+		return overlap(con.view_box, xy);
 	}
 
 	b2s get_tile_on_screen(Console & con, Coords xy)
 	{
-		auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.get_view_pos());
+		auto rpos = ly.map.pos + vmul(ly.terr_dim, xy - con.view_box.pos);
 		return b2s(rpos, ly.terr_dim);
 	}
 
@@ -2696,8 +2131,8 @@ namespace col {
 				auto box = get_tile_on_screen(con, m.pos);
 
 				render_text(
-					box.pos, box.dim, v2f(0.5f, 0.5f),
-					font_tiny(), ColorBlue, ColorBlack,
+					box, v2f(0.5f, 0.5f),
+					font_tiny(), ColorBlue,
 					m.label
 				);
 			}
@@ -2729,55 +2164,40 @@ namespace col {
 
 		bool handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e);
 
-
-
-
-
 	};
 
 
 
-
-
-	void render_map(Front & win, Env const& env, Console & con, v2s pos,
-			Coords const& delta)
+	
+	void MapView::render(Console & con)
 	{
-		auto w = con.view_dim[0];
-		auto h = con.view_dim[1];
+		auto & env = con.env;
 
-		auto vpos = con.view_pos;
-		auto vdim = v2s(w,h);
+		auto & view_box = con.view_box;
+		
+		auto w = view_box.dim[0];
+		auto h = view_box.dim[1];
 
-		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
+		// render terrain
+		for (Coord j = 0; j < h; ++j)
+		{
+			for (Coord i = 0; i < w; ++i)
+			{
+				auto coords = view_box.pos + Coords(i,j);
 
-
-		for (int j = 0; j < h; ++j) {
-			for (int i = 0; i < w; ++i) {
-
-				auto coords = Coords(i,j) + vpos;
-
-				if (env.in_bounds(coords)) {
-
+				if (env.in_bounds(coords))
+				{
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
+					auto & terr = env.get_terr(coords);
 
-					auto& terr = env.get_terr(coords);
-
-
-					if (con.is_discovered(terr)) {
+					if (con.is_discovered(terr))
+					{
 						render_terr(pos, env, terr);
 					}
 					else {
 						render_unknown(pos);
 					}
-
-					auto dim = ly.terr_dim;
-
-					// handle
-
-
 				}
-
-
 			}
 		}
 
@@ -2799,17 +2219,18 @@ namespace col {
 		}
 
 		// stacks on map
-		for (int j = 0; j < h; ++j) {
-			for (int i = 0; i < w; ++i) {
-				auto coords = Coords(i,j) + vpos;
-				if (env.in_bounds(coords)) {
-
+		for (int16_t j = 0; j < h; ++j) {
+			for (int16_t i = 0; i < w; ++i)
+			{
+				auto coords = view_box.pos + Coords(i,j);
+				
+				if (env.in_bounds(coords))
+				{
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
-
 					auto & terr = env.get_terr(coords);
 
 					if (con.has_vision(terr)) {
-						render_stack(win, con, pos, env, terr);
+						render_stack(con, pos, env, terr);
 					}
 					else {
 						if (con.is_discovered(terr)) {
@@ -2821,25 +2242,22 @@ namespace col {
 			}
 		}
 
-		if (auto *u = con.get_sel_unit())
-		{
-			handle_selected_unit(win, con, *u);
-		}
+
 
 		// render cursor on selected tile
 		if (not con.get_sel_unit()) {
-			if (Terr* tp = con.get_sel_terr()) {
-
-				for (auto tp: con.get_sel_terrs()) {
+			if (Terr * tp = con.get_sel_terr())
+			{
+				for (auto tp: con.get_sel_terrs())
+				{
 					auto coords = env.get_coords(*tp);
-
 
 					if (overlap(view_box, coords))
 					{
 						render_inline(
-							{vmul(coords - vpos, ly.terr_dim) + pos, ly.terr_dim},
+							{vmul(coords - view_box.pos, ly.terr_dim) + ly.map.pos, ly.terr_dim},
 							{128,128,128,255},
-							ly.line
+							ly.line_th
 						);
 					}
 				}
@@ -2849,35 +2267,24 @@ namespace col {
 				// blink main terr
 				if ((con.time % 1000) >= 500) {
 					// rect frame on tile
-					if (overlap(view_box, coords)) {
-
-
+					if (overlap(view_box, coords))
+					{
 						render_inline(
-							{vmul(coords - vpos, ly.terr_dim) + pos, ly.terr_dim},
+							{vmul(coords - view_box.pos, ly.terr_dim) + ly.map.pos, ly.terr_dim},
 							{255,255,255,255},
-							ly.line
+							ly.line_th
 						);
 					}
 				}
-
-
 			}
 		}
 
 		if (con.editing) {
 			render_debug_ai(con);
 		}
-
-
-
 	}
 
 
-
-	void MapView::render(Console & con)
-	{
-		render_map(win, con.env, con, ly.map.pos, Coords(0,0));
-	}
 
 	bool MapView::handle_terr(Console & con, Coords coords, v2s pos, v2s dim, Event e)
 	{
@@ -2996,14 +2403,14 @@ namespace col {
 			return 1;
 		}
 
+		// handle selected unit
+		if (auto *u = con.get_sel_unit())
+		{
+			handle_selected_unit(con, e, *u);
+		}
 
-		auto w = con.view_dim[0];
-		auto h = con.view_dim[1];
-
-		auto vpos = con.view_pos;
-		auto vdim = v2s(w,h);
-
-		auto view_box = ext::b2<Coord>(con.view_pos, con.view_dim);
+		auto w = con.view_box.dim[0];
+		auto h = con.view_box.dim[1];
 
 		auto & env = con.env;
 
@@ -3011,7 +2418,7 @@ namespace col {
 		{
 			for (int i = 0; i < w; ++i)
 			{
-				auto coords = Coords(i,j) + vpos;
+				auto coords = Coords(i,j) + con.view_box.pos;
 				if (env.in_bounds(coords)) {
 
 					auto pos = ly.map.pos + vmul(ly.terr_dim, v2s(i,j));
@@ -3230,65 +2637,6 @@ namespace col {
 
 
 
-	struct Menu : Widget {
-		int cursor{-1};
-		void render(Front & win, Console & con);
-
-		int size() { return 2; }
-
-		void move(size_t i) {
-			cursor = i;
-			if (cursor <= 0) { cursor = size(); }
-			if (cursor >= size()) { cursor = 0; }
-		}
-
-		void move_up() {
-			if (cursor <= 0) { cursor = size(); }
-			cursor -= 1;
-		}
-
-		void move_down() {
-			cursor += 1;
-			if (cursor >= size()) { cursor = 0; }
-		}
-	};
-
-	void Menu::render(Front & win, Console & con) {
-		/*TextRend2 cur(win, con, ly.bar, PixFont, StyleMenu);
-
-		cur.link("Reports")
-
-		Game   Unit   Reports   BlaBla
-		*/
-
-
-
-
-
-		/*
-
-		auto cind = 0;
-
-		auto box = ly.bar;
-
-		v2s cpos = box.pos;
-		v2s cdim = {120, box.dim[1]};
-
-		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }
-		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Game");
-		con.on
-		cpos[0] += cdim[0];
-
-		if (cind == cursor) { win.render_fill(win, cpos, cdim, ColorSelectedBG); }
-		render_text(win, cpos, cdim, {0,0}, PixFont, ColorFont, ColorNone, "Reports");
-		cpos[0] += cdim[0];
-		*/
-
-
-
-
-	}
-
 	void render_nations_table() {
 		/*
 		cur.set_tabs(160, 100, 40);
@@ -3370,7 +2718,7 @@ namespace col {
 
 
 
-		auto cur = TextRend2(win, con, ly.pan, font_tiny(), StyleMenu);
+		auto cur = Hypertext(con, ly.pan, font_tiny(), StyleMenu);
 
 		// Turn 5, England
 		cur.text("Turn " + to_string(env.get_turn_no()) + ", " + faction_name + "\n");
@@ -3550,8 +2898,9 @@ namespace col {
 
 				// show button
 				auto text_box = render_text(
-					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny * 2), v2f(0.5, 1.0),
-					font_tiny(), colind, ColorNone,
+					{ly.pan.pos, ly.pan.dim - v2s(0, ly.font_height * 2)},
+					v2f(0.5, 1.0),
+					font_tiny(), colind,
 					"Idle Unit"
 				);
 
@@ -3578,8 +2927,8 @@ namespace col {
 
 				// show button
 				auto text_box = render_text(
-					ly.pan.pos, ly.pan.dim - v2s(0, ly.font_tiny), v2f(0.5, 1.0),
-					font_tiny(), colind, ColorNone,
+					{ly.pan.pos, ly.pan.dim - v2s(0, ly.font_height)}, v2f(0.5, 1.0),
+					font_tiny(), colind,
 					"Idle Factory"
 				);
 
@@ -3633,8 +2982,8 @@ namespace col {
 
 			// label
 			auto text_box = render_text(
-				ly.pan.pos, ly.pan.dim, v2f(0.5, 1.0),
-				font_tiny(), colind, ColorNone,
+				{ly.pan.pos, ly.pan.dim}, v2f(0.5, 1.0),
+				font_tiny(), colind, 
 				lab
 			);
 
@@ -3698,39 +3047,18 @@ namespace col {
 	}
 
 
-
-	void render_drag_clear(Console & con)
+	bool dragdrop_handle_release(Con & con, Event e)
 	{
-		if (con.drag_item)
+		/// always clear unwanted drag by releasing LMB
+		
+		// left release anywhere -- end drag cargo
+		if (con.drag_item and match(e, {EventRelease, KeyLMB}))
 		{
-			// left release anywhere -- end drag cargo
-			con.on({EventRelease, KeyLMB},
-				[&con](){ con.drop_cargo(0); }
-			);
+			con.drop_cargo(0);
+			return 1;				
 		}
+		return 0;
 	}
-
-
-
-/*
-
-	struct MenuEntry
-	{
-		string label{""};
-		function<bool()> can_run;
-		function<void()> run;
-	};
-
-
-
-
-		s.add({"Move (M)"}, [&con](){
-			if (con.has_sel_unit()) {
-				con.set_input_mode(con.InputModeMove);
-			}
-		});
-
-*/
 
 
 
@@ -4055,7 +3383,7 @@ namespace col {
 		MapView map_view;
 		SidePanel side_panel;
 		CityView city_view;
-
+		
 		MainFrame(Console & con): main_menu(con) {}
 	};
 
@@ -4063,13 +3391,12 @@ namespace col {
 	{
 		con.reg.clear();
 
-
 		// int w = app.get_ctx_dim()[0];
 		// int h = app.get_ctx_dim()[1];
 
+		
 
-		render_drag_clear(con);
-
+		
 
 
 
@@ -4089,7 +3416,7 @@ namespace col {
 
 			// vline left of the panel
 			render_fill(
-				{v2s(ly.pan.pos[0] - ly.line, ly.pan.pos[1]), {ly.line, ly.pan.dim[1]}},
+				{v2s(ly.pan.pos[0] - ly.line_th, ly.pan.pos[1]), {ly.line_th, ly.pan.dim[1]}},
 				ColorBlack
 			);
 
@@ -4104,7 +3431,7 @@ namespace col {
 
 			// black hline under the top-bar
 			render_fill(
-				{{ly.bar.pos[0], ly.bar.end()[1]}, {ly.bar.dim[0], ly.line}},
+				{{ly.bar.pos[0], ly.bar.end()[1]}, {ly.bar.dim[0], ly.line_th}},
 				{0,0,0,255}
 			);
 
@@ -4127,6 +3454,10 @@ namespace col {
 	bool MainFrame::handle(Console & con, Event e)
 	{
 
+		if (dragdrop_handle_release(con, e)) {
+			return 1;
+		}
+
 		// toogle terminal
 		if (match(e, {EventChar, '`'}))
 		{
@@ -4147,6 +3478,7 @@ namespace col {
 
 		if (con.mode == Console::Mode::COLONY)
 		{
+			
 			if (city_view.handle(con, e)) {
 				return 1;
 			}
@@ -4195,6 +3527,512 @@ namespace col {
 	void start_gui(Console & con)
 	{
 		con.push_widget<MainFrame>(con);
+	}
+
+	void CityView::render(Con & con)
+	{
+		auto const& env = con.env;
+
+
+		/*
+			// panel right
+			render_panel(app, env, con,
+				ly.pan.pos,
+				ly.pan.dim
+			);
+			// vline left of the panel
+			render_rect(app,
+				{ly.scr.dim[0] - ly.pan.dim[0] - 1, ly.bar.end[1] + 1},
+				{1, h-8},
+				{0,0,0,255}
+			);
+		*/
+
+		//auto render = Renderer{win,env};
+
+
+
+		// render area
+		auto & sand_tex = res(SANDTILE);
+		render_area(ly.city_builds, sand_tex);
+
+		auto & pixs = ly.pixs;
+		auto & dims = ly.dims;
+
+
+		auto& terr = *con.get_sel_terr();
+		auto& colony = terr.get_colony();
+
+		// render buildings
+		{
+			// hover anywhere -- clear label on building
+			con.on({EventMotion},
+				[&con]() { con.sel_colony_slot_id = -1; }
+			);
+
+			// render in reverse order to make sure that docks clickarea will not obscure other builds
+			int i = colony.builds.size();
+			while (i > 0) {
+				i = i - 1;
+
+				auto workplace_id = i;
+
+				auto & build = colony.builds.at(i);
+
+				auto const& build_tex = res(BUILDING, build.get_type_id());
+				auto build_pos = ly.city_builds.pos + pixs.at(i);
+				auto build_dim = build_tex.dim;
+
+				render_sprite(build_pos, build_tex);
+
+				int nominal_prod = logic::get_nominal_prod(env, build, build.get_proditem());
+
+				// production button under the building
+				if (build.get_proditem() == ItemHammers)
+				{
+
+					auto button_pos = build_pos + v2s(0, build_dim[1]);
+					auto button_dim = v2s(build_dim[0], ly.font_height);
+
+
+					int blink = 0;
+					string label, progress;
+					if (build.task) {
+						label = get_name(*build.task.what);
+						label = label.substr(0,11);
+
+						progress = format("%||/%||", build.task.get(), build.task.cap());
+					}
+					else {
+						label = "(empty)";
+
+						if ( nominal_prod and con.blink() ) {
+							blink = 1;
+						}
+						progress = "";
+					}
+
+					if (blink) {
+						render_text(
+							{button_pos, button_dim}, {0.5,0.5},
+							font_tiny(), ColorGray, ColorWhite,
+							label
+						);
+					}
+					else {
+						render_text(
+							{button_pos, button_dim}, {0.5,0.5},
+							font_tiny(), ColorWhite, ColorNone,
+							label
+						);
+					}
+
+					render_outline(
+						{button_pos, button_dim}, ColorWhite, ly.S(1)
+					);
+
+					// progress ind
+					render_text(
+						{build_pos, build_dim}, {1, 0},
+						font_tiny(), ColorWhite, ColorBlack,
+						progress
+					);
+
+
+
+
+					// left click on button -- select production
+					con.on({EventPress, KeyLMB, button_pos, button_dim},
+						[&env, &con, &colony, &build]() {
+							show_select_makeable(env, con, colony, build,
+								{ly.scr.pos, ly.scr.dim}, v2f{0.5f, 0.5f}
+							);
+						}
+					);
+
+
+				}
+
+
+
+				// render build name
+				if (con.sel_colony_slot_id == i)
+				{
+					
+					render_text(
+						{build_pos, build_dim}, v2f(0.5, 0.5),
+						font_tiny(), ColorWhite, ColorBlack,
+						build.get_name()
+					);
+				}
+
+				// left click on building -- assign worker
+				con.on({EventPress, KeyLMB, build_pos, build_dim},
+					[&con, workplace_id]() {
+						if (con.get_sel_unit()) {
+							con.command(format("work-build %||", workplace_id));
+						}
+					}
+				);
+
+				// number of produced items
+				if (int y = nominal_prod) {
+					auto const& item_tex = res(ICON, get_item_icon_id(build.get_proditem()));
+					auto item_dim = item_tex.dim;
+
+					// item icon
+					render_sprite(build_pos, item_tex);
+
+					// number
+					render_text(
+
+						{build_pos + v2s(item_dim[0], 0), v2s(0, item_dim[1])},
+						
+						{0, 0.5},
+
+						font_tiny(), ColorWhite, ColorBlack,
+						std::to_string(y)
+					);
+				}
+
+
+				// hover on building -- show label with building name (select buildplace)
+				con.on({EventMotion, build_pos, build_dim},
+					[&con, i]() { con.sel_colony_slot_id = i; }
+				);
+
+				v2s units_frame = {ly.S(25), ly.S(16)};
+
+				// units on build
+				int n = build.units.size();
+				int i = 0;
+				for (auto& unit_ptr: build.units) {
+					auto& unit = *unit_ptr;
+					auto& unit_tex = res(ICON, get_icon_id(unit));
+
+					v2s unit_pos = calc_align(
+						{
+							build_pos + build_dim - units_frame + ly.S(v2s(1,1)), units_frame
+						},
+						unit_tex.dim,
+						v2f(float(i+1)/float(n+1), 1)
+					);
+
+					v2s unit_dim = unit_tex.dim;
+
+					v2s sel_pos = unit_pos;
+					v2s sel_dim = unit_dim;
+
+					// render unit on build
+					render_sprite(unit_pos, unit_tex);
+
+					auto unit_id = unit.id;
+
+					if (unit_id == con.get_sel_unit_id()) {
+						// render selection frame
+						render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_th);
+					}
+					else {
+						// left click on unit -- select this unit
+						con.on({EventPress, KeyLMB, sel_pos, sel_dim},
+							[&con,unit_id]() {
+								con.command("sel " + to_string(unit_id));
+							}
+						);
+					}
+
+					++i;
+				}
+
+
+			}
+		}
+
+		// render fields
+		{
+			/// render background
+
+			auto pix = ly.city_fields.pos;
+
+			auto& tex_wood = res(WOODTILE);
+			render_area({ly.city_fields.pos, ly.city_fields.dim}, tex_wood);
+
+			auto city_terr_pos = calc_align({ly.city_fields.pos, ly.city_fields.dim}, ly.terr_dim);
+
+			auto& city_terr = terr;
+
+			auto pos = env.get_coords(terr);
+			auto city_coords = Coords(pos[0]-1, pos[1]-1);
+
+
+			for(size_t field_id = 0; field_id < colony.fields.size(); ++field_id) {
+				auto& field = colony.fields.at(field_id);
+
+				auto& field_terr = field.get_terr();
+
+				v2s relc = v2s(env.get_coords(*field.terr) - env.get_coords(city_terr));
+				auto field_pos = city_terr_pos + vmul(relc, ly.terr_dim);
+				auto field_dim = ly.terr_dim;
+
+
+				render_terr(field_pos, env, field_terr);
+
+
+				if (field.units.size() == 0) {
+					// left click on field -- assign unit to work there
+					string cmd = format("work-field %||", field_id);
+					con.on({EventPress, KeyLMB, field_pos, field_dim},
+						[&con,cmd](){ con.command(cmd); }
+					);
+				}
+
+
+
+				// units on field
+				for (auto& unit_p: field.units) {
+					auto& unit = *unit_p;
+					{
+						v2s unit_dim = v2s(field_dim[0]/2, field_dim[1]);
+						v2s unit_pos = field_pos + v2s(field_dim[0]/2, 0);
+
+						v2s item_dim = field_dim; //v2s(field_dim[0]/2, field_dim[1]);
+						v2s item_pos = field_pos;
+
+						v2s sel_pos = field_pos;
+						v2s sel_dim = field_dim;
+
+						auto& unit_tex = res(ICON, get_icon_id(unit));
+
+						// field production
+						if (auto proditem = field.get_proditem()) {
+							// render produced item
+							auto& item_tex = res(ICON, get_item_icon_id(proditem));
+							render_sprite(
+								calc_align({item_pos, item_dim}, item_tex.dim),
+								item_tex
+							);
+
+							// render produced item amount
+							auto text = to_string(logic::get_nominal_prod(env, field, field.get_proditem()));
+
+							render_text(
+								{item_pos, {0,0}}, {0,0},
+								font_tiny(), ColorWhite, ColorBlack,
+								text
+							);
+						}
+
+						// render unit on field
+						render_sprite(
+							calc_align({unit_pos, unit_dim}, unit_tex.dim),
+							unit_tex
+						);
+
+						auto unit_id = unit.id;
+
+						if (unit_id == con.get_sel_unit_id()) {
+							// render selection frame
+							render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_th);
+
+							// left click on field with selected worker -- switch to next proditem
+							/*con.on(EventPress, KeyLMB, sel_pos, sel_dim,
+								[&con,field_id]() {
+									con.command("prodnext-field " + to_string(field_id));
+								}
+							);*/
+
+
+
+							// left click on field with selected worker -- show select proditem menu
+							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
+								[&con, &field]() {
+									con.prod_to_workplace = &field;
+									con.selected_id = field.get_proditem();
+								}
+							);
+
+
+
+						}
+						else {
+							// left click on field with worker -- select this worker
+							con.on({EventPress, KeyLMB, sel_pos, sel_dim},
+								[&con,unit_id]() {
+									con.command("sel " + to_string(unit_id));
+								}
+							);
+						}
+					}
+				}
+
+
+			}
+
+
+		}
+
+
+
+		// render city terr units
+
+		// right click anywhere - unselect selected unit
+		if (con.get_sel_unit()) {
+			con.on({EventPress, KeyRMB},
+				[&con]() {
+					con.unselect_unit();
+				}
+			);
+		}
+
+
+		// left click on city terrain area with selected unit -- unwork that unit
+		if (con.get_sel_unit()) {
+			con.on({EventPress, KeyLMB, ly.city_units.pos, ly.city_units.dim},
+				[&con](){con.command("work-none");}
+			);
+		}
+
+		// render city terr units area bg
+		render_fill(
+			{ly.city_units.pos, ly.city_units.dim},
+			ColorSkyBlue
+		);
+
+		// render unit cargo area bg
+		render_fill(
+			{ly.city_unit_cargo.pos, ly.city_unit_cargo.dim},
+			ColorLightBrown
+		);
+
+		// render standing units
+		int i = 0;
+		for (auto& p: terr.units) {
+			auto& unit = *p;
+
+			if (unit.in_game and !unit.is_working()) {
+
+				v2s unit_pos = ly.city_units.pos + v2s(ly.terr_dim[0] * i, 0);
+				v2s unit_dim = ly.terr_dim;
+
+				v2s sel_pos = unit_pos;
+				v2s sel_dim = unit_dim;
+
+				render_unit_tile(win, {unit_pos, unit_dim}, unit);
+
+				auto unit_id = unit.id;
+
+				if (unit_id == con.get_sel_unit_id()) {
+					// render selection frame
+					render_inline({sel_pos, sel_dim}, {255,100,100,255}, ly.line_th);
+
+					// left click on selected unit (on terr) -- show equip select
+					con.on({EventPress, KeyLMB, sel_pos, sel_dim},					
+						[this,&con,&unit]() {
+							this->show_sel_equip(con, unit.id);
+						}
+					);
+
+					// unit cargo
+					render_unit_cargo(win, con, ly.city_unit_cargo.pos, ly.city_unit_cargo.dim , unit);
+
+				}
+				else {
+					// left click on unselected unit -- select unit
+					con.on({EventPress, KeyLMB, sel_pos, sel_dim},
+						[&con,&env,unit_id]() {
+							con.select_unit(unit_id);
+						}
+					);
+				}
+
+				++i;
+			}
+
+
+		}
+
+
+		render_city_store(win, con, ly.city_resources.pos, ly.city_resources.dim, terr);
+
+
+		// render EXIT button
+		render_fill({ly.city_exit.pos, ly.city_exit.dim}, {140,0,140,255});
+
+		render_text(
+			ly.city_exit.pos + v2s(1,1),
+			font_tiny(), ColorFont,
+			"RET"
+		);
+
+		// left click on exit button -- exit city screen
+		con.on({EventPress, KeyLMB, ly.city_exit.pos, ly.city_exit.dim},
+			[&con, &terr](){ con.command("exit"); }
+		);
+
+		// render fields
+		//render_fields(win, env, con, ly.city_fields.pos, );
+
+		
+		sel_equip.render(con);
+
+		
+		if (con.prod_to_workplace != nullptr) {
+			auto & wp = *con.prod_to_workplace;
+
+			vector<Col> cols;
+			vector<int> keys;
+			vector<Row> rows;
+
+
+			// no prod
+			keys.push_back(0);
+			Row row;
+			row.push_back("(empty)");
+			row.push_back("");
+			rows.push_back(row);
+
+			// prod items
+			for (auto& item: logic::get_all_items(env)) {
+
+				auto prod = logic::get_nominal_prod(env, wp, item);
+
+				if (prod) {
+					keys.push_back(item);
+
+					Row row;
+					row.push_back(get_name(item));
+					row.push_back(to_string(prod));
+
+					rows.push_back(row);
+				}
+			}
+
+			// cols
+			cols.push_back({0.0f, 14 * 4 * ly.S(1), "Item"});
+			cols.push_back({1.0f, 5 * 4 * ly.S(1),  "Prod"});
+
+			// onclick -> assign proditem to wp
+			render_select_f(win, con,
+				ly.scr.pos, ly.scr.dim, v2f(0.5, 0.5),
+
+				cols, keys, rows,
+
+				con.selected_id,
+				[&con,&wp]() {
+					wp.set_proditem(Item(con.selected_id));
+					con.prod_to_workplace = nullptr;
+					con.selected_id = 0;
+				},  // onselect
+				[&con](){
+					con.prod_to_workplace = nullptr;
+					con.selected_id = 0;
+				}   // oncancel
+			);
+		}
+
+
+
+
 	}
 
 }

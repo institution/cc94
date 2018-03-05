@@ -5,7 +5,8 @@
 
 namespace col {
 
-	void read_defs(RCParser & p, Env & env);
-	void read_defs(Path const& path, Env & env);
+	void read_defs(RCParser & p, Env & env);	
+	void read_defs(Path const& path, Env & env);   // used in tests
+
 	
 }

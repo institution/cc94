@@ -1,12 +1,16 @@
 #pragma once
-
+#include <thread>
 #include "agent.hpp"
 #include "env.hpp"
-#include <thread>
+#include "rcparser.hpp"
+
 
 
 
 namespace col{	
+
+	
+
 
 	struct Runner
 	{
@@ -44,8 +48,8 @@ namespace col{
 			threads.clear();
 		}
 
-		void run(std::string const& file_map, std::string const& dir_tile, int verbose);
-		
+		void run(std::string const& path_rc, int verbose);
+
 	};
 
 }

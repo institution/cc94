@@ -133,8 +133,8 @@ namespace col {
 		
 		v2s old_dim{0,0};
 		
-		int equip_to_unit_id{0};
-		int equip_to_unit_type_id{0};
+		//int equip_to_unit_id{0};
+		//int equip_to_unit_type_id{0};
 
 		Workplace *prod_to_workplace{nullptr};
 
@@ -289,10 +289,10 @@ namespace col {
 		Env *server{nullptr};   // wtf?
 
 
-		
+		Path main_rc;
 
-		Console(Env & env, Runner * runner = nullptr):
-			env(env), server(&env), runner(runner), verbose(0)
+		Console(Env & env, Runner * runner, Path const& main_rc):
+			env(env), server(&env), runner(runner), main_rc(main_rc), verbose(0)
 		{
 			for (auto c: CHARSET) {
 				charset.insert(c);
@@ -302,10 +302,6 @@ namespace col {
 			mod = 0;
 			mode = Mode::AMERICA;
 			clear();
-
-			if (runner) {
-				init_GUI();
-			}
 		}
 
 
@@ -433,44 +429,38 @@ namespace col {
 		}
 		
 		// view box
-		v2s view_pos{0,0};		
-		v2s view_dim{15,12};
+		b2c view_box{0,0,15,12};		
 		
-		b2c get_view_box() const { return b2c(view_pos, view_dim); }
-		v2c get_view_pos() const { return view_pos; }		
-		v2c get_view_dim() const { return view_dim; }
-
-		
-		void limit_view() {
-			auto max_pos = env.get_dim() - view_dim;
+		void limit_view()
+		{
+			auto max_pos = env.dim - view_box.dim;
 			auto min_pos = v2s{0,0};
 			
 			for (int i=0; i<2; ++i) {
-				if (view_pos[i] > max_pos[i]) {
-					view_pos[i] = max_pos[i];
+				if (view_box.pos[i] > max_pos[i]) {
+					view_box.pos[i] = max_pos[i];
 				}
 				
-				if (view_pos[i] < min_pos[i]) {
-					view_pos[i] = min_pos[i];
+				if (view_box.pos[i] < min_pos[i]) {
+					view_box.pos[i] = min_pos[i];
 				}				
 			}
 		}
 		
 		void move_view(v2s delta) {			
-			view_pos += delta;			
+			view_box.pos += delta;			
 			limit_view();			
 		}
 		
 		void center_view_on(v2c pos) {			
-			view_pos = pos - v2c(view_dim[0]/2, view_dim[1]/2);			
-			limit_view();			
+			view_box.pos = pos - v2c(view_box.dim[0]/2, view_box.dim[1]/2);			
+			limit_view();
 		}
 		
 		
 		void center_on(Unit const* u) {
 			if (u) {
 				auto unit_pos = env.get_coords(*u);
-				auto view_box = get_view_box();
 				//print("view_box = %||; unit_pos = %||\n", view_box, unit_pos);
 				if (not overlap(view_box, unit_pos)) 
 				{
@@ -529,7 +519,29 @@ namespace col {
 
 
 		
+		Item   drag_item{ItemNone};
+		Amount drag_num{0};
+		int8_t drag_dir{0}; // load = +1; unload = -1;
+		
+		void drag_cargo(Item const& item, Amount const& num, signed dir)
+		{
+			assert(num >= 0);
+			drag_item = item;
+			drag_num = num;
+			drag_dir = dir;
+		}
 
+		void drop_cargo(signed dir)
+		{
+			print("drop cargo expected=%||, actual=%||, num=%||\n", dir, drag_dir, dir * drag_num);
+
+			if (dir == drag_dir) {
+				load_cargo(drag_item, dir * drag_num);
+			}
+			drag_item = ItemNone;
+			drag_num = 0;
+			drag_dir = 0;
+		}
 
 
 
@@ -853,27 +865,6 @@ namespace col {
 		void load_cargo(Item const& item, Amount const& num);
 
 
-		Item drag_item{ItemNone};
-		Amount drag_num{0};
-		// load = +1; unload = -1;
-		signed drag_dir{0};
-
-		void drag_cargo(Item const& item, Amount const& num, signed dir) {
-			assert(num >= 0);
-			drag_item = item;
-			drag_num = num;
-			drag_dir = dir;
-		}
-
-		void drop_cargo(signed dir) {
-			print("drop cargo expected=%||, actual=%||, num=%||\n", dir, drag_dir, dir * drag_num);
-			if (dir == drag_dir) {
-				load_cargo(drag_item, dir * drag_num);
-			}
-			drag_item = ItemNone;
-			drag_num = 0;
-			drag_dir = 0;
-		}
 
 
 		Item get_next_workitem_field(Env const& env, Field const& f) const;
@@ -934,7 +925,6 @@ namespace col {
 
 		void command(string const& line);
 		void do_command(string const& line);
-
 
 
 		void history_up() {

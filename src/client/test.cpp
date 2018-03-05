@@ -35,7 +35,7 @@ TEST_CASE( "console.get_letter", "" ) {
 			
 	unit.time_left = 0;
 			
-	Console con(env, nullptr);
+	Console con(env, nullptr, "");
 	
 	con.cmd_unit(unit.id, Cmd(InsClear));	
 	REQUIRE(con.get_letter(unit) == 'O');
@@ -51,7 +51,7 @@ TEST_CASE( "console.get_next_to_repeat", "" ) {
 	);
 	env.put(env.get_terr({0,0}), unit);
 			
-	Console con(env, nullptr);
+	Console con(env, nullptr, "");
 	
 	// no command
 	REQUIRE(con.get_next_to_repeat(nullptr) == nullptr);
@@ -75,7 +75,7 @@ TEST_CASE( "console.cmd_unit", "" ) {
 		env.get_unittype(1)
 	);
 	
-	Console con(env, nullptr);
+	Console con(env, nullptr, "");
 	
 	con.cmd_unit(unit.id, Cmd(InsWait));	
 	REQUIRE(con.get_unit_ext(unit).can_cont == false);
@@ -112,7 +112,7 @@ TEST_CASE( "console.find_path", "" ) {
 	
 	Env env({2,1}, Terr(AltFlat,BiomePlains,PhysNone));
 	
-	Console con(env, nullptr);
+	Console con(env, nullptr, "");
 	
 	auto & u = env.create<Unit>(
 		env.get_unittype(1).set_travel(TravelLand).set_speed(1)
@@ -136,7 +136,7 @@ TEST_CASE( "console.find_path2", "" ) {
 	);
 	
 	
-	Console con(env, nullptr);
+	Console con(env, nullptr, "");
 	
 	auto path = con.find_path({0,0},{0,2},u);
 	auto & cs = path.cmds;

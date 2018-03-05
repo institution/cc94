@@ -1,6 +1,9 @@
 font 0
 name "Libris ADF Std-Regular-16"
-height 16
+height 19
+ascender 16
+descender -4
+
 
 sprite 32
 name " "

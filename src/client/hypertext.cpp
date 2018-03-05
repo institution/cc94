@@ -3,7 +3,7 @@
 namespace col
 {
 	
-	TextRend2 & TextRend2::link(string const& text, Action act) {
+	Hypertext & Hypertext::link(string const& text, Action act) {
 		b2s area;
 		area.pos = cpos;
 		auto text_box = render_text(cpos, font, style.hl, text);
@@ -16,23 +16,9 @@ namespace col
 		return *this;
 	}
 	
-	TextRend2 & TextRend2::newline() {
-		cpos[0] = box.pos[0];
+	Hypertext & Hypertext::lf() {
+		cpos[0] = box.pos[0] +  + font.pad[0];
 		cpos[1] += font.height;
-		ccol = 0;
-		return *this;
-	}
-	
-	TextRend2 & TextRend2::td() {
-		cpos[0] = box.pos[0] + tabs.at(ccol);
-		ccol += 1;
-		return *this;
-	}
-	
-	TextRend2 & TextRend2::tr() {
-		cpos[0] = box.pos[0];
-		cpos[1] += font.height;
-		ccol = 0;
 		return *this;
 	}
 	
@@ -40,14 +26,12 @@ namespace col
 		'\n' -- new line
 		'\t' -- new column
 	*/
-	TextRend2 & TextRend2::text(string const& text_)
+	Hypertext & Hypertext::text(string const& text_)
 	{
 		for (auto t: text_)
 		{
 			if (t == '\n') {
-				// move to new line
-				cpos[0] = box.pos[0];
-				cpos[1] += font.height;				
+				lf();
 			}
 			else {				
 				auto & g = res(font.base, t);				

@@ -5,14 +5,10 @@
 #include "build.hpp"
 #include "unit.hpp"
 #include "base.hpp"
-#include "conf.hpp"
 
 
 
 namespace col {
-
-
-	v2i const tile_dim = v2i(conf.tile_dim, conf.tile_dim);
 
 	inline char const* get_name(Item const& item) { return get_item_name(item); }	
 	inline string const& get_name(BuildType const& x) { return x.get_name(); }

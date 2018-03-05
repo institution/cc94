@@ -53,7 +53,7 @@ namespace col {
 		//Cost const Neutral = -1;
 		Cost const Infinity = std::numeric_limits<Cost>::infinity();
 		
-		ext::darray2<Cost, Coord> tmp(env.get_dim(), Infinity);
+		ext::darray2<Cost, Coord> tmp(env.dim, Infinity);
 		
 		std::unordered_set<v2c, MyHash<v2c>> ws0;
 		std::unordered_set<v2c, MyHash<v2c>> ws1;

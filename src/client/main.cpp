@@ -28,16 +28,10 @@
 
 #include "col.hpp"
 #include "env.hpp"
-#include "csv.hpp"
 #include "runner.hpp"
 #include "console.hpp"
 #include "server/serialize.hpp"
-
 #include "../ext/format.hpp"
-
-
-
-
 
 
 /*
@@ -67,15 +61,11 @@ int main(int argc, char* argv[])
 	//	emscripten_set_main_loop_arg((em_arg_callback_func)loop_step, &runner, -1, 0);
 	//#endif
 	
-
-	if (argc == 3) {
-		runner.run(argv[1], argv[2], 1);
-	}
-	else if (argc == 2) {
-		runner.run(argv[1], "", 1);
+	if (argc == 2) {
+		runner.run(argv[1], 1);
 	}
 	else {
-		runner.run("", "", 1);
+		runner.run("res/48free/main.rc", 1);
 	}
 		
 	//#ifndef __EMSCRIPTEN__
@@ -84,8 +74,7 @@ int main(int argc, char* argv[])
 	//	}		
 	//#endif
 	
-	print("main EXIT\n");
-	
+	print("main EXIT\n");	
 	return 0;
 }
 

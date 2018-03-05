@@ -1,12 +1,9 @@
 #pragma once
-
 #include <list>
-
 #include "col.hpp"
 #include "base.hpp"
 #include "dir.hpp"
 #include "objs.hpp"
-#include "csv.hpp"
 #include "terr.hpp"
 #include "build.hpp"
 #include "unit.hpp"
@@ -30,7 +27,6 @@ namespace col {
 
 	using BuildTypes = ext::darray1<BuildType, BuildType::Id>;
 	using UnitTypes = ext::darray1<UnitType, UnitType::Id>;
-
 	using Terrs = ext::darray2<Terr, Coord>;
 	
 	
@@ -68,7 +64,8 @@ namespace col {
 
 
 
-	struct Core {
+	struct Core
+	{
 		// const
 		shared_ptr<BuildTypes> bts;
 		shared_ptr<UnitTypes> uts;
@@ -87,8 +84,7 @@ namespace col {
 		Units units;
 
 		// map state
-		Coord w{0};
-		Coord h{0};
+		v2s dim;
 		Terrs terrs;
 
 		// detail
@@ -96,11 +92,11 @@ namespace col {
 
 		explicit
 		Core():
-			terrs(Coords(0,0))
+			terrs(v2s(0,0))
 		{
 			bts = make_shared<BuildTypes>();
 			uts = make_shared<UnitTypes>();
-			w = h = 0;
+			dim = v2s(0,0);
 			next_id = 0;
 		}
 
@@ -117,8 +113,8 @@ namespace col {
 		Faction::Id get_id(Faction const& n) { return n.id; }
 
 		
-		template<class Type>
-		void loads(string const& fn);
+		//template<class Type>
+		//void loads(string const& fn);
 
 		template <typename T>
 		unordered_map<typename T::Id, T>& get_cont();
@@ -196,7 +192,7 @@ namespace col {
 		
 		assert(offset < terrs.size());
 		
-		return Coords(offset % w, offset / w);
+		return Coords(offset % dim[0], offset / dim[0]);
 	}
 
 	inline Coords Core::get_coords(Unit const& u) const {
@@ -233,7 +229,7 @@ namespace col {
 
 
 
-	template<class Type> inline
+	/*template<class Type> inline
 	void Core::loads(string const& fn) {
 
 		auto& ts = get_cont<Type>();
@@ -257,7 +253,7 @@ namespace col {
 			++p;
 		}
 
-	}
+	}*/
 
 	
 	
@@ -328,8 +324,8 @@ namespace col {
 
 	inline void Core::resize(Coords const& dim) {
 		//terrs.resize(boost::extents[dim[1]][dim[0]]);
-		w = dim[0]; h = dim[1];
-		terrs.resize(Coords(w,h));
+		this->dim = dim;
+		terrs.resize(dim);
 	}
 
 
@@ -401,14 +397,14 @@ namespace col {
 
 
 	template <> inline bool Core::in_bound<DirA>(Coords const& p) const { return 0 <= p[0]; }
-	template <> inline bool Core::in_bound<DirD>(Coords const& p) const { return p[0] < w; }
+	template <> inline bool Core::in_bound<DirD>(Coords const& p) const { return p[0] < dim[0]; }
 	template <> inline bool Core::in_bound<DirW>(Coords const& p) const { return 0 <= p[1]; }
-	template <> inline bool Core::in_bound<DirX>(Coords const& p) const {	return p[1] < h; }
+	template <> inline bool Core::in_bound<DirX>(Coords const& p) const {	return p[1] < dim[1]; }
 
 	template <> inline bool Core::on_bound<DirA>(Coords const& p) const {	return 0 == p[0]; }
-	template <> inline bool Core::on_bound<DirD>(Coords const& p) const { return p[0] == w - 1; }
+	template <> inline bool Core::on_bound<DirD>(Coords const& p) const { return p[0] == dim[0] - 1; }
 	template <> inline bool Core::on_bound<DirW>(Coords const& p) const {	return 0 == p[1]; }
-	template <> inline bool Core::on_bound<DirX>(Coords const& p) const { return p[1] == h - 1; }
+	template <> inline bool Core::on_bound<DirX>(Coords const& p) const { return p[1] == dim[1] - 1; }
 
 	inline bool Core::in_bounds(Coords const& p) const {
 		return in_bound<DirA>(p) and in_bound<DirD>(p)

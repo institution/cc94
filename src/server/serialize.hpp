@@ -425,11 +425,11 @@ namespace col {
 			if (verbose) print( "save terrain\n");
 			
 			
-			write(ar, env.w);
-			write(ar, env.h);
+			write(ar, env.dim);
+			
 
-			for(Coord j = 0; j < env.h; ++j) {
-				for(Coord i = 0; i < env.w; ++i) {
+			for(Coord j = 0; j < env.dim[1]; ++j) {
+				for(Coord i = 0; i < env.dim[0]; ++i) {
 					auto& x = env.get_terr({i,j});
 					// terr value
 					write(ar, env, x);
@@ -542,15 +542,15 @@ namespace col {
 			if (verbose) print("load terrain\n");
 			
 			print("offset = %||\n", ar.tellg());
-			read(ar, env.w);
-			read(ar, env.h);
+			read(ar, env.dim);
+
 			
-			print("map dim = %||, %||\n", env.w, env.h);
+			print("map dim = %||, %||\n", env.dim[0], env.dim[1]);
 
-			env.resize({env.w, env.h});
+			env.resize(env.dim);
 
-			for(Coord j = 0; j < env.h; ++j) {
-				for(Coord i = 0; i < env.w; ++i) {
+			for(Coord j = 0; j < env.dim[1]; ++j) {
+				for(Coord i = 0; i < env.dim[0]; ++i) {
 
 					auto& x = env.get_terr(Coords(i,j));
 

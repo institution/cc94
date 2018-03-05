@@ -13,6 +13,7 @@ namespace col {
 
 	using Coord = int16_t;
 	using Coords = ext::v2<Coord>;
+	using v2s = ext::v2<int16_t>;
 	using v2c = Coords;
 
 	using ext::fail;

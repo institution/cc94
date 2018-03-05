@@ -1,47 +1,42 @@
 #pragma once
-
 #include "props.hpp"
-#include "conf.hpp"
 #include "base.hpp"
+#include "rcparser.hpp"
+#include "res.hpp"
 
 namespace col{
 
-	
-	using Cell = b2s;
-
 	struct Layout {
 
-		int16_t lt; // line thickness
-		int16_t fh; // font height
-		int16_t wh; // width height (tile)
+		int16_t tile_dim;
+		int16_t line_th; // line thickness
+		int16_t hires{0};
 
-		int16_t pan_width;
-		int16_t line;
-		int16_t line_sel;   
-		int16_t font_tiny;
+		int16_t font_height; // font height
 		int16_t scale;
+		
 		v2s sep;
-
-		Cell scr, bar, pan, map;
-		Cell city_builds, city_fields, city_units, city_unit_cargo, city_supply_nums, city_resources, city_exit;
 		v2s terr_dim;
+		int16_t line;
+
+		b2s scr, bar, pan, map;
+		b2s city_builds, city_fields, city_units, city_unit_cargo, city_supply_nums, city_resources, city_exit;
 		
 		vector<v2s> pixs, dims;
 
 		inline int16_t S(int x) const {
-			return x * conf.scale;
+			return x * scale;
 		}
 		
 		inline v2s S(v2s x) const {
-			return x * conf.scale;
+			return x * scale;
 		}
 
-		void recalc(int16_t w, int16_t h);
-			
-		
-
+		void recalc();
+	
 	};
 
+	void read_layout(RCParser & p, Layout & ly);
 
 	
 	extern Layout ly;

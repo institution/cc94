@@ -443,8 +443,7 @@ TEST_CASE( "turn sequence", "" ) {
 TEST_CASE( "can_make", "" ) {
 	
 	Env env;
-
-	read_defs("res/csv/defs.rc", env);
+	read_defs("res/test/defs.rc", env);
 		
 	auto & lumber_mill = env.get_buildtype(BuildLumberMill);
 	auto & caravel = env.get_unittype(18);
@@ -457,7 +456,7 @@ TEST_CASE( "can_make", "" ) {
 TEST_CASE( "food_prod", "" ) {
 	
 	Env env({1,1}, Terr(AltFlat, BiomePlains));
-	read_defs("res/csv/defs.rc", env);
+	read_defs("res/test/defs.rc", env);
 	
 	auto & terr = env.get_terr({0,0});
 	
@@ -512,7 +511,7 @@ TEST_CASE("construct_build") {
 	auto& t = env.get_terr({0,0});	
 	env.put(t, unit);
 			
-	read_defs("res/csv/defs.rc", env);
+	read_defs("res/test/defs.rc", env);
 	
 	
 	

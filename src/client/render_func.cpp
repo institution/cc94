@@ -3,11 +3,16 @@
 
 namespace col {
 
+	/// Return approx text dim
+	v2s approx_text_dim(Font const& font, int16_t x, int16_t y)
+	{
+		return v2s(font.width * x, font.height * y);
+	}
+
 	/// Return text dim
 	v2s get_text_dim(Font const& font, string const& text)
 	{
-		auto p = v2s(0,0); // current position (top-left)
-		p += font.pad;
+		auto p = font.pad;
 		for (auto t: text)	
 		{
 			auto & g = res(font.base, t);			
@@ -15,15 +20,9 @@ namespace col {
 			++t;
 		}
 		p += font.pad;
-		return {p[0], font.height};
+		auto end = p + v2s(0, font.height);
+		return end;
 	}
-
-	/// Return text dim with padding
-	v2s get_text_dim_pad(Font const& font, string const& text)
-	{
-		return get_text_dim_pad(font, text);
-	}
-
 	
 	/// Render text at pos (top-left)
 	b2s render_text(
@@ -31,7 +30,7 @@ namespace col {
 		Font const& font, RGBA8 fg,
 		string const& text		
 	) {		
-		auto p = pos; // current position (top-left)
+		auto p = pos + font.pad; // current position (top-left)
 		for (auto t: text)
 		{
 			auto & g = res(font.base, t);
@@ -39,20 +38,43 @@ namespace col {
 			p[0] += g.adv; // move to next position
 			++t;
 		}
-		return {pos, v2s(p[0] - pos[0], font.height)};
+		p += font.pad;
+		auto end = p + v2s(0, font.height);
+		return {pos, end - pos};
 	}
-		
-	/// Render text aligned inside box with background
+
+	/// Render text
 	b2s render_text(
-		v2s pos, v2s dim, v2f align,
-		Font const& font, RGBA8 fg, RGBA8 bg,
+		b2s box, v2f align,
+		Font const& font,
+		RGBA8 fg, RGBA8 bg,
 		string const& text		
 	) {
+		b2s tbox;
+		tbox.dim = get_text_dim(font, text);
+		tbox.pos = calc_align(box, tbox.dim, align);
 		if (bg.a != 0) {
-			render_fill({pos, dim}, bg);			
+			render_fill(tbox, bg);
 		}
 		return render_text(
-			calc_align({pos, dim}, get_text_dim(font, text), align),
+			tbox.pos,
+			font, fg,
+			text
+		);
+	}
+
+	/// Render text
+	b2s render_text(
+		b2s box, v2f align,
+		Font const& font,
+		RGBA8 fg,
+		string const& text		
+	) {
+		b2s tbox;
+		tbox.dim = get_text_dim(font, text);
+		tbox.pos = calc_align(box, tbox.dim, align);
+		return render_text(
+			tbox.pos,
 			font, fg,
 			text
 		);

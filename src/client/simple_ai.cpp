@@ -18,8 +18,8 @@ namespace simple_ai{
 	}
 
 	void SimpleAi::sync() {
-		if (env.get_dim() != val.get_dim()) {
-			val.resize(env.get_dim(), 0.0f);
+		if (env.dim != val.get_dim()) {
+			val.resize(env.dim, 0.0f);
 
 			//tile_exts.resize(env.get_dim());
 

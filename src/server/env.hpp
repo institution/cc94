@@ -178,8 +178,8 @@ namespace col{
 		}
 
 
-		Coords get_dim() const { return Coords(w,h); }
 
+		
 		int get_turn_no() const {
 			return turn_no;
 		}
@@ -539,8 +539,8 @@ namespace col{
 
 		Env & fill(Terr const& t) {
 
-			for (Coord j = 0; j < h; ++j) {
-				for (Coord i = 0; i < w; ++i) {
+			for (Coord j = 0; j < dim[1]; ++j) {
+				for (Coord i = 0; i < dim[0]; ++i) {
 					auto& x = get_terr(Coords(i,j));
 					x.biome = t.biome;
 					x.phys = t.phys;
@@ -1296,7 +1296,7 @@ namespace col{
 
 
 		void clear_vision() {
-			auto dim = get_dim();
+
 
 			for (int16_t j = 0; j < dim[1]; j++)
 			{
@@ -1319,7 +1319,7 @@ namespace col{
 
 			if (0 <= id and id < 32) {
 				Coord r = 2;
-				auto dim = get_dim();
+
 
 				auto i0 = std::max<Coord>(0, p[0]-r);
 				auto i1 = std::min<Coord>(p[0]+r, dim[0]-1);

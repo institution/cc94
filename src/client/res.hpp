@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base.hpp"
-#include "conf.hpp"
 #include "layout.hpp"
 #include <string>
 #include "align.hpp"
@@ -72,15 +71,21 @@ namespace col {
 	struct Font
 	{
 		ResId base{0};
-		int16_t height{0};
-		int16_t ascender{0};
-		int16_t descender{0};
-		v2s pad{0,0};
+		int16_t height{0};   // line height
+		int16_t ascender{0};  // position of baseline
+		int16_t descender{0}; 
 		TexUnit texu{0};
 
+		int16_t width{0};    // approx width of a character; ex	
+
+		//v2s digit_dim{0,0}; // minimal dim that can hold any digit
+		v2s upper_dim{0,0}; // minimal dim that can hold any capital letter
+		v2s pad{0,0};      // default padding
+		
 		v2s get_glyph_rpos(v2s cpos, Sprite const& g) const {
 			return cpos + g.delta + v2s(0, ascender);
 		}
+
 	};
 
 	
@@ -89,8 +94,7 @@ namespace col {
 	extern ext::darray1<Texture, ResId> textures;
 	extern ext::darray1<Font, ResId> fonts;
 	
-
-	void load_resources();
+	void load_resources(Path const& path);
 	void free_resources();
 	
 

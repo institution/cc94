@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base.hpp"
-#include "conf.hpp"
 #include "res.hpp"
 #include <string>
 #include "align.hpp"
@@ -34,6 +33,7 @@ namespace col
 		rc();
 	}
 
+
 	inline void render_sprite_replace(v2s pos, Sprite const& s0, Sprite const& s1)
 	{
 		RenderCall rc;
@@ -45,6 +45,9 @@ namespace col
 		rc.uv1 = s1.box;
 		rc();
 	}
+
+
+
 
 	inline void render_fill(b2s box, RGBA8 color)
 	{
@@ -95,26 +98,35 @@ namespace col
 		*/
 		//_render_call_GL(line_seg.id, data, sizeof(data));
 	}
+
+	/// Return approximate text dim
+	v2s approx_text_dim(Font const& font, int16_t x, int16_t y = 0);
+
 	
 	/// Return text dim
 	v2s get_text_dim(Font const& font, string const& text);
 
-	/// Return text dim with padding
-	v2s get_text_dim_pad(Font const& font, string const& text);
-	
-	
 	/// Render text at pos (top-left)
 	b2s render_text(
 		v2s pos,
 		Font const& font, RGBA8 fg,
 		string const& text		
 	);
-		
-	/// Render text aligned inside box with background
+
+	/// Render text
 	b2s render_text(
-		v2s pos, v2s dim, v2f align,
-		Font const& font, RGBA8 fg, RGBA8 bg,
+		b2s box, v2f align,
+		Font const& font,
+		RGBA8 fg, RGBA8 bg,
 		string const& text		
 	);
 
+	/// Render text
+	b2s render_text(
+		b2s box, v2f align,
+		Font const& font,
+		RGBA8 fg,
+		string const& text		
+	);
+	
 }

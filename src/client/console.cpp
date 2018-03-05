@@ -7,15 +7,48 @@
 #include "simple_ai.hpp"
 #include "../front/front.hpp"
 #include "serialize2.hpp"
+#include "serialize3.hpp"
 #include "timer.hpp"
 //#include "widget.hpp"
 
 namespace col {
 	using boost::str;
 
+	void clear_env(Env & env)
+	{
+		// buildtypes and unittypes
+		// TODO: init to zeroes
+		(*env.bts).resize(100);  
+		(*env.uts).resize(100);
+
+		// map
+		env.resize({15,12});
+		env.fill(Terr{AltSea, BiomeDesert});			
+	}
 
 
 
+	void read_rc(RCParser & p, Console & con)
+	{	
+		while (p.ok())
+		{
+			auto s = p.read_symbol();	
+			if (s == "gui") {
+				read_layout(p, ly);
+			}
+			else if (s == "defs") {
+				read_defs(p, con.env);
+			}			
+			else if (s == "load") {
+				read_file(p.read_string(), *con.runner);
+			}
+			else {
+				p.set_error("unrecognized command: %||", s);
+				break;
+			}
+		}
+		p.end();		
+	}
 
 
 	uint8_t flag_id4color_name(const string &s) {
@@ -216,19 +249,11 @@ namespace col {
 
 
 
-	void Console::init_GUI()
-	{
-		
-	}
 
 
 	void Console::run() 
 	{
-		print("INFO: creating window; &win=%||\n", &win);
-		win.create("ReCol", {conf.screen_w, conf.screen_h});
-
-		
-		print("INFO: rendering intro screen\n");
+		/*print("INFO: rendering intro screen\n");
 		Texture bg = front::make_texture(front::load_png_RGBA8(conf.tile_path / "texture2.png"));
 		front::bind_texture(2, bg);
 		RenderCall rc;
@@ -239,39 +264,32 @@ namespace col {
 		rc.uv0 = aabb2f(0,0,1,1);
 		rc();
 		win.flip();
-		
-
-		print("INFO: loading resources\n");
-		load_resources();
-
-
-		render_text({0,0}, font_tiny(), RGBA8(255,0,0,255), "COLONIZATION");
-		SDL_Delay(3000);
-		win.flip();
-		
-
-		/*
-		print("INFO: test sprite display\n");
-		//print("sprite = %||; pixbox = %||\n", res(TERRAIN, 3), get_pixel_box(res(TERRAIN, 3)));
-		
-		//front::bind_texture(0, textures.at(0));
-		//front::bind_texture(1, textures.at(1));
-		
-		{
-			RenderCall rc;
-			rc.win = &win;
-			rc.mode = front::MODE_TEXTURE;
-			rc.texu = 0;
-			rc.dst = b2s({0,0}, {100,100});
-			rc.uv0 = aabb2f(0.753906, 0.167969, 0.777344, 0.191406);
-			rc();
-			win.flip();
-		}
-		SDL_Delay(5000);
 		*/
+		
+		auto main_dir = filesys::parent_path(main_rc);
+		print("INFO: con.run; main_rc=\"%||\"\n", main_rc);
+		print("INFO: con.run; main_dir=\"%||\"\n", main_dir);
+		
+		print("INFO: running \"%||\"\n", main_rc);
+		clear_env(env);
+		RCParser p(main_rc);
+		read_rc(p, *this);
+		p.close();
 
+		print("INFO: layout racalculation\n");		
+		ly.recalc();
 
-		print("INFO: launching gui\n");		
+		
+		print("INFO: creating window; &win=%||\n", &win);
+		win.create("ReCol", ly.scr.dim);
+		win.clear();
+		win.flip();
+
+		print("INFO: loading resources from: \"%||\"\n", main_dir);
+		load_resources(main_dir);
+		ly.font_height = font_tiny().height;
+
+		print("INFO: launching gui\n");
 		keyboard.init();
 		mouse.init();
 		//front::input::print_mod_table();		

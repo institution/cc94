@@ -44,35 +44,36 @@ namespace col{
 		read(a, b.name);
 	}
 
+
+
 	void read_defs(RCParser & p, Env & env)
 	{
-		// TODO: init to zeroes
-		(*env.bts).resize(100);
-		(*env.uts).resize(100);
-			
-		
 		while (p.ok())
 		{
 			auto s = p.read_symbol();
 			if (s == "unittype") {
-				read_unittype(p, env);			
+				read_unittype(p, env);
 			}
 			else if (s == "buildtype") {
-				read_buildtype(p, env);			
+				read_buildtype(p, env);
 			}
 			else {
-				p.set_error("unknown command: %||", s);
+				p.unread();
+				break;
 			}
 		}
 		p.end();
 	}
 
+	// used in tests
 	void read_defs(Path const& path, Env & env)
 	{
 		RCParser p(path);
 		read_defs(p, env);
 		p.close();
 	}
+
+
 
 
 }
